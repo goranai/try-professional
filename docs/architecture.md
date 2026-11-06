@@ -6,6 +6,8 @@
 
 Try Professional turns an LLM agent runtime into a structured company: a hierarchy of agents with one accountable owner per task, typed handoffs, review gates, shared multilingual memory and a vetted skill supply chain. It is designed against flat swarms.
 
+**End goal (set by the owner on 2026-11-06).** Someone clones `goranai/try-professional`, runs one command describing a business, and gets a complete company designed for that business, with skills assigned to its departments and roles, ready to run. `trypro init "a YouTube Shorts content company"` should produce Trend Research, Scriptwriting, Production, Distribution, Analytics, Executive, Legal and QA, not the generic nine departments. Then `trypro run "make 5 Shorts about AI tools for this week"` works straight away. In v0.1 the company produces files. Rendering and uploading come later as optional connectors, always gated by human approval. §5.4 has the design, approved by the owner on 2026-11-06.
+
 ## Contents
 
 1. [Decisions so far](#1-decisions-so-far)
@@ -51,6 +53,10 @@ Try Professional turns an LLM agent runtime into a structured company: a hierarc
 | LLM provider | Any OpenAI-compatible API, from `TRYPRO_LLM_BASE_URL`, `TRYPRO_LLM_API_KEY` and `TRYPRO_LLM_MODEL` in `.env`. Everyone uses these unless `llm_overrides` in `org.yaml` says otherwise. `OPENAI_API_KEY` is never used. | Owner |
 | Model | `deepseek-v4.1-flash-1017`: passed tool calling, a tool loop and JSON output. Phase 6 uses the same model. | Owner's preference, confirmed by test |
 | Secrets | `.env` is gitignored, and a scan of the working tree and full history runs before every push. | Owner |
+| End goal | One command turns a business description into a company ready to run (§5.4). The YouTube Shorts studio is the flagship example. | Owner |
+| Current claims | Any trend or "current" claim cites a source and a date. Without them, a research deliverable labels it unverified and never calls it "this week's trend". | Owner |
+| Skill fit | Embeddings shortlist candidates per role, then the cheap model judges fit with a one-line reason. It runs at init and when skills change, is cached, and reports its token cost. | Owner |
+| v0.1 scope | Deliverables are files. Real-world actions come later as optional connectors, gated by human approval. The README says this plainly. | Owner |
 
 ## 2. Changes from the brief
 
@@ -62,6 +68,8 @@ Try Professional turns an LLM agent runtime into a structured company: a hierarc
 | Skill index inside a Mnemosyne bank | Separate catalog using the same embedding model | Approved by the owner (§14). Evidence in §8.5. |
 | Role agents write to their department bank (company bank writer unspecified) | Only the Executive department writes to the company bank, through an explicit promotion | Closes a gap in the brief. Anything else lets one role change what the whole company reads. |
 | Phase 6 is OSS packaging | Phase 6 is the benchmark harness, Phase 7 is OSS packaging | Owner's change. |
+| Landing-page example | YouTube Shorts studio example | Owner's change. It's the flagship, and one end-to-end example is easier to keep working than two. |
+| The nine departments are the product | They become the `general-company` template, one of five | Owner's change. The packs stay as its source, so nothing is duplicated. |
 
 ## 3. Directory tree
 
@@ -82,6 +90,12 @@ try-professional/
 │   ├── role-v1.schema.json
 │   ├── artifacts-v1/             # generated from the Pydantic models, checked in CI
 │   └── conformance/{valid,invalid}/
+├── templates/                    # industry templates, a contribution path; copied into the package like spec/
+│   ├── general-company/          # built from the packs
+│   ├── youtube-shorts-studio/
+│   ├── saas-startup/
+│   ├── ecommerce-store/
+│   └── marketing-agency/
 ├── packages/
 │   ├── skill-customs/            # standalone; must not import try_professional
 │   │   ├── pyproject.toml
@@ -100,6 +114,7 @@ try-professional/
 │       ├── src/try_professional/
 │       │   ├── org/              # loader, validator (spec levels 1 and 2)
 │       │   ├── packs/            # one folder per department
+│       │   ├── generator/        # Org Architect, compiler, company policy, provisioning, review screen, estimate
 │       │   ├── core/
 │       │   │   ├── pipeline/     # pure state machine
 │       │   │   ├── orchestrator.py
@@ -113,7 +128,7 @@ try-professional/
 │       │   ├── bench/            # runner, setups, tasks, report generator
 │       │   └── cli.py
 │       └── tests/
-├── examples/landing-page/
+├── examples/youtube-shorts-studio/  # flagship: a whole company, one goal, the files it produces
 ├── benchmarks/results/           # raw results by date, model, version
 ├── docs/
 │   ├── architecture.md           # this file
@@ -281,6 +296,149 @@ Installing a pack makes a department available. It costs nothing until it is act
 | Plan names an uninstalled department | Plan is rejected |
 | QA gate | Always runs for an activated department, and owner never equals reviewer |
 | Hermes, code-only goal (Phase 5) | No cards assigned to Marketing or Sales profiles |
+
+### 5.4 Org Generator: from a business description to a company
+
+**Status: approved by the owner on 2026-11-06, and being built as Phase 4b.**
+
+```mermaid
+flowchart TD
+  A["trypro init 'a YouTube Shorts content company'"] --> B[Choose the closest template<br/>local embeddings, no model call]
+  B --> C[Org Architect<br/>returns an OrgProposal, not YAML]
+  C --> D[Compiler adds Executive, Legal, QA,<br/>tools, escalation and budget]
+  D --> E{org/v1 spec and<br/>company policy}
+  E -->|invalid, 2 retries at most| C
+  E -->|valid| F[Match loadouts for every role]
+  F --> G[Discover skills for gaps<br/>through skill-customs, into quarantine]
+  G --> H[One review screen]
+  H -->|edit| E
+  H -->|regenerate, with a reason| C
+  H -->|approve, at a terminal| I[Write org/ and skills/decisions.yaml]
+  I --> J["trypro run '...'"]
+```
+
+#### The Org Architect
+
+**It is a bootstrap step, not a pipeline run.** You asked for the CEO to run it, but the pipeline needs a company before it can run, and at this point there isn't one. So it uses the fixed Executive pack's CEO prompt with one narrow purpose, the same LLM client, its own token ceiling, and its own hash-chained audit log. It sees the description and the template, and no skill text or web content, so nothing it reads can inject instructions into the org.
+
+**The model never writes `org.yaml`.** It returns a narrow `OrgProposal`, and a compiler writes the files. This differs slightly from the brief's wording, and it's the main safety decision here: every generated role's text becomes a system prompt, and `org.yaml` can name endpoints and keys. It also saves tokens, because the model describes changes to a template instead of repeating it.
+
+| The model decides | The compiler decides, and the model can't change |
+|---|---|
+| Which template departments to keep, rename or remove | Executive department, unmodified from its pack |
+| New departments and roles: id, name, mission, responsibilities | Legal department and gate: all three triggers, `on_unavailable: block` |
+| `skill_needs` and `allowed_skill_categories` | A `qa_gate` on every department that produces work |
+| `outputs`, from the existing artifact types only | `allowed_tools`, from the role's kind: head, worker or reviewer. Never a shell |
+| A role's reviewer, from a fixed list | Escalation: worker, head, CEO, person |
+| `activation` for non-mandatory departments | `pipeline`, including the token ceiling, and the system prompt wrapper around the role's text |
+
+`llm_overrides` and `x-` fields can't be expressed in an `OrgProposal` at all. A model that could write them could send the default key to an endpoint of its choosing.
+
+**Company policy is separate from the spec.** `org/v1` deliberately allows a company with no Legal department, because you decided departments are removable. So "always Executive, QA gates and Legal" becomes a second check, `trypro org validate --policy`, with its own codes. `trypro init` refuses to activate anything that fails it, including after a person's edits on the review screen. Someone can still remove Legal by hand later, as they can today. Policy also caps a generated company's size, proposed at 25 roles, because every extra role adds to the CEO's prompts.
+
+**Without a key,** `trypro init "..."` stops, names the closest template, and gives the command `trypro init --template <id>`, which needs no key and costs nothing. It doesn't quietly hand back an unadapted template.
+
+#### Templates
+
+`templates/<id>/` holds `template.yaml` (name, description, example businesses), `org.yaml` and `roles/`. It's canonical at the repo root and copied into the package like `spec/`, with a drift test, so `pip install` ships it. `general-company` is built from the existing packs, and `--packs` keeps working. Templates are a contribution path: every template must pass the policy and a dry run in CI, and new industries get seeded good first issues, which stay unposted until the repo is recreated.
+
+**Flagship, `youtube-shorts-studio`:**
+
+| Department | Roles | Output in v0.1 |
+|---|---|---|
+| Executive | CEO, chief of staff | Plan, sign-off |
+| Trend Research | Head, trend analyst | Topic research, with sources |
+| Scriptwriting | Head, scriptwriter | Scripts, storyboards |
+| Production | Producer (head), editor, thumbnail designer | Edit notes, thumbnail briefs |
+| Distribution | Head, title and SEO, scheduler | Titles, descriptions, upload schedule |
+| Analytics | Analyst (head) | Measurement plan, or analysis of files you provide |
+| QA | QA lead, reviewer | Reviews of the departments above |
+| Legal & Compliance | Counsel | Checks on copyright, claims and platform rules |
+
+QA is a real department here, so a separate role reviews the work, rather than the department head who assigned it. The pipeline is already ready for this: a search of the code found no department names in core, apart from the Legal default in `packs/` and a fallback in the scripted test model.
+
+#### Provisioning skills
+
+After the org validates, for every role: run loadout matching (§9.6), log gaps, then run discovery for the gaps through `skill-customs`. Downloads go into quarantine and aren't run. Nothing reaches a role without the review screen.
+
+**The repo ships zero skills today:** `skills.lock` is empty. So on a fresh clone, every skill has to come from discovery. Three things follow:
+
+- **Categories.** Matching reached 86–91% precision with categories a person assigned, and about 45% on wording alone (§9.6). Most public skills declare no category, and your rule hides those until a person assigns one. So the generator *proposes* a category, from the discovery search that found the skill, and the review screen labels it as proposed. Approving is the person's assignment. **Precision with proposed categories is unmeasured,** and it's an exit criterion for this phase.
+- **Some roles will have no good skill.** The screen shows that as a gap. A thumbnail designer may well end up with nothing. The promise is "vetted skills where good ones exist, and a list of what's missing", and the README will say that rather than "the right skills for every role".
+- **Discovery uses the network, which needs care.** It sends `skill_needs` phrases to GitHub, never the business description, and prints that it's doing so. `--no-discover` turns it off. Without `GITHUB_TOKEN` it skips discovery with a clear message, because unauthenticated search is heavily rate limited. It reuses queries by category and stops at a time limit, and a slow or failed search leaves gaps rather than failing `init`.
+- **Embeddings alone miss too much.** Matching found 43% of what it could on real skills, which isn't enough for this end goal. So embeddings now only shortlist candidates for each role, and the cheap model judges each one's fit, with a one-line reason shown on the review screen. A skill's text reaches that model as untrusted data, and its answer can only choose among the shortlist. The result is cached by role, skill content and model, so it reruns only when one changes, and its tokens are reported.
+
+#### One review screen
+
+```text
+Proposed company: Shorts Studio   (adapted from youtube-shorts-studio, match 0.81)
+Generated with 14,203 tokens.     Estimated per typical run: 90,000-190,000 tokens (not measured)
+
+Executive
+└─ CEO
+   ├─ Trend Research
+   │  └─ Head ── trend analyst
+   │       trend-scan        0.71  needs "find rising topics", category research (proposed)
+   ├─ Scriptwriting
+   │  └─ Head ── scriptwriter
+   │       short-form-hooks  0.66  needs "write a hook", category copywriting (declared)
+   ├─ Production
+   │  └─ Producer ── editor ── thumbnail designer
+   │       GAP: no skill found for "brief a thumbnail"
+   ...
+
+Not included in approval:
+  QUARANTINED  viral-hacks      scanner: hidden instruction in SKILL.md
+  HAS SCRIPTS  video-cutter     needs a shell, and no role has one in v0.1
+
+[a]pprove   [e]dit   [r]egenerate   [q]uit
+```
+
+The figures above illustrate the layout and aren't real results. Everything before approval stays in `.trypro/proposals/<id>/`. `org/` and `skills/decisions.yaml` are written only on approval, so **nothing activates before it**.
+
+| Action | What happens |
+|---|---|
+| Approve | Activates the org, the listed loadouts, and the proposed categories. Needs a terminal and a typed confirmation |
+| Edit | Opens the proposal in `$EDITOR`, then revalidates against the spec and policy, and reruns matching |
+| Regenerate | Asks for a reason and calls the model again. Each one is a paid call, and the screen shows the running total |
+| Quit | Keeps the proposal, and `trypro init --review <id>` reopens it |
+
+Approval can't come from an agent. Without a terminal, `init` stops at the proposal and exits non-zero. Approving is **one step, but it covers less than everything**: quarantined skills are never included, and a skill with scripts needs its own explicit approval. No role has a shell in v0.1, so such a skill can't run even when approved. The screen says so, and approval for them arrives with the shell tool.
+
+#### The token estimate
+
+It's calculated with no model call: this org's real prompt sizes (`scripts/measure_prompts.py`), times the steps a scripted dry run takes, scaled by the ratio of prompts to total tokens in measured runs. It shows as a range and is labelled as an estimate. Today it would rest on **one measured run**, of three roles. Real runs of the flagship recalibrate it, and §13 will state how far off it was. The prompt-size test also has to apply per org, since it now assumes the default 22 roles.
+
+#### Files as deliverables
+
+Roles already write to a run's workspace, but that's in `.trypro/runs/<id>/workspace`, and `trypro run` only prints a summary. **New:** when a run finishes, it exports workspace files and artifact bodies to `deliverables/<run-id>/`, with an `index.md` linking each file to the role that made it and the reviewer that passed it.
+
+No new artifact types are needed. A script is a `PublicContent`, and research is a `ResearchReport`. **The limit is that a schema can check a storyboard's shape, not its quality.** QA reads it against the definition of done.
+
+#### Research needs a source of facts
+
+**No role has a tool that can reach the web today.** Asked for "this week's" AI tools, Trend Research would answer from the model's training data, and could present stale or invented trends as current. That would quietly undermine the flagship. What's proposed:
+
+- An `inputs/` folder any run can read, with the roles' prompts requiring them to say which claims came from it and which didn't.
+- An optional read-only `web_search` tool, off by default, with its own key, and its results wrapped as untrusted text. Only research roles get it.
+- The flagship example runs from a checked-in `inputs/` file, so it reproduces with no search key.
+- **Current claims need a source and a date.** A `ResearchReport` is rejected if a current or trend claim has neither and isn't labelled unverified, or if an unverified one is called "this week's trend". This is checked in code, in English and Indonesian to start with. A model could still invent a citation, so the exported `index.md` marks each source as retrieved during the run or not.
+
+Analytics has the same limit: with no channel data, it writes a measurement plan.
+
+#### Risks
+
+| Risk | Why it matters | Mitigation |
+|---|---|---|
+| Skill precision falls without human categories | The "right skills" promise rests on it | Proposed categories are labelled, a person approves, and it's measured before any claim |
+| Valid isn't good | A company can pass every schema and still be badly designed | Paid evaluation on businesses with no template, with you judging the results |
+| Fabricated research | The flagship's first step has no data source | `inputs/`, the optional `web_search`, and claims labelled by source |
+| Token cost of a large goal | The smallest live run, with three roles and one simple task, took 31,360 tokens. Five Shorts across six departments could reach the 200,000 default ceiling and block | Tasks grouped by deliverable type, not by Short; measure and report it; say so in the README if it's expensive |
+| Approval fatigue | One-step approval of many skills invites a quick yes, and scanners can be bypassed | Excluded and flagged items are listed apart, and the number of skills being approved is shown |
+| Prompt injection through generated text | Generated text becomes system prompts | `OrgProposal`, the compiler, and no outside content reaching the Architect |
+| A larger surface for discovery | It downloads from strangers' repos on a first run | Full SHA pinning, license allowlist, scan, and quarantine, none of which change; `--no-discover` |
+| "One command" overstates it | Install and a key come first, and the embedding model downloads on first use (about 0.22 GB) | The README gives the real steps, and the time is measured on a clean machine |
+| Adapters could expose approval | MCP should be able to generate a company | MCP gets `org_propose` and `org_proposal_get`, and never approve. A person approves at a terminal |
 
 ## 6. Pipeline state machine
 
@@ -576,6 +734,54 @@ JSON with sorted keys for clean diffs.
 
 The README opens with a working flow under 5 minutes: install, scan a folder, add a pinned skill, run `verify` in CI. It has short sections for CrewAI, Hermes and MCP clients. Each of those gets a seeded `good first issue`. Where a framework's skill-loading details aren't yet verified, the issue begins by confirming them.
 
+### 9.6 Loadouts: which skills each role gets
+
+Category filtering is too coarse, so each role gets a ranked list of skills that fit its actual job. Roles declare a skill profile (`skill_needs`, `required_tools`, `forbidden_tools`, `max_skills`), which is part of the [role spec](spec/org-v1.md#skill-profile).
+
+```mermaid
+flowchart LR
+  L[skills.lock] --> C[Catalog]
+  D[decisions.yaml<br/>people only] --> M
+  C --> M[Match every skill<br/>against every role]
+  F[Usage and QA results] --> M
+  M --> P[Waiting for a person]
+  P -->|trypro skills admit| A[Active loadout]
+  A -->|names and short descriptions| R[Role]
+  R -->|skill_get| A
+  R -->|used, passed QA| F
+  R -->|no skill fits| G[Gap]
+  H[Head or CEO] -.->|propose only| P
+```
+
+**Score.** Embedding similarity between the skill and the best of the role's `skill_needs` (responsibilities count at 0.9), plus 0.08 if the skill's category is one the role allows or minus 0.10 if not, plus up to 0.05 either way from past QA results once there are at least 3. A skill scoring under 0.44 isn't suggested. Each skill is suggested to at most 4 roles, and only those within 0.10 of its best score.
+
+**Excluded outright:** quarantined skills, uncategorized skills, skills needing a tool the role isn't allowed or is forbidden, and skills a person rejected for that role. A tool name that isn't recognized counts as one the role lacks. A skill that ships scripts needs a shell, and no default role has one, so those skills are excluded everywhere for now.
+
+**Collapsing.** Candidates with a similarity of 0.92 or more collapse into one, keeping an approved copy if there is one, and otherwise the better match. The list is then capped at `max_skills`.
+
+**People decide.** Matching only suggests. A skill enters a loadout when a person runs `trypro skills admit`, which needs a terminal and a typed confirmation. The decision is recorded in `skills/decisions.yaml` for review in git, and tied to the skill's content hash, so any change sends it back to waiting. The CEO and department heads can propose through the `skill_propose` tool, which changes nothing until a person acts. No agent tool can admit, reject, or categorize.
+
+**What a role can reach.** Only its active loadout. Names and 70-character descriptions go in its prompt, labelled as untrusted because third parties wrote them, and the full skill is fetched with `skill_get`. A role with no skills isn't offered the skill tools, so it pays nothing for them. A full 8-skill loadout fits the same prompt budget as a run with none.
+
+**Uncategorized skills.** A skill declaring no category is `uncategorized` until a person runs `trypro skills categorize`. Only the CEO and department heads can see these, always labelled, so they can propose them. Most public skills declare no category, so expect to assign most of them by hand.
+
+**Self-declared categories.** A category in a skill's own frontmatter is the author's claim. It affects ranking by a small amount and can't get a skill in without a person admitting it.
+
+**Feedback.** Each `skill_get` for a task is recorded, along with that task's latest QA verdict, so rework that ends in approval counts as a pass. `trypro skills match` re-ranks using this, and flags skills unused for 20 runs of that role for removal (`--unused-runs` changes this). It never removes anything by itself.
+
+**Gaps.** If a task's best skill scores under 0.40, the role and task are logged. `trypro skills gaps` lists them, and `--discover` searches GitHub for candidates. That sends the task descriptions to GitHub, so it only happens with the flag, and results still go through `skill-customs` and a person.
+
+**Measured** ([results](research/loadouts/)). Thresholds were chosen on separate data, and these were each scored once afterward. Scores are for what matching suggests, before a person decides:
+
+| Held-out set | Precision | Recall |
+|---|---|---|
+| 14 real skills from a repository not used for tuning, labelled before scoring | 10/11 (91%) | 10/23 (43%) |
+| 32 hand-written skills across all 22 roles, English and Indonesian | 30/32 (94%) | 30/35 (86%) |
+
+**Read the real-skill row as the honest one, and still with care.** It's a small set, one person labelled it, and that person also assigned the categories, as a person must in real use. Tools were set aside to measure matching alone, and in a real run, skills needing a shell are excluded. Recall is low by design: a person reviews every suggestion, and a head can propose a skill that was missed.
+
+**Categories do most of the work.** A first version chose a threshold of 0.68 on the hand-written fixture alone, and scored 26/26 there, because one author wrote both the skills and the `skill_needs`. On real skills that threshold suggested **nothing**. Real descriptions say when to use a skill rather than what it does, so they score lower. Wording alone then reached about 45% precision, with code review matching Compliance and Sales. Adding a person's category raised it to 86% on the tuning set. So assigning categories isn't busywork: it's what makes matching useful.
+
 ## 10. Adapters
 
 ### 10.1 Interface
@@ -613,18 +819,22 @@ Provider-agnostic config with `anthropic` and `openai_compatible` clients. By de
 
 ### 10.3 MCP server
 
-Tools: `org_get`, `run_start`, `run_status`, `run_next_action`, `artifact_submit`, `review_submit`, `handoff_request`, `escalate`, `memory_recall`, `memory_write`, `memory_promote`, `skill_search`, `skill_get`, `audit_tail`. It uses stdio by default.
+Tools: `org_get`, `run_start`, `run_status`, `run_next_action`, `artifact_submit`, `review_submit`, `handoff_request`, `escalate`, `usage_report`, `memory_recall`, `memory_write`, `memory_promote`, `skill_search`, `skill_get`, `audit_tail`. It uses stdio by default, and is started with `trypro mcp`. See [its README](../packages/try-professional/src/try_professional/adapters/mcp/README.md).
+
+The server can't see what a client's model spends, so token ceilings don't apply in this mode, and `usage_report` tokens are marked as self-reported.
+
+**Org Generator (after Phase 4b):** `org_propose` and `org_proposal_get` let a client generate a company and show the proposal. There's no tool to approve it. A person does that at a terminal, as with every other human decision (§5.4).
 
 Two identity modes:
 
-- **Bound:** started with `TRYPRO_ROLE`, so identity comes from the server's launch config and is recorded as `attested_by: runtime`. Hermes uses this.
+- **Bound:** started with `trypro mcp --role <role>`, so identity comes from the server's launch config and is recorded as `attested_by: runtime`. Hermes uses this.
 - **Operator:** one client plays whichever role `run_next_action` names, which suits Claude Code or Cursor. This is recorded as `attested_by: claimed`. The ordering, schemas and gates remain enforced, but separation between roles is procedural, because one model is playing all of them. The docs and audit log state this plainly.
 
 ### 10.4 Hermes
 
 Verified against Hermes and Mnemosyne docs and source on 2026-11-06. Items marked ⚠ need a live test in Phase 5. Hermes is not on this machine's PATH, so nothing here has been run against it yet.
 
-**Org chart to profiles.** One profile per role, 22 by default, named `tp-<department>-<role>` with `tp-executive-ceo` on top. `trypro hermes install` runs `hermes profile create <name> --description "<mission>"` and generates each profile's files from `org.yaml`, so it remains the only source of truth:
+**Org chart to profiles.** One profile per role, however many the approved org has, named `tp-<department>-<role>` with `tp-executive-ceo` on top. `trypro hermes install` reads only an approved org. It runs `hermes profile create <name> --description "<mission>"` and generates each profile's files from `org.yaml`, so it remains the only source of truth:
 
 | Profile file or setting | Generated from |
 |---|---|
@@ -693,7 +903,7 @@ flowchart LR
 **Install and verify.** The install script performs these steps. The verification step fails if any of them is wrong.
 
 1. Check for Hermes at or above the version required by the Mnemosyne catalog entry (`>=0.21.4`).
-2. Create or update the 22 profiles.
+2. Create or update one profile per role in the approved org.
 3. In each: `hermes -p <name> plugins install mnemosyne`, then `hermes -p <name> config set memory.provider mnemosyne`.
 4. Write the generated config.
 
@@ -717,6 +927,7 @@ trypro hermes verify
 - Whether Hermes's Skills Hub lock can coexist with `skills.lock` (`external_dirs` should avoid the conflict).
 - Whether a `verified` skill loaded through `external_dirs` is treated as instructions. This is why only `verified` skills go there, and `indexed` skills are reached only through `skill_get` as untrusted data.
 - Native Windows behavior for the whole flow.
+- Which version to support. PyPI stops at `hermes-agent` 0.19.0, the latest GitHub release is v0.23.0, and the Mnemosyne catalog entry needs `>=0.21.4`. Building v0.23.0 from its tag with `uv` failed on this machine on 2026-11-06, so the supported route is probably the official installer. Not resolved yet.
 
 **Fallback.** If live testing breaks this design, I'll report it before changing direction.
 
@@ -733,6 +944,8 @@ trypro hermes verify
 
 Each task has a `tasks/<id>/` folder with fixtures, prompt, check and declared check type. Rubric results are reported separately from automatic ones, because they are less objective.
 
+**The YouTube Shorts studio is one of the 25.** Goal: five Shorts from a fixed `inputs/` file. Automatic checks cover what can be counted, such as five scripts, a spoken length within a Short, and a title, description and schedule entry for each. A rubric covers quality. The company is **frozen from the template**, not generated for each run, so generation's variance doesn't enter the comparison. `single` and `swarm` get the same goal, inputs, and role prompts. Generation's own tokens are measured and reported separately.
+
 ### 11.2 Setups
 
 All three use the same mid-priced model, plus the same tools, tasks, and per-task resource cap. Refusal fallbacks are turned off, because they could switch models mid-run. A refusal counts as a failed step.
@@ -741,7 +954,7 @@ All three use the same mid-priced model, plus the same tools, tasks, and per-tas
 |---|---|
 | `single` | One agent with all tools and a neutral system prompt |
 | `swarm` | The same role prompts as peers, sharing a message board, any agent can message any other, terminating on consensus or at the cap |
-| `hierarchy` | Try Professional with the default org |
+| `hierarchy` | Try Professional with the default org, or the frozen Shorts template for that task |
 
 The swarm has to be a fair baseline, or the comparison is worthless. It gets the same role prompts, and its implementation is published with a design note. Contributors can challenge it, and improvements are welcome even if they make the hierarchy look worse.
 
@@ -782,7 +995,7 @@ Recall@5 for the same labelled skills queried in English, Indonesian, Spanish, C
 
 Nothing is marked complete without passing tests. Each phase ends with what was built, what was tested and what is missing.
 
-**Status (2026-11-06):** Phases 1 to 4 pass their tests. Phase 2 has run end to end on a live provider. The memory stack (Phase 3) and skills (Phase 4) have run with a scripted model, not a live one.
+**Status (2026-11-06):** Phases 1 to 4 pass their tests and are pushed. Loadouts (4a) pass their tests and aren't committed. Phases 2 and 3 have run end to end on a live provider, with memory on. Skills (Phases 4 and 4a) have only run with a scripted model, because `skills.lock` is empty, though matching was measured separately on real public skill files. Phase 5 has started: the MCP server and template adapter pass their tests, uncommitted, and Hermes is paused. **Phase 4b is approved and in progress.** Phase numbers 5 to 7 stay the same, so earlier references still hold.
 
 | Phase | Builds | Exit criteria |
 |---|---|---|
@@ -790,25 +1003,50 @@ Nothing is marked complete without passing tests. Each phase ends with what was 
 | 2 | Org spec and JSON Schema, org loader, packs, pipeline, artifacts, audit, API runner, `trypro init` | Conformance fixtures pass; invariants and §5.3 tests pass; an end-to-end run against a scripted model client passes, plus one against a real provider if a key is available |
 | 3 | Memory gateway, Mnemosyne backend, skill catalog | Cross-lingual tests pass for the 5 languages; access-rule tests pass; expiry and remote-refusal tests pass; model choice confirmed or reopened |
 | 4 | `skill-customs` | Passes alone in a clean environment; malicious-skill fixtures are caught; license, pinning and lockfile tests pass; approval unreachable by agents |
-| 5 | MCP and Hermes adapters, landing-page example | Each adapter's smoke test passes; `trypro hermes verify` passes against a real Hermes install; the ⚠ list in §10.4 is resolved |
-| 6 | Benchmark harness and first results | `trypro bench` reproduces; `docs/benchmarks.md` is generated from raw results |
-| 7 | Docs, CI, templates, seeded issues, releases | Clean-machine install works on all 3 operating systems; CI is green; publishing to PyPI and creating issues happen only after your explicit go-ahead |
+| 4a | Loadouts (§9.6) | Precision reported on a labelled fixture and real skills, in English and Indonesian; prompt budget test passes. **Tests pass, not committed** |
+| 4b | Org Generator (§5.4): five templates, Org Architect, compiler, company policy, provisioning, review screen, token estimate, `deliverables/`, `inputs/`, Shorts example | See below |
+| 5 | MCP (add `org_propose`, `org_proposal_get`), Hermes, and template adapters | Each adapter's smoke test passes; `trypro hermes verify` passes against a real Hermes install, on a generated org with a different size from the default; the ⚠ list in §10.4 is resolved |
+| 6 | Benchmark harness and first results, including the Shorts task | `trypro bench` reproduces; `docs/benchmarks.md` is generated from raw results |
+| 7 | Docs, CI, repo templates, seeded issues, releases. The README leads with the Shorts demo, from a real recorded run, and states the v0.1 scope | Clean-machine install works on all 3 operating systems; CI is green; publishing to PyPI and creating issues happen only after your explicit go-ahead |
+
+**Phase 4b exit criteria:**
+
+*With no paid calls:*
+
+- All five templates pass the spec, the company policy and a full dry run. A test fails if a template and its packaged copy drift.
+- `trypro init --template <id>` works with no key.
+- Hostile scripted Architect output is refused or compiled away: dropping Legal, removing a QA gate, adding a shell, `llm_overrides`, waiving a gate, raising the budget, and exceeding the size cap.
+- `org/` and `skills/decisions.yaml` are unchanged until approval. Approval is unreachable without a terminal, and no MCP tool can do it.
+- Quarantined skills and skills with scripts aren't covered by approval. An uncategorized skill reaches a role only after approval.
+- Provisioning with GitHub unreachable or rate limited still ends at the review screen, with gaps listed.
+- `trypro run --dry-run` on the Shorts company writes `deliverables/` with its index.
+
+*With paid calls, each announced first and run only with your approval:*
+
+- Generate at least 8 businesses, 3 times each, including at least 4 with no close template. Report first-try validity, retries, and tokens per generation. You judge whether the companies make sense.
+- Measure loadout precision with proposed categories on generated orgs, labelled before scoring, and report it even if it's poor.
+- One full run of the Shorts company on `deepseek-v4.1-flash-1017`. Report tokens by role, and how far the estimate was from the result.
+
 
 **CI (Phase 7, added incrementally from Phase 2):** lint and type checks, tests, secret scanning, dependency audit, `skill-customs verify` and scan on every PR, spec and artifact-schema drift checks, the isolation job and the README claims lint.
 
-**Seeded issues** (`.github/seed-issues.yaml`, created only when you approve): new department packs (Customer Success, HR, Data), `skill-customs` integrations with CrewAI, Hermes and MCP clients, new adapters, new language tests and scanner rule packs.
+**Seeded issues** (`.github/seed-issues.yaml`, created only when you approve, after the repo is recreated): new industry templates, new department packs (Customer Success, HR, Data), `skill-customs` integrations with CrewAI, Hermes and MCP clients, new adapters, new language tests and scanner rule packs.
 
 **ADRs to write:** core without LLM calls; hierarchy over swarm; Kanban for Hermes; organizational memory through a gateway; skill catalog separate from memory; monorepo split; embedding default; spec versioning.
 
 ## 13. Known limits
 
-- **A real run costs more than the step count suggests.** The smallest live run took 15 model calls and about 44,000 tokens on `deepseek-v4.1-flash-1017`, for 7 steps. Writing and reading files, rejected outputs, and resending context each add calls. New companies get a default ceiling of 200,000 tokens per run. Prompts were then cut by 22% (`scripts/measure_prompts.py`), which hasn't been re-measured on a live run. A test holds prompts to a size budget.
+- **A real run costs more than the step count suggests.** The smallest live run took 12 model calls and 31,360 tokens on `deepseek-v4.1-flash-1017`, for 7 steps, with memory on and 9,216 input tokens cached. That was down from 15 calls and 43,820 tokens before prompts were cut by 22%, though that's one run of each. Writing and reading files, rejected outputs, and resending context each add calls. New companies get a default ceiling of 200,000 tokens per run, and a test holds prompts to a size budget.
 - **Neither search can reliably say "no match".** See §8.3 and §8.5. An agent can still receive a low-relevance skill, labelled with its score, or weak memory above the floor.
 - **Access rules are policy, not a security boundary.** A role with a shell tool could open the SQLite files directly on the same machine. The rules prevent accidents and ordinary misbehavior. Containers are required for stronger isolation.
 - **The hierarchy may not win.** It will probably cost more tokens than a single agent on simple tasks. The benchmark exists to measure that.
 - **Static scanning can be bypassed.** Paraphrased injection will get past rules. That's why trust levels, runtime tool limits and human review exist.
 - **In MCP operator mode, one model plays every role.** Reviewer independence is weaker there and is labelled as such.
+- **Loadout accuracy rests on a small set, labelled by one person.** See §9.6. It finds under half of what it could on real skills, and relies on a person assigning categories.
 - **Agent counsel is not a lawyer.** Legal gate output is a check, not legal advice.
+- **A generated company is a first draft.** Passing the spec and policy shows it's well formed, not that it suits the business. That's why a person approves it. (Phase 4b, not built.)
+- **The company produces files in v0.1, and nothing else.** It doesn't render video, upload anything, or read your channel's data. (Phase 4b, not built.)
+- **Roles have no web access today.** Research comes from the files you provide and the model's training data, unless the optional search tool is approved, built and switched on (§5.4).
 - **Upstream movement.** Mnemosyne and Hermes both change quickly. Versions are bounded, and the `MemoryBackend` and `RuntimeAdapter` boundaries limit the impact.
 - **Quickstart timing is unproven.** The model download adds time to `trypro init`, and the README's "60 seconds" claim has to be measured on a clean machine, or it gets reworded.
 
