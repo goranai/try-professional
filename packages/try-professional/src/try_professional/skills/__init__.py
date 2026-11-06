@@ -14,6 +14,7 @@ from .loadouts import (
     normalize_tool,
 )
 from .proposals import ProposalWriter
+from .rerank import Candidate, RerankCache, RerankReport, Verdict, clean_line, rerank, shortlist
 from .supply import LockedSkills, match_all, records_from_lock, sync_catalog
 
 __all__ = [
@@ -21,6 +22,7 @@ __all__ = [
     "GAP_THRESHOLD",
     "MATCH_THRESHOLD",
     "UNCATEGORIZED",
+    "Candidate",
     "CatalogModelMismatch",
     "CatalogSkills",
     "Decisions",
@@ -28,14 +30,20 @@ __all__ = [
     "LockedSkills",
     "Match",
     "ProposalWriter",
+    "RerankCache",
+    "RerankReport",
     "RoleLoadout",
     "SkillCatalog",
     "SkillHit",
     "SkillRecord",
+    "Verdict",
+    "clean_line",
     "compute_loadouts",
     "exclusion_reason",
     "match_all",
     "normalize_tool",
     "records_from_lock",
+    "rerank",
+    "shortlist",
     "sync_catalog",
 ]

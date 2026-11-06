@@ -91,7 +91,8 @@ try-professional/
 │   ├── artifacts-v1/             # generated from the Pydantic models, checked in CI
 │   └── conformance/{valid,invalid}/
 ├── templates/                    # industry templates, a contribution path; copied into the package like spec/
-│   ├── general-company/          # built from the packs
+│   ├── README.md                 # how to add an industry
+│   ├── general-company/          # one template.yaml each; this one is built from the packs
 │   ├── youtube-shorts-studio/
 │   ├── saas-startup/
 │   ├── ecommerce-store/
@@ -340,7 +341,7 @@ flowchart TD
 
 #### Templates
 
-`templates/<id>/` holds `template.yaml` (name, description, example businesses), `org.yaml` and `roles/`. It's canonical at the repo root and copied into the package like `spec/`, with a drift test, so `pip install` ships it. `general-company` is built from the existing packs, and `--packs` keeps working. Templates are a contribution path: every template must pass the policy and a dry run in CI, and new industries get seeded good first issues, which stay unposted until the repo is recreated.
+Each template is one file, `templates/<id>/template.yaml`: a name, a description, example businesses, and departments written in the same form as an `OrgProposal`. So a template can't express anything a model couldn't, which keeps contributions safe to accept. It's canonical at the repo root and copied into the package like `spec/`, with a drift test, so `pip install` ships it. `general-company` is built from the existing packs, and `--packs` keeps working. Plain `trypro init`, with no description, still creates the default company straight away, because it involves no model and no third-party skills. The owner confirmed this. Templates are a contribution path: every template must pass the policy and a dry run in CI, and new industries get seeded good first issues, which stay unposted until the repo is recreated.
 
 **Flagship, `youtube-shorts-studio`:**
 
@@ -365,7 +366,8 @@ After the org validates, for every role: run loadout matching (§9.6), log gaps,
 
 - **Categories.** Matching reached 86–91% precision with categories a person assigned, and about 45% on wording alone (§9.6). Most public skills declare no category, and your rule hides those until a person assigns one. So the generator *proposes* a category, from the discovery search that found the skill, and the review screen labels it as proposed. Approving is the person's assignment. **Precision with proposed categories is unmeasured,** and it's an exit criterion for this phase.
 - **Some roles will have no good skill.** The screen shows that as a gap. A thumbnail designer may well end up with nothing. The promise is "vetted skills where good ones exist, and a list of what's missing", and the README will say that rather than "the right skills for every role".
-- **Discovery uses the network, which needs care.** It sends `skill_needs` phrases to GitHub, never the business description, and prints that it's doing so. `--no-discover` turns it off. Without `GITHUB_TOKEN` it skips discovery with a clear message, because unauthenticated search is heavily rate limited. It reuses queries by category and stops at a time limit, and a slow or failed search leaves gaps rather than failing `init`.
+- **Discovery searches inside repositories.** The first version used GitHub's repository search, and for the Shorts company 12 searches found 3 repositories and 7 skills, with nothing for the scriptwriter. Most skills sit inside large collections, whose descriptions don't mention them. Code search for `SKILL.md` files found 23 skills in 23 repositories from 20 searches, with candidates for the scriptwriter, editor, and thumbnail designer. That's one company, on 2026-11-06. The scan quarantined 7 of those, and 3 more ship scripts.
+- **Discovery uses the network, which needs care.** It sends `skill_needs` phrases to GitHub, never the business description, and prints that it's doing so. It searches one need per role in turn, working departments first, so a limit still reaches every role. `--no-discover` turns it off. Without `GITHUB_TOKEN` it skips discovery with a clear message, because unauthenticated search is heavily rate limited. It reuses queries by category and stops at a time limit, and a slow or failed search leaves gaps rather than failing `init`.
 - **Embeddings alone miss too much.** Matching found 43% of what it could on real skills, which isn't enough for this end goal. So embeddings now only shortlist candidates for each role, and the cheap model judges each one's fit, with a one-line reason shown on the review screen. A skill's text reaches that model as untrusted data, and its answer can only choose among the shortlist. The result is cached by role, skill content and model, so it reruns only when one changes, and its tokens are reported.
 
 #### One review screen
@@ -422,7 +424,7 @@ No new artifact types are needed. A script is a `PublicContent`, and research is
 - An `inputs/` folder any run can read, with the roles' prompts requiring them to say which claims came from it and which didn't.
 - An optional read-only `web_search` tool, off by default, with its own key, and its results wrapped as untrusted text. Only research roles get it.
 - The flagship example runs from a checked-in `inputs/` file, so it reproduces with no search key.
-- **Current claims need a source and a date.** A `ResearchReport` is rejected if a current or trend claim has neither and isn't labelled unverified, or if an unverified one is called "this week's trend". This is checked in code, in English and Indonesian to start with. A model could still invent a citation, so the exported `index.md` marks each source as retrieved during the run or not.
+- **Current claims need a source and a date.** A `ResearchReport` is rejected if a current or trend claim has neither and isn't labelled unverified, or if an unverified one is called "this week's trend". This is checked in code, in English and Indonesian to start with, so other languages rely on the role's instructions and QA until rules are added. A model could also avoid the words, or invent a citation, so each exported research file marks every source as retrieved during the run or not. Search uses Brave's API, tested only against a stand-in, because no search key has been available.
 
 Analytics has the same limit: with no channel data, it writes a measurement plan.
 
@@ -780,6 +782,8 @@ flowchart LR
 
 **Read the real-skill row as the honest one, and still with care.** It's a small set, one person labelled it, and that person also assigned the categories, as a person must in real use. Tools were set aside to measure matching alone, and in a real run, skills needing a shell are excluded. Recall is low by design: a person reviews every suggestion, and a head can propose a skill that was missed.
 
+**Embeddings alone aren't enough (2026-11-06).** A recall of 43% doesn't meet the end goal, so the owner added a re-rank: embeddings shortlist up to 20 skills per role, and the cheap model chooses those that fit, with a one-line reason. It runs at `trypro init` and on `trypro skills match`, and caches by role, skill content, and model, so it only spends when one changes, and it reports its tokens. `--no-rerank` falls back to the numbers above, and so does `trypro init --template`. Skill text reaches the judge as untrusted data, after the scan, and a person still approves the result. This also removes the need for a person's category before matching. See §5.4.
+
 **Categories do most of the work.** A first version chose a threshold of 0.68 on the hand-written fixture alone, and scored 26/26 there, because one author wrote both the skills and the `skill_needs`. On real skills that threshold suggested **nothing**. Real descriptions say when to use a skill rather than what it does, so they score lower. Wording alone then reached about 45% precision, with code review matching Compliance and Sales. Adding a person's category raised it to 86% on the tuning set. So assigning categories isn't busywork: it's what makes matching useful.
 
 ## 10. Adapters
@@ -1009,6 +1013,8 @@ Nothing is marked complete without passing tests. Each phase ends with what was 
 | 6 | Benchmark harness and first results, including the Shorts task | `trypro bench` reproduces; `docs/benchmarks.md` is generated from raw results |
 | 7 | Docs, CI, repo templates, seeded issues, releases. The README leads with the Shorts demo, from a real recorded run, and states the v0.1 scope | Clean-machine install works on all 3 operating systems; CI is green; publishing to PyPI and creating issues happen only after your explicit go-ahead |
 
+**Phase 4b build status (2026-11-06):** all of it is built and passes with no paid calls, and real GitHub discovery was run once. Nothing here has run on a real model, and nothing is committed.
+
 **Phase 4b exit criteria:**
 
 *With no paid calls:*
@@ -1023,8 +1029,8 @@ Nothing is marked complete without passing tests. Each phase ends with what was 
 
 *With paid calls, each announced first and run only with your approval:*
 
-- Generate at least 8 businesses, 3 times each, including at least 4 with no close template. Report first-try validity, retries, and tokens per generation. You judge whether the companies make sense.
-- Measure loadout precision with proposed categories on generated orgs, labelled before scoring, and report it even if it's poor.
+- Re-rank on the real-skill sets (`docs/research/loadouts/run_rerank.py`), with categories hidden, tuning first, and the `fresh` set scored once. Report precision, recall and token cost. The owner's target is recall well above 43% without losing much precision. If recall on `fresh` is under 60%, set in advance as "clearly above 43%", stop here and report.
+- Generate 8 businesses, 3 times each, on a token cap the harness enforces (`docs/research/org-generator/run_eval.py`). Four have no close template: an online fashion store, a digital marketing agency, and an Indonesian-language education channel, each with its nearest template held out, and a physiotherapy clinic. Only the first generation of each finds skills and pays for the re-rank, as the owner chose. Report first-try validity, retries, and tokens per generation. The owner reviews, per business, the 3 org charts side by side for consistency, and the one loadout.
 - One full run of the Shorts company on `deepseek-v4.1-flash-1017`. Report tokens by role, and how far the estimate was from the result.
 
 
@@ -1042,7 +1048,7 @@ Nothing is marked complete without passing tests. Each phase ends with what was 
 - **The hierarchy may not win.** It will probably cost more tokens than a single agent on simple tasks. The benchmark exists to measure that.
 - **Static scanning can be bypassed.** Paraphrased injection will get past rules. That's why trust levels, runtime tool limits and human review exist.
 - **In MCP operator mode, one model plays every role.** Reviewer independence is weaker there and is labelled as such.
-- **Loadout accuracy rests on a small set, labelled by one person.** See §9.6. It finds under half of what it could on real skills, and relies on a person assigning categories.
+- **Loadout accuracy rests on a small set, labelled by one person.** See §9.6. With embeddings alone, it finds under half of what it could on real skills, and relies on a person assigning categories. The model re-rank added to fix this isn't measured yet (§5.4).
 - **Agent counsel is not a lawyer.** Legal gate output is a check, not legal advice.
 - **A generated company is a first draft.** Passing the spec and policy shows it's well formed, not that it suits the business. That's why a person approves it. (Phase 4b, not built.)
 - **The company produces files in v0.1, and nothing else.** It doesn't render video, upload anything, or read your channel's data. (Phase 4b, not built.)

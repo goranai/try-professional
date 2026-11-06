@@ -51,6 +51,35 @@
   labels: [good first issue, department-pack]
   body: |
     Add a pack with an analyst and a data engineer role.
+- title: "Template: restaurant or cafe"
+  labels: [good first issue, template]
+  body: |
+    Add `templates/restaurant/template.yaml`. See `templates/README.md`. Menus, promotions,
+    supplier notes, and staff schedules are all files, so they fit what the company can do.
+- title: "Template: podcast studio"
+  labels: [good first issue, template]
+  body: |
+    Add `templates/podcast-studio/template.yaml`. See `templates/README.md`. Remember that it
+    writes research, outlines, and show notes, and doesn't record or publish anything.
+- title: "Template: online course creator"
+  labels: [good first issue, template]
+  body: |
+    Add `templates/online-course/template.yaml`. See `templates/README.md`. Add `examples` in a
+    second language if you can, because they're used to choose a template.
+- title: "Template: accounting or bookkeeping practice"
+  labels: [good first issue, template]
+  body: |
+    Add `templates/accounting-practice/template.yaml`. See `templates/README.md`. Roles must say
+    they work only from files a person provides, and that their output isn't professional advice.
+- title: "Template: real estate agency"
+  labels: [good first issue, template]
+  body: |
+    Add `templates/real-estate-agency/template.yaml`. See `templates/README.md`.
+- title: "Template: nonprofit"
+  labels: [good first issue, template]
+  body: |
+    Add `templates/nonprofit/template.yaml`. See `templates/README.md`. Grant writing, donor
+    communications, and impact reports are good starting points.
 - title: "Adapter: a new runtime from adapters/template"
   labels: [good first issue, adapter]
   body: |

@@ -8,9 +8,11 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
+from datetime import date
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 SCHEMA_VERSION = "1"
 Attestation = Literal["runtime", "claimed"]
@@ -156,10 +158,50 @@ class PublicContent(_Strict):
     done_criteria_met: list[DoneCriterion] = []
 
 
+# Wording that presents a claim as current, in English and Indonesian to start with. A model can
+# still avoid these words, so this catches the ordinary case, and QA reads the rest.
+_CURRENT_CLAIM = re.compile(
+    r"\b(this|last|past) (week|month|year)\b|\btoday\b|\bright now\b|\bcurrent(ly)?\b|\blatest\b|\brecent(ly)?\b"
+    r"|\btrend(s|ing)?\b|\bgoing viral\b|\bnowadays\b"
+    r"|\bminggu ini\b|\bbulan ini\b|\bhari ini\b|\bsaat ini\b|\bsekarang\b|\bterkini\b|\bterbaru\b"
+    r"|\btren\b|\bsedang viral\b|\blagi viral\b",
+    re.IGNORECASE,
+)
+_THIS_WEEK_TREND = re.compile(
+    r"this week['\u2019]?s? trend|trend(s|ing)? (of |for )?this week|tren minggu ini", re.IGNORECASE
+)
+
+
+def _is_date(value: str) -> bool:
+    try:
+        date.fromisoformat(value)
+    except ValueError:
+        return False
+    return True
+
+
 class Finding(_Strict):
     statement: str = NonEmpty
     confidence: Literal["low", "medium", "high"]
     sources: list[str] = []
+    source_date: str = Field("", description="Date of the source, YYYY-MM-DD")
+    is_current: bool = Field(False, description="True if this claims something is current or trending")
+    unverified: bool = Field(False, description="True if a current claim has no source and date")
+
+    @model_validator(mode="after")
+    def _current_claims_need_evidence(self) -> Finding:
+        """Stale or invented trends look exactly like real ones, so a current claim must show its evidence."""
+        if not self.is_current and not _CURRENT_CLAIM.search(self.statement):
+            return self
+        evidenced = bool(self.sources) and _is_date(self.source_date)
+        if not evidenced and not self.unverified:
+            raise ValueError(
+                "A current or trend claim needs sources and a source_date (YYYY-MM-DD). "
+                "If you have neither, set unverified to true."
+            )
+        if (self.unverified or not evidenced) and _THIS_WEEK_TREND.search(self.statement):
+            raise ValueError("An unverified claim can't be called this week's trend. Reword it.")
+        return self
 
 
 class ResearchReport(_Strict):

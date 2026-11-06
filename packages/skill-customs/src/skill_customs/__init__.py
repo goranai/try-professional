@@ -5,7 +5,7 @@ found. It does not mean a skill is safe.
 """
 
 from .attribution import render_attribution
-from .discover import Candidate, discover
+from .discover import Candidate, SkillFile, discover, list_skill_paths, search_skill_files
 from .errors import (
     ApprovalError,
     FetchError,
@@ -54,6 +54,7 @@ __all__ = [
     "ScanReport",
     "Scanner",
     "SkillCustomsError",
+    "SkillFile",
     "SkillMetadata",
     "UnsafeArchive",
     "__version__",
@@ -63,12 +64,14 @@ __all__ = [
     "decide_trust",
     "discover",
     "is_full_sha",
+    "list_skill_paths",
     "pin",
     "pin_local",
     "read_skill_metadata",
     "remove",
     "render_attribution",
     "scan",
+    "search_skill_files",
     "skill_dir",
     "verify",
 ]

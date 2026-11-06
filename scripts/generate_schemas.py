@@ -1,4 +1,4 @@
-"""Regenerate spec/artifacts-v1/ from the Pydantic models, and sync the packaged spec copies."""
+"""Regenerate spec/artifacts-v1/ from the Pydantic models, and sync the packaged spec and template copies."""
 
 from __future__ import annotations
 
@@ -20,6 +20,10 @@ def main() -> None:
     packaged = ROOT / "packages" / "try-professional" / "src" / "try_professional" / "_spec"
     for name in ("org-v1.schema.json", "role-v1.schema.json"):
         shutil.copyfile(ROOT / "spec" / name, packaged / name)
+    templates = packaged.parent / "_templates"
+    if templates.exists():
+        shutil.rmtree(templates)
+    shutil.copytree(ROOT / "templates", templates, ignore=shutil.ignore_patterns("__pycache__"))
 
 
 if __name__ == "__main__":

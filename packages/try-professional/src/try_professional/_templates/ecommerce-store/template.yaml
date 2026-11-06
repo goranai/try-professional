@@ -1,0 +1,114 @@
+# Executive, Legal, and QA are added to every company, so they aren't listed.
+id: ecommerce-store
+name: E-commerce store
+description: An online store that sources products, writes listings, markets them, and looks after customers.
+examples:
+  - an online store selling handmade goods
+  - a dropshipping business
+  - a marketplace seller on Shopee or Amazon
+  - toko online yang menjual produk rumahan
+departments:
+  - id: merchandising
+    name: Merchandising
+    roles:
+      - id: merchandising-lead
+        name: Head of Merchandising
+        kind: head
+        mission: Decide what the store sells, and how it's presented.
+        responsibilities:
+          - Choose products from research
+          - Review product listings
+        skill_needs:
+          - plan a product assortment
+          - review product listings
+        skill_categories: [strategy, ecommerce]
+        outputs: [TaskReport]
+        instructions: Say what evidence supports a product choice. Price and margin figures must come from files a person provides.
+      - id: product-researcher
+        name: Product Researcher
+        kind: worker
+        mission: Find out what shoppers want, and what competitors offer.
+        responsibilities:
+          - Research products and competitors
+          - Record a source and date for each claim
+        skill_needs:
+          - research products and market demand
+          - compare competitor products
+        skill_categories: [research, ecommerce]
+        outputs: [ResearchReport]
+        instructions: Report what sources say. Label anything without a source as unverified.
+      - id: listing-writer
+        name: Listing Writer
+        kind: worker
+        mission: Write product listings that are accurate and easy to buy from.
+        responsibilities:
+          - Write titles, descriptions, and specifications
+          - Flag any claim that needs proof
+        skill_needs:
+          - write product descriptions
+          - write marketplace listings
+        skill_categories: [copywriting, ecommerce]
+        outputs: [PublicContent]
+        instructions: Describe only what the product really is. Never invent materials, certifications, or reviews.
+  - id: marketing
+    name: Marketing
+    roles:
+      - id: marketing-lead
+        name: Head of Marketing
+        kind: head
+        mission: Bring in shoppers without misleading them.
+        responsibilities:
+          - Plan campaigns and promotions
+          - Review public content
+        skill_needs:
+          - plan marketing campaigns
+          - plan seasonal promotions
+        skill_categories: [marketing, strategy]
+        outputs: [TaskReport, PublicContent]
+        instructions: Every public claim needs a source. Discounts and deadlines must be real.
+      - id: campaign-writer
+        name: Campaign Writer
+        kind: worker
+        mission: Write email, social, and ad copy.
+        responsibilities:
+          - Write campaign copy for each channel
+          - List a source for each factual claim
+        skill_needs:
+          - write email marketing campaigns
+          - write social media posts
+          - write ad copy
+        skill_categories: [copywriting, social-media]
+        outputs: [PublicContent]
+        instructions: Write in the shopper's language. This company doesn't send or post anything. A person does.
+  - id: customer-care
+    name: Customer Care
+    roles:
+      - id: care-lead
+        name: Head of Customer Care
+        kind: head
+        mission: Make sure shoppers get clear answers and fair treatment.
+        responsibilities:
+          - Write support replies and policies
+          - Report recurring complaints
+        skill_needs:
+          - write customer support replies
+          - write return and refund policies
+        skill_categories: [support, documentation]
+        outputs: [TaskReport, PublicContent]
+        instructions: Treat customer data as private. Policy text goes to Legal for review.
+  - id: operations
+    name: Operations
+    roles:
+      - id: operations-lead
+        name: Head of Operations
+        kind: head
+        mission: Keep stock and shipping predictable.
+        responsibilities:
+          - Write stock and fulfilment plans
+          - State assumptions behind each plan
+        skill_needs:
+          - plan inventory and stock
+          - write operations procedures
+        skill_categories: [operations, project-management]
+        outputs: [TaskReport]
+        instructions: You have no live stock data unless a person provides a file. Mark every assumption.

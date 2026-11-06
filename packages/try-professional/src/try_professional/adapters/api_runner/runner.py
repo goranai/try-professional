@@ -43,7 +43,7 @@ TOOLS_BY_PURPOSE: dict[Purpose, frozenset[str]] = {
     Purpose.DISPATCH: _MEMORY | {"skill_search", "skill_get", "skill_propose"},
     Purpose.EXECUTE: _READ
     | _MEMORY
-    | {"workspace_write", "memory_write", "skill_search", "skill_get", "skill_propose"},
+    | {"workspace_write", "memory_write", "skill_search", "skill_get", "skill_propose", "web_search"},
     Purpose.REVIEW: _READ,
     Purpose.ESCALATION: _MEMORY,
     Purpose.INTEGRATE: _READ,
@@ -237,6 +237,9 @@ class ApiRunner:
             usable = tuple(t for t in usable if t not in ("skill_search", "skill_get"))
         if not skills.proposable(role.ref):
             usable = tuple(t for t in usable if t != "skill_propose")
+        search = self.orchestrator.search
+        if search is None:
+            usable = tuple(t for t in usable if t != "web_search")
         tools = tools_for(
             usable, action.output_type, is_head=may_handoff, declares_flags=action.purpose == Purpose.EXECUTE
         )
@@ -246,6 +249,8 @@ class ApiRunner:
             workspace=self.orchestrator.workspace(run_id),
             memory=self.orchestrator.memory,
             skills=self.orchestrator.skills,
+            search=search,
+            note_source=lambda url, day: self.orchestrator.note_source(run_id, url, day),
         )
         system = system_prompt(role, self.org)
         try:
@@ -255,7 +260,8 @@ class ApiRunner:
         workspace = context.workspace.resolve()
         files = sorted(str(p.relative_to(workspace)).replace("\\", "/") for p in workspace.rglob("*") if p.is_file())
         loadout = skills.loadout(role.ref) if action.purpose == Purpose.EXECUTE else []
-        messages = [client.user_message(user_prompt(invocation, state, self.org, files, loadout))]
+        web = "web_search" in usable
+        messages = [client.user_message(user_prompt(invocation, state, self.org, files, loadout, web=web))]
         metadata = {"invocation": invocation, "state": state, "org": self.org}
         nudges = 0
 

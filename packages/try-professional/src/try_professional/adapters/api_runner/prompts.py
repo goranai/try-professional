@@ -98,6 +98,8 @@ def user_prompt(
     org: Org,
     workspace_files: list[str] | None = None,
     loadout: list[dict[str, Any]] | None = None,
+    *,
+    web: bool = False,
 ) -> str:
     parts = [_section("Your assignment", _PURPOSE[invocation.purpose])]
     parts.append(_section("Goal", state.goal))
@@ -149,7 +151,8 @@ def user_prompt(
         parts.append(
             _section(
                 "Files in this run's workspace",
-                f"{listing}\nYou can reach nothing else: no repository, shell, or network. "
+                f"{listing}\nYou can reach nothing else: no repository or shell"
+                f"{', and no network beyond web_search' if web else ', or network'}. "
                 "If the task needs something missing, call escalate.",
             )
         )
@@ -162,6 +165,14 @@ def user_prompt(
                 "Before you submit",
                 "Set a flag in submit_artifact if the output is public-facing, touches licenses, or handles "
                 "personal data.",
+            )
+        )
+    if invocation.output_type == "ResearchReport" and invocation.purpose == Purpose.EXECUTE:
+        parts.append(
+            _section(
+                "Current claims",
+                "Cite a source and date for anything you call current or trending. Your training data is not a "
+                "source. Without both, set unverified to true, and never call it this week's trend.",
             )
         )
     parts.append(_section("Required output", f"Call submit_artifact with payload of type {invocation.output_type}."))

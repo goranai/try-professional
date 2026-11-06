@@ -202,6 +202,10 @@ A gate fires from flags, whether or not a plan mentions its department. A plan c
 
 If the gate's `reviewer` is unavailable, `on_unavailable` applies. `block` (default) stops the run until a human decides. `waive` continues, and MUST be logged.
 
+## Company policy
+
+`trypro init "<business>"` also applies stricter rules, which aren't part of this spec, because a valid org/v1 company can leave out any department. Check them with `trypro org validate --policy`. A generated company must have an always-active Executive department holding the root role (`GEN001`), a Legal department (`GEN002`), a legal gate with all three triggers that never waives (`GEN003`), a QA gate on every other department (`GEN004`), at most 25 roles (`GEN005`), only known tools, so no shell (`GEN006`), no `llm_overrides` (`GEN007`), and a token ceiling (`GEN008`). A person can change a company by hand afterwards.
+
 ## Conformance
 
 Each file under `spec/conformance/` is one test case, with the whole organization in one document:

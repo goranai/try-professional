@@ -52,9 +52,15 @@ def sync_catalog(catalog: SkillCatalog, lock: Lockfile, dest: Path, decisions: D
     return len(records)
 
 
-def match_all(org: Org, catalog: SkillCatalog, store: LoadoutStore, decisions: Decisions) -> dict[str, Any]:
+def match_all(
+    org: Org,
+    catalog: SkillCatalog,
+    store: LoadoutStore,
+    decisions: Decisions,
+    verdicts: dict[tuple[str, str], Any] | None = None,
+) -> dict[str, Any]:
     """Recompute every loadout, using the feedback gathered so far."""
-    loadouts = compute_loadouts(org, catalog.eligible(), catalog.embedder, decisions, store.usage)
+    loadouts = compute_loadouts(org, catalog.eligible(), catalog.embedder, decisions, store.usage, verdicts=verdicts)
     store.replace_matches(loadouts)
     return loadouts
 

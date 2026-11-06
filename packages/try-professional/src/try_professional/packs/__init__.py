@@ -53,6 +53,12 @@ def pack_department(name: str) -> dict[str, Any]:
     return loaded
 
 
+def pack_role(name: str, role_id: str) -> dict[str, Any]:
+    text = _pack_root(name).joinpath("roles").joinpath(f"{role_id}.yaml").read_text(encoding="utf-8")
+    loaded: dict[str, Any] = yaml.safe_load(text)
+    return loaded
+
+
 def _copy_roles(name: str, org_dir: Path) -> None:
     target = org_dir / "roles" / name
     target.mkdir(parents=True, exist_ok=True)

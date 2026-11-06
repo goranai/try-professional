@@ -48,9 +48,18 @@ class TestDependsLikeAnyOtherUser:
 class TestAgentsCannotApprove:
     def test_approve_is_not_imported_anywhere_in_this_package(self) -> None:
         for path in SOURCE.rglob("*.py"):
+            # A person starting `trypro init` is what pins skills, into a proposal that changes nothing.
+            forbidden = {"approve", "pin_local", "remove"} | ({"pin"} if path.name != "provision.py" else set())
             for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
                 if isinstance(node, ast.ImportFrom) and (node.module or "").startswith("skill_customs"):
-                    assert all(a.name not in ("approve", "pin_local", "remove", "pin") for a in node.names), path.name
+                    assert not forbidden & {a.name for a in node.names}, path.name
+
+    def test_nothing_agents_can_reach_imports_the_generator(self) -> None:
+        for folder in ("adapters", "core", "memory", "skills", "org"):
+            for path in (SOURCE / folder).rglob("*.py"):
+                for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+                    if isinstance(node, ast.ImportFrom):
+                        assert "generator" not in (node.module or ""), path.name
 
     def test_no_agent_tool_can_change_trust(self) -> None:
         names = {*tool_module._SPECS, tool_module.SUBMIT, tool_module.ESCALATE, tool_module.HANDOFF}

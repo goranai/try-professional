@@ -14,6 +14,7 @@ from typing import Any
 import yaml
 
 from .adapters.api_runner.clients import AnthropicClient, ChatClient, ClientError, OpenAICompatibleClient
+from .adapters.api_runner.search import BraveSearch
 from .org import Org, Role
 
 CONFIG_NAME = "trypro.yaml"
@@ -54,6 +55,13 @@ memory:
   embedding_model: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
   remote_allowed: false
 
+# Web search for research roles. Off by default, with its own key. Results are treated as
+# untrusted text, and the query leaves this machine. Only Brave's API is supported for now.
+search:
+  enabled: false
+  provider: brave
+  api_key_env: TRYPRO_SEARCH_API_KEY
+
 # Give one department or role its own key, model, or endpoint in org/org.yaml:
 #
 # llm_overrides:
@@ -91,12 +99,20 @@ class MemoryConfig:
 
 
 @dataclass
+class SearchConfig:
+    enabled: bool = False
+    provider: str = "brave"
+    api_key_env: str = "TRYPRO_SEARCH_API_KEY"
+
+
+@dataclass
 class ProjectConfig:
     root: Path
     org_dir: Path
     home: Path
     model: ModelConfig
     memory: MemoryConfig = field(default_factory=MemoryConfig)
+    search: SearchConfig = field(default_factory=SearchConfig)
     env_file: Path | None = None
     raw: dict[str, Any] = field(default_factory=dict)
 
@@ -141,6 +157,7 @@ def load_config(start: Path) -> ProjectConfig:
     raw = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
     model = raw.get("model") or {}
     memory = raw.get("memory") or {}
+    search = raw.get("search") or {}
     base_url = model.get("base_url")
     if not base_url and model.get("base_url_env"):
         base_url = os.environ.get(model["base_url_env"])
@@ -163,6 +180,11 @@ def load_config(start: Path) -> ProjectConfig:
             enabled=memory.get("enabled", True),
             embedding_model=memory.get("embedding_model", DEFAULT_EMBEDDING_MODEL),
             remote_allowed=memory.get("remote_allowed", False),
+        ),
+        search=SearchConfig(
+            enabled=search.get("enabled", False),
+            provider=search.get("provider", "brave"),
+            api_key_env=search.get("api_key_env", "TRYPRO_SEARCH_API_KEY"),
         ),
         env_file=env_file,
         raw=raw,
@@ -189,6 +211,15 @@ def build_client(config: ModelConfig) -> ChatClient:
             max_tokens_param=config.max_tokens_param,
         )
     raise ClientError(f"unknown model provider '{config.provider}'", retryable=False)
+
+
+def build_search(config: SearchConfig) -> BraveSearch | None:
+    """None unless a person turned search on. Turned on with no key is an error, not a quiet no."""
+    if not config.enabled:
+        return None
+    if config.provider != "brave":
+        raise ClientError(f"unknown search provider '{config.provider}'", retryable=False)
+    return BraveSearch(api_key_env=config.api_key_env)
 
 
 @dataclass(frozen=True)

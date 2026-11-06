@@ -119,7 +119,7 @@ class SkillCatalog:
 
     def rebuild(self, records: list[SkillRecord]) -> None:
         """Replace everything in one transaction, so a failure leaves the old catalog intact."""
-        vectors = self.embedder.embed_documents([r.search_text for r in records])
+        vectors: Any = self.embedder.embed_documents([r.search_text for r in records]) if records else []
         with self._lock, self._conn:
             self._conn.execute("DELETE FROM skills")
             self._conn.execute(

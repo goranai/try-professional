@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import argparse
+import getpass
 import json
 import os
+import subprocess
 import sys
 from collections import Counter
 from collections.abc import Sequence
@@ -18,10 +20,25 @@ from .adapters.api_runner.clients import ClientError
 from .adapters.api_runner.runner import ApiRunner, ModelRoutes, RunResult
 from .adapters.api_runner.scripted import ScriptedClient
 from .adapters.mcp import McpService
-from .config import CONFIG_NAME, CONFIG_TEMPLATE, ClientRouter, ProjectConfig, load_config
+from .config import CONFIG_NAME, CONFIG_TEMPLATE, ClientRouter, ProjectConfig, build_client, build_search, load_config
 from .core.audit import read_records
 from .core.orchestrator import Orchestrator
 from .core.pipeline import HumanDecided, IllegalEvent
+from .generator import (
+    ActivationError,
+    ArchitectFailed,
+    Proposal,
+    ProposalError,
+    activate,
+    apply_edit,
+    create_proposal,
+    load_proposal,
+    load_template,
+    rank_templates,
+    regenerate,
+    render,
+    template_ids,
+)
 from .memory import (
     FastEmbedEmbedder,
     MemoryConfigError,
@@ -34,6 +51,7 @@ from .memory import (
 )
 from .org import Org, OrgValidationError, load_org, validate_bundle
 from .org.loader import read_documents
+from .org.policy import check_policy
 from .packs import add_pack, available_packs, install_org, remove_pack
 from .skills import (
     DEFAULT_UNUSED_RUNS,
@@ -42,8 +60,11 @@ from .skills import (
     LoadoutStore,
     LockedSkills,
     ProposalWriter,
+    RerankCache,
     SkillCatalog,
     match_all,
+    rerank,
+    shortlist,
     sync_catalog,
 )
 
@@ -55,9 +76,134 @@ def _print(text: str = "") -> None:
     stream.write(text.encode(encoding, errors="backslashreplace").decode(encoding) + "\n")
 
 
+def _write_project_files(root: Path) -> None:
+    config = root / CONFIG_NAME
+    if not config.exists():
+        config.write_text(CONFIG_TEMPLATE, encoding="utf-8", newline="\n")
+    home = root / ".trypro"
+    home.mkdir(exist_ok=True)
+    (home / ".gitignore").write_text("*\n", encoding="utf-8", newline="\n")
+
+
+def _model_for_design(config: ProjectConfig) -> tuple[Any, str] | None:
+    """The default model, or None if none is set up. Calling this spends nothing."""
+    try:
+        return build_client(config.model), config.model.model_for_tier("standard")
+    except ClientError:
+        return None
+
+
+def _editor() -> list[str]:
+    choice = os.environ.get("VISUAL") or os.environ.get("EDITOR")
+    return choice.split() if choice else (["notepad"] if os.name == "nt" else ["nano"])
+
+
+def _review(bundle: Proposal, root: Path, embedder: Any, *, by: str, client: Any, model: str, discovery: bool) -> int:
+    """The one review screen. Nothing activates unless a person types the confirmation here."""
+    while True:
+        _print(render(bundle))
+        _print()
+        if not sys.stdin.isatty():
+            _print(f"Approving needs a person at a terminal. Nothing was activated. Proposal: {bundle.path}")
+            _print(f"To review it: trypro init --review {bundle.id}")
+            return 3
+        choice = input("[a]pprove  [e]dit  [r]egenerate  [q]uit: ").strip().lower()
+        if choice.startswith("q"):
+            _print(f"Nothing was activated. To come back to it: trypro init --review {bundle.id}")
+            return 0
+        if choice.startswith("a"):
+            if input("Type 'approve' to activate this company: ").strip() != "approve":
+                _print("It didn't match, so nothing changed.")
+                continue
+            try:
+                activate(bundle, root, embedder, by=by)
+            except ActivationError as error:
+                _print(f"Not activated: {error}")
+                return 1
+            _print("Approved. Files go to deliverables/. Put anything roles should read in inputs/.")
+            _print('Next: trypro run "<your goal>"')
+            return 0
+        if choice.startswith("e"):
+            subprocess.run([*_editor(), str(bundle.path / "proposal.yaml")], check=False)
+            try:
+                bundle = apply_edit(bundle, root, embedder, client=client, model=model, say=_print)
+            except (ProposalError, ValueError) as error:
+                _print(f"That edit can't be used, so it wasn't applied: {error}")
+            continue
+        if choice.startswith("r"):
+            if client is None:
+                _print("Regenerating needs a model, and none is set up.")
+                continue
+            reason = input("What should change? ").strip()
+            spent = bundle.architect_tokens
+            _print(f"This calls the model again. {spent:,} design tokens spent so far.")
+            try:
+                bundle = regenerate(
+                    bundle, root, embedder, reason, client=client, model=model, discovery=discovery, say=_print
+                )
+            except ArchitectFailed as error:
+                _print(f"Couldn't regenerate, so the proposal is unchanged: {error}")
+
+
+def _init_company(args: argparse.Namespace, root: Path) -> int:
+    """trypro init "<business>", --template, or --review. Ends at the review screen."""
+    if (root / "org" / "org.yaml").exists() and not args.review:
+        _print(f"{root} already has a company in org/. Move it first, or use another --dir.")
+        return 1
+    _write_project_files(root)
+    config = load_config(root)
+    embedder = FastEmbedEmbedder(config.memory.embedding_model)
+    discovery = not args.no_discover
+    client: Any = None
+    model = ""
+    if not args.template or args.review:
+        found = None if args.dry_run else _model_for_design(config)
+        if found is not None:
+            client, model = found
+    by = args.by or getpass.getuser()
+    if args.review:
+        bundle = load_proposal(root, args.review)
+        return _review(bundle, root, embedder, by=by, client=client, model=model, discovery=discovery)
+    if args.description and client is None and not args.dry_run:
+        closest, score = rank_templates(args.description, embedder)[0]
+        _print("No model is set up, so this company can't be designed. Nothing was spent or changed.")
+        _print(f"Closest template: {closest} (match {score:.2f}). To use it unchanged, with no key:")
+        _print(f"  trypro init --template {closest}")
+        _print("To design one, set TRYPRO_LLM_BASE_URL, TRYPRO_LLM_API_KEY, and TRYPRO_LLM_MODEL in .env.")
+        return 2
+    try:
+        bundle = create_proposal(
+            root,
+            embedder,
+            description=args.description or "",
+            template_id=args.template,
+            company=args.company,
+            client=client,
+            model=model,
+            discovery=discovery,
+            say=_print,
+        )
+    except ArchitectFailed as error:
+        _print(f"Couldn't design this company, and nothing was activated: {error}")
+        return 1
+    return _review(bundle, root, embedder, by=by, client=client, model=model, discovery=discovery)
+
+
+def cmd_templates(args: argparse.Namespace) -> int:
+    for template_id in template_ids():
+        template = load_template(template_id)
+        _print(f"{template_id}: {template.description}")
+    return 0
+
+
 def cmd_init(args: argparse.Namespace) -> int:
     root = Path(args.dir).resolve()
     root.mkdir(parents=True, exist_ok=True)
+    if args.description or args.template or args.review:
+        if args.packs:
+            _print("--packs builds the default company, so it can't be combined with a description or template.")
+            return 2
+        return _init_company(args, root)
     config = root / CONFIG_NAME
     org_dir = root / "org"
     if (config.exists() or (org_dir / "org.yaml").exists()) and not args.force:
@@ -87,6 +233,8 @@ def cmd_org_validate(args: argparse.Namespace) -> int:
     directory = Path(args.path) if args.path else load_config(Path.cwd()).org_dir
     org, roles = read_documents(directory)
     issues = validate_bundle(org, roles)
+    if args.policy:
+        issues += check_policy(org, roles)
     for issue in issues:
         _print(f"{issue.severity}: {issue}")
     errors = [i for i in issues if i.severity == "error"]
@@ -131,8 +279,10 @@ def cmd_pack(args: argparse.Namespace) -> int:
     return 0
 
 
-def _print_result(result: RunResult) -> int:
+def _print_result(result: RunResult, deliverables: Path | None = None) -> int:
     _print(f"Run {result.run_id}: {result.status}")
+    if deliverables is not None and (deliverables / "index.md").is_file():
+        _print(f"Deliverables: {deliverables / 'index.md'}")
     total = result.input_tokens + result.output_tokens
     cached = f", {result.cached_input_tokens} of the input cached" if result.cached_input_tokens else ""
     _print(
@@ -158,8 +308,9 @@ def _print_result(result: RunResult) -> int:
 def _runner(args: argparse.Namespace) -> tuple[ApiRunner, Orchestrator]:
     config = load_config(Path.cwd())
     org = load_org(config.org_dir)
+    inputs, deliverables = config.root / "inputs", config.root / "deliverables"
     if args.dry_run:
-        orchestrator = Orchestrator(org, config.home)
+        orchestrator = Orchestrator(org, config.home, inputs_dir=inputs, deliverables_dir=deliverables)
         _print("Dry run: a scripted model is standing in. No model is called, and nothing here reflects real work.")
         return ApiRunner(orchestrator, ScriptedClient(), ModelRoutes({"standard": "scripted"})), orchestrator
     router = ClientRouter(config.model, org)
@@ -171,6 +322,9 @@ def _runner(args: argparse.Namespace) -> tuple[ApiRunner, Orchestrator]:
         memory=_memory(config, org),
         skills=_skills(config, org),
         proposals=ProposalWriter(config.root / "skills" / "proposed"),
+        search=build_search(config.search),
+        inputs_dir=inputs,
+        deliverables_dir=deliverables,
     )
     if isinstance(orchestrator.skills, LockedSkills):
         orchestrator.feedback = orchestrator.skills
@@ -221,7 +375,33 @@ def _require_person(action: str) -> bool:
     return False
 
 
-def _sync_and_match(config: ProjectConfig, org: Org) -> tuple[dict[str, Any], LoadoutStore] | None:
+def _judge_skills(
+    config: ProjectConfig, org: Org, catalog: SkillCatalog, decisions: Decisions
+) -> dict[Any, Any] | None:
+    """Have the model judge what changed since last time. Reuses earlier verdicts, and reports what it spent."""
+    found = _model_for_design(config)
+    if found is None:
+        _print("No model is set up, so skills were matched by embeddings alone.")
+        return None
+    client, model = found
+    lists = shortlist(org, catalog.eligible(), catalog.embedder, decisions)
+    if not any(lists.values()):
+        return None
+    cache = RerankCache(config.home / "skills" / "rerank.sqlite")
+    verdicts, report = rerank(org, lists, client, model, cache)
+    cache.close()
+    _print(
+        f"Judged {report.judged} role and skill pairs and reused {report.reused}: "
+        f"{report.total_tokens} tokens, {report.calls} calls."
+    )
+    for role in report.failed_roles:
+        _print(f"  Couldn't judge skills for {role}, so it was left out this time.")
+    return verdicts
+
+
+def _sync_and_match(
+    config: ProjectConfig, org: Org, *, judge: bool = False
+) -> tuple[dict[str, Any], LoadoutStore] | None:
     lock = Lockfile.load(config.root / "skills.lock")
     problems = verify(lock, dest=config.root / "skills")
     if problems:
@@ -235,7 +415,8 @@ def _sync_and_match(config: ProjectConfig, org: Org) -> tuple[dict[str, Any], Lo
     count = sync_catalog(catalog, lock, config.root / "skills", decisions)
     trust = Counter(entry.trust for entry in lock.entries.values())
     _print(f"Catalog holds {count} skill(s): {dict(trust)}. Quarantined skills are never offered to agents.")
-    loadouts = match_all(org, catalog, store, decisions)
+    verdicts = _judge_skills(config, org, catalog, decisions) if judge else None
+    loadouts = match_all(org, catalog, store, decisions, verdicts)
     catalog.close()
     return loadouts, store
 
@@ -243,7 +424,7 @@ def _sync_and_match(config: ProjectConfig, org: Org) -> tuple[dict[str, Any], Lo
 def cmd_skills_match(args: argparse.Namespace) -> int:
     config = load_config(Path.cwd())
     org = load_org(config.org_dir)
-    result = _sync_and_match(config, org)
+    result = _sync_and_match(config, org, judge=not args.no_rerank)
     if result is None:
         return 1
     loadouts, store = result
@@ -395,6 +576,8 @@ def cmd_mcp(args: argparse.Namespace) -> int:
         memory=_memory(config, org),
         skills=_skills(config, org),
         proposals=ProposalWriter(config.root / "skills" / "proposed"),
+        inputs_dir=config.root / "inputs",
+        deliverables_dir=config.root / "deliverables",
     )
     if isinstance(orchestrator.skills, LockedSkills):
         orchestrator.feedback = orchestrator.skills
@@ -406,7 +589,8 @@ def cmd_mcp(args: argparse.Namespace) -> int:
 def cmd_run(args: argparse.Namespace) -> int:
     runner, orchestrator = _runner(args)
     try:
-        return _print_result(runner.run(args.goal))
+        result = runner.run(args.goal)
+        return _print_result(result, orchestrator.deliverables_path(result.run_id))
     finally:
         orchestrator.close()
 
@@ -414,7 +598,7 @@ def cmd_run(args: argparse.Namespace) -> int:
 def cmd_resume(args: argparse.Namespace) -> int:
     runner, orchestrator = _runner(args)
     try:
-        return _print_result(runner.resume(args.run_id))
+        return _print_result(runner.resume(args.run_id), orchestrator.deliverables_path(args.run_id))
     finally:
         orchestrator.close()
 
@@ -546,7 +730,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--version", action="version", version=f"trypro {__version__}")
     sub = parser.add_subparsers(dest="command", required=True)
 
-    init = sub.add_parser("init", help="Create a company with the default org")
+    init = sub.add_parser("init", help="Design a company for a business, or create the default one")
+    init.add_argument("description", nargs="?", help='The business, such as "a YouTube Shorts content company"')
+    init.add_argument("--template", help="Use a template unchanged, with no model. See: trypro templates")
+    init.add_argument("--review", metavar="PROPOSAL", help="Go back to a proposal's review screen")
+    init.add_argument("--no-discover", action="store_true", help="Don't search GitHub for skills")
+    init.add_argument("--dry-run", action="store_true", help="Use the closest template unchanged: no key, no cost")
+    init.add_argument("--by", help="Your name, for the record of what you approved. Default: your username")
     init.add_argument("--dir", default=".")
     init.add_argument("--company")
     init.add_argument("--packs", help="Comma-separated packs. Default: all")
@@ -557,8 +747,11 @@ def build_parser() -> argparse.ArgumentParser:
     org = sub.add_parser("org", help="Inspect the organization").add_subparsers(dest="org_command", required=True)
     validate = org.add_parser("validate", help="Validate against spec org/v1")
     validate.add_argument("path", nargs="?")
+    validate.add_argument("--policy", action="store_true", help="Also apply the rules for generated companies")
     validate.set_defaults(func=cmd_org_validate)
     org.add_parser("show", help="Print the org chart").set_defaults(func=cmd_org_show)
+
+    sub.add_parser("templates", help="List industry templates").set_defaults(func=cmd_templates)
 
     pack = sub.add_parser("pack", help="Manage department packs").add_subparsers(dest="pack_command", required=True)
     pack.add_parser("list").set_defaults(func=cmd_pack)
@@ -596,6 +789,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     skills = sub.add_parser("skills", help="Agent skills").add_subparsers(dest="skills_command", required=True)
     match = skills.add_parser("match", help="Rebuild the catalog from skills.lock and recompute every loadout")
+    match.add_argument("--no-rerank", action="store_true", help="Use embeddings alone: no model call, no cost")
     match.add_argument("--unused-runs", type=int, default=DEFAULT_UNUSED_RUNS, help="Flag skills unused this long")
     match.set_defaults(func=cmd_skills_match)
     loadout = skills.add_parser("loadout", help="Show a role's skills, with scores and why they matched")
@@ -640,6 +834,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         ClientError,
         MemoryConfigError,
         SkillCustomsError,
+        ActivationError,
     ) as error:
         _print(f"Error: {error.args[0] if error.args else error}")
         return 2

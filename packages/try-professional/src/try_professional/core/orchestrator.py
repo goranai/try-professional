@@ -6,6 +6,9 @@ model (resolving context) are handled here, so adapters see only what they must 
 
 from __future__ import annotations
 
+import hashlib
+import json
+import shutil
 import threading
 import uuid
 from collections.abc import Callable
@@ -15,6 +18,7 @@ from typing import Any
 
 from ..org import Org
 from .audit import AuditLog, VerifyResult, verify_log
+from .deliverables import export_deliverables, read_sources
 from .ledger import Ledger
 from .pipeline import (
     Action,
@@ -31,9 +35,10 @@ from .pipeline import (
     initial_state,
     open_actions,
 )
-from .ports import FeedbackPort, MemoryPort, NullMemory, NullSkills, ProposalPort, SkillPort
+from .ports import FeedbackPort, MemoryPort, NullMemory, NullSkills, ProposalPort, SearchPort, SkillPort
 
 Clock = Callable[[], str]
+MAX_INPUT_BYTES = 2_000_000
 
 
 def utc_now() -> str:
@@ -50,6 +55,9 @@ class Orchestrator:
         skills: SkillPort | None = None,
         proposals: ProposalPort | None = None,
         feedback: FeedbackPort | None = None,
+        search: SearchPort | None = None,
+        inputs_dir: Path | None = None,
+        deliverables_dir: Path | None = None,
         clock: Clock = utc_now,
     ) -> None:
         self.org = org
@@ -58,6 +66,9 @@ class Orchestrator:
         self.skills: SkillPort = skills or NullSkills()
         self.proposals = proposals
         self.feedback = feedback
+        self.search = search
+        self.inputs_dir = inputs_dir
+        self.deliverables_dir = deliverables_dir
         self.clock = clock
         self.ledger = Ledger(home / "ledger.sqlite")
         self._lock = threading.RLock()
@@ -71,6 +82,56 @@ class Orchestrator:
         path.mkdir(parents=True, exist_ok=True)
         return path
 
+    def sources_path(self, run_id: str) -> Path:
+        return self.home / "runs" / run_id / "sources.jsonl"
+
+    def deliverables_path(self, run_id: str) -> Path | None:
+        return self.deliverables_dir / run_id if self.deliverables_dir else None
+
+    def note_source(self, run_id: str, source: str, day: str = "") -> None:
+        """What this run really retrieved, so the export can tell a real citation from an invented one."""
+        if not source:
+            return
+        path = self.sources_path(run_id)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with self._lock, path.open("a", encoding="utf-8", newline="\n") as handle:
+            handle.write(json.dumps({"source": source, "date": day}, ensure_ascii=False) + "\n")
+
+    def _copy_inputs(self, run_id: str) -> None:
+        """Give this run its own copy, so what a run read stays on record if the folder changes later."""
+        if self.inputs_dir is None or not self.inputs_dir.is_dir():
+            return
+        target = self.workspace(run_id) / "inputs"
+        copied = []
+        for path in sorted(self.inputs_dir.rglob("*")):
+            if not path.is_file() or path.is_symlink() or path.stat().st_size > MAX_INPUT_BYTES:
+                continue
+            relative = path.relative_to(self.inputs_dir)
+            if any(part.startswith(".") for part in relative.parts):
+                continue
+            destination = target / relative
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(path, destination)
+            name = f"inputs/{relative.as_posix()}"
+            self.note_source(run_id, name)
+            copied.append({"path": name, "sha256": hashlib.sha256(path.read_bytes()).hexdigest()})
+        if copied:
+            self._log(run_id).append(self.clock(), "inputs_copied", {"files": copied})
+
+    def _export(self, state: RunState) -> None:
+        """The run already succeeded, so a failure here is reported and doesn't undo it."""
+        target = self.deliverables_path(state.run_id)
+        if target is None:
+            return
+        log = self._log(state.run_id)
+        try:
+            index = export_deliverables(
+                state, self.workspace(state.run_id), target, read_sources(self.sources_path(state.run_id))
+            )
+            log.append(self.clock(), "deliverables_exported", {"index": index.name})
+        except OSError as error:
+            log.append(self.clock(), "deliverables_error", {"error": type(error).__name__})
+
     def _log(self, run_id: str) -> AuditLog:
         if run_id not in self._logs:
             self._logs[run_id] = AuditLog(self.audit_path(run_id))
@@ -81,6 +142,7 @@ class Orchestrator:
             run_id = run_id or f"run-{uuid.uuid4().hex[:12]}"
             state = initial_state(run_id, goal)
             self._log(run_id).append(self.clock(), "run_started", {"run_id": run_id, "goal": goal})
+            self._copy_inputs(run_id)
             return run_id, self._apply(state, RunStarted())
 
     def handle(self, run_id: str, event: Any) -> list[Action]:
@@ -119,6 +181,7 @@ class Orchestrator:
                     pending_events.append(self._resolve_context(state, action))
                 elif isinstance(action, Finish) and action.status == "done":
                     self._store_lessons(state)
+                    self._export(state)
                     self._safely(state, "run_finished", state.run_id, sorted(state.usage_by_role))
                     outward.append(action)
                 elif not isinstance(action, DepartmentActivated):

@@ -37,6 +37,18 @@
           "title": "Confidence",
           "type": "string"
         },
+        "is_current": {
+          "default": false,
+          "description": "True if this claims something is current or trending",
+          "title": "Is Current",
+          "type": "boolean"
+        },
+        "source_date": {
+          "default": "",
+          "description": "Date of the source, YYYY-MM-DD",
+          "title": "Source Date",
+          "type": "string"
+        },
         "sources": {
           "default": [],
           "items": {
@@ -49,6 +61,12 @@
           "minLength": 1,
           "title": "Statement",
           "type": "string"
+        },
+        "unverified": {
+          "default": false,
+          "description": "True if a current claim has no source and date",
+          "title": "Unverified",
+          "type": "boolean"
         }
       },
       "required": [

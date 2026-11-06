@@ -11,10 +11,14 @@ from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from typing import Any
 
-from .fetch import GitHubClient
+from .errors import FetchError
+from .fetch import GitHubClient, check_repo, is_full_sha
 from .policy import Policy
 
+SKILL_FILE = "SKILL.md"
 DEFAULT_TOP = 40
+DEFAULT_REPOS_PER_SEARCH = 5
+DEFAULT_SKILLS_PER_REPO = 3
 PAGE_SIZE = 100
 MIN_AGE_DAYS = 30
 MAX_IDLE_DAYS = 365
@@ -80,6 +84,74 @@ def rank_repositories(
         )
     candidates.sort(key=lambda c: (-c.score, c.repo))
     return candidates[:top]
+
+
+@dataclass(frozen=True)
+class SkillFile:
+    """One skill found by content search. It's a nomination, like a Candidate."""
+
+    repo: str
+    path: str
+    license_spdx: str | None
+    license_allowed: bool
+    stars: int
+    score: float
+
+
+def search_skill_files(
+    query: str,
+    *,
+    client: GitHubClient | None = None,
+    policy: Policy | None = None,
+    now: datetime | None = None,
+    max_repos: int = DEFAULT_REPOS_PER_SEARCH,
+    max_per_repo: int = DEFAULT_SKILLS_PER_REPO,
+) -> list[SkillFile]:
+    """Find skills by what their SKILL.md says, including those deep inside large collections.
+
+    Repository search only sees a repository's own description, so it misses most skills. Code
+    search needs a token, and GitHub allows few of these per minute. Repositories still go through
+    the same filters as discover(): no archives, forks, brand-new, abandoned, or unlicensed ones.
+    """
+    github = client or GitHubClient()
+    encoded = urllib.parse.quote(f"{query} filename:{SKILL_FILE}")
+    data = github.get_json(f"/search/code?q={encoded}&per_page={PAGE_SIZE}")
+    items = data.get("items", []) if isinstance(data, dict) else []
+    by_repo: dict[str, list[str]] = {}
+    for item in items:
+        repo = (item.get("repository") or {}).get("full_name")
+        path = str(item.get("path", ""))
+        if repo and path.split("/")[-1] == SKILL_FILE:
+            by_repo.setdefault(repo, []).append(path[: -len(SKILL_FILE)].rstrip("/"))
+    active = policy or Policy.default()
+    moment = now or datetime.now(timezone.utc)
+    found: list[SkillFile] = []
+    for repo, paths in list(by_repo.items())[:max_repos]:
+        ranked = rank_repositories([github.get_json(f"/repos/{repo}")], active, now=moment, top=1)
+        if not ranked:
+            continue
+        candidate = ranked[0]
+        found += [
+            SkillFile(repo, path, candidate.license_spdx, candidate.license_allowed, candidate.stars, candidate.score)
+            for path in sorted(paths)[:max_per_repo]
+        ]
+    return found
+
+
+def list_skill_paths(repo: str, commit: str, *, client: GitHubClient | None = None) -> list[str]:
+    """The folder of every SKILL.md at one commit, from the file listing. Nothing is downloaded or run."""
+    github = client or GitHubClient()
+    check_repo(repo)
+    if not is_full_sha(commit):
+        raise FetchError(f"'{commit}' isn't a full 40-character commit SHA.")
+    data = github.get_json(f"/repos/{repo}/git/trees/{commit}?recursive=1")
+    tree = data.get("tree", []) if isinstance(data, dict) else []
+    paths = []
+    for item in tree:
+        path = str(item.get("path", ""))
+        if item.get("type") == "blob" and (path == SKILL_FILE or path.endswith(f"/{SKILL_FILE}")):
+            paths.append(path[: -len(SKILL_FILE)].rstrip("/"))
+    return sorted(paths)
 
 
 def discover(

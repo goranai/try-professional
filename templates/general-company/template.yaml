@@ -1,0 +1,10 @@
+# The nine departments that ship as packs, so this has no departments of its own.
+id: general-company
+name: General company
+description: A general-purpose company with product, engineering, marketing, sales, research, finance, and operations.
+examples:
+  - a general business
+  - a company with several lines of work
+  - a professional services firm
+  - a small business that needs a bit of everything
+source: packs

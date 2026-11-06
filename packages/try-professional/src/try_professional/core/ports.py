@@ -43,6 +43,12 @@ class FeedbackPort(Protocol):
     def run_finished(self, run_id: str, roles: list[str]) -> None: ...
 
 
+class SearchPort(Protocol):
+    """Read-only web search. Off unless a person turned it on and gave it a key."""
+
+    def search(self, query: str) -> list[dict[str, str]]: ...
+
+
 class ProposalPort(Protocol):
     def propose(self, text: str, *, source: str) -> str: ...
 

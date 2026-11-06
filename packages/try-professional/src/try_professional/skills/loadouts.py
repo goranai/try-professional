@@ -368,11 +368,11 @@ class RoleLoadout:
     excluded: dict[str, str] = field(default_factory=dict)  # skill: why it can't be used
 
 
-def exclusion_reason(role: Role, record: SkillRecord) -> str | None:
+def exclusion_reason(role: Role, record: SkillRecord, *, allow_uncategorized: bool = False) -> str | None:
     """Why this role can't use this skill at all, or None."""
     if record.trust == "quarantined":
         return "quarantined"
-    if record.category == UNCATEGORIZED:
+    if record.category == UNCATEGORIZED and not allow_uncategorized:
         return "uncategorized: a person must assign a category first"
     needed = {normalize_tool(tool) for tool in record.tools}
     forbidden = needed & set(role.forbidden_tools)
@@ -418,8 +418,13 @@ def compute_loadouts(
     usage_for: Callable[[str, str], dict[str, int]],
     *,
     threshold: float = MATCH_THRESHOLD,
+    verdicts: dict[tuple[str, str], Any] | None = None,
 ) -> dict[str, RoleLoadout]:
-    """Score every eligible skill against every role. Nothing here changes what any role may use."""
+    """Score every eligible skill against every role. Nothing here changes what any role may use.
+
+    With verdicts from the judge (skills/rerank.py), its call on fit replaces the score threshold and
+    the limit on roles per skill, and the score only ranks. A person's approval always survives.
+    """
     cache: dict[str, Any] = {}
 
     def vector_for(text: str) -> Any:
@@ -455,19 +460,25 @@ def compute_loadouts(
             usage = usage_for(ref, record.skill_id)
             category_fit = CATEGORY_BONUS if fits_category else -CATEGORY_PENALTY
             score = similarity + category_fit + _feedback_adjustment(usage)
-            if score < threshold and status != "approved":
-                continue
+            verdict = verdicts.get((ref, record.skill_id)) if verdicts is not None else None
+            if status != "approved":
+                if verdicts is not None and not (verdict and verdict.fit):
+                    continue
+                if verdicts is None and score < threshold:
+                    continue
             why = f'fits "{needs[best][:50]}" ({similarity:.2f})'
+            if verdict is not None and verdict.fit:
+                why = verdict.reason
             if fits_category:
                 why += f"; category {record.category} is allowed"
             if usage["uses"]:
                 why += f"; used {usage['uses']}x, {usage['passed']} passed QA"
             scored[ref].append((Match(record, score, why, status), vector))
 
-    keep = _best_roles_per_skill(scored)
+    keep = _best_roles_per_skill(scored) if verdicts is None else None
     for ref, role in sorted(org.roles.items()):
         loadout = results[ref]
-        candidates = [item for item in scored[ref] if (ref, item[0].record.skill_id) in keep]
+        candidates = [item for item in scored[ref] if keep is None or (ref, item[0].record.skill_id) in keep]
         # Keep the approved copy of a near-duplicate if there is one, and otherwise the better match.
         candidates.sort(key=lambda item: (item[0].status != "approved", -item[0].score, item[0].record.skill_id))
         kept: list[tuple[Match, Any]] = []
