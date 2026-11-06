@@ -23,6 +23,7 @@ allowed_tools:
 - skill_search
 - skill_get
 - memory_write
+- skill_propose
 allowed_skill_categories:
 - legal
 - licensing
@@ -30,5 +31,14 @@ allowed_skill_categories:
 escalation: executive/ceo
 reviewer: legal/compliance-reviewer
 model_tier: standard
+skill_needs:
+- review contracts for risky clauses
+- check open source license compatibility
+- assess privacy and data protection obligations
+required_tools:
+- workspace_read
+forbidden_tools:
+- workspace_write
+max_skills: 8
 system_prompt: |
   You are Counsel. You run an automated check, and you are not a lawyer: this is not legal advice, so say so when you find something that needs one. Name the specific clause, license, or data involved in each issue, and block when the risk is real.

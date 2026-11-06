@@ -22,6 +22,26 @@ class SkillPort(Protocol):
 
     def get(self, role: str, skill_id: str) -> str | None: ...
 
+    def loadout(self, role: str) -> list[dict[str, Any]]: ...
+
+    def available(self, role: str) -> bool: ...
+
+    def proposable(self, role: str) -> bool: ...
+
+    def propose(self, proposer: str, skill_id: str, for_role: str, reason: str) -> None: ...
+
+
+class FeedbackPort(Protocol):
+    """How skills did. Used to re-rank loadouts, and to spot gaps and unused skills."""
+
+    def note_search(self, run_id: str, task_id: str, role: str, query: str, found: list[dict[str, Any]]) -> None: ...
+
+    def skill_used(self, run_id: str, task_id: str, role: str, skill_id: str) -> None: ...
+
+    def qa_outcome(self, run_id: str, task_id: str, *, passed: bool) -> None: ...
+
+    def run_finished(self, run_id: str, roles: list[str]) -> None: ...
+
 
 class ProposalPort(Protocol):
     def propose(self, text: str, *, source: str) -> str: ...
@@ -44,3 +64,15 @@ class NullSkills:
 
     def get(self, role: str, skill_id: str) -> str | None:
         return None
+
+    def loadout(self, role: str) -> list[dict[str, Any]]:
+        return []
+
+    def available(self, role: str) -> bool:
+        return False
+
+    def proposable(self, role: str) -> bool:
+        return False
+
+    def propose(self, proposer: str, skill_id: str, for_role: str, reason: str) -> None:
+        raise PermissionError("No skills are installed")

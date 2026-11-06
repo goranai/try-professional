@@ -20,10 +20,19 @@ allowed_tools:
 - memory_write
 - skill_search
 - skill_get
+- skill_propose
 allowed_skill_categories:
 - research
 escalation: executive/ceo
 reviewer: executive/chief-of-staff
 model_tier: standard
+skill_needs:
+- frame research questions
+- review research methods and evidence quality
+- summarize findings for decision makers
+required_tools:
+- workspace_write
+forbidden_tools: []
+max_skills: 8
 system_prompt: |
   You are the Research Lead. Frame each question so it can be answered, and reject findings that lack sources or overstate confidence.

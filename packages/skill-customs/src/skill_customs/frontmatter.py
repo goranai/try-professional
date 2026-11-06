@@ -19,6 +19,7 @@ class SkillMetadata:
     description: str
     license: str | None
     category: str | None
+    tools: tuple[str, ...] = ()
 
 
 def _nested_category(data: dict[str, Any]) -> str | None:
@@ -31,6 +32,17 @@ def _nested_category(data: dict[str, Any]) -> str | None:
             if isinstance(value, dict) and isinstance(value.get("category"), str):
                 return str(value["category"])
     return None
+
+
+def _declared_tools(data: dict[str, Any]) -> tuple[str, ...]:
+    """Frameworks spell this differently, as a list or as a space or comma separated string."""
+    for key in ("allowed-tools", "allowed_tools", "tools"):
+        value = data.get(key)
+        if isinstance(value, list):
+            return tuple(str(item) for item in value)
+        if isinstance(value, str):
+            return tuple(part for part in value.replace(",", " ").split() if part)
+    return ()
 
 
 def parse_frontmatter(text: str) -> dict[str, Any]:
@@ -59,4 +71,5 @@ def read_skill_metadata(skill: Path) -> SkillMetadata:
         description=str(data.get("description") or ""),
         license=str(license_value) if license_value else None,
         category=_nested_category(data),
+        tools=_declared_tools(data),
     )

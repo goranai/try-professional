@@ -1,0 +1,1824 @@
+{
+ "split": "tune",
+ "skills": 12,
+ "sweep": [
+  {
+   "t": 0.3,
+   "precision": 0.857,
+   "recall": 0.667,
+   "correct": 18,
+   "wrong": 3,
+   "missed": 9,
+   "rows": [
+    {
+     "role": "engineering/backend",
+     "skill": "test-driven-development",
+     "score": 0.625,
+     "right": true
+    },
+    {
+     "role": "engineering/backend",
+     "skill": "finishing-a-development-branch",
+     "score": 0.56,
+     "right": true
+    },
+    {
+     "role": "engineering/backend",
+     "skill": "requesting-code-review",
+     "score": 0.508,
+     "right": true
+    },
+    {
+     "role": "engineering/backend",
+     "skill": "using-git-worktrees",
+     "score": 0.473,
+     "right": true
+    },
+    {
+     "role": "engineering/frontend",
+     "skill": "test-driven-development",
+     "score": 0.602,
+     "right": true
+    },
+    {
+     "role": "engineering/frontend",
+     "skill": "requesting-code-review",
+     "score": 0.547,
+     "right": true
+    },
+    {
+     "role": "engineering/frontend",
+     "skill": "frontend-design",
+     "score": 0.504,
+     "right": true
+    },
+    {
+     "role": "engineering/qa",
+     "skill": "test-driven-development",
+     "score": 0.666,
+     "right": true
+    },
+    {
+     "role": "engineering/qa",
+     "skill": "finishing-a-development-branch",
+     "score": 0.589,
+     "right": false
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "test-driven-development",
+     "score": 0.7,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "receiving-code-review",
+     "score": 0.627,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "requesting-code-review",
+     "score": 0.599,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "using-git-worktrees",
+     "score": 0.557,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "finishing-a-development-branch",
+     "score": 0.549,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "dispatching-parallel-agents",
+     "score": 0.45,
+     "right": true
+    },
+    {
+     "role": "executive/ceo",
+     "skill": "internal-comms",
+     "score": 0.478,
+     "right": true
+    },
+    {
+     "role": "executive/chief-of-staff",
+     "skill": "internal-comms",
+     "score": 0.46,
+     "right": true
+    },
+    {
+     "role": "executive/chief-of-staff",
+     "skill": "dispatching-parallel-agents",
+     "score": 0.457,
+     "right": false
+    },
+    {
+     "role": "legal/compliance-reviewer",
+     "skill": "requesting-code-review",
+     "score": 0.522,
+     "right": false
+    },
+    {
+     "role": "marketing/marketing-lead",
+     "skill": "brand-guidelines",
+     "score": 0.491,
+     "right": true
+    },
+    {
+     "role": "operations/ops-lead",
+     "skill": "internal-comms",
+     "score": 0.453,
+     "right": true
+    }
+   ]
+  },
+  {
+   "t": 0.32,
+   "precision": 0.857,
+   "recall": 0.667,
+   "correct": 18,
+   "wrong": 3,
+   "missed": 9,
+   "rows": [
+    {
+     "role": "engineering/backend",
+     "skill": "test-driven-development",
+     "score": 0.625,
+     "right": true
+    },
+    {
+     "role": "engineering/backend",
+     "skill": "finishing-a-development-branch",
+     "score": 0.56,
+     "right": true
+    },
+    {
+     "role": "engineering/backend",
+     "skill": "requesting-code-review",
+     "score": 0.508,
+     "right": true
+    },
+    {
+     "role": "engineering/backend",
+     "skill": "using-git-worktrees",
+     "score": 0.473,
+     "right": true
+    },
+    {
+     "role": "engineering/frontend",
+     "skill": "test-driven-development",
+     "score": 0.602,
+     "right": true
+    },
+    {
+     "role": "engineering/frontend",
+     "skill": "requesting-code-review",
+     "score": 0.547,
+     "right": true
+    },
+    {
+     "role": "engineering/frontend",
+     "skill": "frontend-design",
+     "score": 0.504,
+     "right": true
+    },
+    {
+     "role": "engineering/qa",
+     "skill": "test-driven-development",
+     "score": 0.666,
+     "right": true
+    },
+    {
+     "role": "engineering/qa",
+     "skill": "finishing-a-development-branch",
+     "score": 0.589,
+     "right": false
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "test-driven-development",
+     "score": 0.7,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "receiving-code-review",
+     "score": 0.627,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "requesting-code-review",
+     "score": 0.599,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "using-git-worktrees",
+     "score": 0.557,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "finishing-a-development-branch",
+     "score": 0.549,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "dispatching-parallel-agents",
+     "score": 0.45,
+     "right": true
+    },
+    {
+     "role": "executive/ceo",
+     "skill": "internal-comms",
+     "score": 0.478,
+     "right": true
+    },
+    {
+     "role": "executive/chief-of-staff",
+     "skill": "internal-comms",
+     "score": 0.46,
+     "right": true
+    },
+    {
+     "role": "executive/chief-of-staff",
+     "skill": "dispatching-parallel-agents",
+     "score": 0.457,
+     "right": false
+    },
+    {
+     "role": "legal/compliance-reviewer",
+     "skill": "requesting-code-review",
+     "score": 0.522,
+     "right": false
+    },
+    {
+     "role": "marketing/marketing-lead",
+     "skill": "brand-guidelines",
+     "score": 0.491,
+     "right": true
+    },
+    {
+     "role": "operations/ops-lead",
+     "skill": "internal-comms",
+     "score": 0.453,
+     "right": true
+    }
+   ]
+  },
+  {
+   "t": 0.34,
+   "precision": 0.857,
+   "recall": 0.667,
+   "correct": 18,
+   "wrong": 3,
+   "missed": 9,
+   "rows": [
+    {
+     "role": "engineering/backend",
+     "skill": "test-driven-development",
+     "score": 0.625,
+     "right": true
+    },
+    {
+     "role": "engineering/backend",
+     "skill": "finishing-a-development-branch",
+     "score": 0.56,
+     "right": true
+    },
+    {
+     "role": "engineering/backend",
+     "skill": "requesting-code-review",
+     "score": 0.508,
+     "right": true
+    },
+    {
+     "role": "engineering/backend",
+     "skill": "using-git-worktrees",
+     "score": 0.473,
+     "right": true
+    },
+    {
+     "role": "engineering/frontend",
+     "skill": "test-driven-development",
+     "score": 0.602,
+     "right": true
+    },
+    {
+     "role": "engineering/frontend",
+     "skill": "requesting-code-review",
+     "score": 0.547,
+     "right": true
+    },
+    {
+     "role": "engineering/frontend",
+     "skill": "frontend-design",
+     "score": 0.504,
+     "right": true
+    },
+    {
+     "role": "engineering/qa",
+     "skill": "test-driven-development",
+     "score": 0.666,
+     "right": true
+    },
+    {
+     "role": "engineering/qa",
+     "skill": "finishing-a-development-branch",
+     "score": 0.589,
+     "right": false
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "test-driven-development",
+     "score": 0.7,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "receiving-code-review",
+     "score": 0.627,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "requesting-code-review",
+     "score": 0.599,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "using-git-worktrees",
+     "score": 0.557,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "finishing-a-development-branch",
+     "score": 0.549,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "dispatching-parallel-agents",
+     "score": 0.45,
+     "right": true
+    },
+    {
+     "role": "executive/ceo",
+     "skill": "internal-comms",
+     "score": 0.478,
+     "right": true
+    },
+    {
+     "role": "executive/chief-of-staff",
+     "skill": "internal-comms",
+     "score": 0.46,
+     "right": true
+    },
+    {
+     "role": "executive/chief-of-staff",
+     "skill": "dispatching-parallel-agents",
+     "score": 0.457,
+     "right": false
+    },
+    {
+     "role": "legal/compliance-reviewer",
+     "skill": "requesting-code-review",
+     "score": 0.522,
+     "right": false
+    },
+    {
+     "role": "marketing/marketing-lead",
+     "skill": "brand-guidelines",
+     "score": 0.491,
+     "right": true
+    },
+    {
+     "role": "operations/ops-lead",
+     "skill": "internal-comms",
+     "score": 0.453,
+     "right": true
+    }
+   ]
+  },
+  {
+   "t": 0.36,
+   "precision": 0.857,
+   "recall": 0.667,
+   "correct": 18,
+   "wrong": 3,
+   "missed": 9,
+   "rows": [
+    {
+     "role": "engineering/backend",
+     "skill": "test-driven-development",
+     "score": 0.625,
+     "right": true
+    },
+    {
+     "role": "engineering/backend",
+     "skill": "finishing-a-development-branch",
+     "score": 0.56,
+     "right": true
+    },
+    {
+     "role": "engineering/backend",
+     "skill": "requesting-code-review",
+     "score": 0.508,
+     "right": true
+    },
+    {
+     "role": "engineering/backend",
+     "skill": "using-git-worktrees",
+     "score": 0.473,
+     "right": true
+    },
+    {
+     "role": "engineering/frontend",
+     "skill": "test-driven-development",
+     "score": 0.602,
+     "right": true
+    },
+    {
+     "role": "engineering/frontend",
+     "skill": "requesting-code-review",
+     "score": 0.547,
+     "right": true
+    },
+    {
+     "role": "engineering/frontend",
+     "skill": "frontend-design",
+     "score": 0.504,
+     "right": true
+    },
+    {
+     "role": "engineering/qa",
+     "skill": "test-driven-development",
+     "score": 0.666,
+     "right": true
+    },
+    {
+     "role": "engineering/qa",
+     "skill": "finishing-a-development-branch",
+     "score": 0.589,
+     "right": false
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "test-driven-development",
+     "score": 0.7,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "receiving-code-review",
+     "score": 0.627,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "requesting-code-review",
+     "score": 0.599,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "using-git-worktrees",
+     "score": 0.557,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "finishing-a-development-branch",
+     "score": 0.549,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "dispatching-parallel-agents",
+     "score": 0.45,
+     "right": true
+    },
+    {
+     "role": "executive/ceo",
+     "skill": "internal-comms",
+     "score": 0.478,
+     "right": true
+    },
+    {
+     "role": "executive/chief-of-staff",
+     "skill": "internal-comms",
+     "score": 0.46,
+     "right": true
+    },
+    {
+     "role": "executive/chief-of-staff",
+     "skill": "dispatching-parallel-agents",
+     "score": 0.457,
+     "right": false
+    },
+    {
+     "role": "legal/compliance-reviewer",
+     "skill": "requesting-code-review",
+     "score": 0.522,
+     "right": false
+    },
+    {
+     "role": "marketing/marketing-lead",
+     "skill": "brand-guidelines",
+     "score": 0.491,
+     "right": true
+    },
+    {
+     "role": "operations/ops-lead",
+     "skill": "internal-comms",
+     "score": 0.453,
+     "right": true
+    }
+   ]
+  },
+  {
+   "t": 0.38,
+   "precision": 0.857,
+   "recall": 0.667,
+   "correct": 18,
+   "wrong": 3,
+   "missed": 9,
+   "rows": [
+    {
+     "role": "engineering/backend",
+     "skill": "test-driven-development",
+     "score": 0.625,
+     "right": true
+    },
+    {
+     "role": "engineering/backend",
+     "skill": "finishing-a-development-branch",
+     "score": 0.56,
+     "right": true
+    },
+    {
+     "role": "engineering/backend",
+     "skill": "requesting-code-review",
+     "score": 0.508,
+     "right": true
+    },
+    {
+     "role": "engineering/backend",
+     "skill": "using-git-worktrees",
+     "score": 0.473,
+     "right": true
+    },
+    {
+     "role": "engineering/frontend",
+     "skill": "test-driven-development",
+     "score": 0.602,
+     "right": true
+    },
+    {
+     "role": "engineering/frontend",
+     "skill": "requesting-code-review",
+     "score": 0.547,
+     "right": true
+    },
+    {
+     "role": "engineering/frontend",
+     "skill": "frontend-design",
+     "score": 0.504,
+     "right": true
+    },
+    {
+     "role": "engineering/qa",
+     "skill": "test-driven-development",
+     "score": 0.666,
+     "right": true
+    },
+    {
+     "role": "engineering/qa",
+     "skill": "finishing-a-development-branch",
+     "score": 0.589,
+     "right": false
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "test-driven-development",
+     "score": 0.7,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "receiving-code-review",
+     "score": 0.627,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "requesting-code-review",
+     "score": 0.599,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "using-git-worktrees",
+     "score": 0.557,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "finishing-a-development-branch",
+     "score": 0.549,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "dispatching-parallel-agents",
+     "score": 0.45,
+     "right": true
+    },
+    {
+     "role": "executive/ceo",
+     "skill": "internal-comms",
+     "score": 0.478,
+     "right": true
+    },
+    {
+     "role": "executive/chief-of-staff",
+     "skill": "internal-comms",
+     "score": 0.46,
+     "right": true
+    },
+    {
+     "role": "executive/chief-of-staff",
+     "skill": "dispatching-parallel-agents",
+     "score": 0.457,
+     "right": false
+    },
+    {
+     "role": "legal/compliance-reviewer",
+     "skill": "requesting-code-review",
+     "score": 0.522,
+     "right": false
+    },
+    {
+     "role": "marketing/marketing-lead",
+     "skill": "brand-guidelines",
+     "score": 0.491,
+     "right": true
+    },
+    {
+     "role": "operations/ops-lead",
+     "skill": "internal-comms",
+     "score": 0.453,
+     "right": true
+    }
+   ]
+  },
+  {
+   "t": 0.4,
+   "precision": 0.857,
+   "recall": 0.667,
+   "correct": 18,
+   "wrong": 3,
+   "missed": 9,
+   "rows": [
+    {
+     "role": "engineering/backend",
+     "skill": "test-driven-development",
+     "score": 0.625,
+     "right": true
+    },
+    {
+     "role": "engineering/backend",
+     "skill": "finishing-a-development-branch",
+     "score": 0.56,
+     "right": true
+    },
+    {
+     "role": "engineering/backend",
+     "skill": "requesting-code-review",
+     "score": 0.508,
+     "right": true
+    },
+    {
+     "role": "engineering/backend",
+     "skill": "using-git-worktrees",
+     "score": 0.473,
+     "right": true
+    },
+    {
+     "role": "engineering/frontend",
+     "skill": "test-driven-development",
+     "score": 0.602,
+     "right": true
+    },
+    {
+     "role": "engineering/frontend",
+     "skill": "requesting-code-review",
+     "score": 0.547,
+     "right": true
+    },
+    {
+     "role": "engineering/frontend",
+     "skill": "frontend-design",
+     "score": 0.504,
+     "right": true
+    },
+    {
+     "role": "engineering/qa",
+     "skill": "test-driven-development",
+     "score": 0.666,
+     "right": true
+    },
+    {
+     "role": "engineering/qa",
+     "skill": "finishing-a-development-branch",
+     "score": 0.589,
+     "right": false
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "test-driven-development",
+     "score": 0.7,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "receiving-code-review",
+     "score": 0.627,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "requesting-code-review",
+     "score": 0.599,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "using-git-worktrees",
+     "score": 0.557,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "finishing-a-development-branch",
+     "score": 0.549,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "dispatching-parallel-agents",
+     "score": 0.45,
+     "right": true
+    },
+    {
+     "role": "executive/ceo",
+     "skill": "internal-comms",
+     "score": 0.478,
+     "right": true
+    },
+    {
+     "role": "executive/chief-of-staff",
+     "skill": "internal-comms",
+     "score": 0.46,
+     "right": true
+    },
+    {
+     "role": "executive/chief-of-staff",
+     "skill": "dispatching-parallel-agents",
+     "score": 0.457,
+     "right": false
+    },
+    {
+     "role": "legal/compliance-reviewer",
+     "skill": "requesting-code-review",
+     "score": 0.522,
+     "right": false
+    },
+    {
+     "role": "marketing/marketing-lead",
+     "skill": "brand-guidelines",
+     "score": 0.491,
+     "right": true
+    },
+    {
+     "role": "operations/ops-lead",
+     "skill": "internal-comms",
+     "score": 0.453,
+     "right": true
+    }
+   ]
+  },
+  {
+   "t": 0.42,
+   "precision": 0.857,
+   "recall": 0.667,
+   "correct": 18,
+   "wrong": 3,
+   "missed": 9,
+   "rows": [
+    {
+     "role": "engineering/backend",
+     "skill": "test-driven-development",
+     "score": 0.625,
+     "right": true
+    },
+    {
+     "role": "engineering/backend",
+     "skill": "finishing-a-development-branch",
+     "score": 0.56,
+     "right": true
+    },
+    {
+     "role": "engineering/backend",
+     "skill": "requesting-code-review",
+     "score": 0.508,
+     "right": true
+    },
+    {
+     "role": "engineering/backend",
+     "skill": "using-git-worktrees",
+     "score": 0.473,
+     "right": true
+    },
+    {
+     "role": "engineering/frontend",
+     "skill": "test-driven-development",
+     "score": 0.602,
+     "right": true
+    },
+    {
+     "role": "engineering/frontend",
+     "skill": "requesting-code-review",
+     "score": 0.547,
+     "right": true
+    },
+    {
+     "role": "engineering/frontend",
+     "skill": "frontend-design",
+     "score": 0.504,
+     "right": true
+    },
+    {
+     "role": "engineering/qa",
+     "skill": "test-driven-development",
+     "score": 0.666,
+     "right": true
+    },
+    {
+     "role": "engineering/qa",
+     "skill": "finishing-a-development-branch",
+     "score": 0.589,
+     "right": false
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "test-driven-development",
+     "score": 0.7,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "receiving-code-review",
+     "score": 0.627,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "requesting-code-review",
+     "score": 0.599,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "using-git-worktrees",
+     "score": 0.557,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "finishing-a-development-branch",
+     "score": 0.549,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "dispatching-parallel-agents",
+     "score": 0.45,
+     "right": true
+    },
+    {
+     "role": "executive/ceo",
+     "skill": "internal-comms",
+     "score": 0.478,
+     "right": true
+    },
+    {
+     "role": "executive/chief-of-staff",
+     "skill": "internal-comms",
+     "score": 0.46,
+     "right": true
+    },
+    {
+     "role": "executive/chief-of-staff",
+     "skill": "dispatching-parallel-agents",
+     "score": 0.457,
+     "right": false
+    },
+    {
+     "role": "legal/compliance-reviewer",
+     "skill": "requesting-code-review",
+     "score": 0.522,
+     "right": false
+    },
+    {
+     "role": "marketing/marketing-lead",
+     "skill": "brand-guidelines",
+     "score": 0.491,
+     "right": true
+    },
+    {
+     "role": "operations/ops-lead",
+     "skill": "internal-comms",
+     "score": 0.453,
+     "right": true
+    }
+   ]
+  },
+  {
+   "t": 0.44,
+   "precision": 0.857,
+   "recall": 0.667,
+   "correct": 18,
+   "wrong": 3,
+   "missed": 9,
+   "rows": [
+    {
+     "role": "engineering/backend",
+     "skill": "test-driven-development",
+     "score": 0.625,
+     "right": true
+    },
+    {
+     "role": "engineering/backend",
+     "skill": "finishing-a-development-branch",
+     "score": 0.56,
+     "right": true
+    },
+    {
+     "role": "engineering/backend",
+     "skill": "requesting-code-review",
+     "score": 0.508,
+     "right": true
+    },
+    {
+     "role": "engineering/backend",
+     "skill": "using-git-worktrees",
+     "score": 0.473,
+     "right": true
+    },
+    {
+     "role": "engineering/frontend",
+     "skill": "test-driven-development",
+     "score": 0.602,
+     "right": true
+    },
+    {
+     "role": "engineering/frontend",
+     "skill": "requesting-code-review",
+     "score": 0.547,
+     "right": true
+    },
+    {
+     "role": "engineering/frontend",
+     "skill": "frontend-design",
+     "score": 0.504,
+     "right": true
+    },
+    {
+     "role": "engineering/qa",
+     "skill": "test-driven-development",
+     "score": 0.666,
+     "right": true
+    },
+    {
+     "role": "engineering/qa",
+     "skill": "finishing-a-development-branch",
+     "score": 0.589,
+     "right": false
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "test-driven-development",
+     "score": 0.7,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "receiving-code-review",
+     "score": 0.627,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "requesting-code-review",
+     "score": 0.599,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "using-git-worktrees",
+     "score": 0.557,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "finishing-a-development-branch",
+     "score": 0.549,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "dispatching-parallel-agents",
+     "score": 0.45,
+     "right": true
+    },
+    {
+     "role": "executive/ceo",
+     "skill": "internal-comms",
+     "score": 0.478,
+     "right": true
+    },
+    {
+     "role": "executive/chief-of-staff",
+     "skill": "internal-comms",
+     "score": 0.46,
+     "right": true
+    },
+    {
+     "role": "executive/chief-of-staff",
+     "skill": "dispatching-parallel-agents",
+     "score": 0.457,
+     "right": false
+    },
+    {
+     "role": "legal/compliance-reviewer",
+     "skill": "requesting-code-review",
+     "score": 0.522,
+     "right": false
+    },
+    {
+     "role": "marketing/marketing-lead",
+     "skill": "brand-guidelines",
+     "score": 0.491,
+     "right": true
+    },
+    {
+     "role": "operations/ops-lead",
+     "skill": "internal-comms",
+     "score": 0.453,
+     "right": true
+    }
+   ]
+  },
+  {
+   "t": 0.46,
+   "precision": 0.889,
+   "recall": 0.593,
+   "correct": 16,
+   "wrong": 2,
+   "missed": 11,
+   "rows": [
+    {
+     "role": "engineering/backend",
+     "skill": "test-driven-development",
+     "score": 0.625,
+     "right": true
+    },
+    {
+     "role": "engineering/backend",
+     "skill": "finishing-a-development-branch",
+     "score": 0.56,
+     "right": true
+    },
+    {
+     "role": "engineering/backend",
+     "skill": "requesting-code-review",
+     "score": 0.508,
+     "right": true
+    },
+    {
+     "role": "engineering/backend",
+     "skill": "using-git-worktrees",
+     "score": 0.473,
+     "right": true
+    },
+    {
+     "role": "engineering/frontend",
+     "skill": "test-driven-development",
+     "score": 0.602,
+     "right": true
+    },
+    {
+     "role": "engineering/frontend",
+     "skill": "requesting-code-review",
+     "score": 0.547,
+     "right": true
+    },
+    {
+     "role": "engineering/frontend",
+     "skill": "frontend-design",
+     "score": 0.504,
+     "right": true
+    },
+    {
+     "role": "engineering/qa",
+     "skill": "test-driven-development",
+     "score": 0.666,
+     "right": true
+    },
+    {
+     "role": "engineering/qa",
+     "skill": "finishing-a-development-branch",
+     "score": 0.589,
+     "right": false
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "test-driven-development",
+     "score": 0.7,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "receiving-code-review",
+     "score": 0.627,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "requesting-code-review",
+     "score": 0.599,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "using-git-worktrees",
+     "score": 0.557,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "finishing-a-development-branch",
+     "score": 0.549,
+     "right": true
+    },
+    {
+     "role": "executive/ceo",
+     "skill": "internal-comms",
+     "score": 0.478,
+     "right": true
+    },
+    {
+     "role": "executive/chief-of-staff",
+     "skill": "internal-comms",
+     "score": 0.46,
+     "right": true
+    },
+    {
+     "role": "legal/compliance-reviewer",
+     "skill": "requesting-code-review",
+     "score": 0.522,
+     "right": false
+    },
+    {
+     "role": "marketing/marketing-lead",
+     "skill": "brand-guidelines",
+     "score": 0.491,
+     "right": true
+    }
+   ]
+  },
+  {
+   "t": 0.48,
+   "precision": 0.867,
+   "recall": 0.481,
+   "correct": 13,
+   "wrong": 2,
+   "missed": 14,
+   "rows": [
+    {
+     "role": "engineering/backend",
+     "skill": "test-driven-development",
+     "score": 0.625,
+     "right": true
+    },
+    {
+     "role": "engineering/backend",
+     "skill": "finishing-a-development-branch",
+     "score": 0.56,
+     "right": true
+    },
+    {
+     "role": "engineering/backend",
+     "skill": "requesting-code-review",
+     "score": 0.508,
+     "right": true
+    },
+    {
+     "role": "engineering/frontend",
+     "skill": "test-driven-development",
+     "score": 0.602,
+     "right": true
+    },
+    {
+     "role": "engineering/frontend",
+     "skill": "requesting-code-review",
+     "score": 0.547,
+     "right": true
+    },
+    {
+     "role": "engineering/frontend",
+     "skill": "frontend-design",
+     "score": 0.504,
+     "right": true
+    },
+    {
+     "role": "engineering/qa",
+     "skill": "test-driven-development",
+     "score": 0.666,
+     "right": true
+    },
+    {
+     "role": "engineering/qa",
+     "skill": "finishing-a-development-branch",
+     "score": 0.589,
+     "right": false
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "test-driven-development",
+     "score": 0.7,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "receiving-code-review",
+     "score": 0.627,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "requesting-code-review",
+     "score": 0.599,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "using-git-worktrees",
+     "score": 0.557,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "finishing-a-development-branch",
+     "score": 0.549,
+     "right": true
+    },
+    {
+     "role": "legal/compliance-reviewer",
+     "skill": "requesting-code-review",
+     "score": 0.522,
+     "right": false
+    },
+    {
+     "role": "marketing/marketing-lead",
+     "skill": "brand-guidelines",
+     "score": 0.491,
+     "right": true
+    }
+   ]
+  },
+  {
+   "t": 0.5,
+   "precision": 0.857,
+   "recall": 0.444,
+   "correct": 12,
+   "wrong": 2,
+   "missed": 15,
+   "rows": [
+    {
+     "role": "engineering/backend",
+     "skill": "test-driven-development",
+     "score": 0.625,
+     "right": true
+    },
+    {
+     "role": "engineering/backend",
+     "skill": "finishing-a-development-branch",
+     "score": 0.56,
+     "right": true
+    },
+    {
+     "role": "engineering/backend",
+     "skill": "requesting-code-review",
+     "score": 0.508,
+     "right": true
+    },
+    {
+     "role": "engineering/frontend",
+     "skill": "test-driven-development",
+     "score": 0.602,
+     "right": true
+    },
+    {
+     "role": "engineering/frontend",
+     "skill": "requesting-code-review",
+     "score": 0.547,
+     "right": true
+    },
+    {
+     "role": "engineering/frontend",
+     "skill": "frontend-design",
+     "score": 0.504,
+     "right": true
+    },
+    {
+     "role": "engineering/qa",
+     "skill": "test-driven-development",
+     "score": 0.666,
+     "right": true
+    },
+    {
+     "role": "engineering/qa",
+     "skill": "finishing-a-development-branch",
+     "score": 0.589,
+     "right": false
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "test-driven-development",
+     "score": 0.7,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "receiving-code-review",
+     "score": 0.627,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "requesting-code-review",
+     "score": 0.599,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "using-git-worktrees",
+     "score": 0.557,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "finishing-a-development-branch",
+     "score": 0.549,
+     "right": true
+    },
+    {
+     "role": "legal/compliance-reviewer",
+     "skill": "requesting-code-review",
+     "score": 0.522,
+     "right": false
+    }
+   ]
+  },
+  {
+   "t": 0.52,
+   "precision": 0.833,
+   "recall": 0.37,
+   "correct": 10,
+   "wrong": 2,
+   "missed": 17,
+   "rows": [
+    {
+     "role": "engineering/backend",
+     "skill": "test-driven-development",
+     "score": 0.625,
+     "right": true
+    },
+    {
+     "role": "engineering/backend",
+     "skill": "finishing-a-development-branch",
+     "score": 0.56,
+     "right": true
+    },
+    {
+     "role": "engineering/frontend",
+     "skill": "test-driven-development",
+     "score": 0.602,
+     "right": true
+    },
+    {
+     "role": "engineering/frontend",
+     "skill": "requesting-code-review",
+     "score": 0.547,
+     "right": true
+    },
+    {
+     "role": "engineering/qa",
+     "skill": "test-driven-development",
+     "score": 0.666,
+     "right": true
+    },
+    {
+     "role": "engineering/qa",
+     "skill": "finishing-a-development-branch",
+     "score": 0.589,
+     "right": false
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "test-driven-development",
+     "score": 0.7,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "receiving-code-review",
+     "score": 0.627,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "requesting-code-review",
+     "score": 0.599,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "using-git-worktrees",
+     "score": 0.557,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "finishing-a-development-branch",
+     "score": 0.549,
+     "right": true
+    },
+    {
+     "role": "legal/compliance-reviewer",
+     "skill": "requesting-code-review",
+     "score": 0.522,
+     "right": false
+    }
+   ]
+  },
+  {
+   "t": 0.54,
+   "precision": 0.909,
+   "recall": 0.37,
+   "correct": 10,
+   "wrong": 1,
+   "missed": 17,
+   "rows": [
+    {
+     "role": "engineering/backend",
+     "skill": "test-driven-development",
+     "score": 0.625,
+     "right": true
+    },
+    {
+     "role": "engineering/backend",
+     "skill": "finishing-a-development-branch",
+     "score": 0.56,
+     "right": true
+    },
+    {
+     "role": "engineering/frontend",
+     "skill": "test-driven-development",
+     "score": 0.602,
+     "right": true
+    },
+    {
+     "role": "engineering/frontend",
+     "skill": "requesting-code-review",
+     "score": 0.547,
+     "right": true
+    },
+    {
+     "role": "engineering/qa",
+     "skill": "test-driven-development",
+     "score": 0.666,
+     "right": true
+    },
+    {
+     "role": "engineering/qa",
+     "skill": "finishing-a-development-branch",
+     "score": 0.589,
+     "right": false
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "test-driven-development",
+     "score": 0.7,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "receiving-code-review",
+     "score": 0.627,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "requesting-code-review",
+     "score": 0.599,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "using-git-worktrees",
+     "score": 0.557,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "finishing-a-development-branch",
+     "score": 0.549,
+     "right": true
+    }
+   ]
+  },
+  {
+   "t": 0.56,
+   "precision": 0.875,
+   "recall": 0.259,
+   "correct": 7,
+   "wrong": 1,
+   "missed": 20,
+   "rows": [
+    {
+     "role": "engineering/backend",
+     "skill": "test-driven-development",
+     "score": 0.625,
+     "right": true
+    },
+    {
+     "role": "engineering/backend",
+     "skill": "finishing-a-development-branch",
+     "score": 0.56,
+     "right": true
+    },
+    {
+     "role": "engineering/frontend",
+     "skill": "test-driven-development",
+     "score": 0.602,
+     "right": true
+    },
+    {
+     "role": "engineering/qa",
+     "skill": "test-driven-development",
+     "score": 0.666,
+     "right": true
+    },
+    {
+     "role": "engineering/qa",
+     "skill": "finishing-a-development-branch",
+     "score": 0.589,
+     "right": false
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "test-driven-development",
+     "score": 0.7,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "receiving-code-review",
+     "score": 0.627,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "requesting-code-review",
+     "score": 0.599,
+     "right": true
+    }
+   ]
+  },
+  {
+   "t": 0.58,
+   "precision": 0.857,
+   "recall": 0.222,
+   "correct": 6,
+   "wrong": 1,
+   "missed": 21,
+   "rows": [
+    {
+     "role": "engineering/backend",
+     "skill": "test-driven-development",
+     "score": 0.625,
+     "right": true
+    },
+    {
+     "role": "engineering/frontend",
+     "skill": "test-driven-development",
+     "score": 0.602,
+     "right": true
+    },
+    {
+     "role": "engineering/qa",
+     "skill": "test-driven-development",
+     "score": 0.666,
+     "right": true
+    },
+    {
+     "role": "engineering/qa",
+     "skill": "finishing-a-development-branch",
+     "score": 0.589,
+     "right": false
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "test-driven-development",
+     "score": 0.7,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "receiving-code-review",
+     "score": 0.627,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "requesting-code-review",
+     "score": 0.599,
+     "right": true
+    }
+   ]
+  },
+  {
+   "t": 0.6,
+   "precision": 1.0,
+   "recall": 0.185,
+   "correct": 5,
+   "wrong": 0,
+   "missed": 22,
+   "rows": [
+    {
+     "role": "engineering/backend",
+     "skill": "test-driven-development",
+     "score": 0.625,
+     "right": true
+    },
+    {
+     "role": "engineering/frontend",
+     "skill": "test-driven-development",
+     "score": 0.602,
+     "right": true
+    },
+    {
+     "role": "engineering/qa",
+     "skill": "test-driven-development",
+     "score": 0.666,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "test-driven-development",
+     "score": 0.7,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "receiving-code-review",
+     "score": 0.627,
+     "right": true
+    }
+   ]
+  },
+  {
+   "t": 0.62,
+   "precision": 1.0,
+   "recall": 0.148,
+   "correct": 4,
+   "wrong": 0,
+   "missed": 23,
+   "rows": [
+    {
+     "role": "engineering/backend",
+     "skill": "test-driven-development",
+     "score": 0.625,
+     "right": true
+    },
+    {
+     "role": "engineering/qa",
+     "skill": "test-driven-development",
+     "score": 0.666,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "test-driven-development",
+     "score": 0.7,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "receiving-code-review",
+     "score": 0.627,
+     "right": true
+    }
+   ]
+  },
+  {
+   "t": 0.64,
+   "precision": 1.0,
+   "recall": 0.074,
+   "correct": 2,
+   "wrong": 0,
+   "missed": 25,
+   "rows": [
+    {
+     "role": "engineering/qa",
+     "skill": "test-driven-development",
+     "score": 0.666,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "test-driven-development",
+     "score": 0.7,
+     "right": true
+    }
+   ]
+  },
+  {
+   "t": 0.66,
+   "precision": 1.0,
+   "recall": 0.074,
+   "correct": 2,
+   "wrong": 0,
+   "missed": 25,
+   "rows": [
+    {
+     "role": "engineering/qa",
+     "skill": "test-driven-development",
+     "score": 0.666,
+     "right": true
+    },
+    {
+     "role": "engineering/tech-lead",
+     "skill": "test-driven-development",
+     "score": 0.7,
+     "right": true
+    }
+   ]
+  },
+  {
+   "t": 0.68,
+   "precision": 1.0,
+   "recall": 0.037,
+   "correct": 1,
+   "wrong": 0,
+   "missed": 26,
+   "rows": [
+    {
+     "role": "engineering/tech-lead",
+     "skill": "test-driven-development",
+     "score": 0.7,
+     "right": true
+    }
+   ]
+  },
+  {
+   "t": 0.7,
+   "precision": 1.0,
+   "recall": 0.037,
+   "correct": 1,
+   "wrong": 0,
+   "missed": 26,
+   "rows": [
+    {
+     "role": "engineering/tech-lead",
+     "skill": "test-driven-development",
+     "score": 0.7,
+     "right": true
+    }
+   ]
+  }
+ ]
+}

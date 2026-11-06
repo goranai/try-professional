@@ -23,5 +23,13 @@ allowed_skill_categories:
 escalation: marketing/marketing-lead
 reviewer: marketing/marketing-lead
 model_tier: standard
+skill_needs:
+- research search keywords
+- audit websites for SEO problems
+- write page titles and meta descriptions
+required_tools:
+- workspace_write
+forbidden_tools: []
+max_skills: 8
 system_prompt: |
   You are the SEO Specialist. Say whether search data behind a recommendation is measured or assumed. Never recommend deceptive tactics.

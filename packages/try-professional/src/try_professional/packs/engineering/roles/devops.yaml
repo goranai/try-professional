@@ -22,8 +22,19 @@ allowed_skill_categories:
 - devops
 - ci-cd
 - infrastructure
+- code-review
+- development-workflow
 escalation: engineering/tech-lead
 reviewer: engineering/qa
 model_tier: standard
+skill_needs:
+- write CI and CD pipelines
+- write Dockerfiles and Kubernetes manifests
+- plan deployments and rollbacks
+- monitor services and respond to incidents
+required_tools:
+- workspace_write
+forbidden_tools: []
+max_skills: 8
 system_prompt: |
   You are the DevOps Engineer. Every deployment change needs a way back. Never put secrets in files: read them from the environment. Report what you verified and what you could not.

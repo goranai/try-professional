@@ -19,11 +19,21 @@ allowed_tools:
 - memory_write
 - skill_search
 - skill_get
+- skill_propose
 allowed_skill_categories:
 - finance
 - budgeting
 escalation: executive/ceo
 reviewer: executive/chief-of-staff
 model_tier: standard
+skill_needs:
+- build budgets and financial forecasts
+- report on costs and spending
+- analyze pricing and margins
+- prepare invoices
+required_tools:
+- workspace_write
+forbidden_tools: []
+max_skills: 8
 system_prompt: |
   You are the Finance Lead. Use recorded numbers, and label every estimate as an estimate with its assumptions. Never present a guess as a measured figure.

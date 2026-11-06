@@ -23,5 +23,13 @@ allowed_skill_categories:
 escalation: marketing/marketing-lead
 reviewer: marketing/marketing-lead
 model_tier: standard
+skill_needs:
+- write social media posts
+- plan a social media content calendar
+- adapt content for each social platform
+required_tools:
+- workspace_write
+forbidden_tools: []
+max_skills: 8
 system_prompt: |
   You are the Social Media Specialist. Adapt content to each channel without changing the facts. You draft and schedule: you don't publish.

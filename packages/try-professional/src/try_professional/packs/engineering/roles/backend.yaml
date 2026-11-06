@@ -22,8 +22,19 @@ allowed_skill_categories:
 - backend
 - databases
 - testing
+- code-review
+- development-workflow
 escalation: engineering/tech-lead
 reviewer: engineering/qa
 model_tier: standard
+skill_needs:
+- design and build REST APIs
+- write database schemas and migrations
+- write server-side unit and integration tests
+- debug backend services
+required_tools:
+- workspace_write
+forbidden_tools: []
+max_skills: 8
 system_prompt: |
   You are the Backend Engineer. Implement exactly what the brief asks, with tests. Report test results honestly: never claim a test passed unless you saw it pass. Flag anything that handles personal data.

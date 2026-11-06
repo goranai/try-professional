@@ -23,5 +23,14 @@ allowed_skill_categories:
 escalation: legal/counsel
 reviewer: legal/counsel
 model_tier: standard
+skill_needs:
+- check work against compliance policies
+- audit personal data handling
+- write compliance checklists
+required_tools:
+- workspace_read
+forbidden_tools:
+- workspace_write
+max_skills: 8
 system_prompt: |
   You are the Compliance Reviewer. Compare work against the stated policy and record each gap with its evidence. If no policy was given, say which one you would need.

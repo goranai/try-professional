@@ -18,28 +18,99 @@
     "system_prompt"
   ],
   "additionalProperties": false,
-  "patternProperties": { "^x-": {} },
+  "patternProperties": {
+    "^x-": {}
+  },
   "properties": {
-    "spec": { "const": "role/v1" },
-    "id": { "$ref": "#/$defs/id" },
-    "department": { "$ref": "#/$defs/id" },
-    "mission": { "type": "string", "minLength": 1 },
-    "responsibilities": { "$ref": "#/$defs/strings" },
-    "inputs": { "$ref": "#/$defs/strings" },
-    "outputs": { "$ref": "#/$defs/strings" },
-    "allowed_tools": { "$ref": "#/$defs/strings" },
-    "allowed_skill_categories": { "$ref": "#/$defs/strings" },
+    "spec": {
+      "const": "role/v1"
+    },
+    "id": {
+      "$ref": "#/$defs/id"
+    },
+    "department": {
+      "$ref": "#/$defs/id"
+    },
+    "mission": {
+      "type": "string",
+      "minLength": 1
+    },
+    "responsibilities": {
+      "$ref": "#/$defs/strings"
+    },
+    "inputs": {
+      "$ref": "#/$defs/strings"
+    },
+    "outputs": {
+      "$ref": "#/$defs/strings"
+    },
+    "allowed_tools": {
+      "$ref": "#/$defs/strings"
+    },
+    "allowed_skill_categories": {
+      "$ref": "#/$defs/strings"
+    },
     "escalation": {
       "description": "A role reference, or the literal 'human' for the root role only.",
-      "oneOf": [{ "$ref": "#/$defs/role_ref" }, { "const": "human" }]
+      "oneOf": [
+        {
+          "$ref": "#/$defs/role_ref"
+        },
+        {
+          "const": "human"
+        }
+      ]
     },
-    "reviewer": { "$ref": "#/$defs/role_ref" },
-    "model_tier": { "enum": ["executive", "standard", "fast"], "default": "standard" },
-    "system_prompt": { "type": "string", "minLength": 1 }
+    "reviewer": {
+      "$ref": "#/$defs/role_ref"
+    },
+    "model_tier": {
+      "enum": [
+        "executive",
+        "standard",
+        "fast"
+      ],
+      "default": "standard"
+    },
+    "system_prompt": {
+      "type": "string",
+      "minLength": 1
+    },
+    "skill_needs": {
+      "description": "Short descriptions of the capabilities this role's skills should provide.",
+      "$ref": "#/$defs/strings"
+    },
+    "required_tools": {
+      "description": "Tools this role can't work without. Must be a subset of allowed_tools.",
+      "$ref": "#/$defs/strings"
+    },
+    "forbidden_tools": {
+      "description": "A skill that needs any of these is never matched to this role.",
+      "$ref": "#/$defs/strings"
+    },
+    "max_skills": {
+      "description": "Most skills this role's loadout may hold.",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 50,
+      "default": 8
+    }
   },
   "$defs": {
-    "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
-    "role_ref": { "type": "string", "pattern": "^[a-z][a-z0-9-]*/[a-z][a-z0-9-]*$" },
-    "strings": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$"
+    },
+    "role_ref": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*/[a-z][a-z0-9-]*$"
+    },
+    "strings": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
   }
 }

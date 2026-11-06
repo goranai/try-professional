@@ -33,6 +33,10 @@ class Role:
     reviewer: str
     system_prompt: str
     model_tier: str = "standard"
+    skill_needs: tuple[str, ...] = ()
+    required_tools: tuple[str, ...] = ()
+    forbidden_tools: tuple[str, ...] = ()
+    max_skills: int = 8
 
     @property
     def ref(self) -> str:
@@ -100,6 +104,10 @@ class Org:
         department, _, role = ref.partition("/")
         found = self.departments.get(department)
         return found is not None and found.head == role
+
+    def is_senior(self, ref: str) -> bool:
+        """The root role, or a department head."""
+        return ref == self.root_role or self.is_head(ref)
 
     def always_active(self) -> list[str]:
         return [d.id for d in self.departments.values() if d.activation == "always"]

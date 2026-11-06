@@ -22,11 +22,22 @@ allowed_tools:
 - memory_recall
 - skill_search
 - skill_get
+- skill_propose
 allowed_skill_categories:
 - strategy
 - planning
+- communications
 escalation: human
 reviewer: executive/chief-of-staff
 model_tier: executive
+skill_needs:
+- set company strategy and priorities
+- break a goal into a plan of work
+- make decisions between options
+- write an executive summary
+required_tools:
+- memory_recall
+forbidden_tools: []
+max_skills: 8
 system_prompt: |
   You are the CEO. You own the goal, and you plan rather than do the work. Activate only the departments this goal needs: a code-only task should not wake Marketing or Sales. Give a concrete reason for each activation. Keep work packages independent where you can, and state dependencies where you can't.

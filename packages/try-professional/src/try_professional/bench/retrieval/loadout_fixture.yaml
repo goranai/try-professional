@@ -1,0 +1,83 @@
+# Labelled skills for measuring loadout precision. "roles" lists who each skill is right for.
+# The match threshold is chosen on the dev split only, and precision is reported on heldout.
+# Written by hand by the same author as the roles' skill_needs, so scores are likely optimistic.
+skills:
+  - {id: rest-api-design, split: dev, lang: en, category: backend, roles: [engineering/backend, engineering/tech-lead], description: "Design REST endpoints with clear resources, status codes and versioning."}
+  - {id: sql-migrations, split: dev, lang: en, category: databases, roles: [engineering/backend], description: "Write safe database schema migrations with rollback steps."}
+  - {id: rancangan-basis-data, split: heldout, lang: id, category: databases, roles: [engineering/backend], description: "Merancang skema basis data relasional dan indeks untuk layanan backend."}
+  - {id: grpc-service, split: heldout, lang: en, category: backend, roles: [engineering/backend], description: "Build gRPC microservices with protobuf contracts and error handling."}
+  - {id: pytest-integration, split: heldout, lang: en, category: testing, roles: [engineering/backend, engineering/qa], description: "Write integration tests for server APIs using pytest fixtures."}
+  - {id: react-components, split: dev, lang: en, category: frontend, roles: [engineering/frontend], description: "Build reusable React components with hooks and TypeScript props."}
+  - {id: css-accessibility, split: dev, lang: en, category: accessibility, roles: [engineering/frontend], description: "Make web pages accessible with ARIA labels, keyboard navigation and color contrast."}
+  - {id: antarmuka-responsif, split: heldout, lang: id, category: frontend, roles: [engineering/frontend], description: "Membangun antarmuka web responsif dengan HTML dan CSS yang mudah diakses."}
+  - {id: state-management, split: heldout, lang: en, category: frontend, roles: [engineering/frontend], description: "Manage client state in single page apps with Redux or Zustand."}
+  - {id: k8s-deploy, split: dev, lang: en, category: devops, roles: [engineering/devops], description: "Write Kubernetes manifests and deploy services with rolling updates."}
+  - {id: github-actions, split: dev, lang: en, category: ci-cd, roles: [engineering/devops], description: "Create CI pipelines in GitHub Actions that build, test and release."}
+  - {id: pemantauan-layanan, split: heldout, lang: id, category: infrastructure, roles: [engineering/devops], description: "Menyiapkan pemantauan layanan, peringatan, dan penanganan insiden produksi."}
+  - {id: terraform-infra, split: heldout, lang: en, category: infrastructure, roles: [engineering/devops], description: "Provision cloud infrastructure with Terraform modules."}
+  - {id: test-plan-writer, split: dev, lang: en, category: testing, roles: [engineering/qa], description: "Design test plans and test cases from requirements, including edge cases."}
+  - {id: code-review-checklist, split: dev, lang: en, category: code-review, roles: [engineering/qa, engineering/tech-lead], description: "Review code changes for bugs, readability and missing tests."}
+  - {id: tinjauan-keamanan-kode, split: heldout, lang: id, category: quality, roles: [engineering/qa], description: "Memeriksa kode untuk celah keamanan dan bug sebelum dirilis."}
+  - {id: architecture-decision, split: dev, lang: en, category: architecture, roles: [engineering/tech-lead], description: "Write architecture decision records that weigh design options and trade-offs."}
+  - {id: refactor-planner, split: heldout, lang: en, category: architecture, roles: [engineering/tech-lead], description: "Plan large refactors in safe incremental steps."}
+  - {id: prd-writer, split: dev, lang: en, category: requirements, roles: [product/product-manager], description: "Write product requirement documents with scope and acceptance criteria."}
+  - {id: roadmap-prioritization, split: heldout, lang: en, category: product, roles: [product/product-manager], description: "Prioritize a product roadmap using impact and effort scoring."}
+  - {id: cerita-pengguna, split: heldout, lang: id, category: requirements, roles: [product/product-manager], description: "Menulis user story dan kriteria penerimaan untuk fitur produk."}
+  - {id: usability-test, split: dev, lang: en, category: usability, roles: [product/ux-researcher], description: "Run usability tests and report where users get stuck."}
+  - {id: wawancara-pengguna, split: heldout, lang: id, category: ux-research, roles: [product/ux-researcher], description: "Menyusun panduan wawancara pengguna dan merangkum temuan riset."}
+  - {id: campaign-planner, split: dev, lang: en, category: marketing, roles: [marketing/marketing-lead], description: "Plan multi-channel marketing campaigns with goals and budgets."}
+  - {id: positioning-statement, split: heldout, lang: en, category: brand, roles: [marketing/marketing-lead], description: "Define brand positioning and key messaging for a product."}
+  - {id: blog-writer, split: dev, lang: en, category: content, roles: [marketing/content-writer], description: "Write engaging blog posts and long-form articles."}
+  - {id: copy-editor, split: dev, lang: en, category: copywriting, roles: [marketing/content-writer], description: "Edit text for clarity, tone, and grammar."}
+  - {id: penulis-landing-page, split: heldout, lang: id, category: copywriting, roles: [marketing/content-writer], description: "Menulis teks halaman arahan yang persuasif untuk situs web."}
+  - {id: newsletter-writer, split: heldout, lang: en, category: content, roles: [marketing/content-writer], description: "Draft email newsletters for subscribers."}
+  - {id: keyword-research, split: dev, lang: en, category: seo, roles: [marketing/seo], description: "Find search keywords by volume and intent."}
+  - {id: audit-seo, split: heldout, lang: id, category: seo, roles: [marketing/seo], description: "Mengaudit situs web untuk masalah SEO dan judul halaman."}
+  - {id: meta-tags, split: heldout, lang: en, category: seo, roles: [marketing/seo], description: "Write page titles and meta descriptions that rank."}
+  - {id: social-calendar, split: dev, lang: en, category: social-media, roles: [marketing/social], description: "Plan a monthly social media content calendar."}
+  - {id: unggahan-sosial, split: heldout, lang: id, category: social-media, roles: [marketing/social], description: "Menulis unggahan media sosial untuk Instagram dan TikTok."}
+  - {id: lead-scoring, split: dev, lang: en, category: sales, roles: [sales/sales-lead], description: "Score inbound leads and qualify who to contact first."}
+  - {id: objection-handling, split: heldout, lang: en, category: sales, roles: [sales/sales-lead], description: "Handle common objections in sales calls."}
+  - {id: penjangkauan-email, split: heldout, lang: id, category: sales, roles: [sales/sales-lead], description: "Menyusun urutan penjangkauan email untuk calon pelanggan."}
+  - {id: rfp-responder, split: dev, lang: en, category: proposals, roles: [sales/proposal-writer], description: "Respond to requests for proposals with tailored answers."}
+  - {id: penulis-proposal, split: heldout, lang: id, category: proposals, roles: [sales/proposal-writer], description: "Menulis proposal penawaran dan kutipan harga untuk klien."}
+  - {id: contract-review, split: dev, lang: en, category: legal, roles: [legal/counsel], description: "Review contracts for risky clauses and obligations."}
+  - {id: license-compat, split: dev, lang: en, category: licensing, roles: [legal/counsel], description: "Check open source license compatibility for commercial use."}
+  - {id: privasi-data, split: heldout, lang: id, category: privacy, roles: [legal/counsel, legal/compliance-reviewer], description: "Menilai kewajiban perlindungan data pribadi dan privasi."}
+  - {id: compliance-checklist, split: dev, lang: en, category: compliance, roles: [legal/compliance-reviewer], description: "Write compliance checklists and audit work against policy."}
+  - {id: gdpr-audit, split: heldout, lang: en, category: privacy, roles: [legal/compliance-reviewer, legal/counsel], description: "Audit how personal data is collected and stored for GDPR."}
+  - {id: budget-model, split: dev, lang: en, category: budgeting, roles: [finance/finance-lead], description: "Build budget models and quarterly financial forecasts."}
+  - {id: faktur-biaya, split: heldout, lang: id, category: finance, roles: [finance/finance-lead], description: "Membuat faktur dan laporan biaya bulanan."}
+  - {id: pricing-analysis, split: heldout, lang: en, category: finance, roles: [finance/finance-lead], description: "Analyze pricing and gross margins across products."}
+  - {id: sop-writer, split: dev, lang: en, category: process, roles: [operations/ops-lead], description: "Write standard operating procedures for recurring work."}
+  - {id: vendor-management, split: heldout, lang: en, category: operations, roles: [operations/ops-lead], description: "Track vendors, contract renewals and resource needs."}
+  - {id: support-macros, split: dev, lang: en, category: customer-support, roles: [operations/support], description: "Write canned replies for common support tickets."}
+  - {id: artikel-bantuan, split: heldout, lang: id, category: customer-support, roles: [operations/support], description: "Menulis artikel pusat bantuan untuk pelanggan."}
+  - {id: ticket-triage, split: heldout, lang: en, category: customer-support, roles: [operations/support], description: "Triage customer tickets by urgency and route them."}
+  - {id: evidence-grader, split: dev, lang: en, category: research, roles: [research/research-lead], description: "Assess evidence quality and research methods."}
+  - {id: research-brief, split: heldout, lang: en, category: research, roles: [research/research-lead], description: "Turn findings into a brief for decision makers."}
+  - {id: trend-analysis, split: dev, lang: en, category: analysis, roles: [research/analyst], description: "Analyze datasets to find trends and outliers."}
+  - {id: competitor-scan, split: dev, lang: en, category: market-research, roles: [research/analyst], description: "Research competitors, pricing and market position."}
+  - {id: rangkum-makalah, split: heldout, lang: id, category: analysis, roles: [research/analyst], description: "Merangkum makalah akademik dan laporan riset."}
+  - {id: okr-planner, split: dev, lang: en, category: strategy, roles: [executive/ceo], description: "Set company strategy and quarterly objectives."}
+  - {id: exec-summary, split: heldout, lang: en, category: planning, roles: [executive/ceo], description: "Write concise executive summaries for leadership decisions."}
+  - {id: status-report, split: dev, lang: en, category: project-management, roles: [executive/chief-of-staff], description: "Track project status and blockers, and write weekly status reports."}
+  - {id: koordinasi-tim, split: heldout, lang: id, category: project-management, roles: [executive/chief-of-staff], description: "Mengoordinasikan pekerjaan antartim dan menangani eskalasi."}
+# Queries a role would run for a task, in English and Indonesian, and the skill that should come first.
+tasks:
+  - {role: engineering/backend, lang: en, skill: sql-migrations, text: "add a column to the users table without downtime"}
+  - {role: engineering/backend, lang: id, skill: sql-migrations, text: "tambah kolom di tabel pengguna dengan migrasi yang aman"}
+  - {role: engineering/backend, lang: en, skill: rest-api-design, text: "define the endpoints for the orders API"}
+  - {role: engineering/backend, lang: id, skill: rest-api-design, text: "rancang endpoint API untuk pesanan"}
+  - {role: engineering/frontend, lang: en, skill: css-accessibility, text: "the form can't be used with a keyboard"}
+  - {role: engineering/frontend, lang: id, skill: react-components, text: "buat komponen React untuk daftar produk"}
+  - {role: engineering/devops, lang: en, skill: github-actions, text: "run the tests automatically on every push"}
+  - {role: engineering/devops, lang: id, skill: k8s-deploy, text: "deploy layanan ke cluster Kubernetes"}
+  - {role: marketing/content-writer, lang: en, skill: blog-writer, text: "write an article about our new feature"}
+  - {role: marketing/content-writer, lang: id, skill: blog-writer, text: "tulis artikel blog tentang fitur baru kami"}
+  - {role: marketing/content-writer, lang: id, skill: copy-editor, text: "perbaiki tata bahasa dan nada tulisan ini"}
+  - {role: legal/counsel, lang: en, skill: license-compat, text: "can we ship this GPL library in our product"}
+  - {role: legal/counsel, lang: id, skill: contract-review, text: "periksa klausul berisiko dalam kontrak ini"}
+  - {role: finance/finance-lead, lang: id, skill: budget-model, text: "buat proyeksi anggaran kuartal depan"}
+  - {role: operations/support, lang: id, skill: support-macros, text: "siapkan balasan standar untuk tiket yang sering masuk"}
+  - {role: research/analyst, lang: en, skill: competitor-scan, text: "how do our rivals price their plans"}

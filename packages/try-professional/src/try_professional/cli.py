@@ -9,13 +9,15 @@ import sys
 from collections import Counter
 from collections.abc import Sequence
 from pathlib import Path
+from typing import Any
 
-from skill_customs import Lockfile, SkillCustomsError, verify
+from skill_customs import Lockfile, SkillCustomsError, discover, verify
 
 from . import __version__
 from .adapters.api_runner.clients import ClientError
 from .adapters.api_runner.runner import ApiRunner, ModelRoutes, RunResult
 from .adapters.api_runner.scripted import ScriptedClient
+from .adapters.mcp import McpService
 from .config import CONFIG_NAME, CONFIG_TEMPLATE, ClientRouter, ProjectConfig, load_config
 from .core.audit import read_records
 from .core.orchestrator import Orchestrator
@@ -33,7 +35,17 @@ from .memory import (
 from .org import Org, OrgValidationError, load_org, validate_bundle
 from .org.loader import read_documents
 from .packs import add_pack, available_packs, install_org, remove_pack
-from .skills import LockedSkills, ProposalWriter, SkillCatalog, sync_catalog
+from .skills import (
+    DEFAULT_UNUSED_RUNS,
+    UNCATEGORIZED,
+    Decisions,
+    LoadoutStore,
+    LockedSkills,
+    ProposalWriter,
+    SkillCatalog,
+    match_all,
+    sync_catalog,
+)
 
 
 def _print(text: str = "") -> None:
@@ -160,6 +172,8 @@ def _runner(args: argparse.Namespace) -> tuple[ApiRunner, Orchestrator]:
         skills=_skills(config, org),
         proposals=ProposalWriter(config.root / "skills" / "proposed"),
     )
+    if isinstance(orchestrator.skills, LockedSkills):
+        orchestrator.feedback = orchestrator.skills
     return ApiRunner(orchestrator, router=router), orchestrator
 
 
@@ -183,28 +197,209 @@ def _catalog(config: ProjectConfig) -> SkillCatalog:
     return SkillCatalog(config.home / "skills" / "catalog.sqlite", FastEmbedEmbedder(config.memory.embedding_model))
 
 
+def _store(config: ProjectConfig) -> LoadoutStore:
+    return LoadoutStore(config.home / "skills" / "loadouts.sqlite")
+
+
+def _decisions(config: ProjectConfig) -> Decisions:
+    return Decisions(config.root / "skills" / "decisions.yaml")
+
+
 def _skills(config: ProjectConfig, org: Org) -> LockedSkills | None:
-    """Agents get skills only once a catalog exists. Until then the search simply finds nothing."""
+    """Agents get skills only once a catalog exists. Until then they simply have none."""
     if not (config.home / "skills" / "catalog.sqlite").is_file():
         return None
     lock = Lockfile.load(config.root / "skills.lock")
-    return LockedSkills(org, _catalog(config), config.root / "skills", lock)
+    return LockedSkills(org, _catalog(config), config.root / "skills", lock, _store(config))
 
 
-def cmd_skills_sync(args: argparse.Namespace) -> int:
-    config = load_config(Path.cwd())
+def _require_person(action: str) -> bool:
+    """These decide what agents can use, so they won't run from a script or an agent."""
+    if sys.stdin.isatty():
+        return True
+    _print(f"{action} needs a person at a terminal, so it won't run from a script or an agent.")
+    return False
+
+
+def _sync_and_match(config: ProjectConfig, org: Org) -> tuple[dict[str, Any], LoadoutStore] | None:
     lock = Lockfile.load(config.root / "skills.lock")
     problems = verify(lock, dest=config.root / "skills")
     if problems:
         for problem in problems:
             _print(f"  {problem}")
         _print("Not syncing: installed skills don't match skills.lock.")
-        return 1
+        return None
+    decisions = _decisions(config)
     catalog = _catalog(config)
-    count = sync_catalog(catalog, lock, config.root / "skills")
-    catalog.close()
+    store = _store(config)
+    count = sync_catalog(catalog, lock, config.root / "skills", decisions)
     trust = Counter(entry.trust for entry in lock.entries.values())
     _print(f"Catalog holds {count} skill(s): {dict(trust)}. Quarantined skills are never offered to agents.")
+    loadouts = match_all(org, catalog, store, decisions)
+    catalog.close()
+    return loadouts, store
+
+
+def cmd_skills_match(args: argparse.Namespace) -> int:
+    config = load_config(Path.cwd())
+    org = load_org(config.org_dir)
+    result = _sync_and_match(config, org)
+    if result is None:
+        return 1
+    loadouts, store = result
+    active = sum(len(item.active) for item in loadouts.values())
+    pending = sum(len(item.pending) for item in loadouts.values())
+    _print(f"{len(loadouts)} roles: {active} skills approved and active, {pending} waiting for a person.")
+    if pending:
+        _print("Review with: trypro skills loadout <role>. Admit with: trypro skills admit <skill> --by <you>")
+    for item in store.unused(args.unused_runs):
+        _print(f"Consider removing: {item['skill_id']} from {item['role']}, unused for {item['idle_runs']} runs.")
+    store.close()
+    return 0
+
+
+def cmd_skills_loadout(args: argparse.Namespace) -> int:
+    config = load_config(Path.cwd())
+    org = load_org(config.org_dir)
+    if not org.has_role(args.role):
+        _print(f"'{args.role}' isn't a role. Roles look like engineering/backend.")
+        return 2
+    store = _store(config)
+    role = org.role(args.role)
+    active = store.section(args.role, "active")
+    _print(f"{args.role}: {len(active)} of at most {role.max_skills} skills")
+    for title, section in (("Active", "active"), ("Waiting for a person", "pending"), ("Over the cap", "over_cap")):
+        items = active if section == "active" else store.section(args.role, section)
+        if items:
+            _print(f"{title}:")
+        for item in items:
+            _print(f"  {item['rank']:>2}. {item['score']:.2f}  {item['skill_id']}")
+            _print(f"      {item['why']}")
+    for proposal in store.proposals(args.role):
+        _print(f"Proposed by {proposal['proposed_by']}: {proposal['skill_id']}. {proposal['reason']}")
+    if org.is_senior(args.role):
+        catalog = _catalog(config)
+        names = [r.skill_id for r, _ in catalog.eligible() if r.category == UNCATEGORIZED]
+        catalog.close()
+        if names:
+            _print("Uncategorized, visible only to the CEO and department heads:")
+            for name in names:
+                _print(f"  [uncategorized] {name}")
+    store.close()
+    return 0
+
+
+def cmd_skills_gaps(args: argparse.Namespace) -> int:
+    config = load_config(Path.cwd())
+    store = _store(config)
+    gaps = store.gaps()
+    store.close()
+    if not gaps:
+        _print("No skill gaps recorded.")
+        return 0
+    for gap in gaps:
+        _print(f"{gap['count']:>3}x  {gap['role']}  best match {gap['best_score']:.2f}")
+        _print(f"      {gap['description']}")
+    if not args.discover:
+        _print("To look for skills on GitHub: trypro skills gaps --discover. This sends those descriptions to GitHub.")
+        return 0
+    _print("Candidates from GitHub. Nothing was installed, and each still needs skill-customs and a person's approval:")
+    for gap in gaps:
+        _print(f"For: {gap['description'][:80]}")
+        for candidate in discover(gap["description"][:200], top=5):
+            _print(f"  {candidate.score:>6.2f}  {candidate.repo}  {candidate.license_spdx}")
+    return 0
+
+
+def cmd_skills_admit(args: argparse.Namespace) -> int:
+    if not _require_person("admit"):
+        return 2
+    config = load_config(Path.cwd())
+    org = load_org(config.org_dir)
+    catalog = _catalog(config)
+    record = catalog.record(args.skill_id)
+    catalog.close()
+    if record is None or record.trust == "quarantined":
+        _print(f"'{args.skill_id}' doesn't exist, or is still quarantined. Approve it with skill-customs first.")
+        return 1
+    if record.category == UNCATEGORIZED:
+        _print(
+            f"'{args.skill_id}' has no category. Assign one first: trypro skills categorize {args.skill_id} <category>"
+        )
+        return 1
+    store = _store(config)
+    if args.role:
+        roles = [args.role]
+    else:
+        roles = [ref for ref in org.roles if any(i["skill_id"] == args.skill_id for i in store.section(ref, "pending"))]
+    store.close()
+    if not roles:
+        _print("No role is waiting for this skill. Use --role to name one.")
+        return 1
+    _print(f"Admit {args.skill_id} into: {', '.join(roles)}")
+    if input("Type the skill ID to confirm: ").strip() != args.skill_id:
+        _print("It didn't match, so nothing changed.")
+        return 1
+    decisions = _decisions(config)
+    for role in roles:
+        decisions.decide(role, args.skill_id, "approved", by=args.by, content_sha256=record.content_sha256)
+    decisions.save()
+    _print(f"Recorded in {decisions.path.name}. Run 'trypro skills match' to apply it.")
+    return 0
+
+
+def cmd_skills_reject(args: argparse.Namespace) -> int:
+    if not _require_person("reject"):
+        return 2
+    config = load_config(Path.cwd())
+    catalog = _catalog(config)
+    record = catalog.record(args.skill_id)
+    catalog.close()
+    if record is None:
+        _print(f"'{args.skill_id}' doesn't exist.")
+        return 1
+    decisions = _decisions(config)
+    decisions.decide(args.role, args.skill_id, "rejected", by=args.by, content_sha256=record.content_sha256)
+    decisions.save()
+    _print(f"{args.skill_id} won't be offered to {args.role}. Run 'trypro skills match' to apply it.")
+    return 0
+
+
+def cmd_skills_categorize(args: argparse.Namespace) -> int:
+    if not _require_person("categorize"):
+        return 2
+    config = load_config(Path.cwd())
+    org = load_org(config.org_dir)
+    known = {category for role in org.roles.values() for category in role.allowed_skill_categories}
+    if args.category not in known:
+        _print(f"'{args.category}' isn't a category any role uses. Choose from: {', '.join(sorted(known))}")
+        return 1
+    decisions = _decisions(config)
+    decisions.assign_category(args.skill_id, args.category, by=args.by)
+    decisions.save()
+    _print(f"{args.skill_id} is now in {args.category}. Run 'trypro skills match' to apply it.")
+    return 0
+
+
+def cmd_mcp(args: argparse.Namespace) -> int:
+    try:
+        from .adapters.mcp.server import build_server
+    except ImportError:
+        print("The MCP server needs: pip install 'try-professional[mcp]'", file=sys.stderr)
+        return 2
+    config = load_config(Path.cwd())
+    org = load_org(config.org_dir)
+    orchestrator = Orchestrator(
+        org,
+        config.home,
+        memory=_memory(config, org),
+        skills=_skills(config, org),
+        proposals=ProposalWriter(config.root / "skills" / "proposed"),
+    )
+    if isinstance(orchestrator.skills, LockedSkills):
+        orchestrator.feedback = orchestrator.skills
+    # stdout belongs to the protocol from here on, so nothing else may print to it.
+    build_server(McpService(orchestrator, bound_role=args.role)).run("stdio")
     return 0
 
 
@@ -400,7 +595,34 @@ def build_parser() -> argparse.ArgumentParser:
     audit.set_defaults(func=cmd_audit)
 
     skills = sub.add_parser("skills", help="Agent skills").add_subparsers(dest="skills_command", required=True)
-    skills.add_parser("sync", help="Rebuild the search catalog from skills.lock").set_defaults(func=cmd_skills_sync)
+    match = skills.add_parser("match", help="Rebuild the catalog from skills.lock and recompute every loadout")
+    match.add_argument("--unused-runs", type=int, default=DEFAULT_UNUSED_RUNS, help="Flag skills unused this long")
+    match.set_defaults(func=cmd_skills_match)
+    loadout = skills.add_parser("loadout", help="Show a role's skills, with scores and why they matched")
+    loadout.add_argument("role")
+    loadout.set_defaults(func=cmd_skills_loadout)
+    gaps = skills.add_parser("gaps", help="Tasks where a role had no skill that fit")
+    gaps.add_argument("--discover", action="store_true", help="Search GitHub for these. Sends the descriptions there")
+    gaps.set_defaults(func=cmd_skills_gaps)
+    admit = skills.add_parser("admit", help="Let a skill into loadouts, as a person at a terminal")
+    admit.add_argument("skill_id")
+    admit.add_argument("--by", required=True)
+    admit.add_argument("--role", help="Default: every role waiting for it")
+    admit.set_defaults(func=cmd_skills_admit)
+    reject = skills.add_parser("reject", help="Keep a skill out of a role's loadout")
+    reject.add_argument("skill_id")
+    reject.add_argument("--role", required=True)
+    reject.add_argument("--by", required=True)
+    reject.set_defaults(func=cmd_skills_reject)
+    categorize = skills.add_parser("categorize", help="Give an uncategorized skill a category")
+    categorize.add_argument("skill_id")
+    categorize.add_argument("category")
+    categorize.add_argument("--by", required=True)
+    categorize.set_defaults(func=cmd_skills_categorize)
+
+    mcp = sub.add_parser("mcp", help="Serve this company to an MCP client over stdio")
+    mcp.add_argument("--role", help="Act as one role, with its identity fixed. Default: operator mode")
+    mcp.set_defaults(func=cmd_mcp)
 
     sub.add_parser("doctor", help="Check this project's setup").set_defaults(func=cmd_doctor)
     return parser

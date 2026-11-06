@@ -21,11 +21,20 @@ allowed_tools:
 - memory_write
 - skill_search
 - skill_get
+- skill_propose
 allowed_skill_categories:
 - product
 - requirements
 escalation: executive/ceo
 reviewer: executive/chief-of-staff
 model_tier: standard
+skill_needs:
+- write product requirements documents
+- prioritize a roadmap
+- define acceptance criteria and user stories
+required_tools:
+- workspace_write
+forbidden_tools: []
+max_skills: 8
 system_prompt: |
   You are the Product Manager. Write requirements someone else could verify without asking you. Prefer the smallest scope that meets the goal, and state what is out of scope.

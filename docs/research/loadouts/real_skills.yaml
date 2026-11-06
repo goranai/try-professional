@@ -1,0 +1,33 @@
+# Real public skills, labelled by hand, by what their descriptions say. "roles" is who each fits.
+# An empty list means it fits no company role, so the right answer is to suggest it nowhere.
+# "category" is what a person would assign, as the uncategorized rule requires. "general" fits no role.
+# Labels were written before these skills were scored with the matching rules being measured.
+tune:
+  - {repo: anthropics/skills, commit: ca45fc496a3436251f191354091d557da31c15b5, path: skills/academy-guide, category: general, roles: []}
+  - {repo: anthropics/skills, commit: ca45fc496a3436251f191354091d557da31c15b5, path: skills/brand-guidelines, category: brand, roles: [marketing/marketing-lead, marketing/content-writer]}
+  - {repo: anthropics/skills, commit: ca45fc496a3436251f191354091d557da31c15b5, path: skills/frontend-design, category: frontend, roles: [engineering/frontend]}
+  - {repo: anthropics/skills, commit: ca45fc496a3436251f191354091d557da31c15b5, path: skills/internal-comms, category: communications, roles: [executive/chief-of-staff, executive/ceo, operations/ops-lead]}
+  - {repo: obra/superpowers, commit: 22f0b463e7a5e579904dd6211a520321035526f7, path: skills/diagnosing-superpowers, category: general, roles: []}
+  - {repo: obra/superpowers, commit: 22f0b463e7a5e579904dd6211a520321035526f7, path: skills/dispatching-parallel-agents, category: agent-coordination, roles: [engineering/tech-lead]}
+  - {repo: obra/superpowers, commit: 22f0b463e7a5e579904dd6211a520321035526f7, path: skills/finishing-a-development-branch, category: development-workflow, roles: [engineering/backend, engineering/frontend, engineering/devops, engineering/tech-lead]}
+  - {repo: obra/superpowers, commit: 22f0b463e7a5e579904dd6211a520321035526f7, path: skills/receiving-code-review, category: code-review, roles: [engineering/backend, engineering/frontend, engineering/devops, engineering/tech-lead]}
+  - {repo: obra/superpowers, commit: 22f0b463e7a5e579904dd6211a520321035526f7, path: skills/requesting-code-review, category: code-review, roles: [engineering/backend, engineering/frontend, engineering/devops, engineering/tech-lead]}
+  - {repo: obra/superpowers, commit: 22f0b463e7a5e579904dd6211a520321035526f7, path: skills/test-driven-development, category: testing, roles: [engineering/backend, engineering/frontend, engineering/tech-lead, engineering/qa]}
+  - {repo: obra/superpowers, commit: 22f0b463e7a5e579904dd6211a520321035526f7, path: skills/using-git-worktrees, category: development-workflow, roles: [engineering/backend, engineering/frontend, engineering/devops, engineering/tech-lead]}
+  - {repo: obra/superpowers, commit: 22f0b463e7a5e579904dd6211a520321035526f7, path: skills/using-superpowers, category: general, roles: []}
+# Scored once, after the threshold was fixed on the tune split. Labelled from descriptions before any scoring.
+heldout:
+  - {repo: mxyhi/ok-skills, commit: 91108cf5c608edd1f00a8c5ac635f16504e08a35, path: agent-browser, category: testing, roles: [engineering/qa, engineering/frontend]}
+  - {repo: mxyhi/ok-skills, commit: 91108cf5c608edd1f00a8c5ac635f16504e08a35, path: autoresearch, category: analysis, roles: [research/analyst]}
+  - {repo: mxyhi/ok-skills, commit: 91108cf5c608edd1f00a8c5ac635f16504e08a35, path: better-icons, category: frontend, roles: [engineering/frontend]}
+  - {repo: mxyhi/ok-skills, commit: 91108cf5c608edd1f00a8c5ac635f16504e08a35, path: browser-trace, category: testing, roles: [engineering/qa, engineering/frontend]}
+  - {repo: mxyhi/ok-skills, commit: 91108cf5c608edd1f00a8c5ac635f16504e08a35, path: deep-research, category: research, roles: [research/analyst, research/research-lead]}
+  - {repo: mxyhi/ok-skills, commit: 91108cf5c608edd1f00a8c5ac635f16504e08a35, path: domain-modeling, category: architecture, roles: [engineering/tech-lead, product/product-manager]}
+  - {repo: mxyhi/ok-skills, commit: 91108cf5c608edd1f00a8c5ac635f16504e08a35, path: find-docs, category: development-workflow, roles: [engineering/backend, engineering/frontend, engineering/devops, engineering/tech-lead]}
+  - {repo: mxyhi/ok-skills, commit: 91108cf5c608edd1f00a8c5ac635f16504e08a35, path: get-api-docs, category: development-workflow, roles: [engineering/backend, engineering/frontend, engineering/devops, engineering/tech-lead]}
+  - {repo: mxyhi/ok-skills, commit: 91108cf5c608edd1f00a8c5ac635f16504e08a35, path: huashu-design, category: frontend, roles: [engineering/frontend, product/ux-researcher]}
+  - {repo: mxyhi/ok-skills, commit: 91108cf5c608edd1f00a8c5ac635f16504e08a35, path: improve-codebase-architecture, category: architecture, roles: [engineering/tech-lead]}
+  - {repo: mxyhi/ok-skills, commit: 91108cf5c608edd1f00a8c5ac635f16504e08a35, path: kimi-webbridge, category: general, roles: []}
+  - {repo: mxyhi/ok-skills, commit: 91108cf5c608edd1f00a8c5ac635f16504e08a35, path: migrate-to-shoehorn, category: testing, roles: [engineering/backend, engineering/frontend]}
+  - {repo: mxyhi/ok-skills, commit: 91108cf5c608edd1f00a8c5ac635f16504e08a35, path: opencli/opencli-autofix, category: general, roles: []}
+  - {repo: mxyhi/ok-skills, commit: 91108cf5c608edd1f00a8c5ac635f16504e08a35, path: opencli/opencli-usage, category: general, roles: []}

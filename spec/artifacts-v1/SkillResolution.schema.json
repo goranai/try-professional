@@ -3,6 +3,16 @@
     "SkillCandidate": {
       "additionalProperties": false,
       "properties": {
+        "category": {
+          "default": "",
+          "title": "Category",
+          "type": "string"
+        },
+        "description": {
+          "default": "",
+          "title": "Description",
+          "type": "string"
+        },
         "score": {
           "title": "Score",
           "type": "number"

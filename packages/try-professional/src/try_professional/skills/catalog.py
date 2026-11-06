@@ -16,28 +16,35 @@ from typing import Any
 
 import numpy as np
 
-from ..memory.embedding import Embedder
+from ..memory.embedding import Embedder, Vectors
 from ..org import Org
 
 TRUST_LEVELS = ("verified", "indexed", "quarantined")
 # Quarantined skills are never offered to an agent, whatever a caller asks for.
 SEARCHABLE_TRUST = ("verified", "indexed")
 DEFAULT_TOP_K = 5
-GENERAL_CATEGORY = "general"
+# A skill that declares no category, until a person assigns one. Only the root role and
+# department heads ever see these, and always with this label.
+UNCATEGORIZED = "uncategorized"
 
+_COLUMNS = (
+    "skill_id, name, description, category, departments, source_repo, commit_sha, license, trust, tools, content_sha256"
+)
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS skills (
-    skill_id    TEXT PRIMARY KEY,
-    name        TEXT NOT NULL,
-    description TEXT NOT NULL,
-    category    TEXT NOT NULL,
-    departments TEXT NOT NULL,
-    source_repo TEXT NOT NULL,
-    commit_sha  TEXT NOT NULL,
-    license     TEXT NOT NULL,
-    trust       TEXT NOT NULL,
-    vector      BLOB NOT NULL
+    skill_id       TEXT PRIMARY KEY,
+    name           TEXT NOT NULL,
+    description    TEXT NOT NULL,
+    category       TEXT NOT NULL,
+    departments    TEXT NOT NULL,
+    source_repo    TEXT NOT NULL,
+    commit_sha     TEXT NOT NULL,
+    license        TEXT NOT NULL,
+    trust          TEXT NOT NULL,
+    tools          TEXT NOT NULL,
+    content_sha256 TEXT NOT NULL,
+    vector         BLOB NOT NULL
 );
 """
 
@@ -57,6 +64,8 @@ class SkillRecord:
     commit_sha: str = ""
     license: str = ""
     trust: str = "indexed"
+    tools: tuple[str, ...] = ()
+    content_sha256: str = ""
 
     def __post_init__(self) -> None:
         if self.trust not in TRUST_LEVELS:
@@ -73,12 +82,32 @@ class SkillHit:
     score: float = field(default=0.0)
 
 
+def _to_record(row: Any) -> SkillRecord:
+    return SkillRecord(
+        skill_id=row[0],
+        name=row[1],
+        description=row[2],
+        category=row[3],
+        departments=tuple(json.loads(row[4])),
+        source_repo=row[5],
+        commit_sha=row[6],
+        license=row[7],
+        trust=row[8],
+        tools=tuple(json.loads(row[9])),
+        content_sha256=row[10],
+    )
+
+
 class SkillCatalog:
     def __init__(self, path: Path, embedder: Embedder) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
         self.embedder = embedder
         self._lock = threading.Lock()
         self._conn = sqlite3.connect(path, check_same_thread=False)
+        columns = {row[1] for row in self._conn.execute("PRAGMA table_info(skills)")}
+        if columns and "content_sha256" not in columns:
+            # An older layout. The catalog holds no state of its own, so it's simply rebuilt.
+            self._conn.execute("DROP TABLE skills")
         self._conn.executescript(_SCHEMA)
         self._conn.commit()
         row = self._conn.execute("SELECT value FROM meta WHERE key = 'model'").fetchone()
@@ -97,7 +126,7 @@ class SkillCatalog:
                 "INSERT OR REPLACE INTO meta (key, value) VALUES ('model', ?)", (self.embedder.model_name,)
             )
             self._conn.executemany(
-                "INSERT INTO skills VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "INSERT INTO skills VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 [
                     (
                         r.skill_id,
@@ -109,6 +138,8 @@ class SkillCatalog:
                         r.commit_sha,
                         r.license,
                         r.trust,
+                        json.dumps(list(r.tools)),
+                        r.content_sha256,
                         vector.astype(np.float32).tobytes(),
                     )
                     for r, vector in zip(records, vectors, strict=True)
@@ -117,34 +148,29 @@ class SkillCatalog:
 
     def record(self, skill_id: str) -> SkillRecord | None:
         with self._lock:
-            row = self._conn.execute(
-                "SELECT skill_id, name, description, category, departments, source_repo, commit_sha, license, trust "
-                "FROM skills WHERE skill_id = ?",
-                (skill_id,),
-            ).fetchone()
-        if row is None:
-            return None
-        return SkillRecord(
-            skill_id=row[0],
-            name=row[1],
-            description=row[2],
-            category=row[3],
-            departments=tuple(json.loads(row[4])),
-            source_repo=row[5],
-            commit_sha=row[6],
-            license=row[7],
-            trust=row[8],
-        )
+            row = self._conn.execute(f"SELECT {_COLUMNS} FROM skills WHERE skill_id = ?", (skill_id,)).fetchone()
+        return _to_record(row) if row else None
 
     def count(self) -> int:
         with self._lock:
             return int(self._conn.execute("SELECT COUNT(*) FROM skills").fetchone()[0])
+
+    def eligible(self) -> list[tuple[SkillRecord, Vectors]]:
+        """Every skill an agent could ever be offered, with its vector, in ID order."""
+        placeholders = ",".join("?" for _ in SEARCHABLE_TRUST)
+        with self._lock:
+            rows = self._conn.execute(
+                f"SELECT {_COLUMNS}, vector FROM skills WHERE trust IN ({placeholders}) ORDER BY skill_id",
+                list(SEARCHABLE_TRUST),
+            ).fetchall()
+        return [(_to_record(row), np.frombuffer(row[11], dtype=np.float32)) for row in rows]
 
     def search(
         self,
         query: str,
         *,
         categories: tuple[str, ...] | None = None,
+        skill_ids: set[str] | None = None,
         top_k: int = DEFAULT_TOP_K,
     ) -> list[SkillHit]:
         """Filter on structured columns first, then rank by cosine. Ties break by ID, so it's repeatable.
@@ -153,40 +179,17 @@ class SkillCatalog:
         score and an agent can ignore it, while a skill filtered out is lost for good. Measured in
         docs/research/phase3-retrieval/.
         """
-        placeholders = ",".join("?" for _ in SEARCHABLE_TRUST)
-        sql = (
-            "SELECT skill_id, name, description, category, departments, source_repo, commit_sha, license, trust, "
-            f"vector FROM skills WHERE trust IN ({placeholders})"
-        )
-        params: list[Any] = list(SEARCHABLE_TRUST)
+        pool = self.eligible()
         if categories is not None:
-            if not categories:
-                return []
-            sql += f" AND category IN ({','.join('?' for _ in categories)})"
-            params += list(categories)
-        with self._lock:
-            rows = self._conn.execute(sql, params).fetchall()
-        if not rows:
+            pool = [(record, vector) for record, vector in pool if record.category in categories]
+        if skill_ids is not None:
+            pool = [(record, vector) for record, vector in pool if record.skill_id in skill_ids]
+        if not pool:
             return []
         query_vector = self.embedder.embed_query(query)
-        matrix = np.vstack([np.frombuffer(row[9], dtype=np.float32) for row in rows])
-        scores = matrix @ query_vector
-        ranked = sorted(zip(scores.tolist(), rows, strict=True), key=lambda item: (-item[0], item[1][0]))
-        hits = []
-        for score, row in ranked[:top_k]:
-            record = SkillRecord(
-                skill_id=row[0],
-                name=row[1],
-                description=row[2],
-                category=row[3],
-                departments=tuple(json.loads(row[4])),
-                source_repo=row[5],
-                commit_sha=row[6],
-                license=row[7],
-                trust=row[8],
-            )
-            hits.append(SkillHit(record, float(score)))
-        return hits
+        scored = [(float(vector @ query_vector), record) for record, vector in pool]
+        scored.sort(key=lambda item: (-item[0], item[1].skill_id))
+        return [SkillHit(record, score) for score, record in scored[:top_k]]
 
     def close(self) -> None:
         with self._lock:
@@ -194,16 +197,41 @@ class SkillCatalog:
 
 
 class CatalogSkills:
-    """Skill search for a role: limited to the categories its role file allows."""
+    """Category-limited search, for use without loadouts. Uncategorized skills reach only senior roles."""
 
     def __init__(self, org: Org, catalog: SkillCatalog) -> None:
         self.org = org
         self.catalog = catalog
 
     def search(self, role: str, query: str) -> list[dict[str, Any]]:
-        categories = (*self.org.role(role).allowed_skill_categories, GENERAL_CATEGORY)
+        categories = self.org.role(role).allowed_skill_categories
+        if self.org.is_senior(role):
+            categories = (*categories, UNCATEGORIZED)
         hits = self.catalog.search(query, categories=categories)
-        return [{"skill_id": h.record.skill_id, "score": round(h.score, 4), "trust": h.record.trust} for h in hits]
+        return [
+            {
+                "skill_id": h.record.skill_id,
+                "score": round(h.score, 4),
+                "trust": h.record.trust,
+                "category": h.record.category,
+            }
+            for h in hits
+        ]
+
+    def get(self, role: str, skill_id: str) -> str | None:
+        return None
+
+    def loadout(self, role: str) -> list[dict[str, Any]]:
+        return []
+
+    def available(self, role: str) -> bool:
+        return True
+
+    def proposable(self, role: str) -> bool:
+        return False
+
+    def propose(self, proposer: str, skill_id: str, for_role: str, reason: str) -> None:
+        raise PermissionError("Proposals need loadouts")
 
 
-__all__ = ["CatalogModelMismatch", "CatalogSkills", "SkillCatalog", "SkillHit", "SkillRecord"]
+__all__ = ["UNCATEGORIZED", "CatalogModelMismatch", "CatalogSkills", "SkillCatalog", "SkillHit", "SkillRecord"]

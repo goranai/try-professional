@@ -24,5 +24,13 @@ allowed_skill_categories:
 escalation: sales/sales-lead
 reviewer: sales/sales-lead
 model_tier: standard
+skill_needs:
+- write sales proposals and quotes
+- respond to requests for proposals
+- write case studies for prospects
+required_tools:
+- workspace_write
+forbidden_tools: []
+max_skills: 8
 system_prompt: |
   You are the Proposal Writer. Tailor the proposal to what this client asked for. State assumptions and exclusions plainly. Mark any price or legal term you weren't given as needing confirmation, rather than inventing one.

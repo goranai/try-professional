@@ -22,6 +22,7 @@ from .pipeline import (
     DepartmentActivated,
     Finish,
     IllegalEvent,
+    Purpose,
     ResolveContext,
     RunStarted,
     RunState,
@@ -30,7 +31,7 @@ from .pipeline import (
     initial_state,
     open_actions,
 )
-from .ports import MemoryPort, NullMemory, NullSkills, ProposalPort, SkillPort
+from .ports import FeedbackPort, MemoryPort, NullMemory, NullSkills, ProposalPort, SkillPort
 
 Clock = Callable[[], str]
 
@@ -48,6 +49,7 @@ class Orchestrator:
         memory: MemoryPort | None = None,
         skills: SkillPort | None = None,
         proposals: ProposalPort | None = None,
+        feedback: FeedbackPort | None = None,
         clock: Clock = utc_now,
     ) -> None:
         self.org = org
@@ -55,6 +57,7 @@ class Orchestrator:
         self.memory: MemoryPort = memory or NullMemory()
         self.skills: SkillPort = skills or NullSkills()
         self.proposals = proposals
+        self.feedback = feedback
         self.clock = clock
         self.ledger = Ledger(home / "ledger.sqlite")
         self._lock = threading.RLock()
@@ -93,6 +96,7 @@ class Orchestrator:
             current = pending_events.pop(0)
             log = self._log(state.run_id)
             before = state.phase
+            previous = state
             try:
                 state, actions = advance(state, current, self.org)
             except IllegalEvent as error:
@@ -106,6 +110,7 @@ class Orchestrator:
                 raise
             log.append(self.clock(), "event", current.model_dump(mode="json"))
             self._log_rejection(state, current, log)
+            self._note_qa_verdict(previous, state, current, log)
             if state.phase != before:
                 log.append(self.clock(), "phase", {"from": before.value, "to": state.phase.value})
             for action in actions:
@@ -114,11 +119,42 @@ class Orchestrator:
                     pending_events.append(self._resolve_context(state, action))
                 elif isinstance(action, Finish) and action.status == "done":
                     self._store_lessons(state)
+                    self._safely(state, "run_finished", state.run_id, sorted(state.usage_by_role))
                     outward.append(action)
                 elif not isinstance(action, DepartmentActivated):
                     outward.append(action)
             self.ledger.save(state, log.head, self.clock())
         return outward
+
+    def _safely(self, state: RunState, method: str, *args: Any, **kwargs: Any) -> None:
+        """Feedback improves later runs, and a failure in it must never stop this one."""
+        if self.feedback is None:
+            return
+        try:
+            getattr(self.feedback, method)(*args, **kwargs)
+        except Exception as error:
+            self._log(state.run_id).append(self.clock(), "feedback_error", {"error": type(error).__name__})
+
+    def _note_qa_verdict(self, previous: RunState, state: RunState, event: Any, log: AuditLog) -> None:
+        """A QA verdict that was accepted tells us how the task's skills did."""
+        if not isinstance(event, Submission):
+            return
+        invocation = previous.invocations.get(event.invocation_id)
+        if invocation is None or invocation.purpose != Purpose.REVIEW or invocation.gate != "qa":
+            return
+        if event.invocation_id in state.invocations or invocation.task_id is None:
+            return
+        passed = event.payload.get("decision") == "approve"
+        self._safely(state, "qa_outcome", state.run_id, invocation.task_id, passed=passed)
+
+    def skill_used(self, run_id: str, task_id: str | None, role: str, skill_id: str) -> None:
+        """A role fetched a skill for a task. Recorded for the audit trail and for re-ranking."""
+        with self._lock:
+            state = self.ledger.load(run_id)
+            log = self._log(run_id)
+            log.append(self.clock(), "skill_used", {"role": role, "skill_id": skill_id, "task_id": task_id})
+            self.ledger.save(state, log.head, self.clock())
+            self._safely(state, "skill_used", run_id, task_id or "", role, skill_id)
 
     def _log_rejection(self, state: RunState, event: Any, log: AuditLog) -> None:
         """A submission that left its invocation open was rejected. Record why."""
@@ -145,6 +181,7 @@ class Orchestrator:
             self.clock(), "memory_recall", {"role": action.role, "query": action.query, "hits": len(memory_context)}
         )
         log.append(self.clock(), "skill_search", {"role": action.role, "query": action.query, "hits": len(candidates)})
+        self._safely(state, "note_search", state.run_id, action.task_id, action.role, action.query, candidates)
         return ContextResolved(
             task_id=action.task_id,
             query=action.query,

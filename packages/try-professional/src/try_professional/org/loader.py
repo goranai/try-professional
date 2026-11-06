@@ -102,6 +102,12 @@ def _semantic_issues(org: dict[str, Any], roles: dict[str, dict[str, Any]]) -> l
             elif ref in heads and ref != root and escalation.split("/", 1)[0] != root_department:
                 issues.append(Issue("ORG014", f"head '{ref}' must escalate to the root department"))
 
+        allowed_tools = set(role["allowed_tools"])
+        if allowed_tools & set(role.get("forbidden_tools", [])):
+            issues.append(Issue("ORG016", f"'{ref}' both allows and forbids a tool"))
+        if set(role.get("required_tools", [])) - allowed_tools:
+            issues.append(Issue("ORG017", f"'{ref}' requires a tool it isn't allowed"))
+
         if role["reviewer"] not in known:
             issues.append(Issue("ORG010", f"'{ref}' has unknown reviewer '{role['reviewer']}'"))
         elif role["reviewer"] == ref:
@@ -176,6 +182,10 @@ def load_bundle(org: dict[str, Any], roles: dict[str, dict[str, Any]]) -> Org:
             reviewer=data["reviewer"],
             system_prompt=data["system_prompt"],
             model_tier=data.get("model_tier", "standard"),
+            skill_needs=tuple(data.get("skill_needs", ())),
+            required_tools=tuple(data.get("required_tools", ())),
+            forbidden_tools=tuple(data.get("forbidden_tools", ())),
+            max_skills=data.get("max_skills", 8),
         )
         for ref, data in roles.items()
     }

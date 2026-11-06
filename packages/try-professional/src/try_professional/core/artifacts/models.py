@@ -100,6 +100,8 @@ class SkillCandidate(_Strict):
     skill_id: str = NonEmpty
     score: float
     trust: Literal["verified", "indexed", "quarantined"]
+    category: str = ""
+    description: str = ""
 
 
 class SkillResolution(_Strict):

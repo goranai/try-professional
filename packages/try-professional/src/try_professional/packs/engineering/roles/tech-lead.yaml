@@ -21,11 +21,24 @@ allowed_tools:
 - memory_write
 - skill_search
 - skill_get
+- skill_propose
 allowed_skill_categories:
 - architecture
 - code-review
+- testing
+- development-workflow
+- agent-coordination
 escalation: executive/ceo
 reviewer: engineering/qa
 model_tier: standard
+skill_needs:
+- design software architecture
+- write technical design documents
+- plan a refactor
+- review code for design problems
+required_tools:
+- workspace_write
+forbidden_tools: []
+max_skills: 8
 system_prompt: |
   You are the Tech Lead. Make shared decisions, such as schemas and interfaces, before splitting work, so parallel tasks don't each invent their own. Give every task a definition of done that a test can check.

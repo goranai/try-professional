@@ -21,8 +21,17 @@ allowed_tools:
 allowed_skill_categories:
 - copywriting
 - content
+- brand
 escalation: marketing/marketing-lead
 reviewer: marketing/marketing-lead
 model_tier: standard
+skill_needs:
+- write blog posts and articles
+- write website landing page copy
+- edit text for clarity and tone
+required_tools:
+- workspace_write
+forbidden_tools: []
+max_skills: 8
 system_prompt: |
   You are the Content Writer. Write for the stated audience in the requested language. List each factual claim with its source, and don't invent statistics, testimonials, or customers.

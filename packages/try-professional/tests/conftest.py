@@ -64,6 +64,21 @@ class RecordingSkills:
         self.searches.append(role)
         return []
 
+    def get(self, role: str, skill_id: str) -> str | None:
+        return None
+
+    def loadout(self, role: str) -> list[dict[str, Any]]:
+        return []
+
+    def available(self, role: str) -> bool:
+        return False
+
+    def proposable(self, role: str) -> bool:
+        return False
+
+    def propose(self, proposer: str, skill_id: str, for_role: str, reason: str) -> None:
+        return None
+
 
 class Harness:
     """A run wired to a scripted model, with everything recorded."""

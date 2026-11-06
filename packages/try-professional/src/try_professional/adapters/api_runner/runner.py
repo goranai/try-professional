@@ -40,8 +40,10 @@ _MEMORY = frozenset({"memory_recall"})
 TOOLS_BY_PURPOSE: dict[Purpose, frozenset[str]] = {
     Purpose.INTAKE: frozenset(),
     Purpose.PLAN: _MEMORY,
-    Purpose.DISPATCH: _MEMORY,
-    Purpose.EXECUTE: _READ | _MEMORY | {"workspace_write", "memory_write", "skill_search", "skill_get"},
+    Purpose.DISPATCH: _MEMORY | {"skill_search", "skill_get", "skill_propose"},
+    Purpose.EXECUTE: _READ
+    | _MEMORY
+    | {"workspace_write", "memory_write", "skill_search", "skill_get", "skill_propose"},
     Purpose.REVIEW: _READ,
     Purpose.ESCALATION: _MEMORY,
     Purpose.INTEGRATE: _READ,
@@ -229,6 +231,12 @@ class ApiRunner:
         may_handoff = self.org.is_head(role.ref) and role.ref != self.org.root_role
         may_handoff = may_handoff and action.purpose in (Purpose.DISPATCH, Purpose.EXECUTE)
         usable = tuple(t for t in role.allowed_tools if t in TOOLS_BY_PURPOSE[action.purpose])
+        skills = self.orchestrator.skills
+        # Every tool offered is resent on every call, so offer skill tools only when they can work.
+        if not skills.available(role.ref):
+            usable = tuple(t for t in usable if t not in ("skill_search", "skill_get"))
+        if not skills.proposable(role.ref):
+            usable = tuple(t for t in usable if t != "skill_propose")
         tools = tools_for(
             usable, action.output_type, is_head=may_handoff, declares_flags=action.purpose == Purpose.EXECUTE
         )
@@ -246,7 +254,8 @@ class ApiRunner:
             return [InvocationFailed(invocation_id=action.invocation_id, reason=str(error), retryable=error.retryable)]
         workspace = context.workspace.resolve()
         files = sorted(str(p.relative_to(workspace)).replace("\\", "/") for p in workspace.rglob("*") if p.is_file())
-        messages = [client.user_message(user_prompt(invocation, state, self.org, files))]
+        loadout = skills.loadout(role.ref) if action.purpose == Purpose.EXECUTE else []
+        messages = [client.user_message(user_prompt(invocation, state, self.org, files, loadout))]
         metadata = {"invocation": invocation, "state": state, "org": self.org}
         nudges = 0
 
@@ -330,6 +339,10 @@ class ApiRunner:
                     continue
                 try:
                     output = run_tool(context, call.name, call.arguments)
+                    if call.name == "skill_get":
+                        self.orchestrator.skill_used(
+                            run_id, action.task_id, role.ref, str(call.arguments.get("skill_id", ""))
+                        )
                     self.orchestrator.record(
                         run_id,
                         "tool_call",

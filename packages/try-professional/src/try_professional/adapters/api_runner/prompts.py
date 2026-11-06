@@ -92,7 +92,13 @@ def _team(org: Org, department_id: str) -> list[dict[str, Any]]:
     return team
 
 
-def user_prompt(invocation: Invocation, state: RunState, org: Org, workspace_files: list[str] | None = None) -> str:
+def user_prompt(
+    invocation: Invocation,
+    state: RunState,
+    org: Org,
+    workspace_files: list[str] | None = None,
+    loadout: list[dict[str, Any]] | None = None,
+) -> str:
     parts = [_section("Your assignment", _PURPOSE[invocation.purpose])]
     parts.append(_section("Goal", state.goal))
     if state.user_language:
@@ -100,8 +106,8 @@ def user_prompt(invocation: Invocation, state: RunState, org: Org, workspace_fil
         parts.append(
             _section(
                 "Language",
-                f"The user writes in {state.user_language}. Write free text in "
-                f"{state.user_language if language == 'auto' else language}. Keep schema keys and code in English.",
+                f"Write free text in {state.user_language if language == 'auto' else language}. "
+                "Keep schema keys and code in English.",
             )
         )
     if invocation.purpose == Purpose.PLAN:
@@ -121,7 +127,8 @@ def user_prompt(invocation: Invocation, state: RunState, org: Org, workspace_fil
         parts.append(_section("Escalated from", {"role": origin.role, "purpose": origin.purpose.value}))
     for ref in invocation.context_refs:
         artifact = state.artifacts.get(ref)
-        if artifact is not None:
+        # Search results stay in the audit trail. The role sees its loadout instead.
+        if artifact is not None and artifact.type != "SkillResolution":
             parts.append(
                 _section(
                     f"{artifact.type} {artifact.artifact_id} from {artifact.produced_by}",
@@ -142,16 +149,19 @@ def user_prompt(invocation: Invocation, state: RunState, org: Org, workspace_fil
         parts.append(
             _section(
                 "Files in this run's workspace",
-                f"{listing}\nThis is everything you can reach. There is no repository, shell, or network, so don't "
-                "search for anything else. If the task truly needs something missing, call escalate at once.",
+                f"{listing}\nYou can reach nothing else: no repository, shell, or network. "
+                "If the task needs something missing, call escalate.",
             )
         )
+    if loadout:
+        lines = "\n".join(f"- {item['skill_id']}: {item['description']}" for item in loadout)
+        parts.append(_section("Your skills (read one with skill_get)", untrusted("skill-list", lines)))
     if invocation.purpose == Purpose.EXECUTE:
         parts.append(
             _section(
                 "Before you submit",
-                "Memory and skills were already searched for this task, and results are above. Set a flag in "
-                "submit_artifact if the output is public-facing, touches licenses, or handles personal data.",
+                "Set a flag in submit_artifact if the output is public-facing, touches licenses, or handles "
+                "personal data.",
             )
         )
     parts.append(_section("Required output", f"Call submit_artifact with payload of type {invocation.output_type}."))

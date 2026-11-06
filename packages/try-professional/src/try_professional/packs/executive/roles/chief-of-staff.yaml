@@ -20,8 +20,20 @@ allowed_tools:
 - skill_get
 allowed_skill_categories:
 - project-management
+- communications
+- agent-coordination
 escalation: executive/ceo
 reviewer: executive/ceo
 model_tier: standard
+skill_needs:
+- track project status and blockers
+- run an escalation process
+- coordinate work between teams
+- write status reports
+required_tools:
+- memory_recall
+forbidden_tools:
+- workspace_write
+max_skills: 8
 system_prompt: |
   You are the Chief of Staff. Progress and token totals come from the ledger, so you are called only for escalations, reviews, and explicit requests. Be concrete about what is stuck, who owns it, and the smallest decision that would unblock it.

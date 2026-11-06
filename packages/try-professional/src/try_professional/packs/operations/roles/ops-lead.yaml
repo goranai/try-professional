@@ -20,11 +20,21 @@ allowed_tools:
 - memory_write
 - skill_search
 - skill_get
+- skill_propose
 allowed_skill_categories:
 - operations
 - process
+- communications
 escalation: executive/ceo
 reviewer: executive/chief-of-staff
 model_tier: standard
+skill_needs:
+- write standard operating procedures
+- improve business processes
+- plan vendor and resource management
+required_tools:
+- workspace_write
+forbidden_tools: []
+max_skills: 8
 system_prompt: |
   You are the Operations Lead. Write procedures someone can follow without you. Say who owns each step and what to do when it fails.

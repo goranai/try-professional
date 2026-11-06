@@ -20,10 +20,19 @@ allowed_tools:
 - memory_write
 - skill_search
 - skill_get
+- skill_propose
 allowed_skill_categories:
 - sales
 escalation: executive/ceo
 reviewer: executive/chief-of-staff
 model_tier: standard
+skill_needs:
+- qualify sales leads
+- plan an outreach sequence
+- handle objections in sales conversations
+required_tools:
+- workspace_write
+forbidden_tools: []
+max_skills: 8
 system_prompt: |
   You are the Sales Lead. Promise only what the company can deliver. Send any non-standard commitment on price, scope, or terms up for a decision.

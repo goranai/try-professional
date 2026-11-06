@@ -130,7 +130,27 @@ system_prompt: |
   You are the Backend Engineer...
 ```
 
-All fields are required except `model_tier`, which defaults to `standard`. `escalation` is a role reference, or the literal `human` for the root role only.
+These fields are optional: `model_tier` (default `standard`), and the skill profile below. All others are required. `escalation` is a role reference, or the literal `human` for the root role only.
+
+### Skill profile
+
+These describe which skills fit a role, so a runtime can match skills to it.
+
+```yaml
+skill_needs:
+  - design and build REST APIs
+  - write database migrations
+required_tools: [workspace_read, workspace_write]
+forbidden_tools: [shell]
+max_skills: 8
+```
+
+| Field | Default | Meaning |
+|---|---|---|
+| `skill_needs` | `[]` | Short descriptions of the capabilities this role's skills should provide. Any language |
+| `required_tools` | `[]` | Tools this role can't work without. A runtime that can't provide them SHOULD refuse to run the role |
+| `forbidden_tools` | `[]` | A skill that needs any of these MUST NOT be matched to this role |
+| `max_skills` | `8` | The most skills this role's loadout may hold, from 1 to 50 |
 
 `inputs`, `outputs`, and `allowed_tools` are open vocabularies at spec level, and implementations define what they accept.
 
@@ -155,6 +175,8 @@ JSON Schema is validation level 1. A conforming validator MUST also apply these 
 | `ORG013` | A non-head role escalates within its own department |
 | `ORG014` | A head escalates to the root role, or to a role in the root role's department |
 | `ORG015` | The root role's department has `activation: always` |
+| `ORG016` | A role's `allowed_tools` and `forbidden_tools` don't overlap |
+| `ORG017` | A role's `required_tools` are all in its `allowed_tools` |
 
 A validator SHOULD emit a warning, not an error, when a gate's `reviewer` doesn't resolve (`ORG101`). This is a valid state: it means a gate's department was removed, and `on_unavailable` decides what happens.
 

@@ -7,6 +7,7 @@ real model replies differ, so use this to compare versions of the prompts, not t
 from __future__ import annotations
 
 import json
+import sys
 import tempfile
 from collections.abc import Callable
 from dataclasses import asdict, dataclass
@@ -56,11 +57,43 @@ class MeasuringClient(ScriptedClient):
         return super().complete(request)
 
 
-def measure(factory: Callable[[], MeasuringClient] = MeasuringClient) -> list[StepSize]:
+class FullLoadout:
+    """A role with a full loadout of realistic skill IDs and descriptions, cut as they really are."""
+
+    def __init__(self, size: int) -> None:
+        self.items = [
+            {
+                "skill_id": f"some-owner/agent-skills/skills/skill-number-{n}",
+                "description": ("Write and review the kind of thing this skill is about, in clear steps. " * 2)[:70],
+            }
+            for n in range(size)
+        ]
+
+    def search(self, role: str, query: str) -> list[dict[str, Any]]:
+        return []
+
+    def get(self, role: str, skill_id: str) -> str | None:
+        return None
+
+    def loadout(self, role: str) -> list[dict[str, Any]]:
+        return self.items
+
+    def available(self, role: str) -> bool:
+        return True
+
+    def proposable(self, role: str) -> bool:
+        return False
+
+    def propose(self, proposer: str, skill_id: str, for_role: str, reason: str) -> None:
+        return None
+
+
+def measure(factory: Callable[[], MeasuringClient] = MeasuringClient, *, loadout_size: int = 0) -> list[StepSize]:
     with tempfile.TemporaryDirectory() as work:
         root = Path(work)
         install_org(root / "org", "Measure", available_packs())
-        orchestrator = Orchestrator(load_org(root / "org"), root / "home")
+        skills = FullLoadout(loadout_size) if loadout_size else None
+        orchestrator = Orchestrator(load_org(root / "org"), root / "home", skills=skills)
         client = factory()
         routes = ModelRoutes({"standard": "m", "executive": "m", "fast": "m"})
         result = ApiRunner(orchestrator, client, routes).run(GOAL)
@@ -71,7 +104,8 @@ def measure(factory: Callable[[], MeasuringClient] = MeasuringClient) -> list[St
 
 
 def main() -> None:
-    steps = measure()
+    size = int(sys.argv[1]) if len(sys.argv) > 1 else 0
+    steps = measure(loadout_size=size)
     print(f"{'step':<14} {'system':>7} {'user':>7} {'tools':>7} {'~tokens':>8}")
     for step in steps:
         print(f"{step.purpose:<14} {step.system:>7} {step.user:>7} {step.tools:>7} {step.total // 4:>8}")

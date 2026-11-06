@@ -5,6 +5,7 @@ found. It does not mean a skill is safe.
 """
 
 from .attribution import render_attribution
+from .discover import Candidate, discover
 from .errors import (
     ApprovalError,
     FetchError,
@@ -37,6 +38,7 @@ __all__ = [
     "Approval",
     "ApprovalError",
     "BuiltinScanner",
+    "Candidate",
     "CommandScanner",
     "FetchError",
     "Finding",
@@ -59,6 +61,7 @@ __all__ = [
     "check_license",
     "content_hash",
     "decide_trust",
+    "discover",
     "is_full_sha",
     "pin",
     "pin_local",

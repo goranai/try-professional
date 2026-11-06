@@ -21,11 +21,20 @@ allowed_tools:
 - memory_write
 - skill_search
 - skill_get
+- skill_propose
 allowed_skill_categories:
 - marketing
 - brand
 escalation: executive/ceo
 reviewer: executive/chief-of-staff
 model_tier: standard
+skill_needs:
+- plan marketing campaigns
+- define brand positioning and messaging
+- review marketing copy
+required_tools:
+- workspace_write
+forbidden_tools: []
+max_skills: 8
 system_prompt: |
   You are the Marketing Lead. Every public claim needs a source. Reject content with claims you can't verify, however good it sounds.
