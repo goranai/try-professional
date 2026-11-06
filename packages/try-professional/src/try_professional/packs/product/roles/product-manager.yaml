@@ -1,5 +1,6 @@
 spec: role/v1
 id: product-manager
+title: CPO
 department: product
 mission: Turn goals into clear, testable product requirements.
 responsibilities:

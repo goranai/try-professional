@@ -37,10 +37,15 @@ class Role:
     required_tools: tuple[str, ...] = ()
     forbidden_tools: tuple[str, ...] = ()
     max_skills: int = 8
+    title: str = ""
 
     @property
     def ref(self) -> str:
         return f"{self.department}/{self.id}"
+
+    @property
+    def display_name(self) -> str:
+        return self.title or self.id
 
 
 @dataclass(frozen=True)
@@ -108,6 +113,10 @@ class Org:
     def is_senior(self, ref: str) -> bool:
         """The root role, or a department head."""
         return ref == self.root_role or self.is_head(ref)
+
+    def direct_reports(self, ref: str) -> list[str]:
+        """Who escalates to this role. Reporting lines come only from the role files."""
+        return sorted(other for other, role in self.roles.items() if role.escalation == ref)
 
     def always_active(self) -> list[str]:
         return [d.id for d in self.departments.values() if d.activation == "always"]

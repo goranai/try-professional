@@ -36,6 +36,8 @@ missing. To keep a template department as it is, give its id in from_template wi
 every run.
 - Executive, Legal, and QA exist in every company and are added for you. Don't include them.
 - Each department has exactly one head. A department of one person is fine.
+- Name each head what this business would call them: a CTO, a CFO, a Creative Director. The name is a title, and \
+adds no layer of management.
 - The company produces files only: research, scripts, plans, briefs, schedules. It can't render video, upload, \
 publish, or spend. Don't design roles that claim to.
 - It has no access to live data unless a person provides files, so don't promise real-time analysis.

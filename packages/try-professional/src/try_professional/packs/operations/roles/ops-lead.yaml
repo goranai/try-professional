@@ -1,5 +1,6 @@
 spec: role/v1
 id: ops-lead
+title: COO
 department: operations
 mission: Make recurring work run smoothly.
 responsibilities:

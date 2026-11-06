@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import re
 import shutil
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -789,7 +790,7 @@ class TestReviewScreen:
 
     def test_it_shows_the_chart_loadouts_reasons_and_estimate(self, tmp_path: Path) -> None:
         screen = render(self._bundle(tmp_path))
-        for text in ("Trend Research", "thumbnail-designer", "(head)", "Fits the job", "Estimated per typical run"):
+        for text in ("Trend Research", "thumbnail-designer", "head)", "Fits the job", "Estimated per typical run"):
             assert text in screen
         assert "not a measurement" in screen
 
@@ -988,6 +989,22 @@ class TestDiscovery:
         bundle = create_proposal(root, FakeEmbedder(), template_id=SHORTS, github=github)
         assert any("Stopped skill discovery early" in line for line in bundle.provisioned.discovery)
         assert bundle.provisioned.gaps
+
+    def test_a_skill_that_cant_be_placed_on_disk_doesnt_stop_init(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Seen for real: a skill's path went over Windows' limit, and took the whole proposal down."""
+
+        def too_long(*args: Any, **kwargs: Any) -> Any:
+            raise FileNotFoundError("[WinError 3] The system cannot find the path specified")
+
+        monkeypatch.setattr(sys.modules["try_professional.generator.provision"], "pin", too_long)
+        lock = Lockfile.load(tmp_path / "l")
+        report = discover_skills(
+            ["brief a thumbnail"], lock, tmp_path / "s", client=FakeGitHub(self._source(tmp_path)), sleep=lambda s: None
+        )
+        assert not lock.entries
+        assert any("unusable" in line for line in report)
 
     def test_a_refused_license_installs_nothing(self, tmp_path: Path) -> None:
         github = FakeGitHub(self._source(tmp_path), license_id="GPL-3.0")
@@ -1208,6 +1225,8 @@ class TestCurrentClaims:
                             "id": "t1",
                             "title": "t",
                             "owner_role": "research/analyst",
+                            "goal": "g",
+                            "expected_output": "o",
                             "definition_of_done": ["d"],
                             "output_type": "ResearchReport",
                         }

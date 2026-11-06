@@ -12,9 +12,15 @@ from typing import Any, Protocol
 class MemoryPort(Protocol):
     def recall(self, role: str, query: str) -> list[str]: ...
 
+    def recall_personal(self, role: str, query: str) -> list[str]: ...
+
     def write(self, role: str, text: str) -> None: ...
 
+    def write_department(self, role: str, text: str) -> None: ...
+
     def promote(self, role: str, text: str, source: str) -> None: ...
+
+    def sizes(self) -> dict[str, dict[str, int]]: ...
 
 
 class SkillPort(Protocol):
@@ -57,11 +63,20 @@ class NullMemory:
     def recall(self, role: str, query: str) -> list[str]:
         return []
 
+    def recall_personal(self, role: str, query: str) -> list[str]:
+        return []
+
     def write(self, role: str, text: str) -> None:
+        return None
+
+    def write_department(self, role: str, text: str) -> None:
         return None
 
     def promote(self, role: str, text: str, source: str) -> None:
         return None
+
+    def sizes(self) -> dict[str, dict[str, int]]:
+        return {}
 
 
 class NullSkills:

@@ -19,6 +19,26 @@
       "title": "Restated Goal",
       "type": "string"
     },
+    "route_department": {
+      "default": "",
+      "title": "Route Department",
+      "type": "string"
+    },
+    "route_role": {
+      "default": "",
+      "description": "department/role",
+      "title": "Route Role",
+      "type": "string"
+    },
+    "size": {
+      "default": "large",
+      "enum": [
+        "small",
+        "large"
+      ],
+      "title": "Size",
+      "type": "string"
+    },
     "success_criteria": {
       "items": {
         "type": "string"

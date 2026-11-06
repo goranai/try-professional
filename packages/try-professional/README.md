@@ -12,6 +12,19 @@ trypro run --dry-run "Build a health check endpoint"
 
 `--dry-run` uses a scripted model, so it needs no API key and spends nothing. `trypro init` downloads the local embedding model, about 0.22 GB.
 
+Once a company exists:
+
+```bash
+trypro run "<a command>"          # Or --queue to add it to the backlog without running it
+trypro next                       # Run the oldest queued command
+trypro resume <run-id>            # Continue unfinished work
+trypro cancel <run-id>            # Stop it. Its records stay
+trypro status                     # Backlog, handoffs, memory size per tier, tokens by month and command
+trypro status --role <dept/role>  # One role's card and work state
+trypro memory review --by <you>   # Decide what the CEO proposed for company memory
+trypro compact                    # Summarize old logs, and archive raw ones. Uses no model
+```
+
 To use a real model, copy `.env.example` to `.env` and set `TRYPRO_LLM_BASE_URL`, `TRYPRO_LLM_API_KEY` and `TRYPRO_LLM_MODEL`. Any OpenAI-compatible API works. Runs stop at a token ceiling, set in `org/org.yaml`, and ask before continuing.
 
 See [docs/architecture.md](https://github.com/goranai/try-professional/blob/main/docs/architecture.md).

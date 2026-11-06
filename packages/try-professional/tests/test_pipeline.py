@@ -108,7 +108,15 @@ class TestHierarchy:
         return {
             "work_package_id": "wp1",
             "tasks": [
-                {"id": "t1", "title": "T", "owner_role": owner, "definition_of_done": ["d"], "output_type": output}
+                {
+                    "id": "t1",
+                    "title": "T",
+                    "owner_role": owner,
+                    "goal": "g",
+                    "expected_output": "o",
+                    "definition_of_done": ["d"],
+                    "output_type": output,
+                }
             ],
         }
 
@@ -371,6 +379,8 @@ class TestReview:
                             "id": "t1",
                             "title": "T",
                             "owner_role": "engineering/backend",
+                            "goal": "g",
+                            "expected_output": "o",
                             "definition_of_done": ["d"],
                             "output_type": "CodeChange",
                         }
@@ -596,6 +606,8 @@ class TestParallelism:
                             "id": f"t{n}",
                             "title": f"Task {n}",
                             "owner_role": "engineering/backend",
+                            "goal": "g",
+                            "expected_output": "o",
                             "definition_of_done": ["d"],
                             "output_type": "CodeChange",
                         }
@@ -630,7 +642,13 @@ class TestParallelism:
 
         def override(invocation: Any, state: Any, org_: Org) -> dict[str, Any] | None:
             if invocation.purpose == Purpose.DISPATCH:
-                task = {"owner_role": "engineering/backend", "definition_of_done": ["d"], "output_type": "CodeChange"}
+                task = {
+                    "owner_role": "engineering/backend",
+                    "goal": "g",
+                    "expected_output": "o",
+                    "definition_of_done": ["d"],
+                    "output_type": "CodeChange",
+                }
                 return {
                     "work_package_id": invocation.work_package_id,
                     "tasks": [
@@ -656,6 +674,8 @@ class TestParallelism:
         task = {
             "title": "T",
             "owner_role": "engineering/backend",
+            "goal": "g",
+            "expected_output": "o",
             "definition_of_done": ["d"],
             "output_type": "CodeChange",
         }

@@ -12,7 +12,7 @@ departments:
     name: Strategy
     roles:
       - id: strategy-lead
-        name: Head of Strategy
+        name: Chief Strategy Officer
         kind: head
         mission: Decide each client's positioning and plan.
         responsibilities:

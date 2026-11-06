@@ -180,6 +180,8 @@ class TestWebSearch:
                             "id": "t1",
                             "title": "t",
                             "owner_role": "research/analyst",
+                            "goal": "g",
+                            "expected_output": "o",
                             "definition_of_done": ["d"],
                             "output_type": "ResearchReport",
                         }

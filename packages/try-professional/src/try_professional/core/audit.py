@@ -6,13 +6,33 @@ latest hash and verification compares against it.
 
 from __future__ import annotations
 
+import gzip
 import hashlib
 import json
+import shutil
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import IO, Any
 
 GENESIS = "0" * 64
+
+
+def _archived(path: Path) -> Path:
+    return path.with_name(f"{path.name}.gz")
+
+
+def _open_log(path: Path) -> IO[str]:
+    if path.exists():
+        return path.open(encoding="utf-8")
+    return gzip.open(_archived(path), "rt", encoding="utf-8")
+
+
+def archive_log(path: Path) -> None:
+    """Compress a finished run's log. Its hash chain still verifies, since no record changes."""
+    target = _archived(path)
+    with path.open("rb") as source, gzip.open(target, "wb") as compressed:
+        shutil.copyfileobj(source, compressed)
+    path.unlink()
 
 
 def _digest(record: dict[str, Any]) -> str:
@@ -32,6 +52,11 @@ class AuditLog:
     def __init__(self, path: Path) -> None:
         self.path = path
         path.parent.mkdir(parents=True, exist_ok=True)
+        if not path.exists() and _archived(path).exists():
+            # Something new happened to an archived run. Restore it, so the chain stays whole.
+            with gzip.open(_archived(path), "rb") as compressed, path.open("wb") as restored:
+                shutil.copyfileobj(compressed, restored)
+            _archived(path).unlink()
         self._seq = 0
         self._head = GENESIS
         if path.exists():
@@ -58,9 +83,9 @@ class AuditLog:
 def verify_log(path: Path, expected_head: str | None = None) -> VerifyResult:
     head = GENESIS
     count = 0
-    if not path.exists():
+    if not path.exists() and not _archived(path).exists():
         return VerifyResult(False, 0, head, "log file is missing")
-    with path.open(encoding="utf-8") as handle:
+    with _open_log(path) as handle:
         for number, line in enumerate(handle, start=1):
             try:
                 record = json.loads(line)
@@ -80,5 +105,5 @@ def verify_log(path: Path, expected_head: str | None = None) -> VerifyResult:
 
 
 def read_records(path: Path) -> list[dict[str, Any]]:
-    with path.open(encoding="utf-8") as handle:
+    with _open_log(path) as handle:
         return [json.loads(line) for line in handle]

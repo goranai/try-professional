@@ -461,7 +461,7 @@ stateDiagram-v2
   Review --> Integration: all packages approved
   Integration --> Review: final deliverable needs a gate
   Integration --> Retrospective: FinalDeliverable reported
-  Retrospective --> Done: lessons stored, proposals queued
+  Retrospective --> Done: lessons proposed, for a person to decide
   Done --> [*]
 
   Intake --> Blocked: needs human
@@ -571,8 +571,9 @@ Pydantic v2 models are the source of truth. JSON Schema is generated into `spec/
 
 | Store | Read | Write | Backing |
 |---|---|---|---|
-| `dept-<id>` | Roles in that department | Roles in that department | Mnemosyne bank |
-| `company` | All roles | Executive only, through `promote` with a source reference | Mnemosyne bank |
+| `agent-<dept>--<role>` (personal) | That role only | That role only, through `memory_write` and its own task notes | Mnemosyne bank |
+| `dept-<id>` | Roles in that department | Its head only, adopting lessons staff put forward | Mnemosyne bank |
+| `company` | All roles | The CEO proposes, and a person approves with `trypro memory review`. No agent tool writes it | Mnemosyne bank |
 | Skill catalog | All roles, filtered by `allowed_skill_categories` | Orchestrator only | Separate catalog (§8.5) |
 
 Reads and writes go through `MemoryGateway`. The caller's identity comes from the runtime context and is never a model-supplied argument. Every call is audited.
@@ -1048,6 +1049,7 @@ Nothing is marked complete without passing tests. Each phase ends with what was 
 | Company memory | A bank readable by all. Retrospective lessons are written to it automatically | Only the CEO proposes, and the user approves. The automatic write in `_store_lessons` goes |
 | Department memory | A bank that any role in the department can write | Curated by the head. Staff put forward lessons, and the head accepts them |
 | Personal memory | Nothing | One bank per role, which only that role can write and read |
+| Prompt retrieval | Top 5 across two banks | At most 3 personal, 2 department and 2 company hits, each cut to 300 characters |
 | Role card | Role fields, and a team list shown only when dispatching | A card built by code: who I am, my manager, my team, my responsibilities |
 | Task queue, work log, handoffs | Inside one run's state | Company-wide, across commands, with origin |
 | Wake-up brief | Task memory, recalled per task | A brief built by code with a strict token budget. Managers also get a team view |
@@ -1066,8 +1068,11 @@ Design rules:
 - **Budgets per package.** The CEO allocates them, and code checks they fit the run's ceiling. A package's budget is a model's estimate, so going over it is counted and reported, and only the run's ceiling stops a run.
 - **Right-sized orchestration.** The CEO's first step classifies each command. A small one needs one department and one or two roles. It skips planning and the retrospective, goes straight to the department's head or to the one role that can do it, and gets a smaller brief. QA and legal gates apply exactly as they do to any other command. Tokens per command are reported for both paths.
 - **Executives.** A CTO or CSO is the head of a department with an executive title, so there's no extra layer of delegation to pay for on every command. A true extra layer stays a possible option for large companies later.
+- **One stand-up per agent per command.** Later steps in the same command already have their own context, and a brief sent on every step would add cost with little in return.
+- **Team lessons cost no extra call.** Staff put one forward in their task notes. A head decides it the next time they dispatch, so a head who isn't called doesn't spend anything.
 - **Compaction uses code, not a model.** Work log entries are typed, so old ones can be summarized for free. Raw logs are archived unchanged, so `trypro audit` still verifies.
-- **Commands run one at a time** per company. No scheduling and no proactive behavior.
+- **Commands run one at a time** per company, with a lock the operating system releases if a process dies. A command started while another runs joins the backlog. No scheduling and no proactive behavior.
+- **Surviving updates.** `company.sqlite` has a format number and migrations, and a newer format is refused with nothing changed. Changing the LLM needs nothing. Changing the embedding model is still refused, as in §8.
 
 The acceptance test is the whole journey. From a fresh clone, `trypro init "a web design agency"` gives a complete company in one review screen, with a role card, matched skills and an empty personal memory for each agent. One command then goes from the CEO through heads to staff and QA, into `deliverables/`. A related command a simulated week later shows what agents did before in their briefs, and reuses lessons from the first. This phase's exit runs that journey on three businesses, with the Shorts studio as one, on flow and cost. The final quality report comes after Phase 4d, on at least three business types not used in training, including the web design agency.
 

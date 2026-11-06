@@ -89,6 +89,7 @@ class RunResult:
     output_tokens: int = 0
     cached_input_tokens: int = 0
     calls: int = 0
+    size: str = ""
 
 
 class ApiRunner:
@@ -218,6 +219,7 @@ class ApiRunner:
             output_tokens=state.usage.output_tokens,
             cached_input_tokens=state.usage.cached_input_tokens,
             calls=state.usage.calls,
+            size=state.size,
         )
 
     # ---- one role, one assignment ---------------------------------------------------
@@ -261,7 +263,10 @@ class ApiRunner:
         files = sorted(str(p.relative_to(workspace)).replace("\\", "/") for p in workspace.rglob("*") if p.is_file())
         loadout = skills.loadout(role.ref) if action.purpose == Purpose.EXECUTE else []
         web = "web_search" in usable
-        messages = [client.user_message(user_prompt(invocation, state, self.org, files, loadout, web=web))]
+        briefing = self.orchestrator.briefing(run_id, invocation)
+        messages = [
+            client.user_message(user_prompt(invocation, state, self.org, files, loadout, web=web, briefing=briefing))
+        ]
         metadata = {"invocation": invocation, "state": state, "org": self.org}
         nudges = 0
 
@@ -382,9 +387,12 @@ class ApiRunner:
         """
         if name == SUBMIT:
             payload = arguments.get("payload")
+            notes = arguments.get("notes")
             try:
                 parse_payload(action.output_type, payload)
                 flags = Flags.model_validate(arguments.get("flags") or {})
+                if notes is not None:
+                    parse_payload("WorkNotes", notes)
             except (ArtifactError, ValueError) as error:
                 self._count_invalid(run_id, action, str(error))
                 return f"Rejected, fix this and call {SUBMIT} again: {error}"
@@ -395,6 +403,7 @@ class ApiRunner:
                 flags=flags,
                 language=arguments.get("language"),
                 created_at=self.orchestrator.clock(),
+                notes=notes,
             )
         if name == ESCALATE:
             return EscalationRaised(invocation_id=action.invocation_id, actor=action.role, payload=arguments)

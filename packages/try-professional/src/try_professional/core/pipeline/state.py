@@ -100,6 +100,7 @@ class TaskState(_Model):
     memory_context: list[str] = []
     skill_artifact_id: str | None = None
     feedback: list[str] = []
+    notes_artifact_id: str | None = None
 
 
 class PackageState(_Model):
@@ -112,6 +113,7 @@ class PackageState(_Model):
     status: PackageStatus = PackageStatus.PENDING
     resumes_invocation_id: str | None = None
     origin: Literal["plan", "handoff", "amendment"] = "plan"
+    token_budget: int = 0
 
 
 class Counters(_Model):
@@ -123,6 +125,7 @@ class Counters(_Model):
     escalations: int = 0
     handoffs: int = 0
     violations: int = 0
+    package_overruns: int = 0
 
 
 class Usage(_Model):
@@ -167,8 +170,12 @@ class RunState(_Model):
     counters: Counters = Counters()
     usage: Usage = Usage()
     usage_by_role: dict[str, Usage] = {}
+    usage_by_purpose: dict[str, Usage] = {}
+    package_usage: dict[str, int] = {}
     budget_override: int | None = None
     failure_reason: str | None = None
+    size: Literal["small", "large"] = "large"
+    cancelled: bool = False
 
 
 # ---- Events: everything that can happen to a run ----------------------------
@@ -189,6 +196,7 @@ class Submission(_Model):
     flags: Flags = Flags()
     language: str | None = None
     created_at: str | None = None
+    notes: dict[str, Any] | None = None
 
 
 class EscalationRaised(_Model):
@@ -241,6 +249,13 @@ class HumanDecided(_Model):
     new_token_budget: int | None = None
 
 
+class RunCancelled(_Model):
+    """A person stopped this command. Nothing more is spent on it."""
+
+    kind: Literal["run_cancelled"] = "run_cancelled"
+    reason: str = "Cancelled by a person"
+
+
 Event = Annotated[
     RunStarted
     | Submission
@@ -249,7 +264,8 @@ Event = Annotated[
     | InvocationFailed
     | ContextResolved
     | UsageRecorded
-    | HumanDecided,
+    | HumanDecided
+    | RunCancelled,
     Field(discriminator="kind"),
 ]
 

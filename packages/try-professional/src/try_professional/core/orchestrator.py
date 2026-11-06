@@ -12,12 +12,15 @@ import shutil
 import threading
 import uuid
 from collections.abc import Callable
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
+from .. import playbooks
 from ..org import Org
-from .audit import AuditLog, VerifyResult, verify_log
+from .audit import AuditLog, VerifyResult, archive_log, verify_log
+from .brief import Briefing, build_brief
+from .company import CompanyStore
 from .deliverables import export_deliverables, read_sources
 from .ledger import Ledger
 from .pipeline import (
@@ -28,6 +31,7 @@ from .pipeline import (
     IllegalEvent,
     Purpose,
     ResolveContext,
+    RunCancelled,
     RunStarted,
     RunState,
     Submission,
@@ -35,10 +39,13 @@ from .pipeline import (
     initial_state,
     open_actions,
 )
+from .pipeline.state import Invocation
 from .ports import FeedbackPort, MemoryPort, NullMemory, NullSkills, ProposalPort, SearchPort, SkillPort
 
 Clock = Callable[[], str]
 MAX_INPUT_BYTES = 2_000_000
+PENDING_LESSONS_SHOWN = 3
+TEAM_SKILLS_SHOWN = 3
 
 
 def utc_now() -> str:
@@ -71,6 +78,7 @@ class Orchestrator:
         self.deliverables_dir = deliverables_dir
         self.clock = clock
         self.ledger = Ledger(home / "ledger.sqlite")
+        self.company = CompanyStore(home / "company.sqlite")
         self._lock = threading.RLock()
         self._logs: dict[str, AuditLog] = {}
 
@@ -141,7 +149,9 @@ class Orchestrator:
         with self._lock:
             run_id = run_id or f"run-{uuid.uuid4().hex[:12]}"
             state = initial_state(run_id, goal)
-            self._log(run_id).append(self.clock(), "run_started", {"run_id": run_id, "goal": goal})
+            log = self._log(run_id)
+            log.append(self.clock(), "run_started", {"run_id": run_id, "goal": goal})
+            log.append(self.clock(), "playbooks", playbooks.versions())
             self._copy_inputs(run_id)
             return run_id, self._apply(state, RunStarted())
 
@@ -173,6 +183,7 @@ class Orchestrator:
             log.append(self.clock(), "event", current.model_dump(mode="json"))
             self._log_rejection(state, current, log)
             self._note_qa_verdict(previous, state, current, log)
+            self._note_lesson_decisions(previous, state, current, log)
             if state.phase != before:
                 log.append(self.clock(), "phase", {"from": before.value, "to": state.phase.value})
             for action in actions:
@@ -180,14 +191,95 @@ class Orchestrator:
                 if isinstance(action, ResolveContext):
                     pending_events.append(self._resolve_context(state, action))
                 elif isinstance(action, Finish) and action.status == "done":
-                    self._store_lessons(state)
+                    self._propose_lessons(state)
                     self._export(state)
                     self._safely(state, "run_finished", state.run_id, sorted(state.usage_by_role))
                     outward.append(action)
                 elif not isinstance(action, DepartmentActivated):
                     outward.append(action)
             self.ledger.save(state, log.head, self.clock())
+            self._sync_company(state, log)
         return outward
+
+    def _sync_company(self, state: RunState, log: AuditLog) -> None:
+        """Work state follows the run. Lessons in a role's own notes go where they belong."""
+        for entry in self.company.sync(state, self.org, self.clock()):
+            try:
+                if entry.kind == "lesson":
+                    self.memory.write(entry.role, entry.text)
+                elif entry.kind == "team_lesson":
+                    self.company.propose_memory(
+                        "department",
+                        entry.role.split("/", 1)[0],
+                        entry.text,
+                        source_run=state.run_id,
+                        source=entry.key,
+                        proposed_by=entry.role,
+                        at=self.clock(),
+                    )
+            except Exception as error:
+                log.append(self.clock(), "memory_error", {"role": entry.role, "error": type(error).__name__})
+
+    def briefing(self, run_id: str, invocation: Invocation) -> Briefing:
+        """What an agent is told when it wakes up. It costs no model call, and failing never stops a run."""
+        with self._lock:
+            state = self.ledger.load(run_id)
+            role = invocation.role
+            personal: list[str] = []
+            # A task's memory is recalled with its context, so only other steps need it here.
+            if invocation.purpose not in (Purpose.EXECUTE, Purpose.REVIEW) and role not in state.usage_by_role:
+                try:
+                    personal = self.memory.recall_personal(role, state.goal)
+                except Exception as error:
+                    self._log(run_id).append(
+                        self.clock(), "memory_error", {"role": role, "error": type(error).__name__}
+                    )
+            # One stand-up per agent per command. Later steps in the same command have their own context.
+            brief = None
+            if role not in state.usage_by_role:
+                brief = build_brief(
+                    self.org, self.company, role, invocation.purpose, size=state.size, personal=personal
+                )
+            lessons: list[dict[str, Any]] = []
+            team: dict[str, dict[str, Any]] = {}
+            if invocation.purpose == Purpose.DISPATCH:
+                department = role.split("/", 1)[0]
+                pending = self.company.pending_memory("department", department, limit=PENDING_LESSONS_SHOWN)
+                lessons = [{"number": p.id, "from": p.proposed_by, "lesson": p.text} for p in pending]
+                members = [f"{department}/{r}" for r in self.org.departments[department].roles]
+                counts = self.company.open_task_counts(members)
+                for member in members:
+                    skills = [str(item.get("name") or item.get("skill_id", "")) for item in self.skills.loadout(member)]
+                    team[member] = {"open_tasks": counts[member], "skills": skills[:TEAM_SKILLS_SHOWN]}
+        return Briefing(brief=brief, pending_lessons=lessons, team=team)
+
+    def cancel(self, run_id: str, reason: str = "Cancelled by a person") -> None:
+        self.handle(run_id, RunCancelled(reason=reason))
+
+    def _note_lesson_decisions(self, previous: RunState, state: RunState, event: Any, log: AuditLog) -> None:
+        """A head decided its team's lessons while dispatching. Only that department's pending ones count."""
+        if not isinstance(event, Submission):
+            return
+        invocation = previous.invocations.get(event.invocation_id)
+        if invocation is None or invocation.purpose != Purpose.DISPATCH or event.invocation_id in state.invocations:
+            return
+        department = invocation.role.split("/", 1)[0]
+        own = {p.id for p in self.company.pending_memory("department", department)}
+        for key, accepted in (("adopt_lessons", True), ("drop_lessons", False)):
+            for number in event.payload.get(key) or []:
+                if number not in own:
+                    continue
+                decided = self.company.decide_memory(number, accepted, by=invocation.role, at=self.clock())
+                if decided is None:
+                    continue
+                log.append(self.clock(), "lesson_decided", {"number": number, "adopted": accepted})
+                if accepted:
+                    try:
+                        self.memory.write_department(invocation.role, decided.text)
+                    except Exception as error:
+                        log.append(
+                            self.clock(), "memory_error", {"role": invocation.role, "error": type(error).__name__}
+                        )
 
     def _safely(self, state: RunState, method: str, *args: Any, **kwargs: Any) -> None:
         """Feedback improves later runs, and a failure in it must never stop this one."""
@@ -252,20 +344,24 @@ class Orchestrator:
             skill_candidates=candidates,
         )
 
-    def _store_lessons(self, state: RunState) -> None:
-        """Retrospective: lessons and procedures become company memory, linked to their source."""
+    def _propose_lessons(self, state: RunState) -> None:
+        """Retrospective: the root role proposes company memory, and a person decides. Nothing is written here."""
         artifact = state.artifacts.get(state.retrospective_artifact_id or "")
         if artifact is None:
             return
         log = self._log(state.run_id)
         items = [*artifact.payload.get("lessons", []), *artifact.payload.get("procedures", [])]
         for text in items:
-            try:
-                self.memory.promote(self.org.root_role, text, artifact.artifact_id)
-            except Exception as error:
-                log.append(self.clock(), "memory_error", {"role": self.org.root_role, "error": type(error).__name__})
-                return
-        log.append(self.clock(), "lessons_stored", {"count": len(items), "source": artifact.artifact_id})
+            self.company.propose_memory(
+                "company",
+                "company",
+                text,
+                source_run=state.run_id,
+                source=artifact.artifact_id,
+                proposed_by=self.org.root_role,
+                at=self.clock(),
+            )
+        log.append(self.clock(), "lessons_proposed", {"count": len(items), "source": artifact.artifact_id})
         if self.proposals is None:
             return
         for text in artifact.payload.get("skill_proposals", []):
@@ -305,8 +401,32 @@ class Orchestrator:
                 state = self.ledger.load(run_id)
             return open_actions(state)
 
+    def compact(self, older_than_days: int = 90) -> dict[str, int]:
+        """Keep context and storage from growing without limit. Uses no model, and loses no raw record."""
+        with self._lock:
+            cutoff = (datetime.fromisoformat(self.clock()) - timedelta(days=older_than_days)).isoformat()
+            removed = self.company.compact(cutoff)
+            archived = 0
+            for run_id, updated in self.ledger.list_runs():
+                if updated >= cutoff or self.ledger.is_archived(run_id):
+                    continue
+                if self.ledger.load(run_id).phase.value not in ("done", "failed"):
+                    continue
+                self._logs.pop(run_id, None)
+                archive_log(self.audit_path(run_id))
+                self.ledger.archive(run_id)
+                archived += 1
+        return {"log_entries_summarized": removed, "runs_archived": archived}
+
+    def rebuild_company(self) -> None:
+        """Work state is derived, so it can always be rebuilt from the ledger."""
+        with self._lock:
+            states = [self.ledger.load(run_id) for run_id, _ in reversed(self.ledger.list_runs())]
+            self.company.rebuild(states, self.org, self.clock())
+
     def verify_audit(self, run_id: str) -> VerifyResult:
         return verify_log(self.audit_path(run_id), self.ledger.audit_head(run_id))
 
     def close(self) -> None:
         self.ledger.close()
+        self.company.close()

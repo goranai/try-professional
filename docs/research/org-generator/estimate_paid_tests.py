@@ -79,9 +79,11 @@ def main(proposal: Path) -> None:
     print("Plan, in tokens:")
     print(f"  A. Re-rank on real skills, tune, held-out, and combined: about {real_skills * 3}")
     print(f"  B. {GENERATIONS} generations, design only: {typical * GENERATIONS}-{typical * 3 * GENERATIONS}")
-    print(f"  C. Re-rank for {GENERATIONS} generations: about {rerank_typical * GENERATIONS}, up to {rerank_worst * GENERATIONS}")
+    print(f"  C. Re-rank for {GENERATIONS} generations: {rerank_typical * GENERATIONS}-{rerank_worst * GENERATIONS}")
     print(f"  C2. Re-rank for only the first generation of each of 8 businesses: about {rerank_typical * 8}")
-    print(f"  D. Shorts: one design and re-rank ({typical + rerank_typical}), and a run up to its ceiling ({run.ceiling})")
+    print(
+        f"  D. Shorts: one design and re-rank ({typical + rerank_typical}), and a run up to its ceiling ({run.ceiling})"
+    )
 
 
 if __name__ == "__main__":

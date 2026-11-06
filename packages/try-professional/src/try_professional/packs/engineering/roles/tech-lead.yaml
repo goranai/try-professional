@@ -1,5 +1,6 @@
 spec: role/v1
 id: tech-lead
+title: CTO
 department: engineering
 mission: Decide how to build it and split the work so it can be verified.
 responsibilities:

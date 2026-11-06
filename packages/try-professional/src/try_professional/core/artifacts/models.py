@@ -19,6 +19,9 @@ Attestation = Literal["runtime", "claimed"]
 NonEmpty = Field(min_length=1)
 
 
+WORK_OUTPUT_TYPES = ("CodeChange", "PublicContent", "ResearchReport", "TaskReport")
+
+
 class _Strict(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -47,6 +50,9 @@ class GoalCharter(_Strict):
     user_language: str = Field(min_length=2, description="BCP 47 tag of the language the goal was written in")
     constraints: list[str] = []
     success_criteria: list[str] = Field(min_length=1)
+    size: Literal["small", "large"] = "large"
+    route_department: str = ""
+    route_role: str = Field("", description="department/role")
 
 
 class DepartmentActivation(_Strict):
@@ -61,6 +67,7 @@ class WorkPackage(_Strict):
     depends_on: list[str] = []
     acceptance: list[str] = Field(min_length=1)
     flags: Flags = Flags()
+    token_budget: int = Field(0, ge=0)
 
 
 class Plan(_Strict):
@@ -72,6 +79,12 @@ class TaskSpec(_Strict):
     id: str = NonEmpty
     title: str = NonEmpty
     owner_role: str = Field(min_length=1, description="department/role. Must be in this department")
+    goal: str = NonEmpty
+    context: str = ""
+    inputs: list[str] = []
+    expected_output: str = NonEmpty
+    relevant_memory: list[str] = []
+    relevant_skills: list[str] = []
     definition_of_done: list[str] = Field(min_length=1)
     depends_on: list[str] = []
     output_type: str = NonEmpty
@@ -83,6 +96,8 @@ class TaskPlan(_Strict):
 
     work_package_id: str = NonEmpty
     tasks: list[TaskSpec] = Field(min_length=1)
+    adopt_lessons: list[int] = []
+    drop_lessons: list[int] = []
 
 
 class TaskBrief(_Strict):
@@ -93,6 +108,12 @@ class TaskBrief(_Strict):
     title: str = NonEmpty
     owner_role: str = NonEmpty
     reviewer_role: str = NonEmpty
+    goal: str = NonEmpty
+    context: str = ""
+    inputs: list[str] = []
+    expected_output: str = NonEmpty
+    relevant_memory: list[str] = []
+    relevant_skills: list[str] = []
     definition_of_done: list[str] = Field(min_length=1)
     depends_on: list[str] = []
     output_type: str = NonEmpty
@@ -259,6 +280,16 @@ class FinalDeliverable(_Strict):
     known_limits: list[str] = []
 
 
+class WorkNotes(_Strict):
+    """What a role records about its own task. It becomes that role's work log and personal memory."""
+
+    did: str = Field("", max_length=300)
+    decided: list[str] = Field([], max_length=5)
+    promised: list[str] = Field([], max_length=5)
+    lesson: str = Field("", max_length=500)
+    team_lesson: str = Field("", max_length=500)
+
+
 class Retrospective(_Strict):
     lessons: list[str] = []
     procedures: list[str] = []
@@ -283,6 +314,7 @@ PAYLOAD_TYPES: dict[str, type[BaseModel]] = {
         EscalationResolution,
         FinalDeliverable,
         Retrospective,
+        WorkNotes,
     )
 }
 

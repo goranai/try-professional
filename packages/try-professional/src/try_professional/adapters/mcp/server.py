@@ -81,12 +81,12 @@ def build_server(service: McpService) -> MCPServer:
 
     @server.tool()
     def memory_recall(run_id: str, invocation_id: str, query: str) -> Any:
-        """Search this role's department memory and the company memory, in any language."""
+        """Search this role's own notes, its department's memory, and company memory, in any language."""
         return _guard(service.memory_recall, run_id, invocation_id, query)
 
     @server.tool()
     def memory_write(run_id: str, invocation_id: str, text: str) -> Any:
-        """Save to this role's department memory."""
+        """Save to this role's personal memory. Only this role can see it."""
         return _guard(service.memory_write, run_id, invocation_id, text)
 
     @server.tool()

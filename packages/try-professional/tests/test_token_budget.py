@@ -19,7 +19,8 @@ measure_prompts: Any = importlib.util.module_from_spec(spec)
 sys.modules["measure_prompts"] = measure_prompts
 spec.loader.exec_module(measure_prompts)
 
-TOTAL_CHAR_BUDGET = 28146
+# Raised on 2026-11-07 from 28146 for wake-up briefs, playbooks and fuller task briefs: Phase 4c's cost.
+TOTAL_CHAR_BUDGET = 34000
 
 
 def test_a_minimal_run_stays_within_its_prompt_budget() -> None:

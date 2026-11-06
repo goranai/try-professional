@@ -1,4 +1,4 @@
-"""Regenerate spec/artifacts-v1/ from the Pydantic models, and sync the packaged spec and template copies."""
+"""Regenerate spec/artifacts-v1/ from the Pydantic models, and sync the packaged spec, template and playbook copies."""
 
 from __future__ import annotations
 
@@ -24,6 +24,10 @@ def main() -> None:
     if templates.exists():
         shutil.rmtree(templates)
     shutil.copytree(ROOT / "templates", templates, ignore=shutil.ignore_patterns("__pycache__"))
+    playbooks = packaged.parent / "_playbooks"
+    for path in (ROOT / "playbooks").glob("*.md"):
+        if path.name != "README.md":
+            shutil.copyfile(path, playbooks / path.name)
 
 
 if __name__ == "__main__":

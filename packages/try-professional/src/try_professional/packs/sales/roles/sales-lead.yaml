@@ -1,5 +1,6 @@
 spec: role/v1
 id: sales-lead
+title: CSO
 department: sales
 mission: Decide who to sell to and how.
 responsibilities:

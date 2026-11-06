@@ -160,7 +160,7 @@ class TestMemoryAndSkills:
         service, run_id, invocation = self._at_execute(orchestrator)
         service.memory_write(run_id, invocation, "deploy on friday")
         backend = orchestrator.memory.backend  # type: ignore[attr-defined]
-        assert backend.banks == {"dept-engineering": ["deploy on friday"]}
+        assert backend.banks == {"agent-engineering--backend": ["deploy on friday"]}
         assert "friday" in service.memory_recall(run_id, invocation, "deploy friday")
 
     def test_memory_comes_back_labelled_untrusted(self, orchestrator: Orchestrator) -> None:

@@ -115,6 +115,7 @@ def role_document(department: str, role: ProposedRole, head: str | None = None) 
     return {
         "spec": "role/v1",
         "id": role.id,
+        "title": role.name,
         "department": department,
         "mission": role.mission,
         "responsibilities": list(role.responsibilities),

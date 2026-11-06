@@ -98,7 +98,7 @@ def test_memory_written_in_one_language_is_found_from_others(tmp_path: Path) -> 
     _run_isolated(
         tmp_path,
         """
-        gateway.write("engineering/backend", "Peluncuran produk dijadwalkan pada hari Jumat setelah pengujian selesai.")
+        gateway.write_department("engineering/tech-lead", "Peluncuran produk dijadwalkan pada hari Jumat setelah pengujian selesai.")
         for query in ("when is the product launch scheduled", "¿cuándo es el lanzamiento del producto?", "产品什么时候发布"):
             hits = gateway.search("engineering/qa", query)
             assert any("Peluncuran" in h.text for h in hits), query
@@ -113,7 +113,7 @@ def test_memories_do_not_expire_after_a_week(tmp_path: Path) -> None:
         """
         import sqlite3
         gateway.write("sales/sales-lead", "The enterprise client prefers annual billing.")
-        path = work / "memory" / "banks" / "dept-sales" / "mnemosyne.db"
+        path = work / "memory" / "banks" / "agent-sales--sales-lead" / "mnemosyne.db"
         conn = sqlite3.connect(path)
         conn.execute("UPDATE working_memory SET timestamp = '2020-01-01T00:00:00'")
         conn.commit()
@@ -141,7 +141,7 @@ def test_recall_makes_no_network_calls_even_with_other_keys_set(tmp_path: Path) 
 
         socket.socket.connect = refuse
         socket.create_connection = refuse
-        gateway.write("engineering/backend", "The staging database is rotated monthly.")
+        gateway.write_department("engineering/tech-lead", "The staging database is rotated monthly.")
         assert any("rotated" in h.text for h in gateway.search("engineering/qa", "basis data staging dirotasi"))
         """,
     )
@@ -151,10 +151,14 @@ def test_each_bank_is_its_own_file_and_nothing_lands_in_the_hermes_home(tmp_path
     _run_isolated(
         tmp_path,
         """
-        gateway.write("engineering/backend", "engineering note")
+        gateway.write("engineering/backend", "my own note")
+        gateway.write_department("engineering/tech-lead", "engineering note")
         gateway.promote("executive/ceo", "company note", "art-1")
         banks = sorted(p.parent.name for p in (work / "memory" / "banks").glob("*/mnemosyne.db"))
-        assert banks == ["company", "dept-engineering"], banks
+        assert banks == ["agent-engineering--backend", "company", "dept-engineering"], banks
+        sizes = gateway.sizes()
+        assert {tier: size["entries"] for tier, size in sizes.items()} == {"company": 1, "department": 1, "personal": 1}
+        assert all(size["bytes"] > 0 for size in sizes.values())
         """,
     )
 
@@ -164,7 +168,7 @@ def test_real_gateway_keeps_departments_apart(org: Org, tmp_path: Path) -> None:
     _run_isolated(
         tmp_path,
         """
-        gateway.write("legal/counsel", "Contract renewal for the Jakarta office is due in June.")
+        gateway.write_department("legal/counsel", "Contract renewal for the Jakarta office is due in June.")
         assert gateway.search("legal/compliance-reviewer", "contract renewal Jakarta")
         assert gateway.search("marketing/social", "contract renewal Jakarta") == []
         assert socket is not None
@@ -173,7 +177,7 @@ def test_real_gateway_keeps_departments_apart(org: Org, tmp_path: Path) -> None:
 
 
 def test_a_later_run_recalls_what_an_earlier_run_learned_across_languages(tmp_path: Path) -> None:
-    """The whole loop on the real stack, with a scripted model: lesson, company memory, next run."""
+    """The whole loop on the real stack, with a scripted model: lessons, a person's approval, the next run."""
     _run_isolated(
         tmp_path,
         """
@@ -182,21 +186,31 @@ def test_a_later_run_recalls_what_an_earlier_run_learned_across_languages(tmp_pa
         from try_professional.core.orchestrator import Orchestrator
         from try_professional.core.pipeline import Purpose
 
+        from try_professional.adapters.api_runner.scripted import default_payload
+
         LESSON = "Selalu tulis pengujian otomatis untuk setiap endpoint health check sebelum rilis."
+        MINE = "Endpoint health check saya harus memeriksa basis data juga."
 
         def teach(invocation, state, org_):
             if invocation.purpose == Purpose.RETROSPECTIVE:
                 return {"lessons": [LESSON], "procedures": [], "skill_proposals": []}
+            if invocation.purpose == Purpose.EXECUTE:
+                return {"payload": default_payload(invocation, state, org_), "notes": {"lesson": MINE}}
             return None
 
         routes = ModelRoutes({"standard": "m", "executive": "m", "fast": "m"})
         orchestrator = Orchestrator(org, work / "home", memory=gateway)
         first = ApiRunner(orchestrator, ScriptedClient(teach), routes).run("Tambahkan endpoint health check")
         assert first.status == "done"
+        assert gateway.backend.size("company")["entries"] == 0, "nothing reaches company memory unapproved"
+        for item in orchestrator.company.pending_memory("company"):
+            gateway.promote(org.root_role, item.text, item.source)
+            orchestrator.company.decide_memory(item.id, True, by="test", at="2026-01-01")
         second = ApiRunner(orchestrator, ScriptedClient(), routes).run("Add automated tests for the health check endpoint")
         assert second.status == "done"
         task = next(t for t in orchestrator.state(second.run_id).tasks.values() if t.work_package_id)
         assert any(LESSON in m and m.startswith("[company]") for m in task.memory_context), task.memory_context
+        assert any(MINE in m and m.startswith("[personal]") for m in task.memory_context), task.memory_context
         orchestrator.close()
         """,
     )

@@ -5,11 +5,12 @@ from __future__ import annotations
 import json
 from typing import Any
 
+from ... import playbooks
+from ...core.artifacts import WORK_OUTPUT_TYPES as TASK_OUTPUTS
+from ...core.brief import Briefing
 from ...core.pipeline import Purpose, RunState
 from ...core.pipeline.state import Invocation
 from ...org import Org, Role
-
-TASK_OUTPUTS = ("CodeChange", "PublicContent", "ResearchReport", "TaskReport")
 
 _RULES = """You work in a company with a strict hierarchy. You report to {escalation}.
 
@@ -26,38 +27,6 @@ If you need another department, call request_handoff."""
 
 _ROOT_RULES = """
 - You own the goal. You plan and sign off, and departments do the work. Never do a department's work yourself."""
-
-_PURPOSE = {
-    Purpose.INTAKE: (
-        "Restate the user's goal and record its constraints and success criteria. Detect the language the goal "
-        "is written in, and record it as user_language (a BCP 47 tag). Keep original_goal exactly as written."
-    ),
-    Purpose.PLAN: (
-        "Produce a plan as a dependency graph of work packages, each owned by one department. Activate only "
-        "the departments this goal actually needs, and give a reason for each one. Use the fewest work packages "
-        "that meet the goal: one is often right. Plan exactly what was asked. If the goal asks for a document or "
-        "a plan, the work is to write it, not to build what it describes. Don't plan review steps: QA and legal "
-        "review of every result happens automatically."
-    ),
-    Purpose.DISPATCH: (
-        "Break this work package into tasks for roles in your department. Use the fewest tasks that meet the "
-        "acceptance criteria: one is often right. Don't add work that wasn't asked for. Give each task a definition "
-        "of done that can be checked, and mark dependencies between tasks. Independent tasks may run in parallel. "
-        "owner_role and output_type must come exactly from the list of your department's roles below. Don't create "
-        "review tasks: every result is reviewed automatically."
-    ),
-    Purpose.EXECUTE: "Do this task and submit the result. Report each done criterion with evidence.",
-    Purpose.REVIEW: (
-        "Review the artifact against its definition of done. Approve only what the evidence supports. "
-        "When you request changes, say exactly what is wrong."
-    ),
-    Purpose.ESCALATION: "An item was escalated to you. Decide how to resolve it, or escalate it further.",
-    Purpose.INTEGRATE: (
-        "Assemble the final deliverable from the approved work. Report on every success criterion, using its "
-        "exact wording. Write summary_in_user_language in the user's language."
-    ),
-    Purpose.RETROSPECTIVE: "Record lessons and reusable procedures from this run. Be specific and brief.",
-}
 
 
 def untrusted(kind: str, text: str) -> str:
@@ -80,16 +49,49 @@ def _section(title: str, body: Any) -> str:
     return f"## {title}\n{text}"
 
 
-def _team(org: Org, department_id: str) -> list[dict[str, Any]]:
-    """What a head can assign. Lists only outputs that can be task results."""
+def _team(org: Org, department_id: str, detail: dict[str, dict[str, Any]] | None = None) -> list[dict[str, Any]]:
+    """What a head can assign: outputs that can be task results, and each role's fit and workload."""
     department = org.departments[department_id]
     team = []
     for role_id in department.roles:
         role = org.role(f"{department_id}/{role_id}")
         outputs = [o for o in role.outputs if o in TASK_OUTPUTS]
         if outputs:
-            team.append({"owner_role": role.ref, "mission": role.mission, "output_types": outputs})
+            team.append(
+                {
+                    "owner_role": role.ref,
+                    "mission": role.mission,
+                    "output_types": outputs,
+                    **(detail or {}).get(role.ref, {}),
+                }
+            )
     return team
+
+
+def _routes(org: Org) -> dict[str, list[str]]:
+    """What the root role needs to send a small command straight to the right place."""
+    root_department = org.root_role.split("/", 1)[0]
+    return {
+        department.id: [
+            role
+            for role in department.roles
+            if any(o in TASK_OUTPUTS for o in org.role(f"{department.id}/{role}").outputs)
+        ]
+        for department in org.departments.values()
+        if department.id != root_department
+    }
+
+
+def _artifact_section(artifact: Any) -> str:
+    """Memory quoted in a brief stays labelled as data, even though a manager passed it on."""
+    payload = artifact.payload
+    title = f"{artifact.type} {artifact.artifact_id} from {artifact.produced_by}"
+    quoted = payload.get("relevant_memory") if artifact.type == "TaskBrief" else None
+    if not quoted:
+        return _section(title, payload)
+    rest = {k: v for k, v in payload.items() if k != "relevant_memory"}
+    memory = untrusted("memory", "\n".join(str(item) for item in quoted))
+    return f"{_section(title, rest)}\n\n{_section('Memory your manager chose for this task', memory)}"
 
 
 def user_prompt(
@@ -100,8 +102,16 @@ def user_prompt(
     loadout: list[dict[str, Any]] | None = None,
     *,
     web: bool = False,
+    briefing: Briefing | None = None,
 ) -> str:
-    parts = [_section("Your assignment", _PURPOSE[invocation.purpose])]
+    briefing = briefing or Briefing()
+    level = playbooks.level_of(org, invocation.role)
+    parts = []
+    if briefing.brief is not None:
+        parts.append(_section("Who you are", briefing.brief.card))
+        if briefing.brief.state:
+            parts.append(_section("Your stand-up", untrusted("work-state", briefing.brief.state)))
+    parts.append(_section("Your assignment", playbooks.section(level, invocation.purpose.value)))
     parts.append(_section("Goal", state.goal))
     if state.user_language:
         language = org.pipeline.working_language
@@ -112,6 +122,8 @@ def user_prompt(
                 "Keep schema keys and code in English.",
             )
         )
+    if invocation.purpose == Purpose.INTAKE:
+        parts.append(_section("Departments and their roles", _routes(org)))
     if invocation.purpose == Purpose.PLAN:
         installed = {
             d.id: org.role(d.head_ref).mission for d in org.departments.values() if d.id != org.root_role.split("/")[0]
@@ -119,7 +131,8 @@ def user_prompt(
         parts.append(_section("Departments you can activate, and what their heads are for", installed))
     if invocation.work_package_id:
         package = state.packages[invocation.work_package_id]
-        parts.append(_section("Work package", package.model_dump(mode="json", include={"id", "title", "acceptance"})))
+        shown = package.model_dump(mode="json", include={"id", "title", "acceptance", "token_budget"})
+        parts.append(_section("Work package", shown))
     if invocation.gate:
         parts.append(
             _section("Review", {"gate": invocation.gate, "subject_artifact_id": invocation.subject_artifact_id})
@@ -131,12 +144,7 @@ def user_prompt(
         artifact = state.artifacts.get(ref)
         # Search results stay in the audit trail. The role sees its loadout instead.
         if artifact is not None and artifact.type != "SkillResolution":
-            parts.append(
-                _section(
-                    f"{artifact.type} {artifact.artifact_id} from {artifact.produced_by}",
-                    artifact.payload,
-                )
-            )
+            parts.append(_artifact_section(artifact))
     if invocation.task_id and invocation.task_id in state.tasks:
         task = state.tasks[invocation.task_id]
         if task.memory_context:
@@ -145,7 +153,10 @@ def user_prompt(
         parts.append(_section("Feedback to address", "\n".join(f"- {f}" for f in invocation.feedback)))
     if invocation.purpose == Purpose.DISPATCH and invocation.work_package_id:
         department = state.packages[invocation.work_package_id].owner_department
-        parts.append(_section("Your department's roles", _team(org, department)))
+        parts.append(_section("Your department's roles", _team(org, department, briefing.team)))
+        if briefing.pending_lessons:
+            rows = json.dumps(briefing.pending_lessons, ensure_ascii=False)
+            parts.append(_section("Team lessons waiting for your decision", untrusted("lessons", rows)))
     if workspace_files is not None and invocation.purpose in (Purpose.EXECUTE, Purpose.REVIEW):
         listing = "\n".join(f"- {name}" for name in workspace_files) or "(empty)"
         parts.append(

@@ -1,5 +1,6 @@
 spec: role/v1
 id: marketing-lead
+title: CMO
 department: marketing
 mission: Decide the message and the channels.
 responsibilities:

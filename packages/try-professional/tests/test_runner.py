@@ -138,6 +138,8 @@ class TestWhatARoleSees:
                             "id": "t",
                             "title": "T",
                             "owner_role": "engineering/tech_lead",
+                            "goal": "g",
+                            "expected_output": "o",
                             "definition_of_done": ["d"],
                             "output_type": "TaskReport",
                         }

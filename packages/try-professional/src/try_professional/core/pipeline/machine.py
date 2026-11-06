@@ -10,8 +10,10 @@ from typing import Any
 
 from ...org import Org
 from ..artifacts import (
+    WORK_OUTPUT_TYPES,
     Artifact,
     ArtifactError,
+    DepartmentActivation,
     Escalation,
     EscalationResolution,
     FinalDeliverable,
@@ -21,6 +23,7 @@ from ..artifacts import (
     ReviewVerdict,
     TaskBrief,
     TaskPlan,
+    TaskSpec,
     WorkPackage,
     make_artifact,
     parse_payload,
@@ -44,6 +47,7 @@ from .state import (
     PackageStatus,
     Purpose,
     ResolveContext,
+    RunCancelled,
     RunPhase,
     RunStarted,
     RunState,
@@ -423,8 +427,17 @@ class _Step:
 
     def approve(self, task: TaskState) -> None:
         task.status = TaskStatus.APPROVED
-        if task.task_id == FINAL_TASK_ID:
+        if task.task_id != FINAL_TASK_ID:
+            return
+        if self.state.size == "small":
+            self.finish_done()
+        else:
             self.start_retrospective()
+
+    def finish_done(self) -> None:
+        self.state.human_requests.clear()
+        self.state.phase = RunPhase.DONE
+        self.actions.append(Finish(status="done", final_artifact_id=self.state.final_artifact_id))
 
     def start_retrospective(self) -> None:
         self.invoke(self.org.root_role, Purpose.RETROSPECTIVE, "Retrospective")
@@ -460,10 +473,13 @@ class _Step:
         task.status = TaskStatus.READY
 
 
-def _validate_plan(plan: Plan, org: Org) -> str | None:
+def _validate_plan(plan: Plan, org: Org, limit: int | None = None) -> str | None:
     ids = [p.id for p in plan.work_packages]
     if len(ids) != len(set(ids)):
         return "work package IDs must be unique"
+    allocated = sum(p.token_budget for p in plan.work_packages)
+    if limit is not None and allocated > limit:
+        return f"package budgets add up to {allocated} tokens, over this run's limit of {limit}"
     activated = {a.id for a in plan.activated_departments}
     for activation in plan.activated_departments:
         if activation.id not in org.departments:
@@ -524,6 +540,117 @@ def _validate_task_plan(plan: TaskPlan, package: PackageState, org: Org) -> str 
     return _find_cycle({t.id: t.depends_on for t in plan.tasks})
 
 
+def _work_output(outputs: tuple[str, ...]) -> str | None:
+    return next((output for output in outputs if output in WORK_OUTPUT_TYPES), None)
+
+
+def _route_problem(charter: GoalCharter, org: Org) -> str | None:
+    """Why a small command can't go where the root role sent it. Gates still apply wherever it goes."""
+    root_department = org.root_role.split("/", 1)[0]
+    department = charter.route_department or charter.route_role.split("/", 1)[0]
+    if department not in org.departments or department == root_department:
+        known = ", ".join(d for d in org.departments if d != root_department)
+        return f"a small command needs route_department, one of: {known}"
+    role = charter.route_role
+    if not role:
+        return None
+    if not org.has_role(role) or role.split("/", 1)[0] != department:
+        return f"route_role '{role}' isn't a role in '{department}'"
+    if _work_output(org.role(role).outputs) is None:
+        return f"route_role '{role}' doesn't produce work results. Route to the department instead"
+    return None
+
+
+def _start_small(step: _Step, charter: GoalCharter, stored: Artifact) -> None:
+    """Skip the steps a small command doesn't need: planning, and dispatch if one role can do it alone."""
+    state, org = step.state, step.org
+    state.size = "small"
+    department = charter.route_department or charter.route_role.split("/", 1)[0]
+    package = WorkPackage(
+        id="wp1",
+        title=charter.restated_goal[:120],
+        owner_department=department,
+        acceptance=charter.success_criteria,
+        flags=deterministic_flags("GoalCharter", charter.model_dump(mode="json")),
+    )
+    reason = "small command, routed by the root role"
+    plan = Plan(activated_departments=[DepartmentActivation(id=department, reason=reason)], work_packages=[package])
+    plan_artifact = step.store(
+        make_artifact(
+            "Plan",
+            plan.model_dump(mode="json"),
+            run_id=state.run_id,
+            produced_by="orchestrator",
+            parents=[stored.artifact_id],
+        )
+    )
+    state.plan_artifact_id = plan_artifact.artifact_id
+    step.activate(department, reason)
+    _add_package(step, package, "plan")
+    if not charter.route_role:
+        return
+    owning = state.packages[package.id]
+    owning.status = PackageStatus.ACTIVE
+    output_type = _work_output(org.role(charter.route_role).outputs)
+    assert output_type is not None
+    spec = TaskSpec(
+        id="t1",
+        title=charter.restated_goal[:120],
+        owner_role=charter.route_role,
+        goal=charter.restated_goal,
+        context="; ".join(charter.constraints),
+        expected_output=f"A {output_type} that meets the definition of done",
+        definition_of_done=charter.success_criteria,
+        output_type=output_type,
+    )
+    _add_tasks(step, owning, [spec], "orchestrator", plan_artifact.artifact_id)
+
+
+def _add_tasks(step: _Step, owning: PackageState, specs: list[TaskSpec], produced_by: str, parent: str) -> None:
+    state, org = step.state, step.org
+    for spec in specs:
+        task_id = f"{owning.id}/{spec.id}"
+        brief = TaskBrief(
+            task_id=task_id,
+            work_package_id=owning.id,
+            title=spec.title,
+            owner_role=spec.owner_role,
+            reviewer_role=org.resolve_reviewer(spec.owner_role),
+            goal=spec.goal,
+            context=spec.context,
+            inputs=spec.inputs,
+            expected_output=spec.expected_output,
+            relevant_memory=spec.relevant_memory,
+            relevant_skills=spec.relevant_skills,
+            definition_of_done=spec.definition_of_done,
+            depends_on=[f"{owning.id}/{d}" for d in spec.depends_on],
+            output_type=spec.output_type,
+        )
+        brief_artifact = step.store(
+            make_artifact(
+                "TaskBrief",
+                brief.model_dump(mode="json"),
+                run_id=state.run_id,
+                produced_by=produced_by,
+                task_id=task_id,
+                parents=[parent],
+                flags=owning.flags.union(spec.flags),
+            )
+        )
+        state.tasks[task_id] = TaskState(
+            task_id=task_id,
+            work_package_id=owning.id,
+            title=spec.title,
+            owner_role=spec.owner_role,
+            reviewer_role=brief.reviewer_role,
+            definition_of_done=spec.definition_of_done,
+            depends_on=brief.depends_on,
+            output_type=spec.output_type,
+            flags=owning.flags.union(spec.flags),
+            brief_artifact_id=brief_artifact.artifact_id,
+        )
+
+
 def _check_actor(state: RunState, invocation_id: str, actor: str) -> Invocation:
     invocation = state.invocations.get(invocation_id)
     if invocation is None:
@@ -573,15 +700,23 @@ def _on_submission(step: _Step, event: Submission) -> None:
 
     if invocation.purpose == Purpose.INTAKE:
         assert isinstance(parsed, GoalCharter)
+        if parsed.size == "small":
+            problem = _route_problem(parsed, org)
+            if problem:
+                step.reject(invocation, problem)
+                return
         stored = artifact()
         state.charter_artifact_id = stored.artifact_id
         state.user_language = parsed.user_language
         close()
-        step.invoke(org.root_role, Purpose.PLAN, "Plan", context_refs=[stored.artifact_id])
+        if parsed.size == "small":
+            _start_small(step, parsed, stored)
+        else:
+            step.invoke(org.root_role, Purpose.PLAN, "Plan", context_refs=[stored.artifact_id])
 
     elif invocation.purpose == Purpose.PLAN:
         assert isinstance(parsed, Plan)
-        problem = _validate_plan(parsed, org)
+        problem = _validate_plan(parsed, org, state.budget_override or org.pipeline.max_tokens_per_run)
         if problem:
             step.reject(invocation, problem)
             return
@@ -603,46 +738,31 @@ def _on_submission(step: _Step, event: Submission) -> None:
         stored = artifact()
         close()
         owning.status = PackageStatus.ACTIVE
-        for spec in parsed.tasks:
-            task_id = f"{owning.id}/{spec.id}"
-            brief = TaskBrief(
-                task_id=task_id,
-                work_package_id=owning.id,
-                title=spec.title,
-                owner_role=spec.owner_role,
-                reviewer_role=org.resolve_reviewer(spec.owner_role),
-                definition_of_done=spec.definition_of_done,
-                depends_on=[f"{owning.id}/{d}" for d in spec.depends_on],
-                output_type=spec.output_type,
-            )
-            brief_artifact = step.store(
-                make_artifact(
-                    "TaskBrief",
-                    brief.model_dump(mode="json"),
-                    run_id=state.run_id,
-                    produced_by=invocation.role,
-                    task_id=task_id,
-                    parents=[stored.artifact_id],
-                    flags=owning.flags.union(spec.flags),
-                )
-            )
-            state.tasks[task_id] = TaskState(
-                task_id=task_id,
-                work_package_id=owning.id,
-                title=spec.title,
-                owner_role=spec.owner_role,
-                reviewer_role=brief.reviewer_role,
-                definition_of_done=spec.definition_of_done,
-                depends_on=brief.depends_on,
-                output_type=spec.output_type,
-                flags=owning.flags.union(spec.flags),
-                brief_artifact_id=brief_artifact.artifact_id,
-            )
+        _add_tasks(step, owning, parsed.tasks, invocation.role, stored.artifact_id)
 
     elif invocation.purpose == Purpose.EXECUTE:
         assert task is not None
+        notes = None
+        if event.notes is not None:
+            try:
+                notes = parse_payload("WorkNotes", event.notes)
+            except ArtifactError as error:
+                step.reject(invocation, str(error))
+                return
         stored = artifact()
         close()
+        if notes is not None:
+            task.notes_artifact_id = step.store(
+                make_artifact(
+                    "WorkNotes",
+                    notes.model_dump(mode="json"),
+                    run_id=state.run_id,
+                    produced_by=event.actor,
+                    task_id=task.task_id,
+                    attested_by=event.attested_by,
+                    parents=[stored.artifact_id],
+                )
+            ).artifact_id
         task.result_artifact_id = stored.artifact_id
         task.flags = flags
         task.pending_gates = [QA_GATE, *triggered_gates(org, flags)]
@@ -740,6 +860,7 @@ def _add_package(step: _Step, package: WorkPackage, origin: Any, resumes: str | 
         flags=package.flags,
         origin=origin,
         resumes_invocation_id=resumes,
+        token_budget=package.token_budget,
     )
 
 
@@ -914,16 +1035,38 @@ def _on_context(step: _Step, event: ContextResolved) -> None:
     task.status = TaskStatus.READY
 
 
+def _note_package_usage(step: _Step, event: UsageRecorded) -> None:
+    """A package's budget is the CEO's estimate. Going over it is counted. Only the run's limit stops a run."""
+    state = step.state
+    invocation = state.invocations.get(event.invocation_id or "")
+    if invocation is None:
+        return
+    task = state.tasks.get(invocation.task_id or "")
+    package_id = invocation.work_package_id or (task.work_package_id if task else None)
+    package = state.packages.get(package_id or "")
+    if package is None:
+        return
+    before = state.package_usage.get(package.id, 0)
+    after = before + event.input_tokens + event.output_tokens
+    state.package_usage[package.id] = after
+    if package.token_budget and before <= package.token_budget < after:
+        state.counters.package_overruns += 1
+
+
 def _on_usage(step: _Step, event: UsageRecorded) -> None:
     state = step.state
     buckets = [state.usage]
     if event.role:
         buckets.append(state.usage_by_role.setdefault(event.role, Usage()))
+    invocation = state.invocations.get(event.invocation_id or "")
+    if invocation is not None:
+        buckets.append(state.usage_by_purpose.setdefault(invocation.purpose.value, Usage()))
     for bucket in buckets:
         bucket.input_tokens += event.input_tokens
         bucket.output_tokens += event.output_tokens
         bucket.cached_input_tokens += event.cached_input_tokens
         bucket.calls += 1
+    _note_package_usage(step, event)
     limit = state.budget_override or step.org.pipeline.max_tokens_per_run
     if limit is None or state.usage.total <= limit or state.phase in TERMINAL_PHASES:
         return
@@ -966,6 +1109,12 @@ def _on_human(step: _Step, event: HumanDecided) -> None:
         state.budget_override = event.new_token_budget
 
 
+def _on_cancel(step: _Step, event: RunCancelled) -> None:
+    step.state.cancelled = True
+    step.state.human_requests.clear()
+    step.fail_run(event.reason)
+
+
 def initial_state(run_id: str, goal: str) -> RunState:
     return RunState(run_id=run_id, goal=goal)
 
@@ -997,6 +1146,8 @@ def advance(state: RunState, event: Any, org: Org) -> tuple[RunState, list[Actio
         _on_usage(step, event)
     elif isinstance(event, HumanDecided):
         _on_human(step, event)
+    elif isinstance(event, RunCancelled):
+        _on_cancel(step, event)
     else:
         raise IllegalEvent("UNKNOWN_EVENT", type(event).__name__)
 

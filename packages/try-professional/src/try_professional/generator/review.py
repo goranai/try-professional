@@ -60,8 +60,9 @@ def render(bundle: Proposal) -> str:
         members = [department.head, *[r for r in department.roles if r != department.head]]
         for member in members:
             ref = f"{department.id}/{member}"
-            marker = " (head)" if member == department.head else ""
-            lines.append(f"  {member}{marker}: {org.role(ref).mission}")
+            role = org.role(ref)
+            marker = f" ({member}, head)" if member == department.head else f" ({member})"
+            lines.append(f"  {role.display_name}{marker}: {role.mission}")
             matches = bundle.provisioned.matches.get(ref, [])
             total_skills += len(matches)
             for match_item in matches:
@@ -96,6 +97,7 @@ def render(bundle: Proposal) -> str:
         "",
         f"Approving activates {len(org.departments)} departments, {len(org.roles)} roles, "
         f"and {len(unique)} skills in {total_skills} role assignments.",
+        "Each role starts with its role card, its skills, and an empty personal memory.",
         "This company produces files. It can't render, upload, publish, or spend.",
     ]
     return "\n".join(lines)

@@ -1,5 +1,6 @@
 spec: role/v1
 id: chief-of-staff
+title: Chief of Staff
 department: executive
 mission: Keep the company on schedule and surface what is stuck.
 responsibilities:

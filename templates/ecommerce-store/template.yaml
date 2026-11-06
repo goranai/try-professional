@@ -54,7 +54,7 @@ departments:
     name: Marketing
     roles:
       - id: marketing-lead
-        name: Head of Marketing
+        name: CMO
         kind: head
         mission: Bring in shoppers without misleading them.
         responsibilities:
@@ -100,7 +100,7 @@ departments:
     name: Operations
     roles:
       - id: operations-lead
-        name: Head of Operations
+        name: COO
         kind: head
         mission: Keep stock and shipping predictable.
         responsibilities:

@@ -55,7 +55,9 @@ class TemplateAdapter:
         invocation = state.invocations[action.invocation_id]
         role = self.org.role(action.role)
         try:
-            payload = self.call_runtime(system_prompt(role, self.org), user_prompt(invocation, state, self.org), action)
+            briefing = self.orchestrator.briefing(run_id, invocation)
+            assignment = user_prompt(invocation, state, self.org, briefing=briefing)
+            payload = self.call_runtime(system_prompt(role, self.org), assignment, action)
         except Exception as error:
             failed = InvocationFailed(invocation_id=action.invocation_id, reason=str(error), retryable=True)
             return Delivery(events=[failed])

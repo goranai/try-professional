@@ -26,6 +26,11 @@
     "TaskSpec": {
       "additionalProperties": false,
       "properties": {
+        "context": {
+          "default": "",
+          "title": "Context",
+          "type": "string"
+        },
         "definition_of_done": {
           "items": {
             "type": "string"
@@ -42,6 +47,11 @@
           "title": "Depends On",
           "type": "array"
         },
+        "expected_output": {
+          "minLength": 1,
+          "title": "Expected Output",
+          "type": "string"
+        },
         "flags": {
           "$ref": "#/$defs/Flags",
           "default": {
@@ -50,10 +60,23 @@
             "touches_personal_data": false
           }
         },
+        "goal": {
+          "minLength": 1,
+          "title": "Goal",
+          "type": "string"
+        },
         "id": {
           "minLength": 1,
           "title": "Id",
           "type": "string"
+        },
+        "inputs": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Inputs",
+          "type": "array"
         },
         "output_type": {
           "minLength": 1,
@@ -66,6 +89,22 @@
           "title": "Owner Role",
           "type": "string"
         },
+        "relevant_memory": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Relevant Memory",
+          "type": "array"
+        },
+        "relevant_skills": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Relevant Skills",
+          "type": "array"
+        },
         "title": {
           "minLength": 1,
           "title": "Title",
@@ -76,6 +115,8 @@
         "id",
         "title",
         "owner_role",
+        "goal",
+        "expected_output",
         "definition_of_done",
         "output_type"
       ],
@@ -86,6 +127,22 @@
   "additionalProperties": false,
   "description": "A department head's breakdown of one work package.",
   "properties": {
+    "adopt_lessons": {
+      "default": [],
+      "items": {
+        "type": "integer"
+      },
+      "title": "Adopt Lessons",
+      "type": "array"
+    },
+    "drop_lessons": {
+      "default": [],
+      "items": {
+        "type": "integer"
+      },
+      "title": "Drop Lessons",
+      "type": "array"
+    },
     "tasks": {
       "items": {
         "$ref": "#/$defs/TaskSpec"

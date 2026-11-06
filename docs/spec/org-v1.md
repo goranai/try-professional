@@ -147,6 +147,7 @@ max_skills: 8
 
 | Field | Default | Meaning |
 |---|---|---|
+| `title` | the role's ID | What people call this role, such as CTO. It changes no permission or reporting line |
 | `skill_needs` | `[]` | Short descriptions of the capabilities this role's skills should provide. Any language |
 | `required_tools` | `[]` | Tools this role can't work without. A runtime that can't provide them SHOULD refuse to run the role |
 | `forbidden_tools` | `[]` | A skill that needs any of these MUST NOT be matched to this role |

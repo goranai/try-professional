@@ -1,5 +1,6 @@
 spec: role/v1
 id: ceo
+title: CEO
 department: executive
 mission: Own the goal from intake to final sign-off.
 responsibilities:

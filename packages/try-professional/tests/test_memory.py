@@ -23,6 +23,7 @@ from try_professional.memory import (
     RemoteEmbeddingRefused,
     check_local_only,
     department_bank,
+    personal_bank,
     remote_embedding_reasons,
     score_floor,
 )
@@ -80,25 +81,51 @@ def gateway(org: Org, backend: FakeBackend) -> MemoryGateway:
 
 
 class TestAccessRules:
-    def test_a_role_writes_only_to_its_own_department(self, gateway: MemoryGateway, backend: FakeBackend) -> None:
+    def test_a_role_writes_only_to_its_own_personal_memory(self, gateway: MemoryGateway, backend: FakeBackend) -> None:
         gateway.write("engineering/backend", "deploy on friday")
+        assert backend.banks == {personal_bank("engineering/backend"): ["deploy on friday"]}
+
+    def test_personal_memory_is_private(self, gateway: MemoryGateway) -> None:
+        gateway.write("engineering/backend", "deploy on friday")
+        assert any("friday" in h for h in gateway.recall("engineering/backend", "deploy friday"))
+        assert gateway.recall("engineering/qa", "deploy friday") == []
+        assert gateway.recall("engineering/tech-lead", "deploy friday") == [], "not even its manager"
+        assert gateway.recall_personal("engineering/qa", "deploy friday") == []
+
+    def test_only_the_head_writes_department_memory(self, gateway: MemoryGateway, backend: FakeBackend) -> None:
+        with pytest.raises(MemoryAccessDenied, match="head"):
+            gateway.write_department("engineering/backend", "deploy on friday")
+        assert backend.banks == {}
+        gateway.write_department("engineering/tech-lead", "deploy on friday")
         assert backend.banks == {department_bank("engineering"): ["deploy on friday"]}
 
     def test_the_department_shares_memory(self, gateway: MemoryGateway) -> None:
-        gateway.write("engineering/backend", "deploy on friday")
+        gateway.write_department("engineering/tech-lead", "deploy on friday")
         assert any("friday" in h for h in gateway.recall("engineering/qa", "deploy friday"))
 
     def test_another_department_cannot_read_it(self, gateway: MemoryGateway) -> None:
-        gateway.write("engineering/backend", "deploy on friday")
+        gateway.write_department("engineering/tech-lead", "deploy on friday")
         assert gateway.recall("marketing/social", "deploy friday") == []
+
+    def test_a_prompt_never_gets_a_whole_bank(self, gateway: MemoryGateway, backend: FakeBackend) -> None:
+        for n in range(30):
+            gateway.write_department("engineering/tech-lead", f"deploy note {n} " + "x" * 900)
+            gateway.write("engineering/backend", f"deploy note {n}")
+        found = gateway.recall("engineering/backend", "deploy note")
+        assert len(found) <= 7
+        assert all(len(text) < 320 for text in found)
 
     def test_everyone_reads_the_company_bank(self, org: Org, gateway: MemoryGateway) -> None:
         gateway.promote("executive/ceo", "launch is in march", "art-1")
         for role in org.roles:
             assert any("march" in h for h in gateway.recall(role, "launch march")), role
 
-    def test_a_role_reads_exactly_two_banks(self, gateway: MemoryGateway) -> None:
-        assert gateway.readable_banks("sales/sales-lead") == ["dept-sales", COMPANY_BANK]
+    def test_a_role_reads_exactly_three_banks(self, gateway: MemoryGateway) -> None:
+        assert gateway.readable_banks("sales/sales-lead") == [
+            personal_bank("sales/sales-lead"),
+            "dept-sales",
+            COMPANY_BANK,
+        ]
 
     @pytest.mark.parametrize("role", ["engineering/backend", "engineering/tech-lead", "legal/counsel"])
     def test_only_executive_can_promote(self, gateway: MemoryGateway, backend: FakeBackend, role: str) -> None:
@@ -136,7 +163,7 @@ class TestAccessRules:
     ) -> None:
         context = ToolContext("engineering/backend", ("memory_write",), tmp_path, gateway, NullSkills())
         run_tool(context, "memory_write", {"text": "hello", "bank": COMPANY_BANK, "role": "executive/ceo"})
-        assert set(backend.banks) == {"dept-engineering"}
+        assert set(backend.banks) == {personal_bank("engineering/backend")}
 
     def test_refused_writes_become_a_tool_refusal(self, gateway: MemoryGateway, tmp_path: Path) -> None:
         context = ToolContext("engineering/backend", ("memory_write",), tmp_path, gateway, NullSkills())
@@ -157,7 +184,7 @@ class TestFloor:
         gateway = MemoryGateway(org, backend, floor=0.0, top_k=3)
         found = gateway.search("sales/sales-lead", "alpha beta")
         assert len(found) == 3
-        assert all(h.bank == COMPANY_BANK for h in found)
+        assert [h.bank for h in found[:2]] == [COMPANY_BANK, COMPANY_BANK], "best first, within each tier's limit"
 
     def test_an_unknown_model_gets_no_floor(self) -> None:
         assert score_floor(DEFAULT_MODEL) > 0
@@ -332,13 +359,17 @@ class TestPipelineUsesMemory:
         task = next(t for t in state.tasks.values() if t.work_package_id)
         assert any("hint" in m for m in task.memory_context)
 
-    def test_lessons_become_company_memory_with_their_source(self, org: Org, harness: Callable[..., Any]) -> None:
+    def test_lessons_become_proposals_and_never_reach_company_memory_alone(
+        self, org: Org, harness: Callable[..., Any]
+    ) -> None:
         run = harness(org)
         result = run.runner.run("Goal")
         state = run.orchestrator.state(result.run_id)
-        assert [p[0] for p in run.memory.promoted] == [org.root_role]
-        assert run.memory.promoted[0][2] == state.retrospective_artifact_id
-        assert any(r["kind"] == "lessons_stored" for r in run.records(result.run_id))
+        assert run.memory.promoted == []
+        pending = run.orchestrator.company.pending_memory("company")
+        assert [p.proposed_by for p in pending] == [org.root_role]
+        assert pending[0].source == state.retrospective_artifact_id
+        assert any(r["kind"] == "lessons_proposed" for r in run.records(result.run_id))
 
     def test_a_memory_failure_does_not_stop_the_run(self, org: Org, harness: Callable[..., Any]) -> None:
         class Broken:

@@ -22,8 +22,10 @@ from .adapters.api_runner.scripted import ScriptedClient
 from .adapters.mcp import McpService
 from .config import CONFIG_NAME, CONFIG_TEMPLATE, ClientRouter, ProjectConfig, build_client, build_search, load_config
 from .core.audit import read_records
-from .core.orchestrator import Orchestrator
-from .core.pipeline import HumanDecided, IllegalEvent
+from .core.brief import build_brief, role_card
+from .core.lock import command_lock
+from .core.orchestrator import Orchestrator, utc_now
+from .core.pipeline import HumanDecided, IllegalEvent, Purpose
 from .generator import (
     ActivationError,
     ArchitectFailed,
@@ -45,9 +47,11 @@ from .memory import (
     MemoryGateway,
     MemorySettings,
     MnemosyneBackend,
+    bank_size,
     check_local_only,
     model_cache_dir,
     score_floor,
+    tier_sizes,
 )
 from .org import Org, OrgValidationError, load_org, validate_bundle
 from .org.loader import read_documents
@@ -98,6 +102,21 @@ def _editor() -> list[str]:
     return choice.split() if choice else (["notepad"] if os.name == "nt" else ["nano"])
 
 
+def _seed_company_memory(bundle: Proposal, root: Path, by: str) -> None:
+    """A person just approved this company, so its description is the first thing it remembers."""
+    description = str(bundle.meta.get("description") or "")
+    if not description:
+        return
+    try:
+        config = load_config(root)
+        org = load_org(config.org_dir)
+        memory = _memory(config, org)
+        if memory is not None:
+            memory.promote(org.root_role, f"What this company is: {description}", f"approved at init by {by}")
+    except Exception as error:
+        _print(f"Couldn't save the company's description to its memory ({type(error).__name__}). Nothing else changed.")
+
+
 def _review(bundle: Proposal, root: Path, embedder: Any, *, by: str, client: Any, model: str, discovery: bool) -> int:
     """The one review screen. Nothing activates unless a person types the confirmation here."""
     while True:
@@ -120,6 +139,7 @@ def _review(bundle: Proposal, root: Path, embedder: Any, *, by: str, client: Any
             except ActivationError as error:
                 _print(f"Not activated: {error}")
                 return 1
+            _seed_company_memory(bundle, root, by)
             _print("Approved. Files go to deliverables/. Put anything roles should read in inputs/.")
             _print('Next: trypro run "<your goal>"')
             return 0
@@ -285,6 +305,8 @@ def _print_result(result: RunResult, deliverables: Path | None = None) -> int:
         _print(f"Deliverables: {deliverables / 'index.md'}")
     total = result.input_tokens + result.output_tokens
     cached = f", {result.cached_input_tokens} of the input cached" if result.cached_input_tokens else ""
+    if result.size:
+        _print(f"Size: {result.size}")
     _print(
         f"Tokens: {total} total ({result.input_tokens} in, {result.output_tokens} out{cached}), {result.calls} calls"
     )
@@ -590,11 +612,63 @@ def cmd_mcp(args: argparse.Namespace) -> int:
     return 0
 
 
+def _show_unfinished(orchestrator: Orchestrator) -> None:
+    unfinished = orchestrator.company.unfinished()
+    if unfinished:
+        _print(
+            "Unfinished from earlier commands. Continue with `trypro resume <id>`, or stop with `trypro cancel <id>`:"
+        )
+        for item in unfinished:
+            _print(f"  {item['run_id']}  {item['status']:<8} {item['goal'][:70]}")
+
+
+def _finish_command(orchestrator: Orchestrator) -> None:
+    done = orchestrator.compact()
+    if any(done.values()):
+        _print(f"Tidied old records: {done['log_entries_summarized']} log entries, {done['runs_archived']} runs.")
+    waiting = orchestrator.company.queued()
+    if waiting:
+        _print(f"{len(waiting)} queued. Run the next one with: trypro next")
+
+
+def _run_goal(orchestrator: Orchestrator, runner: ApiRunner, goal: str) -> int:
+    result = runner.run(goal)
+    code = _print_result(result, orchestrator.deliverables_path(result.run_id))
+    _finish_command(orchestrator)
+    return code
+
+
 def cmd_run(args: argparse.Namespace) -> int:
     runner, orchestrator = _runner(args)
     try:
-        result = runner.run(args.goal)
-        return _print_result(result, orchestrator.deliverables_path(result.run_id))
+        _show_unfinished(orchestrator)
+        if args.queue:
+            number = orchestrator.company.add_queued(args.goal, utc_now())
+            _print(f"Queued as #{number}. Nothing has run or been spent. Run it with: trypro next")
+            return 0
+        with command_lock(orchestrator.home) as held:
+            if not held:
+                number = orchestrator.company.add_queued(args.goal, utc_now())
+                _print(f"Another command is running, so this one is queued as #{number}. Run it with: trypro next")
+                return 0
+            return _run_goal(orchestrator, runner, args.goal)
+    finally:
+        orchestrator.close()
+
+
+def cmd_next(args: argparse.Namespace) -> int:
+    runner, orchestrator = _runner(args)
+    try:
+        with command_lock(orchestrator.home) as held:
+            if not held:
+                _print("Another command is running. Nothing was started.")
+                return 1
+            item = orchestrator.company.take_queued()
+            if item is None:
+                _print("Nothing is queued.")
+                return 0
+            _print(f"Running #{item['id']}: {item['goal']}")
+            return _run_goal(orchestrator, runner, item["goal"])
     finally:
         orchestrator.close()
 
@@ -602,7 +676,86 @@ def cmd_run(args: argparse.Namespace) -> int:
 def cmd_resume(args: argparse.Namespace) -> int:
     runner, orchestrator = _runner(args)
     try:
-        return _print_result(runner.resume(args.run_id), orchestrator.deliverables_path(args.run_id))
+        with command_lock(orchestrator.home) as held:
+            if not held:
+                _print("Another command is running. Nothing was resumed.")
+                return 1
+            return _print_result(runner.resume(args.run_id), orchestrator.deliverables_path(args.run_id))
+    finally:
+        orchestrator.close()
+
+
+def cmd_cancel(args: argparse.Namespace) -> int:
+    orchestrator = _orchestrator()
+    try:
+        if args.target.startswith("#") or args.target.isdigit():
+            item = orchestrator.company.take_queued(int(args.target.lstrip("#")))
+            _print(f"Removed #{item['id']}: {item['goal']}" if item else "That isn't in the queue.")
+            return 0 if item else 1
+        try:
+            orchestrator.cancel(args.target)
+        except KeyError:
+            _print(f"There's no command {args.target}.")
+            return 1
+        except IllegalEvent as error:
+            _print(str(error))
+            return 1
+        _print(f"Cancelled {args.target}. Its records stay, and nothing more will be spent on it.")
+        return 0
+    finally:
+        orchestrator.close()
+
+
+def cmd_memory_pending(args: argparse.Namespace) -> int:
+    orchestrator = _orchestrator()
+    try:
+        company = orchestrator.company.pending_memory("company")
+        team = orchestrator.company.pending_memory("department")
+        if not company and not team:
+            _print("No memory changes are waiting.")
+        for item in company:
+            _print(f"#{item.id} company, from {item.proposed_by} ({item.source_run}): {item.text}")
+        for item in team:
+            _print(f"#{item.id} team lesson for {item.owner}'s head, from {item.proposed_by}: {item.text}")
+        if company:
+            _print("Decide company memory with: trypro memory review --by <your name>")
+        return 0
+    finally:
+        orchestrator.close()
+
+
+def cmd_memory_review(args: argparse.Namespace) -> int:
+    """The CEO proposes company memory, and a person decides each item here."""
+    if not _require_person("Changing company memory"):
+        return 3
+    config = load_config(Path.cwd())
+    org = load_org(config.org_dir)
+    memory = _memory(config, org)
+    orchestrator = Orchestrator(org, config.home)
+    try:
+        for item in orchestrator.company.pending_memory("company"):
+            _print(f"#{item.id} from {item.proposed_by} ({item.source_run}):\n  {item.text}")
+            choice = input("[a]pprove  [r]eject  [s]kip: ").strip().lower()
+            if choice.startswith("a"):
+                if memory is None:
+                    _print("Memory is turned off, so this can't be saved. It stays pending.")
+                    continue
+                memory.promote(org.root_role, item.text, f"{item.source}, approved by {args.by}")
+                orchestrator.company.decide_memory(item.id, True, by=args.by, at=utc_now())
+            elif choice.startswith("r"):
+                orchestrator.company.decide_memory(item.id, False, by=args.by, at=utc_now())
+        return 0
+    finally:
+        orchestrator.close()
+
+
+def cmd_compact(args: argparse.Namespace) -> int:
+    orchestrator = _orchestrator()
+    try:
+        done = orchestrator.compact(args.older_than_days)
+        _print(f"Summarized {done['log_entries_summarized']} log entries, and archived {done['runs_archived']} runs.")
+        _print("Raw logs stay in .trypro/runs/, compressed. trypro audit still verifies them.")
+        return 0
     finally:
         orchestrator.close()
 
@@ -633,16 +786,85 @@ def cmd_decide(args: argparse.Namespace) -> int:
     return 0
 
 
+def _status_backlog(orchestrator: Orchestrator) -> None:
+    _print("Backlog:")
+    queued = orchestrator.company.queued()
+    unfinished = orchestrator.company.unfinished()
+    if not queued and not unfinished:
+        _print("  Nothing waiting.")
+    for item in queued:
+        _print(f"  #{item['id']}  queued   {item['goal'][:70]}")
+    for item in unfinished:
+        _print(f"  {item['run_id']}  {item['status']:<8} {item['goal'][:70]}")
+
+
+def _status_handoffs(orchestrator: Orchestrator) -> None:
+    _print("Open handoffs:")
+    handoffs = orchestrator.company.open_handoffs()
+    if not handoffs:
+        _print("  None.")
+    for item in handoffs:
+        _print(f"  {item['from'] or '?'} -> {item['to']}: {item['request'][:70]} ({item['run_id']})")
+
+
+def _status_memory(orchestrator: Orchestrator, config: ProjectConfig, org: Org) -> None:
+    _print("Memory by tier:")
+    if not config.memory.enabled:
+        _print("  Memory is turned off.")
+    else:
+        sizes = tier_sizes(org, lambda bank: bank_size(_memory_settings(config).data_dir, bank))
+        for tier, size in sizes.items():
+            _print(f"  {tier:<11} {size['entries']:>6} entries  {size['bytes'] / 1024:>9.1f} KB")
+    company = len(orchestrator.company.pending_memory("company"))
+    team = len(orchestrator.company.pending_memory("department"))
+    _print(f"  Waiting for a decision: {company} company changes (yours), {team} team lessons (their heads').")
+
+
+def _status_tokens(orchestrator: Orchestrator) -> None:
+    _print("Tokens by month:")
+    months = orchestrator.company.tokens_by_month()
+    if not months:
+        _print("  Nothing yet.")
+    for row in months:
+        _print(
+            f"  {row['month']}: {row['commands']} commands, {row['input']} input ({row['cached_input']} cached), "
+            f"{row['output']} output, {row['calls']} calls"
+        )
+    _print("Latest commands:")
+    for row in orchestrator.company.tokens_by_command(limit=10):
+        _print(
+            f"  {row['run_id']}  {row['size']:<5} {row['status']:<9} {row['input']} in ({row['cached_input']} cached), "
+            f"{row['output']} out  {row['goal'][:40]}"
+        )
+
+
+def _status_role(orchestrator: Orchestrator, org: Org, ref: str) -> int:
+    if not org.has_role(ref):
+        _print(f"There's no role {ref}.")
+        return 1
+    _print(role_card(org, ref))
+    brief = build_brief(org, orchestrator.company, ref, Purpose.DISPATCH if org.is_head(ref) else Purpose.EXECUTE)
+    _print(brief.state or "No work on record yet.")
+    return 0
+
+
 def cmd_status(args: argparse.Namespace) -> int:
-    orchestrator = _orchestrator()
+    config = load_config(Path.cwd())
+    org = load_org(config.org_dir)
+    orchestrator = Orchestrator(org, config.home)
     try:
+        if args.role:
+            return _status_role(orchestrator, org, args.role)
         if not args.run_id:
-            runs = orchestrator.ledger.list_runs()
-            if not runs:
-                _print("No runs yet.")
-            for run_id, updated in runs:
-                state = orchestrator.state(run_id)
-                _print(f"{run_id}  {state.phase.value:<16} {updated}  {state.goal[:60]}")
+            chosen = args.backlog or args.handoffs or args.memory or args.tokens
+            if not chosen or args.backlog:
+                _status_backlog(orchestrator)
+            if not chosen or args.handoffs:
+                _status_handoffs(orchestrator)
+            if not chosen or args.memory:
+                _status_memory(orchestrator, config, org)
+            if not chosen or args.tokens:
+                _status_tokens(orchestrator)
             return 0
         state = orchestrator.state(args.run_id)
         _print(f"Run {state.run_id}: {state.phase.value}")
@@ -653,6 +875,9 @@ def cmd_status(args: argparse.Namespace) -> int:
         _print(f"Tokens: {state.usage.total} total, {state.usage.calls} calls")
         for role, usage in sorted(state.usage_by_role.items(), key=lambda item: -item[1].total):
             _print(f"  {role}: {usage.total} tokens, {usage.calls} calls")
+        _print(f"Size: {state.size}")
+        for purpose, usage in sorted(state.usage_by_purpose.items(), key=lambda item: -item[1].total):
+            _print(f"  {purpose}: {usage.total} tokens, {usage.calls} calls")
         _print(f"Counters: {state.counters.model_dump()}")
         return 0
     finally:
@@ -767,7 +992,27 @@ def build_parser() -> argparse.ArgumentParser:
     run = sub.add_parser("run", help="Run a goal")
     run.add_argument("goal")
     run.add_argument("--dry-run", action="store_true", help="Use a scripted model: no key, no cost")
+    run.add_argument("--queue", action="store_true", help="Add it to the backlog without running it")
     run.set_defaults(func=cmd_run)
+
+    next_command = sub.add_parser("next", help="Run the oldest queued command")
+    next_command.add_argument("--dry-run", action="store_true")
+    next_command.set_defaults(func=cmd_next)
+
+    cancel = sub.add_parser("cancel", help="Stop an unfinished command, or remove a queued one")
+    cancel.add_argument("target", help="A run ID, or a queue number such as 3")
+    cancel.set_defaults(func=cmd_cancel)
+
+    memory = sub.add_parser("memory", help="Company memory").add_subparsers(dest="memory_command", required=True)
+    pending = memory.add_parser("pending", help="Show memory changes waiting for a decision")
+    pending.set_defaults(func=cmd_memory_pending)
+    memory_review = memory.add_parser("review", help="Decide the CEO's proposed company memory, at a terminal")
+    memory_review.add_argument("--by", required=True)
+    memory_review.set_defaults(func=cmd_memory_review)
+
+    compact = sub.add_parser("compact", help="Summarize old work logs and archive old raw logs. Uses no model")
+    compact.add_argument("--older-than-days", type=int, default=90)
+    compact.set_defaults(func=cmd_compact)
 
     resume = sub.add_parser("resume", help="Continue a blocked or interrupted run")
     resume.add_argument("run_id")
@@ -782,8 +1027,13 @@ def build_parser() -> argparse.ArgumentParser:
     decide.add_argument("--token-budget", type=int)
     decide.set_defaults(func=cmd_decide)
 
-    status = sub.add_parser("status", help="Show runs, or one run")
+    status = sub.add_parser("status", help="Show the backlog, handoffs, memory and tokens, or one run")
     status.add_argument("run_id", nargs="?")
+    status.add_argument("--backlog", action="store_true")
+    status.add_argument("--handoffs", action="store_true")
+    status.add_argument("--memory", action="store_true")
+    status.add_argument("--tokens", action="store_true")
+    status.add_argument("--role", help="One role's card and work state")
     status.set_defaults(func=cmd_status)
 
     audit = sub.add_parser("audit", help="Verify a run's audit log")

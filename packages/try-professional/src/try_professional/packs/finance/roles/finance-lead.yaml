@@ -1,5 +1,6 @@
 spec: role/v1
 id: finance-lead
+title: CFO
 department: finance
 mission: Keep budgets honest and costs visible.
 responsibilities:

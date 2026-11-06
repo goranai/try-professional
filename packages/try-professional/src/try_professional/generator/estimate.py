@@ -91,6 +91,8 @@ class _Typical(ScriptedClient):
                         "id": f"t{n}",
                         "title": f"{member} work",
                         "owner_role": f"{department.id}/{member}",
+                        "goal": "A typical task's goal, in one sentence.",
+                        "expected_output": "An artifact that meets the definition of done.",
                         "definition_of_done": ["Done as described"],
                         "output_type": _work_output(org.role(f"{department.id}/{member}").outputs),
                     }

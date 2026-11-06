@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from ...core.artifacts import PAYLOAD_TYPES, Flags
+from ...core.artifacts import PAYLOAD_TYPES, Flags, WorkNotes
 from ...core.ports import MemoryPort, SearchPort, SkillPort
 from .clients import ClientError, ToolSpec
 from .prompts import untrusted
@@ -61,7 +61,7 @@ _SPECS: dict[str, ToolSpec] = {
     ),
     "memory_recall": ToolSpec(
         "memory_recall",
-        "Search your department's memory and the company memory, in any language.",
+        "Search your own notes, your department's memory, and company memory, in any language.",
         {
             "type": "object",
             "properties": {"query": {"type": "string"}},
@@ -71,7 +71,7 @@ _SPECS: dict[str, ToolSpec] = {
     ),
     "memory_write": ToolSpec(
         "memory_write",
-        "Save a fact or lesson to your department's memory.",
+        "Save a note or lesson to your personal memory. Only you can see it.",
         {
             "type": "object",
             "properties": {"text": {"type": "string"}},
@@ -178,6 +178,17 @@ def compact_schema(node: Any) -> Any:
     return compact
 
 
+# Written by hand because it's resent on every call while a role works. WorkNotes still validates the result.
+_NOTES_SCHEMA = {
+    "type": "object",
+    "properties": {
+        name: {"type": "array", "items": {"type": "string"}} if name in ("decided", "promised") else {"type": "string"}
+        for name in WorkNotes.model_fields
+    },
+    "additionalProperties": False,
+}
+
+
 def submit_spec(output_type: str, *, declares_flags: bool = False) -> ToolSpec:
     schema = compact_schema(PAYLOAD_TYPES[output_type].model_json_schema())
     definitions = schema.pop("$defs", {})
@@ -185,6 +196,7 @@ def submit_spec(output_type: str, *, declares_flags: bool = False) -> ToolSpec:
     if declares_flags:
         properties["flags"] = compact_schema(Flags.model_json_schema())
         properties["language"] = {"type": "string", "description": "BCP 47 tag"}
+        properties["notes"] = _NOTES_SCHEMA
     wrapper: dict[str, Any] = {
         "type": "object",
         "properties": properties,

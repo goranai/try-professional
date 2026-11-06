@@ -1,8 +1,8 @@
 """Multilingual memory: department and company banks on Mnemosyne, behind access rules."""
 
-from .backend import MemoryBackend, MemoryHit, MnemosyneBackend
+from .backend import MemoryBackend, MemoryHit, MnemosyneBackend, bank_size
 from .embedding import DEFAULT_MODEL, Embedder, FastEmbedEmbedder, model_cache_dir, score_floor
-from .gateway import COMPANY_BANK, MemoryAccessDenied, MemoryGateway, department_bank
+from .gateway import COMPANY_BANK, MemoryAccessDenied, MemoryGateway, department_bank, personal_bank, tier_sizes
 from .settings import (
     MemoryConfigError,
     MemorySettings,
@@ -24,9 +24,12 @@ __all__ = [
     "MemorySettings",
     "MnemosyneBackend",
     "RemoteEmbeddingRefused",
+    "bank_size",
     "check_local_only",
     "department_bank",
     "model_cache_dir",
+    "personal_bank",
     "remote_embedding_reasons",
     "score_floor",
+    "tier_sizes",
 ]

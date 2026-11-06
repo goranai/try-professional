@@ -231,7 +231,8 @@ def discover_skills(
                         continue
                     except FetchError:
                         raise
-                    except SkillCustomsError:
+                    except (SkillCustomsError, OSError):
+                        # An OSError here is usually a path too long for Windows. One skill can't stop init.
                         counts["other"] += 1
                         continue
                     lock.add(result.entry)

@@ -186,6 +186,7 @@ def load_bundle(org: dict[str, Any], roles: dict[str, dict[str, Any]]) -> Org:
             required_tools=tuple(data.get("required_tools", ())),
             forbidden_tools=tuple(data.get("forbidden_tools", ())),
             max_skills=data.get("max_skills", 8),
+            title=data.get("title", ""),
         )
         for ref, data in roles.items()
     }

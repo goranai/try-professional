@@ -11,7 +11,7 @@ departments:
     name: Product
     roles:
       - id: product-lead
-        name: Head of Product
+        name: CPO
         kind: head
         mission: Decide what to build next, and why.
         responsibilities:
@@ -40,7 +40,7 @@ departments:
     name: Engineering
     roles:
       - id: tech-lead
-        name: Tech Lead
+        name: CTO
         kind: head
         mission: Own the system's design and its quality.
         responsibilities:
@@ -70,7 +70,7 @@ departments:
     name: Growth
     roles:
       - id: growth-lead
-        name: Head of Growth
+        name: CMO
         kind: head
         mission: Find and keep customers without misleading anyone.
         responsibilities:

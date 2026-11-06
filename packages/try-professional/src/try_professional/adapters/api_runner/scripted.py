@@ -59,6 +59,8 @@ def default_payload(invocation: Invocation, state: RunState, org: Org) -> dict[s
                     "id": "t1",
                     "title": package.title,
                     "owner_role": owner,
+                    "goal": f"{LABEL} {package.title}",
+                    "expected_output": "An artifact that meets the definition of done",
                     "definition_of_done": ["Done as described"],
                     "output_type": _work_output(org.role(owner).outputs),
                 }

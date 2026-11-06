@@ -2,6 +2,11 @@
   "additionalProperties": false,
   "description": "Issued by the orchestrator from a TaskPlan. The reviewer comes from the org, not the plan.",
   "properties": {
+    "context": {
+      "default": "",
+      "title": "Context",
+      "type": "string"
+    },
     "definition_of_done": {
       "items": {
         "type": "string"
@@ -18,6 +23,24 @@
       "title": "Depends On",
       "type": "array"
     },
+    "expected_output": {
+      "minLength": 1,
+      "title": "Expected Output",
+      "type": "string"
+    },
+    "goal": {
+      "minLength": 1,
+      "title": "Goal",
+      "type": "string"
+    },
+    "inputs": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Inputs",
+      "type": "array"
+    },
     "output_type": {
       "minLength": 1,
       "title": "Output Type",
@@ -27,6 +50,22 @@
       "minLength": 1,
       "title": "Owner Role",
       "type": "string"
+    },
+    "relevant_memory": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Relevant Memory",
+      "type": "array"
+    },
+    "relevant_skills": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Relevant Skills",
+      "type": "array"
     },
     "reviewer_role": {
       "minLength": 1,
@@ -55,6 +94,8 @@
     "title",
     "owner_role",
     "reviewer_role",
+    "goal",
+    "expected_output",
     "definition_of_done",
     "output_type"
   ],

@@ -181,7 +181,9 @@ class McpService:
             "task_id": action.task_id,
             "gate": action.gate,
             "instructions": system_prompt(role, self.org),
-            "assignment": user_prompt(invocation, state, self.org, None, loadout),
+            "assignment": user_prompt(
+                invocation, state, self.org, None, loadout, briefing=self.orchestrator.briefing(run_id, invocation)
+            ),
             "output_schema": submit_spec(action.output_type, declares_flags=declares_flags).input_schema,
             "may_use": usable,
             "submit_with": "review_submit" if action.purpose == Purpose.REVIEW else "artifact_submit",

@@ -1,0 +1,44 @@
+{
+  "additionalProperties": false,
+  "description": "What a role records about its own task. It becomes that role's work log and personal memory.",
+  "properties": {
+    "decided": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 5,
+      "title": "Decided",
+      "type": "array"
+    },
+    "did": {
+      "default": "",
+      "maxLength": 300,
+      "title": "Did",
+      "type": "string"
+    },
+    "lesson": {
+      "default": "",
+      "maxLength": 500,
+      "title": "Lesson",
+      "type": "string"
+    },
+    "promised": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 5,
+      "title": "Promised",
+      "type": "array"
+    },
+    "team_lesson": {
+      "default": "",
+      "maxLength": 500,
+      "title": "Team Lesson",
+      "type": "string"
+    }
+  },
+  "title": "WorkNotes",
+  "type": "object"
+}

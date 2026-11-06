@@ -1,5 +1,6 @@
 spec: role/v1
 id: counsel
+title: General Counsel
 department: legal
 mission: Catch license, terms-of-service, and privacy problems before they ship.
 responsibilities:
