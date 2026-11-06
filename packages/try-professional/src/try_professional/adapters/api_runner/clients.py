@@ -63,6 +63,8 @@ class ChatRequest:
     model: str
     max_tokens: int = DEFAULT_MAX_TOKENS
     metadata: dict[str, Any] = field(default_factory=dict)
+    # Honoured where the provider allows it. Anthropic's newer models reject it, so that client ignores it.
+    temperature: float | None = None
 
 
 @dataclass
@@ -229,6 +231,7 @@ class OpenAICompatibleClient:
             base_url=base_url.rstrip("/") + "/", headers=headers, timeout=timeout, transport=transport
         )
         self.max_tokens_param = max_tokens_param
+        self._temperature_refused = False
         self.max_retries = max_retries
         self._sleep = sleep
 
@@ -276,7 +279,18 @@ class OpenAICompatibleClient:
                 for t in request.tools
             ]
             body["tool_choice"] = "auto"
-        data = self._post(body)
+        if request.temperature is not None and not self._temperature_refused:
+            body["temperature"] = request.temperature
+        try:
+            data = self._post(body)
+        except ClientError as refused:
+            # Some models only accept their default. That's not worth failing the call.
+            detail = str(refused).lower()
+            if "temperature" not in body or "http 400" not in detail or "temperature" not in detail:
+                raise
+            self._temperature_refused = True
+            del body["temperature"]
+            data = self._post(body)
         choices = data.get("choices") or []
         if not choices:
             raise ClientError(f"response has no choices: {str(data)[:300]}", retryable=True)

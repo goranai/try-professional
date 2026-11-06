@@ -33,6 +33,45 @@ def _request(model: str = "test-model") -> ChatRequest:
 
 
 class TestOpenAICompatible:
+    def test_a_requested_temperature_is_sent(self) -> None:
+        sent: list[dict[str, Any]] = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            sent.append(json.loads(request.content))
+            return httpx.Response(200, json=self._ok({"role": "assistant", "content": "ok"}))
+
+        client = self._client(handler)
+        client.complete(_request())
+        request = _request()
+        request.temperature = 0.0
+        client.complete(request)
+        assert "temperature" not in sent[0]
+        assert sent[1]["temperature"] == 0.0
+
+    def test_a_model_that_refuses_a_temperature_still_answers(self) -> None:
+        sent: list[dict[str, Any]] = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            body = json.loads(request.content)
+            sent.append(body)
+            if "temperature" in body:
+                return httpx.Response(400, text="Unsupported value: 'temperature'")
+            return httpx.Response(200, json=self._ok({"role": "assistant", "content": "ok"}))
+
+        client = self._client(handler)
+        request = _request()
+        request.temperature = 0.0
+        assert client.complete(request).text == "ok"
+        assert client.complete(request).text == "ok"
+        assert ["temperature" in body for body in sent] == [True, False, False]
+
+    def test_other_bad_requests_still_fail(self) -> None:
+        client = self._client(lambda request: httpx.Response(400, text="bad model"))
+        request = _request()
+        request.temperature = 0.0
+        with pytest.raises(ClientError):
+            client.complete(request)
+
     def _client(self, handler: Any, **kwargs: Any) -> OpenAICompatibleClient:
         return OpenAICompatibleClient(
             base_url="https://api.example.com/v1",

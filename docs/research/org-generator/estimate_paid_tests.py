@@ -24,7 +24,7 @@ from try_professional.skills.rerank import _SUBMIT, _SYSTEM, SHORTLIST_SIZE, jud
 CHARS_PER_TOKEN = 3.5
 ARCHITECT_RETRIES_WORST = 3
 # The judge lists only the skills that fit, at about 40 tokens each. A role's cap is 8.
-FIT_OUTPUT_TOKENS = 320
+FIT_OUTPUT_TOKENS = 450
 GENERATIONS = 24
 SPLIT_ROLES = 22
 

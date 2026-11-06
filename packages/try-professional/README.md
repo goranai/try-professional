@@ -1,8 +1,8 @@
 # Try Professional
 
-Turn an LLM agent runtime into a structured company: one accountable owner per task, typed handoffs, review gates, multilingual memory, and a full audit log.
+Turn an agent into a permanent company, not a one-off project. It works only when you give it a command, and it persists between commands: every agent, from the CEO down, keeps its own memory and knows what it's working on.
 
-**Status: pre-release, Phase 3 of 7.** The org spec, pipeline, audit log, API runner, and multilingual memory exist. The skill supply chain, the MCP and Hermes adapters, and benchmarks don't exist yet.
+**Status: pre-release. Most of that isn't built yet.** Today's version gives you one accountable owner per task, typed handoffs, review gates, multilingual memory shared at company and department level, a vetted skill supply chain, and a full audit log. Generating a company from a description exists, but hasn't been proven on a real model. Personal memory, work state across commands, wake-up briefs, management playbooks, Hermes support, and benchmarks don't exist yet.
 
 ```bash
 pip install -e packages/try-professional

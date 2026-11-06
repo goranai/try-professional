@@ -6,6 +6,8 @@
 
 Try Professional turns an LLM agent runtime into a structured company: a hierarchy of agents with one accountable owner per task, typed handoffs, review gates, shared multilingual memory and a vetted skill supply chain. It is designed against flat swarms.
 
+**Core product definition (set by the owner on 2026-11-06; planned as Phase 4c and not built yet).** Try Professional turns an agent into a permanent company, not a one-off project. The company only works when the user gives it a command, with no autonomous loop, but it persists between commands indefinitely. Every agent, from the CEO to the lowest role, has its own memory and always knows what it's working on. Management behavior comes from versioned playbooks that are ours to write and refine. GitHub skills supply staff expertise.
+
 **End goal (set by the owner on 2026-11-06).** Someone clones `goranai/try-professional`, runs one command describing a business, and gets a complete company designed for that business, with skills assigned to its departments and roles, ready to run. `trypro init "a YouTube Shorts content company"` should produce Trend Research, Scriptwriting, Production, Distribution, Analytics, Executive, Legal and QA, not the generic nine departments. Then `trypro run "make 5 Shorts about AI tools for this week"` works straight away. In v0.1 the company produces files. Rendering and uploading come later as optional connectors, always gated by human approval. §5.4 has the design, approved by the owner on 2026-11-06.
 
 ## Contents
@@ -784,7 +786,7 @@ flowchart LR
 
 **Embeddings alone aren't enough (2026-11-06).** A recall of 43% doesn't meet the end goal, so the owner added a re-rank: embeddings shortlist up to 20 skills per role, and the cheap model chooses those that fit, with a one-line reason. It runs at `trypro init` and on `trypro skills match`, and caches by role, skill content, and model, so it only spends when one changes, and it reports its tokens. `--no-rerank` falls back to the numbers above, and so does `trypro init --template`. Skill text reaches the judge as untrusted data, after the scan, and a person still approves the result. This also removes the need for a person's category before matching. See §5.4.
 
-**The re-rank missed its target.** On 30 fresh skills from a third repository, scored once, it found 20 of 39 matches (51%) at 69% precision, against the 60% recall set in advance. Embeddings with a person's categories found 16 of 39 (41%) at 70%. So it adds about 10 points with no human categories, but not yet enough. Details are in [`docs/research/loadouts/`](research/loadouts/).
+**The re-rank met its target on the second try.** The target, set in advance, was 60% recall on unseen skills. Version 3 of the judge missed it, finding 20 of 39 (51%) at 69% precision. Version 4 decides every candidate by number, and on 30 more unseen skills, scored once, it found 32 of 44 (73%) at 64% precision. Embeddings with a person's categories found 21 of 44 (48%) at 72% on that set. So it finds far more, needs no human categories, and gets more wrong, which is why a person reviews the result. Details are in [`docs/research/loadouts/`](research/loadouts/).
 
 **Categories do most of the work.** A first version chose a threshold of 0.68 on the hand-written fixture alone, and scored 26/26 there, because one author wrote both the skills and the `skill_needs`. On real skills that threshold suggested **nothing**. Real descriptions say when to use a skill rather than what it does, so they score lower. Wording alone then reached about 45% precision, with code review matching Compliance and Sales. Adding a person's category raised it to 86% on the tuning set. So assigning categories isn't busywork: it's what makes matching useful.
 
@@ -1011,11 +1013,14 @@ Nothing is marked complete without passing tests. Each phase ends with what was 
 | 4 | `skill-customs` | Passes alone in a clean environment; malicious-skill fixtures are caught; license, pinning and lockfile tests pass; approval unreachable by agents |
 | 4a | Loadouts (§9.6) | Precision reported on a labelled fixture and real skills, in English and Indonesian; prompt budget test passes. **Tests pass, not committed** |
 | 4b | Org Generator (§5.4): five templates, Org Architect, compiler, company policy, provisioning, review screen, token estimate, `deliverables/`, `inputs/`, Shorts example | See below |
+| 4c | Permanent company and management playbooks: **approved 2026-11-06, being built.** See below | The journey below passes on three businesses; memory permission tests pass for all three tiers; briefs stay within budget; their cost is reported |
+| 4d | Self-refinement loop: **held until Phase 4c's journey gives real numbers.** See below | Quality gap reported per industry on held-out businesses, on two cheap models; every kept change has before and after numbers in `docs/refinement-log.md` |
 | 5 | MCP (add `org_propose`, `org_proposal_get`), Hermes, and template adapters | Each adapter's smoke test passes; `trypro hermes verify` passes against a real Hermes install, on a generated org with a different size from the default; the ⚠ list in §10.4 is resolved |
 | 6 | Benchmark harness and first results, including the Shorts task | `trypro bench` reproduces; `docs/benchmarks.md` is generated from raw results |
 | 7 | Docs, CI, repo templates, seeded issues, releases. The README leads with the Shorts demo, from a real recorded run, and states the v0.1 scope | Clean-machine install works on all 3 operating systems; CI is green; publishing to PyPI and creating issues happen only after your explicit go-ahead |
+| 8 (v0.2) | `trypro dream`: **agreed for v0.2, not started.** See below | Hostile transcripts can't produce a forbidden change; concurrent writes can't overwrite each other; rollback restores the exact earlier state; effect on held-out goals reported, even if it's none |
 
-**Phase 4b status (2026-11-06):** built and committed as unproven (`d75f1b4`). Real GitHub discovery ran once. The re-rank was measured on a real model and missed its 60% recall target, so, as agreed, the paid generations and the Shorts run didn't happen. The Architect and the token estimate have still never run on a real model.
+**Phase 4b status (2026-11-06):** built and committed as unproven (`d75f1b4`). Real GitHub discovery ran once. The re-rank met its 60% recall target on its second scored set. The owner postponed the full Shorts run to Phase 4c's exit. The Architect and the token estimate have still never run on a real model.
 
 **Phase 4b exit criteria:**
 
@@ -1033,8 +1038,73 @@ Nothing is marked complete without passing tests. Each phase ends with what was 
 
 - Re-rank on the real-skill sets (`docs/research/loadouts/run_rerank.py`), with categories hidden, tuning first, and the `fresh` set scored once. Report precision, recall and token cost. The owner's target is recall well above 43% without losing much precision. If recall on `fresh` is under 60%, set in advance as "clearly above 43%", stop here and report.
 - Generate 8 businesses, 3 times each, on a token cap the harness enforces (`docs/research/org-generator/run_eval.py`). Four have no close template: an online fashion store, a digital marketing agency, and an Indonesian-language education channel, each with its nearest template held out, and a physiotherapy clinic. Only the first generation of each finds skills and pays for the re-rank, as the owner chose. Report first-try validity, retries, and tokens per generation. The owner reviews, per business, the 3 org charts side by side for consistency, and the one loadout.
-- One full run of the Shorts company on `deepseek-v4.1-flash-1017`. Report tokens by role, and how far the estimate was from the result.
+- **Postponed to Phase 4c's exit, by the owner's decision:** one full run of the Shorts company on `deepseek-v4.1-flash-1017`. Report tokens by role, and how far the estimate was from the result.
 
+
+**Phase 4c: permanent company and management playbooks (set by the owner and approved on 2026-11-06, being built).** It comes before self-refinement, so that phase refines the final architecture. Test D, the full Shorts run, is postponed until this is built, because it would otherwise test a pipeline this phase replaces.
+
+| Area | Exists today | New |
+|---|---|---|
+| Company memory | A bank readable by all. Retrospective lessons are written to it automatically | Only the CEO proposes, and the user approves. The automatic write in `_store_lessons` goes |
+| Department memory | A bank that any role in the department can write | Curated by the head. Staff put forward lessons, and the head accepts them |
+| Personal memory | Nothing | One bank per role, which only that role can write and read |
+| Role card | Role fields, and a team list shown only when dispatching | A card built by code: who I am, my manager, my team, my responsibilities |
+| Task queue, work log, handoffs | Inside one run's state | Company-wide, across commands, with origin |
+| Wake-up brief | Task memory, recalled per task | A brief built by code with a strict token budget. Managers also get a team view |
+| Commands | `run`, `resume`, `decide`, and `status` per run | A backlog, cancelling, and unfinished work shown at each command |
+| Long-term use | The ledger and hash-chained audit logs survive restarts | A schema version with migrations, and compaction with raw logs archived |
+| Cost | Tokens per run and per role | Per command and per month, plus `trypro status` views for backlog, handoffs and memory size per tier |
+| Management behavior | Short rules hard-coded in `prompts.py` | Versioned Markdown in `playbooks/`, loaded by role level and by step |
+| Delegation artifacts | `Plan`, `TaskSpec`, `TaskBrief` and `TaskReport`, validated | Budget per package. Briefs add goal, context, inputs, expected format, memory and skills |
+
+Design rules:
+
+- **Work state is derived, not authored.** Code projects it from audit events and typed artifacts into `.trypro/company.sqlite`, so it can be rebuilt, and no model can write it directly. `advance()` stays pure.
+- **Briefs cost no model call.** Code builds them, with a priority order and a hard limit: 300 tokens for staff, 600 for heads and the CEO. Local embeddings choose the personal memories.
+- **Playbooks stay small in prompts.** Only the section for the current step is loaded, at most 250 tokens. They replace `_PURPOSE`, with a packaged copy and a drift test, and each run records the playbook version it used. Templates may add industry notes but can't replace a playbook.
+- **Memory is retrieved by a fixed policy, enforced in code:** a few top hits from each tier, under a character limit, never a whole bank. Skills show as a list first, and the full text is fetched only when needed.
+- **Budgets per package.** The CEO allocates them, and code checks they fit the run's ceiling. A package's budget is a model's estimate, so going over it is counted and reported, and only the run's ceiling stops a run.
+- **Right-sized orchestration.** The CEO's first step classifies each command. A small one needs one department and one or two roles. It skips planning and the retrospective, goes straight to the department's head or to the one role that can do it, and gets a smaller brief. QA and legal gates apply exactly as they do to any other command. Tokens per command are reported for both paths.
+- **Executives.** A CTO or CSO is the head of a department with an executive title, so there's no extra layer of delegation to pay for on every command. A true extra layer stays a possible option for large companies later.
+- **Compaction uses code, not a model.** Work log entries are typed, so old ones can be summarized for free. Raw logs are archived unchanged, so `trypro audit` still verifies.
+- **Commands run one at a time** per company. No scheduling and no proactive behavior.
+
+The acceptance test is the whole journey. From a fresh clone, `trypro init "a web design agency"` gives a complete company in one review screen, with a role card, matched skills and an empty personal memory for each agent. One command then goes from the CEO through heads to staff and QA, into `deliverables/`. A related command a simulated week later shows what agents did before in their briefs, and reuses lessons from the first. This phase's exit runs that journey on three businesses, with the Shorts studio as one, on flow and cost. The final quality report comes after Phase 4d, on at least three business types not used in training, including the web design agency.
+
+**Phase 4d: self-refinement loop (set by the owner on 2026-11-06, held until Phase 4c's journey gives real numbers).** Its re-estimate splits token totals by input, cached input and output, and includes a minimal version with one iteration and a smaller training set.
+
+Goal: on a cheap model, get as close as possible to what a strong model produces, by improving the repo rather than the model. Claude Code writes the SOPs, produces reference deliverables, diagnoses failures and changes the repo. All quality measurement uses the cheap model as the employee. Claude Code may play employees only to debug handoffs, artifact formats and gates, and never to judge quality.
+
+It comes after Phase 4c and before Phase 5, so adapters expose the refined prompts. Refining the management playbooks is its main goal, measured by right person assigned, task size, brief clarity, rework rate, escalations, and tokens spent on coordination against actual work. Phase 6 benchmark tasks must not overlap with its training or held-out goals.
+
+- **Generality.** No business-specific logic in core code, and a test fails if industry words appear in the pipeline, generator, matcher or shared prompts. Most training goals have no template, and Shorts is at most one goal. A change that helps one industry and lowers the average is reverted.
+- **Measuring the gap.** One written rubric per deliverable type, including whether a professional in that industry would recognize the departments, roles, gates and loadouts. A fresh grader sees both deliverables in random order, with identifying details stripped.
+- **Noise first.** The same model gave different answers to the same re-rank call, so the baseline repeats some goals. A change only counts as helping if its effect exceeds that measured noise.
+- **Changes.** One commit each, with before and after numbers in `docs/refinement-log.md`. Each fix is a hypothesis, logged as coming from Claude Code's reasoning or from an observed failure, with how often each kind helped. Scores can never be improved by weakening QA, Legal, skill vetting, secret handling or budget limits.
+- **Stopping.** When the gap stops shrinking for 2 iterations, or at the approved budget.
+- **Final result.** Only on held-out industries the training set never touched, on two cheap models, before and after refinement. The remaining gap goes in the README.
+- **Dogfooding.** One training goal is a software company working on this repo. Its output is proposals only, and `docs/refinement-log.md` records which came from it.
+
+**Phase 8 (v0.2): `trypro dream` (agreed for v0.2 by the owner on 2026-11-06, not started).** Out-of-band memory consolidation, inspired by ["Learning while you sleep: Beyond memory to dreaming"](https://tessl.io/registry/skills/github/AINativeDev/aidevcon-2026-ldn/talk-lamis-context-engineering-dreaming), Lamis Mukta (Anthropic), AI Native DevCon 2026 London. It reviews past runs and proposes changes to a company's memory and SOPs. It's off by default, and it never edits anything itself.
+
+| Step | What happens | Who decides |
+|---|---|---|
+| Collect | Reads run logs in the chosen window, and builds one digest per department, holding only what that department could see | Code |
+| Count | Failed gates, retries, rework and tokens per task | Code, not the model |
+| Analyse | One sub-agent per department, on the cheap model, with no tools except submitting findings. Transcripts and memories reach it as untrusted data | Model |
+| Aggregate | A CEO-level step sees department findings, not transcripts, and merges them | Model |
+| Filter | A pattern needs at least 3 distinct runs and 30% of the window. Cited run IDs must exist, and that department must have been able to see them | Code |
+| Review | One screen. Each proposal shows the diff, example run IDs, how often it happened, and why | Person |
+| Apply | Compare-and-swap on a content hash, then a versioned change record | Code |
+
+- **What it can change.** A closed list of typed proposals: add, edit or remove a memory, and edit a role's SOP, `skill_needs`, or that company's copy of a playbook. Nothing else has a proposal type, so QA and Legal gates, security settings, secrets handling and budgets can't be expressed. The result must still pass `trypro org validate --policy`.
+- **QA and Legal roles.** Their SOPs are off-limits to dreaming, because weakening a reviewer's checklist would weaken its gate without touching it. They can only be made stricter, never looser, through dev-time refinement with the owner's review.
+- **Personal memory.** Dreaming may propose changes only through the review screen, grouped by department so they aren't approved one by one.
+- **Company memory.** Each change is approved on its own, and an "accept all" doesn't include it.
+- **Safety.** Accepting needs a terminal, as with `trypro init`, and no MCP tool or agent can do it. Secrets are redacted before text reaches the model. Every change records its source runs and earlier content, and `trypro dream rollback <change>` restores it. If the hash has changed, the proposal is marked stale and isn't applied. Memories stay untrusted when read back.
+- **Cost.** `trypro dream --estimate` is free, and a run has its own token ceiling. A weekly schedule prints an OS scheduler entry for a person to install, so there's no daemon.
+- **Backend work.** `MemoryBackend` only has `remember` and `recall` today. Mnemosyne 4.0.0 has `get_all_memories`, `update`, `forget` and `invalidate`, which would need wrapping and testing. Its own `sleep` isn't used, because it changes memory without a person's review.
+- **Proof.** Compare held-out goals before and after accepted dreams, using the Phase 4d rubric and noise floor, and report the result even if it shows no effect.
 
 **CI (Phase 7, added incrementally from Phase 2):** lint and type checks, tests, secret scanning, dependency audit, `skill-customs verify` and scan on every PR, spec and artifact-schema drift checks, the isolation job and the README claims lint.
 
@@ -1050,7 +1120,7 @@ Nothing is marked complete without passing tests. Each phase ends with what was 
 - **The hierarchy may not win.** It will probably cost more tokens than a single agent on simple tasks. The benchmark exists to measure that.
 - **Static scanning can be bypassed.** Paraphrased injection will get past rules. That's why trust levels, runtime tool limits and human review exist.
 - **In MCP operator mode, one model plays every role.** Reviewer independence is weaker there and is labelled as such.
-- **Loadout accuracy rests on small sets, labelled by one person.** See §9.6. On the fairest test, the model re-rank finds about half of the skills a role should get, with about 7 in 10 suggestions right, so a person's review still matters.
+- **Loadout accuracy rests on small sets, labelled by one person.** See §9.6. On the latest unseen set, the model re-rank found about 7 in 10 of the skills a role should get, with about 6 in 10 suggestions right, so a person's review matters.
 - **Agent counsel is not a lawyer.** Legal gate output is a check, not legal advice.
 - **A generated company is a first draft.** Passing the spec and policy shows it's well formed, not that it suits the business. That's why a person approves it. (Phase 4b, not built.)
 - **The company produces files in v0.1, and nothing else.** It doesn't render video, upload anything, or read your channel's data. (Phase 4b, not built.)

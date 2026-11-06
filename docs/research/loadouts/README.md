@@ -24,15 +24,25 @@ How well matching fits skills to roles. Scores are for what matching suggests, b
 
 Recall of 43% isn't enough for the project's goal, so embeddings now only shortlist, and the cheap model judges fit. `run_rerank.py` measures it, with categories hidden, because a fresh install won't have a person's.
 
-Measured on 2026-11-06 on `deepseek-v4.1-flash-1017`. **It missed the target set in advance: recall of at least 60% on the fresh set.**
+Measured on 2026-11-06 on `deepseek-v4.1-flash-1017`. The target set in advance was recall of at least 60% on an unseen set. Prompt version 3 missed it, and version 4 met it.
 
 | Set | Embeddings, with a person's categories | Re-rank, with no categories |
 |---|---|---|
-| Fresh: 30 skills, scored once | 16/23 precise (70%), 16/39 found (41%) | 20/29 precise (69%), 20/39 found (51%) |
-| Held out: 14 skills, labels seen before | 10/11 (91%), 10/23 (43%) | 15/20 (75%), 15/23 (65%) |
-| Tuning: 12 skills, prompt tuned on it | 86%, 67% | 27/34 (79%), 27/27 (100%) |
+| **Second fresh set: 30 skills, scored once, version 4** | 21/29 precise (72%), 21/44 found (48%) | **32/50 precise (64%), 32/44 found (73%)** |
+| Fresh: 30 skills, scored once, version 3 | 16/23 precise (70%), 16/39 found (41%) | 20/29 precise (69%), 20/39 found (51%) |
+| Held out: 14 skills, labels seen before, version 3 | 10/11 (91%), 10/23 (43%) | 15/20 (75%), 15/23 (65%) |
+| Tuning: 12 skills, prompt tuned on it, version 3 | 86%, 67% | 27/34 (79%), 27/27 (100%) |
 
-Trust the fresh row. The tuning row shows how far a small set can flatter a prompt: three versions were tried on it, and 100% became 51%. On the fresh set, 16 of the 19 misses were the judge's and 3 were the shortlist's. `engineering/backend` chose no skills at all, and rejected all 5 of its labelled matches, including `stripe-integration-expert`, ranked second. That could be a bad answer, or a real judgment, because the first version didn't record it. The code now retries a misshapen answer instead of reading it as "no", and reports roles that chose nothing. All of this cost 187,811 tokens, including 54,623 for one 22-role pass over 30 skills.
+Trust the top row. The tuning row shows how far a small set can flatter a prompt: three versions were tried on it, and 100% became 51%.
+
+**What changed for version 4.** On the first fresh set, `engineering/backend` chose no skills at all. Rerunning that role chose 3, so identical calls could give different answers, and the first answer can't be explained because it wasn't recorded. Even then, a valid answer silently rejected most of its matches. So:
+
+- The judge now gives a decision for every candidate, by number, instead of listing only the ones that fit. All 440 candidates got one.
+- It asks for temperature 0, so answers repeat where the provider allows it.
+- Every raw answer is saved beside the cache (`*.raw.jsonl`), so a surprising result can be looked at without paying for it again.
+- A misshapen or empty answer is retried, instead of being read as "no".
+
+**What to keep in mind.** Recall rose 25 points over embeddings, at a cost of 8 points of precision, and needs no person's categories. Precision is lower than version 3's, so a person's review matters more. The most common wrong suggestion was generic code review offered to every engineer, because their categories invite it. Of the 12 misses, 11 were the judge's and 1 was the shortlist's. This is one score on one set, labelled by one person, and this set may be easier: the same embeddings found 48% here against 41% on the first. One 22-role pass cost 49,710 tokens, about 2,260 per role, which is less than version 3 despite the extra decisions, because numbers replaced long skill IDs. Everything in this test cost 243,198 tokens of its 250,000 cap.
 
 A shortlist limits recall whatever the judge does. On the two sets combined (29 skills), a size of 12 kept 38 of 50 labelled matches, and 20 kept 48, so the size is 20. That choice looked at the held-out labels, so they can't give a clean result any more. The `fresh` split comes from a third repository, was labelled before anything scored it, and is scored once.
 

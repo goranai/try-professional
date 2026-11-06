@@ -424,12 +424,13 @@ class Judge:
         text = request.messages[0]["content"]
         role = json.loads(text.split("## Role\n")[1].split("\n\n")[0])["role"]
         rows = json.loads(text.split('<untrusted kind="skill-list">\n')[1].split("\n</untrusted>")[0])
-        fits = [
-            {"skill_id": r["skill_id"], "reason": "Fits the job\x1b[31m", "category": "copywriting"}
+        decisions = [
+            {"number": r["number"], "fit": True, "reason": "Fits the job\x1b[31m", "category": "copywriting"}
+            if self.fits(role, r["name"])
+            else {"number": r["number"], "fit": False}
             for r in rows
-            if self.fits(role, r["skill_id"])
         ]
-        call = ToolCall(id="j", name="submit_fit", arguments={"fits": fits})
+        call = ToolCall(id="j", name="submit_fit", arguments={"decisions": decisions})
         return ChatResponse(
             text="",
             tool_calls=[call],
@@ -520,7 +521,7 @@ class TestRerank:
         class Invents(Judge):
             def complete(self, request: ChatRequest) -> ChatResponse:
                 response = super().complete(request)
-                response.tool_calls[0].arguments["fits"].append({"skill_id": "evil/skill", "reason": "x"})
+                response.tool_calls[0].arguments["decisions"].append({"number": 999, "fit": True, "reason": "x"})
                 return response
 
         verdicts, _ = rerank(
@@ -528,9 +529,7 @@ class TestRerank:
         )
         assert not any(skill == "evil/skill" for _, skill in verdicts)
 
-    def test_a_skill_left_out_counts_as_no_and_is_remembered(
-        self, shorts_org: Any, catalog: Any, tmp_path: Path
-    ) -> None:
+    def test_a_decision_of_no_is_remembered(self, shorts_org: Any, catalog: Any, tmp_path: Path) -> None:
         lists = self._lists(shorts_org, catalog, tmp_path)
         cache = RerankCache(tmp_path / "v.sqlite")
         judge = Judge(fits=lambda role, skill: False)
@@ -545,7 +544,7 @@ class TestRerank:
             def complete(self, request: ChatRequest) -> ChatResponse:
                 response = super().complete(request)
                 response.stop_reason = "max_tokens"
-                response.tool_calls[0].arguments["fits"] = []
+                response.tool_calls[0].arguments["decisions"] = []
                 return response
 
         lists = self._lists(shorts_org, catalog, tmp_path)
@@ -558,13 +557,77 @@ class TestRerank:
             def complete(self, request: ChatRequest) -> ChatResponse:
                 response = super().complete(request)
                 arguments = response.tool_calls[0].arguments
-                arguments["verdicts"] = arguments.pop("fits")
+                arguments["verdicts"] = arguments.pop("decisions")
                 return response
 
         lists = self._lists(shorts_org, catalog, tmp_path)
         verdicts, report = rerank(shorts_org, lists, WrongKey(), "m", RerankCache(tmp_path / "v.sqlite"))
         assert not verdicts
         assert set(report.failed_roles) == {role for role, items in lists.items() if items}
+
+    def test_an_undecided_skill_isnt_read_as_no_or_remembered(
+        self, shorts_org: Any, catalog: Any, tmp_path: Path
+    ) -> None:
+        class Partial(Judge):
+            def complete(self, request: ChatRequest) -> ChatResponse:
+                response = super().complete(request)
+                decisions = response.tool_calls[0].arguments["decisions"]
+                decisions[0]["fit"] = "true"
+                return response
+
+        lists = {"scriptwriting/scriptwriter": self._lists(shorts_org, catalog, tmp_path)["scriptwriting/scriptwriter"]}
+        assert len(lists["scriptwriting/scriptwriter"]) > 1
+        verdicts, report = rerank(shorts_org, lists, Partial(), "m", RerankCache(tmp_path / "v.sqlite"))
+        assert report.unanswered == 1
+        assert len(verdicts) == len(lists["scriptwriting/scriptwriter"]) - 1
+
+    def test_it_asks_for_repeatable_answers(self, shorts_org: Any, catalog: Any, tmp_path: Path) -> None:
+        judge = Judge()
+        rerank(shorts_org, self._lists(shorts_org, catalog, tmp_path), judge, "m", RerankCache(tmp_path / "v.sqlite"))
+        assert judge.requests and all(request.temperature == 0.0 for request in judge.requests)
+
+    def test_every_raw_answer_is_logged(self, shorts_org: Any, catalog: Any, tmp_path: Path) -> None:
+        lists = self._lists(shorts_org, catalog, tmp_path)
+        cache = RerankCache(tmp_path / "v.sqlite")
+        judge = Judge(fits=lambda role, skill: False)
+        _, report = rerank(shorts_org, lists, judge, "m", cache)
+        assert report.raw_log == str(tmp_path / "v.raw.jsonl")
+        entries = [json.loads(line) for line in Path(report.raw_log).read_text(encoding="utf-8").splitlines()]
+        assert len(entries) == report.calls > 0
+        assert {entry["role"] for entry in entries} == {role for role, items in lists.items() if items}
+        assert all("answer" in entry and entry["prompt_version"] and entry["candidates"] for entry in entries)
+
+    def test_a_retry_logs_both_answers(self, shorts_org: Any, catalog: Any, tmp_path: Path) -> None:
+        class WrongKey(Judge):
+            def complete(self, request: ChatRequest) -> ChatResponse:
+                response = super().complete(request)
+                arguments = response.tool_calls[0].arguments
+                arguments["verdicts"] = arguments.pop("decisions")
+                return response
+
+        lists = self._lists(shorts_org, catalog, tmp_path)
+        cache = RerankCache(tmp_path / "v.sqlite")
+        _, report = rerank(shorts_org, lists, WrongKey(), "m", cache)
+        entries = [json.loads(line) for line in cache.raw_log.read_text(encoding="utf-8").splitlines()]
+        assert {entry["attempt"] for entry in entries} == {1, 2}
+        assert len(entries) == report.calls
+
+    def test_a_failed_call_is_logged(self, shorts_org: Any, catalog: Any, tmp_path: Path) -> None:
+        lists = self._lists(shorts_org, catalog, tmp_path)
+        cache = RerankCache(tmp_path / "v.sqlite")
+        rerank(shorts_org, lists, Judge(fail=True), "m", cache)
+        entries = [json.loads(line) for line in cache.raw_log.read_text(encoding="utf-8").splitlines()]
+        assert entries
+        assert all(entry["error"] for entry in entries)
+
+    def test_cached_judgments_log_nothing_new(self, shorts_org: Any, catalog: Any, tmp_path: Path) -> None:
+        lists = self._lists(shorts_org, catalog, tmp_path)
+        cache = RerankCache(tmp_path / "v.sqlite")
+        judge = Judge()
+        rerank(shorts_org, lists, judge, "m", cache)
+        before = cache.raw_log.read_text(encoding="utf-8")
+        rerank(shorts_org, lists, judge, "m", cache)
+        assert cache.raw_log.read_text(encoding="utf-8") == before
 
     def test_a_role_that_chose_nothing_is_reported(self, shorts_org: Any, catalog: Any, tmp_path: Path) -> None:
         lists = self._lists(shorts_org, catalog, tmp_path)

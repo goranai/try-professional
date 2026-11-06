@@ -64,3 +64,38 @@ fresh:
   - {repo: alirezarezvani/claude-skills, commit: 8f082544116fc0d014188e521ca40304cdfc86b0, path: ra-qm-team/skills/isms-audit-expert, category: compliance, roles: [legal/compliance-reviewer]}
   - {repo: alirezarezvani/claude-skills, commit: 8f082544116fc0d014188e521ca40304cdfc86b0, path: ra-qm-team/skills/regulatory-affairs-head, category: compliance, roles: [legal/compliance-reviewer, legal/counsel]}
   - {repo: alirezarezvani/claude-skills, commit: 8f082544116fc0d014188e521ca40304cdfc86b0, path: research/research/skills/research, category: research, roles: [research/analyst, research/research-lead]}
+
+# The same repository, with skills no earlier set used. 30 chosen by a salted hash of their paths, skipping
+# skills that are symbolic links, which skill-customs refuses. Labelled from descriptions before anything scored
+# them. No model answer or shortlist for them was seen first. The target is 60% recall: at least 27 of 44.
+fresh2:
+  - {repo: alirezarezvani/claude-skills, commit: 8f082544116fc0d014188e521ca40304cdfc86b0, path: c-level-advisor/general-counsel-advisor/skills/general-counsel-advisor, category: legal, roles: [legal/counsel]}
+  - {repo: alirezarezvani/claude-skills, commit: 8f082544116fc0d014188e521ca40304cdfc86b0, path: project-management/skills/atlassian-admin, category: operations, roles: [operations/ops-lead, engineering/devops]}
+  - {repo: alirezarezvani/claude-skills, commit: 8f082544116fc0d014188e521ca40304cdfc86b0, path: engineering/data-quality-auditor/skills/data-quality-auditor, category: analysis, roles: [research/analyst]}
+  - {repo: alirezarezvani/claude-skills, commit: 8f082544116fc0d014188e521ca40304cdfc86b0, path: research-ops/skills/market-research, category: market-research, roles: [research/analyst, research/research-lead]}
+  - {repo: alirezarezvani/claude-skills, commit: 8f082544116fc0d014188e521ca40304cdfc86b0, path: compliance-os/skills/iso13485-audit-prep, category: compliance, roles: [legal/compliance-reviewer]}
+  - {repo: alirezarezvani/claude-skills, commit: 8f082544116fc0d014188e521ca40304cdfc86b0, path: engineering-team/playwright-pro/skills/pw, category: testing, roles: [engineering/qa, engineering/frontend]}
+  - {repo: alirezarezvani/claude-skills, commit: 8f082544116fc0d014188e521ca40304cdfc86b0, path: c-level-advisor/skills/cmo-advisor, category: marketing, roles: [marketing/marketing-lead]}
+  - {repo: alirezarezvani/claude-skills, commit: 8f082544116fc0d014188e521ca40304cdfc86b0, path: business-growth/skills/sales-engineer, category: sales, roles: [sales/proposal-writer, sales/sales-lead]}
+  - {repo: alirezarezvani/claude-skills, commit: 8f082544116fc0d014188e521ca40304cdfc86b0, path: commercial/skills/deal-desk, category: sales, roles: [sales/sales-lead, finance/finance-lead]}
+  - {repo: alirezarezvani/claude-skills, commit: 8f082544116fc0d014188e521ca40304cdfc86b0, path: marketing-skill/skills/campaign-analytics, category: marketing, roles: [marketing/marketing-lead]}
+  - {repo: alirezarezvani/claude-skills, commit: 8f082544116fc0d014188e521ca40304cdfc86b0, path: business-growth/skills/revenue-operations, category: sales, roles: [sales/sales-lead, finance/finance-lead]}
+  - {repo: alirezarezvani/claude-skills, commit: 8f082544116fc0d014188e521ca40304cdfc86b0, path: marketing-skill/skills/form-cro, category: marketing, roles: [marketing/marketing-lead]}
+  - {repo: alirezarezvani/claude-skills, commit: 8f082544116fc0d014188e521ca40304cdfc86b0, path: marketing-skill/skills/churn-prevention, category: marketing, roles: [marketing/marketing-lead, product/product-manager]}
+  - {repo: alirezarezvani/claude-skills, commit: 8f082544116fc0d014188e521ca40304cdfc86b0, path: c-level-advisor/skills/cs-onboard, category: general, roles: []}
+  - {repo: alirezarezvani/claude-skills, commit: 8f082544116fc0d014188e521ca40304cdfc86b0, path: engineering/skills/api-design-reviewer, category: code-review, roles: [engineering/backend, engineering/tech-lead]}
+  - {repo: alirezarezvani/claude-skills, commit: 8f082544116fc0d014188e521ca40304cdfc86b0, path: engineering/i18n-localization/skills/i18n-localization, category: frontend, roles: [engineering/frontend]}
+  - {repo: alirezarezvani/claude-skills, commit: 8f082544116fc0d014188e521ca40304cdfc86b0, path: engineering/skills/pr-review-expert, category: code-review, roles: [engineering/qa, engineering/tech-lead]}
+  - {repo: alirezarezvani/claude-skills, commit: 8f082544116fc0d014188e521ca40304cdfc86b0, path: engineering/skills/spec-driven-workflow, category: development-workflow, roles: [engineering/tech-lead, product/product-manager]}
+  - {repo: alirezarezvani/claude-skills, commit: 8f082544116fc0d014188e521ca40304cdfc86b0, path: c-level-advisor/skills/vpe-advisor, category: agent-coordination, roles: [engineering/tech-lead]}
+  - {repo: alirezarezvani/claude-skills, commit: 8f082544116fc0d014188e521ca40304cdfc86b0, path: product-team/skills/experiment-designer, category: product, roles: [product/product-manager, product/ux-researcher]}
+  - {repo: alirezarezvani/claude-skills, commit: 8f082544116fc0d014188e521ca40304cdfc86b0, path: finance/skills/finance-skills, category: finance, roles: [finance/finance-lead]}
+  - {repo: alirezarezvani/claude-skills, commit: 8f082544116fc0d014188e521ca40304cdfc86b0, path: engineering-team/skills/gcp-cloud-architect, category: infrastructure, roles: [engineering/devops, engineering/tech-lead]}
+  - {repo: alirezarezvani/claude-skills, commit: 8f082544116fc0d014188e521ca40304cdfc86b0, path: engineering/llm-wiki/skills/llm-wiki, category: general, roles: []}
+  - {repo: alirezarezvani/claude-skills, commit: 8f082544116fc0d014188e521ca40304cdfc86b0, path: c-level-advisor/skills/competitive-intel, category: market-research, roles: [research/analyst, marketing/marketing-lead, sales/sales-lead]}
+  - {repo: alirezarezvani/claude-skills, commit: 8f082544116fc0d014188e521ca40304cdfc86b0, path: engineering/prompt-governance/skills/prompt-governance, category: development-workflow, roles: [engineering/backend, engineering/devops]}
+  - {repo: alirezarezvani/claude-skills, commit: 8f082544116fc0d014188e521ca40304cdfc86b0, path: c-level-advisor/skills/context-engine, category: general, roles: []}
+  - {repo: alirezarezvani/claude-skills, commit: 8f082544116fc0d014188e521ca40304cdfc86b0, path: engineering/skills/codebase-onboarding, category: development-workflow, roles: [engineering/tech-lead]}
+  - {repo: alirezarezvani/claude-skills, commit: 8f082544116fc0d014188e521ca40304cdfc86b0, path: business-operations/skills/internal-comms, category: communications, roles: [executive/chief-of-staff, operations/ops-lead]}
+  - {repo: alirezarezvani/claude-skills, commit: 8f082544116fc0d014188e521ca40304cdfc86b0, path: engineering-team/skills/senior-frontend, category: frontend, roles: [engineering/frontend]}
+  - {repo: alirezarezvani/claude-skills, commit: 8f082544116fc0d014188e521ca40304cdfc86b0, path: engineering-team/skills/code-reviewer, category: code-review, roles: [engineering/qa, engineering/tech-lead]}

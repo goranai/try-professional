@@ -396,6 +396,10 @@ def _judge_skills(
     )
     for role in report.failed_roles:
         _print(f"  Couldn't judge skills for {role}, so it was left out this time.")
+    for role in report.chose_none:
+        _print(f"  The model chose no skills for {role}.")
+    if report.calls:
+        _print(f"Its raw answers are in {report.raw_log}.")
     return verdicts
 
 

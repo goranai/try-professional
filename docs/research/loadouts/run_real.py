@@ -67,14 +67,28 @@ def main(output: Path, split: str, threshold: float | None) -> None:
                 ok = skill in wanted
                 correct += ok
                 wrong += not ok
-                rows.append({"role": role, "skill": skill.rsplit("/", 1)[-1], "score": round(match.score, 3), "right": ok})
+                rows.append(
+                    {"role": role, "skill": skill.rsplit("/", 1)[-1], "score": round(match.score, 3), "right": ok}
+                )
             missed += len(wanted - set(got) - collapsed)
         precision = correct / (correct + wrong) if correct + wrong else 0.0
         recall = correct / (correct + missed) if correct + missed else 0.0
-        return {"t": t, "precision": round(precision, 3), "recall": round(recall, 3), "correct": correct, "wrong": wrong, "missed": missed, "rows": rows}
+        return {
+            "t": t,
+            "precision": round(precision, 3),
+            "recall": round(recall, 3),
+            "correct": correct,
+            "wrong": wrong,
+            "missed": missed,
+            "rows": rows,
+        }
 
     if threshold is None:
-        report = {"split": split, "skills": len(labels), "sweep": [measure(round(0.30 + 0.02 * n, 2)) for n in range(21)]}
+        report = {
+            "split": split,
+            "skills": len(labels),
+            "sweep": [measure(round(0.30 + 0.02 * n, 2)) for n in range(21)],
+        }
     else:
         report = {"split": split, "skills": len(labels), "result": measure(threshold)}
     output.write_text(json.dumps(report, ensure_ascii=False, indent=1), encoding="utf-8")

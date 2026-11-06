@@ -356,6 +356,8 @@ def provision(
             "judged": report.judged,
             "reused": report.reused,
             "failed_roles": report.failed_roles,
+            "chose_none": report.chose_none,
+            "raw_log": report.raw_log,
             "used_model": client is not None,
         }
 
