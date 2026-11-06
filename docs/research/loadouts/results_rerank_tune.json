@@ -1,0 +1,256 @@
+{
+ "split": "tune",
+ "model": "deepseek-v4.1-flash-1017",
+ "skills": 12,
+ "precision": 0.794,
+ "recall": 1.0,
+ "correct": 27,
+ "wrong": 7,
+ "missed": 0,
+ "tokens": 32934,
+ "input_tokens": 30367,
+ "output_tokens": 2567,
+ "cached_input_tokens": 2560,
+ "calls": 22,
+ "failed_roles": [],
+ "rows": [
+  {
+   "role": "engineering/backend",
+   "skill": "dispatching-parallel-agents",
+   "fit": true,
+   "labelled": false,
+   "reason": "Splitting independent backend tasks for parallel implementation"
+  },
+  {
+   "role": "engineering/backend",
+   "skill": "finishing-a-development-branch",
+   "fit": true,
+   "labelled": true,
+   "reason": "Integrating completed backend work after tests pass"
+  },
+  {
+   "role": "engineering/backend",
+   "skill": "receiving-code-review",
+   "fit": true,
+   "labelled": true,
+   "reason": "Applying code review feedback on backend changes"
+  },
+  {
+   "role": "engineering/backend",
+   "skill": "requesting-code-review",
+   "fit": true,
+   "labelled": true,
+   "reason": "Verifying backend implementation meets spec before merging"
+  },
+  {
+   "role": "engineering/backend",
+   "skill": "test-driven-development",
+   "fit": true,
+   "labelled": true,
+   "reason": "Core to writing tests for features and bugfixes the role builds"
+  },
+  {
+   "role": "engineering/backend",
+   "skill": "using-git-worktrees",
+   "fit": true,
+   "labelled": true,
+   "reason": "Isolating feature branch work in the development workflow"
+  },
+  {
+   "role": "engineering/devops",
+   "skill": "dispatching-parallel-agents",
+   "fit": true,
+   "labelled": false,
+   "reason": "Coordinating independent tasks, e.g. parallel incident or pipeline fixes."
+  },
+  {
+   "role": "engineering/devops",
+   "skill": "finishing-a-development-branch",
+   "fit": true,
+   "labelled": true,
+   "reason": "Deciding how to integrate completed work ties directly to deployment workflow."
+  },
+  {
+   "role": "engineering/devops",
+   "skill": "receiving-code-review",
+   "fit": true,
+   "labelled": true,
+   "reason": "Applies review feedback with rigor; supports the role's code-review and dev-workflow categories."
+  },
+  {
+   "role": "engineering/devops",
+   "skill": "requesting-code-review",
+   "fit": true,
+   "labelled": true,
+   "reason": "Code review is a listed role category; gates changes before merge into deployable branches."
+  },
+  {
+   "role": "engineering/devops",
+   "skill": "using-git-worktrees",
+   "fit": true,
+   "labelled": true,
+   "reason": "Isolated workspaces for parallel fixes; relevant to development-workflow category."
+  },
+  {
+   "role": "engineering/frontend",
+   "skill": "frontend-design",
+   "fit": true,
+   "labelled": true,
+   "reason": "Directly supports building distinctive, intentional user interfaces."
+  },
+  {
+   "role": "engineering/frontend",
+   "skill": "finishing-a-development-branch",
+   "fit": true,
+   "labelled": true,
+   "reason": "Development-workflow category: integrating completed implementation work."
+  },
+  {
+   "role": "engineering/frontend",
+   "skill": "receiving-code-review",
+   "fit": true,
+   "labelled": true,
+   "reason": "Role includes code-review; handling review feedback rigorously fits."
+  },
+  {
+   "role": "engineering/frontend",
+   "skill": "requesting-code-review",
+   "fit": true,
+   "labelled": true,
+   "reason": "Role includes code-review category; verifying work before merge fits."
+  },
+  {
+   "role": "engineering/frontend",
+   "skill": "test-driven-development",
+   "fit": true,
+   "labelled": true,
+   "reason": "Frontend work includes testing components; TDD guides feature implementation."
+  },
+  {
+   "role": "engineering/frontend",
+   "skill": "using-git-worktrees",
+   "fit": true,
+   "labelled": true,
+   "reason": "Development-workflow skill for isolating feature work on UI changes."
+  },
+  {
+   "role": "engineering/qa",
+   "skill": "finishing-a-development-branch",
+   "fit": true,
+   "labelled": false,
+   "reason": "Gating integration on tests passing is a definition-of-done decision"
+  },
+  {
+   "role": "engineering/qa",
+   "skill": "receiving-code-review",
+   "fit": true,
+   "labelled": false,
+   "reason": "Reviewing changes demands technical rigor when assessing feedback"
+  },
+  {
+   "role": "engineering/qa",
+   "skill": "requesting-code-review",
+   "fit": true,
+   "labelled": false,
+   "reason": "Verifying work meets requirements before merge is core QA review duty"
+  },
+  {
+   "role": "engineering/qa",
+   "skill": "test-driven-development",
+   "fit": true,
+   "labelled": true,
+   "reason": "Test design expectations inform whether done criteria are met"
+  },
+  {
+   "role": "engineering/tech-lead",
+   "skill": "dispatching-parallel-agents",
+   "fit": true,
+   "labelled": true,
+   "reason": "Splitting work packages into parallelizable tasks for engineers."
+  },
+  {
+   "role": "engineering/tech-lead",
+   "skill": "finishing-a-development-branch",
+   "fit": true,
+   "labelled": true,
+   "reason": "Decides how to integrate completed work and unblock engineers."
+  },
+  {
+   "role": "engineering/tech-lead",
+   "skill": "receiving-code-review",
+   "fit": true,
+   "labelled": true,
+   "reason": "Applies technical rigor when evaluating feedback on own designs and PRs."
+  },
+  {
+   "role": "engineering/tech-lead",
+   "skill": "requesting-code-review",
+   "fit": true,
+   "labelled": true,
+   "reason": "Tech lead verifies work before merge against requirements."
+  },
+  {
+   "role": "engineering/tech-lead",
+   "skill": "test-driven-development",
+   "fit": true,
+   "labelled": true,
+   "reason": "Sets verifiable build standards so work packages can be checked."
+  },
+  {
+   "role": "engineering/tech-lead",
+   "skill": "using-git-worktrees",
+   "fit": true,
+   "labelled": true,
+   "reason": "Coordinates isolated workspaces so parallel implementation tasks don't collide."
+  },
+  {
+   "role": "executive/ceo",
+   "skill": "internal-comms",
+   "fit": true,
+   "labelled": true,
+   "reason": "Executive communications responsibility — internal formats for reporting and announcements"
+  },
+  {
+   "role": "executive/ceo",
+   "skill": "dispatching-parallel-agents",
+   "fit": true,
+   "labelled": false,
+   "reason": "Planning work packages and activating departments maps to parallel delegation"
+  },
+  {
+   "role": "executive/chief-of-staff",
+   "skill": "internal-comms",
+   "fit": true,
+   "labelled": true,
+   "reason": "Writing status reports and escalations in company-preferred formats"
+  },
+  {
+   "role": "marketing/content-writer",
+   "skill": "brand-guidelines",
+   "fit": true,
+   "labelled": true,
+   "reason": "Applies brand style guidance to written content, relevant to brand category."
+  },
+  {
+   "role": "marketing/marketing-lead",
+   "skill": "brand-guidelines",
+   "fit": true,
+   "labelled": true,
+   "reason": "Applying brand colors/visual identity supports brand positioning and messaging work"
+  },
+  {
+   "role": "marketing/marketing-lead",
+   "skill": "internal-comms",
+   "fit": true,
+   "labelled": false,
+   "reason": "Writing company-standard communications is relevant to reviewing and shaping messaging"
+  },
+  {
+   "role": "operations/ops-lead",
+   "skill": "internal-comms",
+   "fit": true,
+   "labelled": true,
+   "reason": "Writing internal comms supports the ops lead's communications duties."
+  }
+ ]
+}

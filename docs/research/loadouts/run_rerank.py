@@ -2,7 +2,7 @@
 
 usage:
     python run_rerank.py shortlist <split>             Free: how many labelled matches survive each shortlist size.
-                                                       Don't use this on "fresh": it would reveal part of its score.
+                                                       Don't use this on an unscored set: it reveals part of its score.
     python run_rerank.py judge <split> <output.json>   PAID: calls the model. Needs TRYPRO_RERANK_APPROVED=yes.
 
 Categories are hidden here on purpose, because a fresh install won't have a person's categories.
@@ -120,6 +120,7 @@ def measure_judge(split: str, output: Path) -> None:
         "cached_input_tokens": report.cached_input_tokens,
         "calls": report.calls,
         "failed_roles": report.failed_roles,
+        "chose_none": report.chose_none,
         "rows": [
             {
                 "role": role,

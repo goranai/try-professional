@@ -1,0 +1,214 @@
+{
+ "split": "heldout",
+ "model": "deepseek-v4.1-flash-1017",
+ "skills": 14,
+ "precision": 0.75,
+ "recall": 0.652,
+ "correct": 15,
+ "wrong": 5,
+ "missed": 8,
+ "tokens": 34920,
+ "input_tokens": 32847,
+ "output_tokens": 2073,
+ "cached_input_tokens": 11264,
+ "calls": 22,
+ "failed_roles": [],
+ "rows": [
+  {
+   "role": "engineering/backend",
+   "skill": "domain-modeling",
+   "fit": true,
+   "labelled": false,
+   "reason": "Glossary/ADR and domain modeling support schema design and backend terminology."
+  },
+  {
+   "role": "engineering/backend",
+   "skill": "find-docs",
+   "fit": true,
+   "labelled": true,
+   "reason": "Looking up framework and library references aids backend API and DB work."
+  },
+  {
+   "role": "engineering/backend",
+   "skill": "get-api-docs",
+   "fit": true,
+   "labelled": true,
+   "reason": "Fetching current docs for APIs/libraries supports building REST APIs correctly."
+  },
+  {
+   "role": "engineering/backend",
+   "skill": "migrate-to-shoehorn",
+   "fit": true,
+   "labelled": true,
+   "reason": "Improves test-file typing; relevant to writing server-side tests."
+  },
+  {
+   "role": "engineering/devops",
+   "skill": "find-docs",
+   "fit": false,
+   "labelled": true,
+   "reason": "Not chosen by the judge"
+  },
+  {
+   "role": "engineering/devops",
+   "skill": "get-api-docs",
+   "fit": false,
+   "labelled": true,
+   "reason": "Not chosen by the judge"
+  },
+  {
+   "role": "engineering/frontend",
+   "skill": "agent-browser",
+   "fit": true,
+   "labelled": true,
+   "reason": "Browser automation for testing web apps and UI"
+  },
+  {
+   "role": "engineering/frontend",
+   "skill": "better-icons",
+   "fit": true,
+   "labelled": true,
+   "reason": "Frontend UI work with icon libraries and SVGs"
+  },
+  {
+   "role": "engineering/frontend",
+   "skill": "browser-trace",
+   "fit": false,
+   "labelled": true,
+   "reason": "Not chosen by the judge"
+  },
+  {
+   "role": "engineering/frontend",
+   "skill": "find-docs",
+   "fit": true,
+   "labelled": true,
+   "reason": "Look up framework/library docs while building UIs"
+  },
+  {
+   "role": "engineering/frontend",
+   "skill": "get-api-docs",
+   "fit": true,
+   "labelled": true,
+   "reason": "Fetch latest API docs for frontend libraries"
+  },
+  {
+   "role": "engineering/frontend",
+   "skill": "huashu-design",
+   "fit": true,
+   "labelled": true,
+   "reason": "High-fidelity HTML/UI prototypes and mockups"
+  },
+  {
+   "role": "engineering/frontend",
+   "skill": "migrate-to-shoehorn",
+   "fit": true,
+   "labelled": true,
+   "reason": "Improves test-file typing for component tests"
+  },
+  {
+   "role": "engineering/qa",
+   "skill": "agent-browser",
+   "fit": true,
+   "labelled": true,
+   "reason": "Enables exercising web flows to validate changes during review"
+  },
+  {
+   "role": "engineering/qa",
+   "skill": "autoresearch",
+   "fit": true,
+   "labelled": false,
+   "reason": "Verification loop against metrics supports quality/definition-of-done checks"
+  },
+  {
+   "role": "engineering/qa",
+   "skill": "browser-trace",
+   "fit": true,
+   "labelled": true,
+   "reason": "Debugging trace capture helps diagnose failures when verifying work"
+  },
+  {
+   "role": "engineering/qa",
+   "skill": "migrate-to-shoehorn",
+   "fit": true,
+   "labelled": false,
+   "reason": "Directly edits test files, matching test-design work in QA role"
+  },
+  {
+   "role": "engineering/tech-lead",
+   "skill": "autoresearch",
+   "fit": true,
+   "labelled": false,
+   "reason": "Verify-against-metric iteration loop aids planning and validating refactors"
+  },
+  {
+   "role": "engineering/tech-lead",
+   "skill": "domain-modeling",
+   "fit": true,
+   "labelled": true,
+   "reason": "Domain model and ADRs support technical design and decisions"
+  },
+  {
+   "role": "engineering/tech-lead",
+   "skill": "find-docs",
+   "fit": false,
+   "labelled": true,
+   "reason": "Not chosen by the judge"
+  },
+  {
+   "role": "engineering/tech-lead",
+   "skill": "get-api-docs",
+   "fit": false,
+   "labelled": true,
+   "reason": "Not chosen by the judge"
+  },
+  {
+   "role": "engineering/tech-lead",
+   "skill": "improve-codebase-architecture",
+   "fit": true,
+   "labelled": true,
+   "reason": "Scans codebase for architecture improvements, core to design decisions"
+  },
+  {
+   "role": "product/product-manager",
+   "skill": "domain-modeling",
+   "fit": false,
+   "labelled": true,
+   "reason": "Not chosen by the judge"
+  },
+  {
+   "role": "product/ux-researcher",
+   "skill": "huashu-design",
+   "fit": false,
+   "labelled": true,
+   "reason": "Not chosen by the judge"
+  },
+  {
+   "role": "research/analyst",
+   "skill": "autoresearch",
+   "fit": false,
+   "labelled": true,
+   "reason": "Not chosen by the judge"
+  },
+  {
+   "role": "research/analyst",
+   "skill": "deep-research",
+   "fit": true,
+   "labelled": true,
+   "reason": "Multi-source deep research reports with quality checks fit evidence gathering and synthesis."
+  },
+  {
+   "role": "research/research-lead",
+   "skill": "autoresearch",
+   "fit": true,
+   "labelled": false,
+   "reason": "Iterative verify-and-evaluate loop on a metric supports research methods and evidence review."
+  },
+  {
+   "role": "research/research-lead",
+   "skill": "deep-research",
+   "fit": true,
+   "labelled": true,
+   "reason": "Generates deep research reports with quality checks, fitting framing and summarizing research."
+  }
+ ]
+}

@@ -553,6 +553,25 @@ class TestRerank:
         assert not verdicts
         assert set(report.failed_roles) == {role for role, items in lists.items() if items}
 
+    def test_a_misshapen_answer_isnt_read_as_no(self, shorts_org: Any, catalog: Any, tmp_path: Path) -> None:
+        class WrongKey(Judge):
+            def complete(self, request: ChatRequest) -> ChatResponse:
+                response = super().complete(request)
+                arguments = response.tool_calls[0].arguments
+                arguments["verdicts"] = arguments.pop("fits")
+                return response
+
+        lists = self._lists(shorts_org, catalog, tmp_path)
+        verdicts, report = rerank(shorts_org, lists, WrongKey(), "m", RerankCache(tmp_path / "v.sqlite"))
+        assert not verdicts
+        assert set(report.failed_roles) == {role for role, items in lists.items() if items}
+
+    def test_a_role_that_chose_nothing_is_reported(self, shorts_org: Any, catalog: Any, tmp_path: Path) -> None:
+        lists = self._lists(shorts_org, catalog, tmp_path)
+        judge = Judge(fits=lambda role, skill: False)
+        _, report = rerank(shorts_org, lists, judge, "m", RerankCache(tmp_path / "v.sqlite"))
+        assert set(report.chose_none) == {role for role, items in lists.items() if items}
+
     def test_reasons_are_safe_to_print(self) -> None:
         assert clean_line("Fits\x1b[31m the\njob" + "x" * 300).startswith("Fits [31m the job")
         assert len(clean_line("x" * 500)) <= 120

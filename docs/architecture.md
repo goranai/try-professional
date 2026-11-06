@@ -784,6 +784,8 @@ flowchart LR
 
 **Embeddings alone aren't enough (2026-11-06).** A recall of 43% doesn't meet the end goal, so the owner added a re-rank: embeddings shortlist up to 20 skills per role, and the cheap model chooses those that fit, with a one-line reason. It runs at `trypro init` and on `trypro skills match`, and caches by role, skill content, and model, so it only spends when one changes, and it reports its tokens. `--no-rerank` falls back to the numbers above, and so does `trypro init --template`. Skill text reaches the judge as untrusted data, after the scan, and a person still approves the result. This also removes the need for a person's category before matching. See §5.4.
 
+**The re-rank missed its target.** On 30 fresh skills from a third repository, scored once, it found 20 of 39 matches (51%) at 69% precision, against the 60% recall set in advance. Embeddings with a person's categories found 16 of 39 (41%) at 70%. So it adds about 10 points with no human categories, but not yet enough. Details are in [`docs/research/loadouts/`](research/loadouts/).
+
 **Categories do most of the work.** A first version chose a threshold of 0.68 on the hand-written fixture alone, and scored 26/26 there, because one author wrote both the skills and the `skill_needs`. On real skills that threshold suggested **nothing**. Real descriptions say when to use a skill rather than what it does, so they score lower. Wording alone then reached about 45% precision, with code review matching Compliance and Sales. Adding a person's category raised it to 86% on the tuning set. So assigning categories isn't busywork: it's what makes matching useful.
 
 ## 10. Adapters
@@ -1013,7 +1015,7 @@ Nothing is marked complete without passing tests. Each phase ends with what was 
 | 6 | Benchmark harness and first results, including the Shorts task | `trypro bench` reproduces; `docs/benchmarks.md` is generated from raw results |
 | 7 | Docs, CI, repo templates, seeded issues, releases. The README leads with the Shorts demo, from a real recorded run, and states the v0.1 scope | Clean-machine install works on all 3 operating systems; CI is green; publishing to PyPI and creating issues happen only after your explicit go-ahead |
 
-**Phase 4b build status (2026-11-06):** all of it is built and passes with no paid calls, and real GitHub discovery was run once. Nothing here has run on a real model, and nothing is committed.
+**Phase 4b status (2026-11-06):** built and committed as unproven (`d75f1b4`). Real GitHub discovery ran once. The re-rank was measured on a real model and missed its 60% recall target, so, as agreed, the paid generations and the Shorts run didn't happen. The Architect and the token estimate have still never run on a real model.
 
 **Phase 4b exit criteria:**
 
@@ -1048,7 +1050,7 @@ Nothing is marked complete without passing tests. Each phase ends with what was 
 - **The hierarchy may not win.** It will probably cost more tokens than a single agent on simple tasks. The benchmark exists to measure that.
 - **Static scanning can be bypassed.** Paraphrased injection will get past rules. That's why trust levels, runtime tool limits and human review exist.
 - **In MCP operator mode, one model plays every role.** Reviewer independence is weaker there and is labelled as such.
-- **Loadout accuracy rests on a small set, labelled by one person.** See §9.6. With embeddings alone, it finds under half of what it could on real skills, and relies on a person assigning categories. The model re-rank added to fix this isn't measured yet (§5.4).
+- **Loadout accuracy rests on small sets, labelled by one person.** See §9.6. On the fairest test, the model re-rank finds about half of the skills a role should get, with about 7 in 10 suggestions right, so a person's review still matters.
 - **Agent counsel is not a lawyer.** Legal gate output is a check, not legal advice.
 - **A generated company is a first draft.** Passing the spec and policy shows it's well formed, not that it suits the business. That's why a person approves it. (Phase 4b, not built.)
 - **The company produces files in v0.1, and nothing else.** It doesn't render video, upload anything, or read your channel's data. (Phase 4b, not built.)

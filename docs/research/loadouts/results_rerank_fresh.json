@@ -1,0 +1,333 @@
+{
+ "split": "fresh",
+ "model": "deepseek-v4.1-flash-1017",
+ "skills": 30,
+ "precision": 0.69,
+ "recall": 0.513,
+ "correct": 20,
+ "wrong": 9,
+ "missed": 19,
+ "tokens": 54623,
+ "input_tokens": 51663,
+ "output_tokens": 2960,
+ "cached_input_tokens": 0,
+ "calls": 22,
+ "failed_roles": [],
+ "rows": [
+  {
+   "role": "engineering/backend",
+   "skill": "senior-fullstack",
+   "fit": false,
+   "labelled": true,
+   "reason": "Not chosen by the judge"
+  },
+  {
+   "role": "engineering/backend",
+   "skill": "senior-ml-engineer",
+   "fit": false,
+   "labelled": true,
+   "reason": "Not chosen by the judge"
+  },
+  {
+   "role": "engineering/backend",
+   "skill": "stripe-integration-expert",
+   "fit": false,
+   "labelled": true,
+   "reason": "Not chosen by the judge"
+  },
+  {
+   "role": "engineering/backend",
+   "skill": "autoresearch-agent",
+   "fit": false,
+   "labelled": true,
+   "reason": "Not chosen by the judge"
+  },
+  {
+   "role": "engineering/backend",
+   "skill": "observability-designer",
+   "fit": false,
+   "labelled": true,
+   "reason": "Not chosen by the judge"
+  },
+  {
+   "role": "engineering/devops",
+   "skill": "ms365-tenant-manager",
+   "fit": false,
+   "labelled": true,
+   "reason": "Not chosen by the judge"
+  },
+  {
+   "role": "engineering/devops",
+   "skill": "security-pen-testing",
+   "fit": false,
+   "labelled": true,
+   "reason": "Not chosen by the judge"
+  },
+  {
+   "role": "engineering/devops",
+   "skill": "senior-ml-engineer",
+   "fit": false,
+   "labelled": true,
+   "reason": "Not chosen by the judge"
+  },
+  {
+   "role": "engineering/devops",
+   "skill": "changelog-generator",
+   "fit": true,
+   "labelled": true,
+   "reason": "Release notes and semver bumping support deployment and release planning."
+  },
+  {
+   "role": "engineering/devops",
+   "skill": "ci-cd-pipeline-builder",
+   "fit": true,
+   "labelled": true,
+   "reason": "Directly builds CI/CD pipeline YAML for repos, core DevOps responsibility."
+  },
+  {
+   "role": "engineering/devops",
+   "skill": "observability-designer",
+   "fit": true,
+   "labelled": true,
+   "reason": "Designs metrics, alerts and dashboards, supporting monitoring and incident response."
+  },
+  {
+   "role": "engineering/frontend",
+   "skill": "browserstack",
+   "fit": true,
+   "labelled": true,
+   "reason": "Cross-browser test runs fit testing components in the browser across a matrix"
+  },
+  {
+   "role": "engineering/frontend",
+   "skill": "fix",
+   "fit": true,
+   "labelled": true,
+   "reason": "Diagnosing flaky/failing browser tests supports testing components in the browser"
+  },
+  {
+   "role": "engineering/qa",
+   "skill": "browserstack",
+   "fit": false,
+   "labelled": true,
+   "reason": "Not chosen by the judge"
+  },
+  {
+   "role": "engineering/qa",
+   "skill": "fix",
+   "fit": true,
+   "labelled": true,
+   "reason": "Diagnosing and fixing failing/flaky tests supports QA verification of done criteria."
+  },
+  {
+   "role": "engineering/qa",
+   "skill": "security-pen-testing",
+   "fit": true,
+   "labelled": true,
+   "reason": "Security vulnerability scanning and OWASP checks address finding security problems in code."
+  },
+  {
+   "role": "engineering/qa",
+   "skill": "ci-cd-pipeline-builder",
+   "fit": true,
+   "labelled": false,
+   "reason": "Running lint and tests on push enforces the definition of done in the workflow."
+  },
+  {
+   "role": "engineering/tech-lead",
+   "skill": "senior-fullstack",
+   "fit": true,
+   "labelled": true,
+   "reason": "Stack selection and architecture decisions when starting or auditing a codebase"
+  },
+  {
+   "role": "engineering/tech-lead",
+   "skill": "autoresearch-agent",
+   "fit": true,
+   "labelled": false,
+   "reason": "Iterative optimization against a metric, useful for refactor/improvement planning"
+  },
+  {
+   "role": "engineering/tech-lead",
+   "skill": "changelog-generator",
+   "fit": false,
+   "labelled": true,
+   "reason": "Not chosen by the judge"
+  },
+  {
+   "role": "engineering/tech-lead",
+   "skill": "ci-cd-pipeline-builder",
+   "fit": true,
+   "labelled": false,
+   "reason": "Sets up verified build/test pipelines, supporting verification of split work"
+  },
+  {
+   "role": "engineering/tech-lead",
+   "skill": "observability-designer",
+   "fit": true,
+   "labelled": false,
+   "reason": "Design decisions for metrics, logs, traces and SLIs when architecting services"
+  },
+  {
+   "role": "engineering/tech-lead",
+   "skill": "agile-product-owner",
+   "fit": true,
+   "labelled": false,
+   "reason": "Breaking epics into stories and tasks matches tech-lead work breakdown"
+  },
+  {
+   "role": "executive/ceo",
+   "skill": "onboard",
+   "fit": true,
+   "labelled": false,
+   "reason": "Interview-based company context intake supports CEO-level strategy and priority setting."
+  },
+  {
+   "role": "executive/ceo",
+   "skill": "ai-decision-authority",
+   "fit": true,
+   "labelled": false,
+   "reason": "Decision-routing framework for choosing between options with human review stakes."
+  },
+  {
+   "role": "executive/ceo",
+   "skill": "team-communications",
+   "fit": true,
+   "labelled": false,
+   "reason": "Drafts leadership updates and executive-facing status reports for the CEO."
+  },
+  {
+   "role": "executive/chief-of-staff",
+   "skill": "team-communications",
+   "fit": true,
+   "labelled": true,
+   "reason": "Produces status reports, leadership updates and incident reports for stakeholders."
+  },
+  {
+   "role": "finance/finance-lead",
+   "skill": "passive-deal-screener",
+   "fit": false,
+   "labelled": true,
+   "reason": "Not chosen by the judge"
+  },
+  {
+   "role": "legal/compliance-reviewer",
+   "skill": "ms365-tenant-manager",
+   "fit": true,
+   "labelled": false,
+   "reason": "Includes personal-data handling and compliance reporting for M365 tenants"
+  },
+  {
+   "role": "legal/compliance-reviewer",
+   "skill": "cmmc-readiness",
+   "fit": true,
+   "labelled": true,
+   "reason": "Assesses compliance against NIST SP 800-171 controls and records gaps"
+  },
+  {
+   "role": "legal/compliance-reviewer",
+   "skill": "eu-ai-act-specialist",
+   "fit": true,
+   "labelled": true,
+   "reason": "Checks AI systems against EU AI Act obligations and documents compliance"
+  },
+  {
+   "role": "legal/compliance-reviewer",
+   "skill": "isms-audit-expert",
+   "fit": true,
+   "labelled": true,
+   "reason": "Audits controls against ISO 27001 policy with evidence and nonconformities"
+  },
+  {
+   "role": "legal/compliance-reviewer",
+   "skill": "regulatory-affairs-head",
+   "fit": false,
+   "labelled": true,
+   "reason": "Not chosen by the judge"
+  },
+  {
+   "role": "legal/counsel",
+   "skill": "eu-ai-act-specialist",
+   "fit": false,
+   "labelled": true,
+   "reason": "Not chosen by the judge"
+  },
+  {
+   "role": "legal/counsel",
+   "skill": "regulatory-affairs-head",
+   "fit": false,
+   "labelled": true,
+   "reason": "Not chosen by the judge"
+  },
+  {
+   "role": "marketing/content-writer",
+   "skill": "linkedin-content",
+   "fit": true,
+   "labelled": true,
+   "reason": "Writes and edits marketing posts, turning blog content into audience-facing copy"
+  },
+  {
+   "role": "marketing/marketing-lead",
+   "skill": "ai-decision-authority",
+   "fit": true,
+   "labelled": true,
+   "reason": "Guides AI use policy for marketing/GTM workflows, relevant to a marketing lead"
+  },
+  {
+   "role": "marketing/social",
+   "skill": "linkedin-content",
+   "fit": true,
+   "labelled": true,
+   "reason": "Writes and edits LinkedIn posts, a core social channel for this role"
+  },
+  {
+   "role": "operations/ops-lead",
+   "skill": "team-communications",
+   "fit": true,
+   "labelled": true,
+   "reason": "Covers internal comms, status reports and leadership updates for ops lead."
+  },
+  {
+   "role": "product/product-manager",
+   "skill": "agile-product-owner",
+   "fit": true,
+   "labelled": true,
+   "reason": "Writes user stories and acceptance criteria, splits epics, prioritizes backlog."
+  },
+  {
+   "role": "product/product-manager",
+   "skill": "code-to-prd",
+   "fit": true,
+   "labelled": true,
+   "reason": "Writes PRDs/product specs, directly matching the core deliverable."
+  },
+  {
+   "role": "product/product-manager",
+   "skill": "product-discovery",
+   "fit": false,
+   "labelled": true,
+   "reason": "Not chosen by the judge"
+  },
+  {
+   "role": "product/ux-researcher",
+   "skill": "product-discovery",
+   "fit": false,
+   "labelled": true,
+   "reason": "Not chosen by the judge"
+  },
+  {
+   "role": "research/analyst",
+   "skill": "research",
+   "fit": true,
+   "labelled": true,
+   "reason": "General research router covering litreview and dossier work for evidence gathering"
+  },
+  {
+   "role": "research/research-lead",
+   "skill": "research",
+   "fit": true,
+   "labelled": true,
+   "reason": "General research routing skill fits framing and executing research questions"
+  }
+ ]
+}

@@ -20,9 +20,19 @@ How well matching fits skills to roles. Scores are for what matching suggests, b
 4. Adding a person-assigned category, a penalty for one that doesn't fit, and a limit of 4 roles per skill reached 86% precision and 67% recall on the tuning set.
 5. The threshold was fixed at 0.44. A separate real repository was then scored once: 10 of 11 suggestions were right, and 10 of 23 expected matches were found.
 
-## Re-rank (not yet measured)
+## Re-rank
 
 Recall of 43% isn't enough for the project's goal, so embeddings now only shortlist, and the cheap model judges fit. `run_rerank.py` measures it, with categories hidden, because a fresh install won't have a person's.
+
+Measured on 2026-11-06 on `deepseek-v4.1-flash-1017`. **It missed the target set in advance: recall of at least 60% on the fresh set.**
+
+| Set | Embeddings, with a person's categories | Re-rank, with no categories |
+|---|---|---|
+| Fresh: 30 skills, scored once | 16/23 precise (70%), 16/39 found (41%) | 20/29 precise (69%), 20/39 found (51%) |
+| Held out: 14 skills, labels seen before | 10/11 (91%), 10/23 (43%) | 15/20 (75%), 15/23 (65%) |
+| Tuning: 12 skills, prompt tuned on it | 86%, 67% | 27/34 (79%), 27/27 (100%) |
+
+Trust the fresh row. The tuning row shows how far a small set can flatter a prompt: three versions were tried on it, and 100% became 51%. On the fresh set, 16 of the 19 misses were the judge's and 3 were the shortlist's. `engineering/backend` chose no skills at all, and rejected all 5 of its labelled matches, including `stripe-integration-expert`, ranked second. That could be a bad answer, or a real judgment, because the first version didn't record it. The code now retries a misshapen answer instead of reading it as "no", and reports roles that chose nothing. All of this cost 187,811 tokens, including 54,623 for one 22-role pass over 30 skills.
 
 A shortlist limits recall whatever the judge does. On the two sets combined (29 skills), a size of 12 kept 38 of 50 labelled matches, and 20 kept 48, so the size is 20. That choice looked at the held-out labels, so they can't give a clean result any more. The `fresh` split comes from a third repository, was labelled before anything scored it, and is scored once.
 
