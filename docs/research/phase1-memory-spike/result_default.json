@@ -1,0 +1,118 @@
+{
+ "env": [],
+ "skills_indexed": 40,
+ "index_seconds": 35.62,
+ "total": {
+  "hybrid": {
+   "r1": 5,
+   "r5": 5,
+   "n": 40
+  },
+  "cosine": {
+   "r1": 35,
+   "r5": 39,
+   "n": 40
+  }
+ },
+ "per_language": {
+  "hybrid": {
+   "en": {
+    "r1": 3,
+    "r5": 3,
+    "n": 8
+   },
+   "id": {
+    "r1": 1,
+    "r5": 1,
+    "n": 8
+   },
+   "es": {
+    "r1": 0,
+    "r5": 0,
+    "n": 8
+   },
+   "zh": {
+    "r1": 1,
+    "r5": 1,
+    "n": 8
+   },
+   "ar": {
+    "r1": 0,
+    "r5": 0,
+    "n": 8
+   }
+  },
+  "cosine": {
+   "en": {
+    "r1": 6,
+    "r5": 8,
+    "n": 8
+   },
+   "id": {
+    "r1": 7,
+    "r5": 8,
+    "n": 8
+   },
+   "es": {
+    "r1": 8,
+    "r5": 8,
+    "n": 8
+   },
+   "zh": {
+    "r1": 7,
+    "r5": 7,
+    "n": 8
+   },
+   "ar": {
+    "r1": 7,
+    "r5": 8,
+    "n": 8
+   }
+  }
+ },
+ "nonsense_hits": {
+  "purple bicycle quantum oatmeal": 0,
+  "sepeda ungu kuantum bubur": 0,
+  "紫色自行车量子燕麦片": 0,
+  "دراجة أرجوانية كمومية شوفان": 0
+ },
+ "cosine_misses": [
+  {
+   "mode": "cosine",
+   "lang": "zh",
+   "want": "invoice-gen",
+   "got": [
+    "support-macro",
+    "sales-proposal",
+    "pricing-model",
+    "competitor-brief",
+    "payment-reminder"
+   ]
+  }
+ ],
+ "hybrid_miss_count": 35,
+ "sample_hit": {
+  "id": "9b7d9d49d7bbae03",
+  "content": "docker-deploy: Build a Docker image and deploy the service to production with a ",
+  "source": "skill-index",
+  "timestamp": "2026-11-06T06:55:47.232842",
+  "tier": "working",
+  "score": "0.54896",
+  "keyword_score": "1.0",
+  "dense_score": "0.7911",
+  "fts_score": "1.0",
+  "importance": "0.5",
+  "recall_count": "2",
+  "last_recalled": "2026-11-06T06:55:50.979452",
+  "recency_decay": "1.0",
+  "scope": "global",
+  "author_id": "None",
+  "author_type": "None",
+  "channel_id": "spike",
+  "veracity": "unknown",
+  "valid_until": "None",
+  "superseded_by": "None",
+  "voice_scores": "{'vec': 0.7911, 'fts': 1.0, 'keyword': 1.0, 'importance': 0.5, 'recency_decay': "
+ },
+ "avg_recall_ms_hybrid_plus_cosine": 54.3
+}

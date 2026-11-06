@@ -1,0 +1,298 @@
+{
+ "python": "3.14.7",
+ "platform": "win32",
+ "model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+ "bank_isolation": {
+  "banks": [
+   "company",
+   "default",
+   "dept-engineering",
+   "dept-marketing",
+   "skills"
+  ],
+  "hits_in_owner_bank": 1,
+  "hits_in_other_bank": 0,
+  "db_paths_differ": true
+ },
+ "index_seconds": 0.4,
+ "embedding_dim": 384,
+ "retrieval": {
+  "hybrid": {
+   "en": {
+    "top1": 3,
+    "top3": 3,
+    "n": 8
+   },
+   "id": {
+    "top1": 1,
+    "top3": 1,
+    "n": 8
+   },
+   "es": {
+    "top1": 0,
+    "top3": 0,
+    "n": 8
+   },
+   "zh": {
+    "top1": 1,
+    "top3": 1,
+    "n": 8
+   },
+   "ar": {
+    "top1": 0,
+    "top3": 0,
+    "n": 8
+   }
+  },
+  "cosine": {
+   "en": {
+    "top1": 8,
+    "top3": 8,
+    "n": 8
+   },
+   "id": {
+    "top1": 8,
+    "top3": 8,
+    "n": 8
+   },
+   "es": {
+    "top1": 8,
+    "top3": 8,
+    "n": 8
+   },
+   "zh": {
+    "top1": 8,
+    "top3": 8,
+    "n": 8
+   },
+   "ar": {
+    "top1": 8,
+    "top3": 8,
+    "n": 8
+   }
+  }
+ },
+ "misses": [
+  {
+   "mode": "hybrid",
+   "lang": "id",
+   "want": "seo-audit",
+   "got": []
+  },
+  {
+   "mode": "hybrid",
+   "lang": "es",
+   "want": "seo-audit",
+   "got": []
+  },
+  {
+   "mode": "hybrid",
+   "lang": "zh",
+   "want": "seo-audit",
+   "got": []
+  },
+  {
+   "mode": "hybrid",
+   "lang": "ar",
+   "want": "seo-audit",
+   "got": []
+  },
+  {
+   "mode": "hybrid",
+   "lang": "es",
+   "want": "code-review",
+   "got": []
+  },
+  {
+   "mode": "hybrid",
+   "lang": "zh",
+   "want": "code-review",
+   "got": []
+  },
+  {
+   "mode": "hybrid",
+   "lang": "ar",
+   "want": "code-review",
+   "got": []
+  },
+  {
+   "mode": "hybrid",
+   "lang": "en",
+   "want": "invoice-gen",
+   "got": []
+  },
+  {
+   "mode": "hybrid",
+   "lang": "id",
+   "want": "invoice-gen",
+   "got": []
+  },
+  {
+   "mode": "hybrid",
+   "lang": "es",
+   "want": "invoice-gen",
+   "got": []
+  },
+  {
+   "mode": "hybrid",
+   "lang": "zh",
+   "want": "invoice-gen",
+   "got": []
+  },
+  {
+   "mode": "hybrid",
+   "lang": "ar",
+   "want": "invoice-gen",
+   "got": []
+  },
+  {
+   "mode": "hybrid",
+   "lang": "en",
+   "want": "contract-check",
+   "got": [
+    "ux-interview",
+    "invoice-gen"
+   ]
+  },
+  {
+   "mode": "hybrid",
+   "lang": "id",
+   "want": "contract-check",
+   "got": []
+  },
+  {
+   "mode": "hybrid",
+   "lang": "es",
+   "want": "contract-check",
+   "got": []
+  },
+  {
+   "mode": "hybrid",
+   "lang": "zh",
+   "want": "contract-check",
+   "got": []
+  },
+  {
+   "mode": "hybrid",
+   "lang": "ar",
+   "want": "contract-check",
+   "got": []
+  },
+  {
+   "mode": "hybrid",
+   "lang": "en",
+   "want": "docker-deploy",
+   "got": []
+  },
+  {
+   "mode": "hybrid",
+   "lang": "id",
+   "want": "docker-deploy",
+   "got": []
+  },
+  {
+   "mode": "hybrid",
+   "lang": "es",
+   "want": "docker-deploy",
+   "got": []
+  },
+  {
+   "mode": "hybrid",
+   "lang": "ar",
+   "want": "docker-deploy",
+   "got": []
+  },
+  {
+   "mode": "hybrid",
+   "lang": "en",
+   "want": "ux-interview",
+   "got": []
+  },
+  {
+   "mode": "hybrid",
+   "lang": "id",
+   "want": "ux-interview",
+   "got": []
+  },
+  {
+   "mode": "hybrid",
+   "lang": "es",
+   "want": "ux-interview",
+   "got": []
+  },
+  {
+   "mode": "hybrid",
+   "lang": "zh",
+   "want": "ux-interview",
+   "got": []
+  },
+  {
+   "mode": "hybrid",
+   "lang": "ar",
+   "want": "ux-interview",
+   "got": []
+  },
+  {
+   "mode": "hybrid",
+   "lang": "en",
+   "want": "social-calendar",
+   "got": []
+  },
+  {
+   "mode": "hybrid",
+   "lang": "id",
+   "want": "social-calendar",
+   "got": []
+  },
+  {
+   "mode": "hybrid",
+   "lang": "es",
+   "want": "social-calendar",
+   "got": []
+  },
+  {
+   "mode": "hybrid",
+   "lang": "zh",
+   "want": "social-calendar",
+   "got": []
+  },
+  {
+   "mode": "hybrid",
+   "lang": "ar",
+   "want": "social-calendar",
+   "got": []
+  },
+  {
+   "mode": "hybrid",
+   "lang": "id",
+   "want": "budget-forecast",
+   "got": []
+  },
+  {
+   "mode": "hybrid",
+   "lang": "es",
+   "want": "budget-forecast",
+   "got": []
+  },
+  {
+   "mode": "hybrid",
+   "lang": "zh",
+   "want": "budget-forecast",
+   "got": []
+  },
+  {
+   "mode": "hybrid",
+   "lang": "ar",
+   "want": "budget-forecast",
+   "got": []
+  }
+ ],
+ "sample_hit_keys": [],
+ "data_files": [
+  "banks\\company\\mnemosyne.db",
+  "banks\\dept-engineering\\mnemosyne.db",
+  "banks\\dept-marketing\\mnemosyne.db",
+  "banks\\skills\\mnemosyne.db",
+  "mnemosyne.db"
+ ]
+}
