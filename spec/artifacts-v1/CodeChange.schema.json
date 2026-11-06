@@ -1,0 +1,107 @@
+{
+  "$defs": {
+    "ChangedFile": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "default": "",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "title": "ChangedFile",
+      "type": "object"
+    },
+    "DoneCriterion": {
+      "additionalProperties": false,
+      "properties": {
+        "criterion": {
+          "minLength": 1,
+          "title": "Criterion",
+          "type": "string"
+        },
+        "evidence": {
+          "default": "",
+          "title": "Evidence",
+          "type": "string"
+        },
+        "met": {
+          "title": "Met",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "criterion",
+        "met"
+      ],
+      "title": "DoneCriterion",
+      "type": "object"
+    },
+    "TestRun": {
+      "additionalProperties": false,
+      "properties": {
+        "command": {
+          "minLength": 1,
+          "title": "Command",
+          "type": "string"
+        },
+        "result": {
+          "minLength": 1,
+          "title": "Result",
+          "type": "string"
+        }
+      },
+      "required": [
+        "command",
+        "result"
+      ],
+      "title": "TestRun",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "done_criteria_met": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/DoneCriterion"
+      },
+      "title": "Done Criteria Met",
+      "type": "array"
+    },
+    "files": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ChangedFile"
+      },
+      "title": "Files",
+      "type": "array"
+    },
+    "summary": {
+      "minLength": 1,
+      "title": "Summary",
+      "type": "string"
+    },
+    "tests": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/TestRun"
+      },
+      "title": "Tests",
+      "type": "array"
+    }
+  },
+  "required": [
+    "summary"
+  ],
+  "title": "CodeChange",
+  "type": "object"
+}

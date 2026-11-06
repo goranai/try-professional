@@ -1,0 +1,125 @@
+{
+  "$defs": {
+    "DepartmentActivation": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "reason": {
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "reason"
+      ],
+      "title": "DepartmentActivation",
+      "type": "object"
+    },
+    "Flags": {
+      "additionalProperties": false,
+      "description": "Gate triggers. A flag can be added later but never cleared.",
+      "properties": {
+        "public_facing": {
+          "default": false,
+          "title": "Public Facing",
+          "type": "boolean"
+        },
+        "touches_license": {
+          "default": false,
+          "title": "Touches License",
+          "type": "boolean"
+        },
+        "touches_personal_data": {
+          "default": false,
+          "title": "Touches Personal Data",
+          "type": "boolean"
+        }
+      },
+      "title": "Flags",
+      "type": "object"
+    },
+    "WorkPackage": {
+      "additionalProperties": false,
+      "properties": {
+        "acceptance": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Acceptance",
+          "type": "array"
+        },
+        "depends_on": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Depends On",
+          "type": "array"
+        },
+        "flags": {
+          "$ref": "#/$defs/Flags",
+          "default": {
+            "public_facing": false,
+            "touches_license": false,
+            "touches_personal_data": false
+          }
+        },
+        "id": {
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "owner_department": {
+          "minLength": 1,
+          "title": "Owner Department",
+          "type": "string"
+        },
+        "title": {
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "owner_department",
+        "acceptance"
+      ],
+      "title": "WorkPackage",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "activated_departments": {
+      "items": {
+        "$ref": "#/$defs/DepartmentActivation"
+      },
+      "minItems": 1,
+      "title": "Activated Departments",
+      "type": "array"
+    },
+    "work_packages": {
+      "items": {
+        "$ref": "#/$defs/WorkPackage"
+      },
+      "minItems": 1,
+      "title": "Work Packages",
+      "type": "array"
+    }
+  },
+  "required": [
+    "activated_departments",
+    "work_packages"
+  ],
+  "title": "Plan",
+  "type": "object"
+}

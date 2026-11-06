@@ -1,0 +1,12 @@
+id: engineering
+name: Engineering
+head: tech-lead
+activation: on_demand
+qa_gate:
+  reviewer: qa
+roles:
+- tech-lead
+- backend
+- frontend
+- devops
+- qa

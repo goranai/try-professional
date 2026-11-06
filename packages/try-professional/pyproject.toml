@@ -1,0 +1,40 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "try-professional"
+dynamic = ["version"]
+description = "Turn any LLM agent runtime into a structured AI company: hierarchy, typed handoffs, review gates, and full auditability."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+keywords = ["agents", "llm", "orchestration", "multi-agent", "hierarchy"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+]
+dependencies = [
+  "httpx>=0.27,<1",
+  "jsonschema>=4.21,<5",
+  "mnemosyne-memory[embeddings]>=4,<5",
+  "numpy>=1.26,<3",
+  "pydantic>=2.7,<3",
+  "pyyaml>=6,<7",
+]
+
+[project.optional-dependencies]
+anthropic = ["anthropic>=2,<3"]
+
+[project.scripts]
+trypro = "try_professional.cli:main"
+
+[tool.hatch.version]
+path = "src/try_professional/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/try_professional"]

@@ -1,0 +1,63 @@
+{
+  "additionalProperties": false,
+  "description": "Issued by the orchestrator from a TaskPlan. The reviewer comes from the org, not the plan.",
+  "properties": {
+    "definition_of_done": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Definition Of Done",
+      "type": "array"
+    },
+    "depends_on": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Depends On",
+      "type": "array"
+    },
+    "output_type": {
+      "minLength": 1,
+      "title": "Output Type",
+      "type": "string"
+    },
+    "owner_role": {
+      "minLength": 1,
+      "title": "Owner Role",
+      "type": "string"
+    },
+    "reviewer_role": {
+      "minLength": 1,
+      "title": "Reviewer Role",
+      "type": "string"
+    },
+    "task_id": {
+      "minLength": 1,
+      "title": "Task Id",
+      "type": "string"
+    },
+    "title": {
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+    },
+    "work_package_id": {
+      "minLength": 1,
+      "title": "Work Package Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "task_id",
+    "work_package_id",
+    "title",
+    "owner_role",
+    "reviewer_role",
+    "definition_of_done",
+    "output_type"
+  ],
+  "title": "TaskBrief",
+  "type": "object"
+}

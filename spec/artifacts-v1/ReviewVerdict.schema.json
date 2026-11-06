@@ -1,0 +1,66 @@
+{
+  "$defs": {
+    "ReviewIssue": {
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "severity": {
+          "enum": [
+            "minor",
+            "major",
+            "blocker"
+          ],
+          "title": "Severity",
+          "type": "string"
+        }
+      },
+      "required": [
+        "severity",
+        "description"
+      ],
+      "title": "ReviewIssue",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "decision": {
+      "enum": [
+        "approve",
+        "changes_requested",
+        "block"
+      ],
+      "title": "Decision",
+      "type": "string"
+    },
+    "gate": {
+      "minLength": 1,
+      "title": "Gate",
+      "type": "string"
+    },
+    "issues": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ReviewIssue"
+      },
+      "title": "Issues",
+      "type": "array"
+    },
+    "subject_artifact_id": {
+      "minLength": 1,
+      "title": "Subject Artifact Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "gate",
+    "subject_artifact_id",
+    "decision"
+  ],
+  "title": "ReviewVerdict",
+  "type": "object"
+}

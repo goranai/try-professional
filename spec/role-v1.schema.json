@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/goranai/try-professional/main/spec/role-v1.schema.json",
+  "title": "Role definition, spec role/v1",
+  "type": "object",
+  "required": [
+    "spec",
+    "id",
+    "department",
+    "mission",
+    "responsibilities",
+    "inputs",
+    "outputs",
+    "allowed_tools",
+    "allowed_skill_categories",
+    "escalation",
+    "reviewer",
+    "system_prompt"
+  ],
+  "additionalProperties": false,
+  "patternProperties": { "^x-": {} },
+  "properties": {
+    "spec": { "const": "role/v1" },
+    "id": { "$ref": "#/$defs/id" },
+    "department": { "$ref": "#/$defs/id" },
+    "mission": { "type": "string", "minLength": 1 },
+    "responsibilities": { "$ref": "#/$defs/strings" },
+    "inputs": { "$ref": "#/$defs/strings" },
+    "outputs": { "$ref": "#/$defs/strings" },
+    "allowed_tools": { "$ref": "#/$defs/strings" },
+    "allowed_skill_categories": { "$ref": "#/$defs/strings" },
+    "escalation": {
+      "description": "A role reference, or the literal 'human' for the root role only.",
+      "oneOf": [{ "$ref": "#/$defs/role_ref" }, { "const": "human" }]
+    },
+    "reviewer": { "$ref": "#/$defs/role_ref" },
+    "model_tier": { "enum": ["executive", "standard", "fast"], "default": "standard" },
+    "system_prompt": { "type": "string", "minLength": 1 }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+    "role_ref": { "type": "string", "pattern": "^[a-z][a-z0-9-]*/[a-z][a-z0-9-]*$" },
+    "strings": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+  }
+}

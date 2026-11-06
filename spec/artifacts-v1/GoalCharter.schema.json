@@ -1,0 +1,45 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "constraints": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Constraints",
+      "type": "array"
+    },
+    "original_goal": {
+      "minLength": 1,
+      "title": "Original Goal",
+      "type": "string"
+    },
+    "restated_goal": {
+      "minLength": 1,
+      "title": "Restated Goal",
+      "type": "string"
+    },
+    "success_criteria": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Success Criteria",
+      "type": "array"
+    },
+    "user_language": {
+      "description": "BCP 47 tag of the language the goal was written in",
+      "minLength": 2,
+      "title": "User Language",
+      "type": "string"
+    }
+  },
+  "required": [
+    "original_goal",
+    "restated_goal",
+    "user_language",
+    "success_criteria"
+  ],
+  "title": "GoalCharter",
+  "type": "object"
+}

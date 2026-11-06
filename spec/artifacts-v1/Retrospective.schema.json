@@ -1,0 +1,31 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "lessons": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Lessons",
+      "type": "array"
+    },
+    "procedures": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Procedures",
+      "type": "array"
+    },
+    "skill_proposals": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Skill Proposals",
+      "type": "array"
+    }
+  },
+  "title": "Retrospective",
+  "type": "object"
+}

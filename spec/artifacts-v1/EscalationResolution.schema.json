@@ -1,0 +1,139 @@
+{
+  "$defs": {
+    "DepartmentActivation": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "reason": {
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "reason"
+      ],
+      "title": "DepartmentActivation",
+      "type": "object"
+    },
+    "Flags": {
+      "additionalProperties": false,
+      "description": "Gate triggers. A flag can be added later but never cleared.",
+      "properties": {
+        "public_facing": {
+          "default": false,
+          "title": "Public Facing",
+          "type": "boolean"
+        },
+        "touches_license": {
+          "default": false,
+          "title": "Touches License",
+          "type": "boolean"
+        },
+        "touches_personal_data": {
+          "default": false,
+          "title": "Touches Personal Data",
+          "type": "boolean"
+        }
+      },
+      "title": "Flags",
+      "type": "object"
+    },
+    "WorkPackage": {
+      "additionalProperties": false,
+      "properties": {
+        "acceptance": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Acceptance",
+          "type": "array"
+        },
+        "depends_on": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Depends On",
+          "type": "array"
+        },
+        "flags": {
+          "$ref": "#/$defs/Flags",
+          "default": {
+            "public_facing": false,
+            "touches_license": false,
+            "touches_personal_data": false
+          }
+        },
+        "id": {
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "owner_department": {
+          "minLength": 1,
+          "title": "Owner Department",
+          "type": "string"
+        },
+        "title": {
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "owner_department",
+        "acceptance"
+      ],
+      "title": "WorkPackage",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "activate_departments": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/DepartmentActivation"
+      },
+      "title": "Activate Departments",
+      "type": "array"
+    },
+    "added_work_packages": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/WorkPackage"
+      },
+      "title": "Added Work Packages",
+      "type": "array"
+    },
+    "decision": {
+      "enum": [
+        "resume",
+        "abandon",
+        "escalate_further",
+        "amend_plan"
+      ],
+      "title": "Decision",
+      "type": "string"
+    },
+    "guidance": {
+      "default": "",
+      "title": "Guidance",
+      "type": "string"
+    }
+  },
+  "required": [
+    "decision"
+  ],
+  "title": "EscalationResolution",
+  "type": "object"
+}

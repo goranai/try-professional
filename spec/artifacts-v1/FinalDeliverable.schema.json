@@ -1,0 +1,67 @@
+{
+  "$defs": {
+    "CriterionResult": {
+      "additionalProperties": false,
+      "properties": {
+        "criterion": {
+          "minLength": 1,
+          "title": "Criterion",
+          "type": "string"
+        },
+        "evidence": {
+          "default": "",
+          "title": "Evidence",
+          "type": "string"
+        },
+        "met": {
+          "title": "Met",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "criterion",
+        "met"
+      ],
+      "title": "CriterionResult",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "artifact_refs": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Artifact Refs",
+      "type": "array"
+    },
+    "criteria_results": {
+      "items": {
+        "$ref": "#/$defs/CriterionResult"
+      },
+      "minItems": 1,
+      "title": "Criteria Results",
+      "type": "array"
+    },
+    "known_limits": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Known Limits",
+      "type": "array"
+    },
+    "summary_in_user_language": {
+      "minLength": 1,
+      "title": "Summary In User Language",
+      "type": "string"
+    }
+  },
+  "required": [
+    "summary_in_user_language",
+    "criteria_results"
+  ],
+  "title": "FinalDeliverable",
+  "type": "object"
+}

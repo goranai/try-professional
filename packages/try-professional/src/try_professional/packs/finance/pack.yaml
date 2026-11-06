@@ -1,0 +1,8 @@
+id: finance
+name: Finance
+head: finance-lead
+activation: on_demand
+qa_gate:
+  reviewer: executive/chief-of-staff
+roles:
+- finance-lead

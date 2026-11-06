@@ -1,0 +1,46 @@
+# Spanish retrieval queries. Not yet reviewed by a native speaker.
+language: es
+review:
+  status: unreviewed
+  reviewer: null
+queries:
+  - {skill: seo-audit, split: dev, text: "por qué mi página no aparece en Google, revísala"}
+  - {skill: seo-audit, split: heldout, text: "busca problemas de SEO en mi tienda en línea"}
+  - {skill: code-review, split: dev, text: "échale un vistazo a este cambio antes de fusionarlo"}
+  - {skill: code-review, split: heldout, text: "revisa mi PR y dime si hay algo inseguro"}
+  - {skill: invoice-gen, split: dev, text: "hazme una factura para mi cliente con IVA incluido"}
+  - {skill: invoice-gen, split: heldout, text: "necesito la factura de este mes con las condiciones de pago"}
+  - {skill: contract-check, split: dev, text: "¿hay algo en este acuerdo que me perjudique?"}
+  - {skill: contract-check, split: heldout, text: "resume mis obligaciones legales en este contrato de colaboración"}
+  - {skill: docker-deploy, split: dev, text: "sube esta aplicación al servidor de producción usando contenedores"}
+  - {skill: docker-deploy, split: heldout, text: "publica el servicio en producción y prepara cómo revertir si falla"}
+  - {skill: ux-interview, split: dev, text: "prepara las preguntas para entrevistar a los usuarios de nuestra app"}
+  - {skill: ux-interview, split: heldout, text: "resume lo que dijeron los usuarios y qué les resultó confuso"}
+  - {skill: social-calendar, split: dev, text: "planifica las publicaciones de Instagram y TikTok del próximo mes"}
+  - {skill: social-calendar, split: heldout, text: "necesito un calendario de contenidos para redes con ideas"}
+  - {skill: budget-forecast, split: dev, text: "calcula la previsión de gastos para los próximos tres meses"}
+  - {skill: budget-forecast, split: heldout, text: "compara lo que hemos gastado con lo presupuestado este trimestre"}
+  - {skill: unit-test-gen, split: dev, text: "añade pruebas unitarias a este módulo de Python"}
+  - {skill: unit-test-gen, split: heldout, text: "este código no tiene pruebas, créalas por favor"}
+  - {skill: security-scan, split: dev, text: "comprueba si las librerías que usamos tienen vulnerabilidades"}
+  - {skill: security-scan, split: heldout, text: "analiza las dependencias del proyecto en busca de fallos de seguridad conocidos"}
+  - {skill: privacy-policy, split: dev, text: "redacta la política de privacidad de nuestra web"}
+  - {skill: privacy-policy, split: heldout, text: "guardamos datos personales de clientes y nos falta el documento de privacidad"}
+  - {skill: license-audit, split: dev, text: "¿puedo vender un producto que use esta librería de código abierto?"}
+  - {skill: license-audit, split: heldout, text: "verifica las licencias de todas las dependencias antes de comercializar"}
+  - {skill: ci-pipeline, split: dev, text: "haz que las pruebas se ejecuten solas con cada commit"}
+  - {skill: ci-pipeline, split: heldout, text: "configura integración continua para este repositorio"}
+  - {skill: incident-postmortem, split: dev, text: "explica por qué se cayó el servidor anoche sin culpar a nadie"}
+  - {skill: incident-postmortem, split: heldout, text: "escribe el análisis posterior a la caída de producción"}
+  - {skill: newsletter, split: dev, text: "escribe el boletín semanal por correo para nuestros clientes"}
+  - {skill: newsletter, split: heldout, text: "prepara el correo periódico con novedades para los suscriptores"}
+  - {skill: press-release, split: dev, text: "redacta un comunicado de prensa para el lanzamiento de nuestro producto"}
+  - {skill: press-release, split: heldout, text: "queremos anunciar el producto nuevo a los medios"}
+  - {skill: sales-proposal, split: dev, text: "elabora una propuesta comercial para un posible cliente"}
+  - {skill: sales-proposal, split: heldout, text: "prepara una oferta con precios adaptada a este comprador potencial"}
+  - {skill: market-sizing, split: dev, text: "¿qué tamaño tiene el mercado para este producto nuevo?"}
+  - {skill: market-sizing, split: heldout, text: "estima el mercado total al que podríamos llegar"}
+  - {skill: support-macro, split: dev, text: "crea plantillas de respuesta para las quejas más habituales"}
+  - {skill: support-macro, split: heldout, text: "prepara respuestas predefinidas para los tickets de soporte frecuentes"}
+  - {skill: meeting-notes, split: dev, text: "convierte esta transcripción de la reunión en decisiones y tareas"}
+  - {skill: meeting-notes, split: heldout, text: "haz el acta de la reunión de hoy con los próximos pasos"}

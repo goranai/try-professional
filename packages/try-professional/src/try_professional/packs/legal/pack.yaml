@@ -1,0 +1,9 @@
+id: legal
+name: Legal & Compliance
+head: counsel
+activation: on_demand
+qa_gate:
+  reviewer: counsel
+roles:
+- counsel
+- compliance-reviewer

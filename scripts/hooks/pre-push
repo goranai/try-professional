@@ -1,0 +1,11 @@
+#!/bin/sh
+# Blocks a push if the secret scan finds anything, or if it can't run.
+# Install with: python scripts/install_hooks.py
+root="$(git rev-parse --show-toplevel)"
+for python in "$root/.venv/Scripts/python.exe" "$root/.venv/bin/python" python3 python; do
+  if command -v "$python" >/dev/null 2>&1 || [ -x "$python" ]; then
+    exec "$python" "$root/scripts/secret_scan.py" "$root"
+  fi
+done
+echo "pre-push: no Python found, so the secret scan could not run. Push blocked." >&2
+exit 2

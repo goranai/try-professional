@@ -1,0 +1,46 @@
+# Arabic retrieval queries. Not yet reviewed by a native speaker.
+language: ar
+review:
+  status: unreviewed
+  reviewer: null
+queries:
+  - {skill: seo-audit, split: dev, text: "لماذا لا يظهر موقعي في جوجل؟ افحصه من فضلك"}
+  - {skill: seo-audit, split: heldout, text: "ابحث عن مشاكل السيو في متجري الإلكتروني"}
+  - {skill: code-review, split: dev, text: "ألقِ نظرة على هذا التعديل قبل دمجه"}
+  - {skill: code-review, split: heldout, text: "راجع طلب السحب الخاص بي وأخبرني إن كان فيه خطر أمني"}
+  - {skill: invoice-gen, split: dev, text: "أصدر فاتورة لعميلي شاملة ضريبة القيمة المضافة"}
+  - {skill: invoice-gen, split: heldout, text: "أحتاج فاتورة هذا الشهر مع شروط السداد"}
+  - {skill: contract-check, split: dev, text: "هل يوجد في هذه الاتفاقية ما يضر بمصلحتي؟"}
+  - {skill: contract-check, split: heldout, text: "لخص التزاماتي القانونية في عقد الشراكة هذا"}
+  - {skill: docker-deploy, split: dev, text: "ارفع هذا التطبيق إلى خادم الإنتاج باستخدام الحاويات"}
+  - {skill: docker-deploy, split: heldout, text: "أطلق الخدمة في الإنتاج وجهز طريقة للتراجع عند الفشل"}
+  - {skill: ux-interview, split: dev, text: "جهز أسئلة لمقابلة مستخدمي تطبيقنا"}
+  - {skill: ux-interview, split: heldout, text: "لخص ما قاله المستخدمون في المقابلات وما الذي حيّرهم"}
+  - {skill: social-calendar, split: dev, text: "خطط لمنشورات إنستغرام وتيك توك للشهر القادم"}
+  - {skill: social-calendar, split: heldout, text: "أحتاج جدول نشر لوسائل التواصل للشهر المقبل مع أفكار"}
+  - {skill: budget-forecast, split: dev, text: "قدّر مصروفاتنا خلال الأشهر الثلاثة القادمة"}
+  - {skill: budget-forecast, split: heldout, text: "قارن إنفاقنا الفعلي بالخطة المالية لهذا الربع"}
+  - {skill: unit-test-gen, split: dev, text: "أضف اختبارات وحدة لهذه الوحدة البرمجية في بايثون"}
+  - {skill: unit-test-gen, split: heldout, text: "هذا الكود بلا اختبارات، أنشئها من فضلك"}
+  - {skill: security-scan, split: dev, text: "تحقق مما إذا كانت المكتبات التي نستخدمها فيها ثغرات"}
+  - {skill: security-scan, split: heldout, text: "افحص اعتماديات المشروع بحثًا عن مشاكل أمنية معروفة"}
+  - {skill: privacy-policy, split: dev, text: "اكتب سياسة الخصوصية لموقعنا"}
+  - {skill: privacy-policy, split: heldout, text: "نحتفظ ببيانات العملاء الشخصية ونحتاج وثيقة الخصوصية الخاصة بذلك"}
+  - {skill: license-audit, split: dev, text: "هل تسمح رخصة هذه المكتبة مفتوحة المصدر باستخدامها في منتج تجاري؟"}
+  - {skill: license-audit, split: heldout, text: "راجع رخص جميع الاعتماديات قبل بيع المنتج"}
+  - {skill: ci-pipeline, split: dev, text: "اجعل الاختبارات تعمل تلقائيًا مع كل عملية إيداع"}
+  - {skill: ci-pipeline, split: heldout, text: "أعدّ التكامل المستمر لهذا المستودع"}
+  - {skill: incident-postmortem, split: dev, text: "اشرح سبب توقف الخادم الليلة الماضية دون لوم أحد"}
+  - {skill: incident-postmortem, split: heldout, text: "اكتب تحليلًا لما بعد عطل بيئة الإنتاج"}
+  - {skill: newsletter, split: dev, text: "اكتب الرسالة البريدية الأسبوعية لعملائنا"}
+  - {skill: newsletter, split: heldout, text: "جهز البريد الدوري بآخر الأخبار للمشتركين"}
+  - {skill: press-release, split: dev, text: "اكتب بيانًا صحفيًا لإطلاق منتجنا الجديد"}
+  - {skill: press-release, split: heldout, text: "نريد الإعلان عن المنتج الجديد لوسائل الإعلام"}
+  - {skill: sales-proposal, split: dev, text: "أعدّ عرضًا تجاريًا لعميل محتمل"}
+  - {skill: sales-proposal, split: heldout, text: "جهز عرض أسعار مناسبًا لاحتياجات هذا المشتري المحتمل"}
+  - {skill: market-sizing, split: dev, text: "ما حجم السوق لهذا المنتج الجديد؟"}
+  - {skill: market-sizing, split: heldout, text: "قدّر إجمالي السوق الذي يمكننا الوصول إليه"}
+  - {skill: support-macro, split: dev, text: "أنشئ قوالب ردود على شكاوى العملاء المتكررة"}
+  - {skill: support-macro, split: heldout, text: "جهز إجابات جاهزة لتذاكر الدعم الشائعة"}
+  - {skill: meeting-notes, split: dev, text: "حوّل نص هذا الاجتماع إلى قرارات ومهام"}
+  - {skill: meeting-notes, split: heldout, text: "اكتب محضر اجتماع اليوم مع الخطوات التالية"}

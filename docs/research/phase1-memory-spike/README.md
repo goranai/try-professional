@@ -21,3 +21,4 @@ The first run downloads the embedding model into `fastembed-cache/` next to the 
 | `spike_40_skills.py` | Second pass: 40 skills, recall@5, nonsense queries |
 | `result_default.json` | Mnemosyne defaults |
 | `result_gate0*.json` | Lexical gate off, with further setting variations |
+| `spike_score_floor.py`, `result_score_floor.json` | Gate off: dense score of correct hits vs nonsense queries, at candidate floors |

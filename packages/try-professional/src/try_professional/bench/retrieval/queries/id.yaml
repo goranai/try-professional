@@ -1,0 +1,52 @@
+# Indonesian retrieval queries. Owner review requested.
+#
+# What to check:
+#   1. Would a real Indonesian speaker type this? Change anything that sounds translated.
+#   2. Does it still ask for the skill named on that line?
+#   3. Keep "skill" and "split" unchanged, so all language files stay parallel.
+# When done, set review.status to "reviewed" and fill in review.reviewer.
+language: id
+review:
+  status: pending
+  reviewer: null
+queries:
+  - {skill: seo-audit, split: dev, text: "kenapa situs saya susah ditemukan di Google, tolong dicek"}
+  - {skill: seo-audit, split: heldout, text: "cari masalah SEO di website toko online saya"}
+  - {skill: code-review, split: dev, text: "tolong cek perubahan kode ini sebelum di-merge"}
+  - {skill: code-review, split: heldout, text: "tinjau PR saya, ada celah keamanan atau tidak"}
+  - {skill: invoice-gen, split: dev, text: "buatkan tagihan untuk klien lengkap dengan PPN"}
+  - {skill: invoice-gen, split: heldout, text: "saya perlu invoice bulan ini beserta syarat pembayarannya"}
+  - {skill: contract-check, split: dev, text: "ada pasal yang merugikan saya di perjanjian ini tidak?"}
+  - {skill: contract-check, split: heldout, text: "ringkas kewajiban hukum saya dalam kontrak kerja sama ini"}
+  - {skill: docker-deploy, split: dev, text: "naikkan aplikasi ini ke server produksi pakai container"}
+  - {skill: docker-deploy, split: heldout, text: "rilis layanan ke production, dan siapkan cara rollback kalau gagal"}
+  - {skill: ux-interview, split: dev, text: "susun daftar pertanyaan untuk wawancara dengan pengguna aplikasi kami"}
+  - {skill: ux-interview, split: heldout, text: "rangkum hasil wawancara pengguna, bagian mana yang membingungkan mereka"}
+  - {skill: social-calendar, split: dev, text: "rencanakan unggahan Instagram dan TikTok untuk sebulan ke depan"}
+  - {skill: social-calendar, split: heldout, text: "butuh jadwal konten medsos bulan depan beserta idenya"}
+  - {skill: budget-forecast, split: dev, text: "hitung proyeksi anggaran untuk tiga bulan ke depan"}
+  - {skill: budget-forecast, split: heldout, text: "bandingkan pengeluaran kita dengan rencana anggaran kuartal ini"}
+  - {skill: unit-test-gen, split: dev, text: "tambahkan unit test untuk modul Python ini"}
+  - {skill: unit-test-gen, split: heldout, text: "kode ini belum ada pengujiannya, tolong buatkan"}
+  - {skill: security-scan, split: dev, text: "cek apakah library yang kami pakai punya kerentanan"}
+  - {skill: security-scan, split: heldout, text: "pindai dependensi proyek untuk mencari celah keamanan yang sudah diketahui"}
+  - {skill: privacy-policy, split: dev, text: "buatkan kebijakan privasi untuk situs web kami"}
+  - {skill: privacy-policy, split: heldout, text: "kami menyimpan data pribadi pelanggan, perlu dokumen kebijakan privasinya"}
+  - {skill: license-audit, split: dev, text: "apakah lisensi pustaka open source ini boleh dipakai untuk produk komersial?"}
+  - {skill: license-audit, split: heldout, text: "periksa lisensi semua dependensi sebelum produk kami dijual"}
+  - {skill: ci-pipeline, split: dev, text: "atur supaya tes jalan otomatis setiap kali ada commit"}
+  - {skill: ci-pipeline, split: heldout, text: "siapkan continuous integration untuk repositori ini"}
+  - {skill: incident-postmortem, split: dev, text: "tulis laporan penyebab server kami mati semalam, tanpa menyalahkan orang"}
+  - {skill: incident-postmortem, split: heldout, text: "buat analisis pasca-insiden setelah gangguan di production"}
+  - {skill: newsletter, split: dev, text: "tulis buletin email mingguan untuk pelanggan kami"}
+  - {skill: newsletter, split: heldout, text: "siapkan email berkala berisi kabar terbaru untuk para subscriber"}
+  - {skill: press-release, split: dev, text: "buat siaran pers untuk peluncuran produk baru kami"}
+  - {skill: press-release, split: heldout, text: "kami mau mengumumkan produk baru ke media, tolong tulis rilisnya"}
+  - {skill: sales-proposal, split: dev, text: "susun proposal penawaran untuk calon klien"}
+  - {skill: sales-proposal, split: heldout, text: "buatkan penawaran harga dan solusi yang disesuaikan dengan kebutuhan calon pembeli"}
+  - {skill: market-sizing, split: dev, text: "seberapa besar pasar untuk produk baru ini?"}
+  - {skill: market-sizing, split: heldout, text: "hitung perkiraan total pasar yang bisa kita sasar"}
+  - {skill: support-macro, split: dev, text: "buat template balasan untuk keluhan pelanggan yang sering masuk"}
+  - {skill: support-macro, split: heldout, text: "siapkan jawaban siap pakai untuk tiket dukungan yang umum"}
+  - {skill: meeting-notes, split: dev, text: "ubah transkrip rapat ini jadi keputusan dan daftar tugas"}
+  - {skill: meeting-notes, split: heldout, text: "tolong buatkan notulen rapat tadi beserta tindak lanjutnya"}

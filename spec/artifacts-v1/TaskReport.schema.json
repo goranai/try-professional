@@ -1,0 +1,66 @@
+{
+  "$defs": {
+    "DoneCriterion": {
+      "additionalProperties": false,
+      "properties": {
+        "criterion": {
+          "minLength": 1,
+          "title": "Criterion",
+          "type": "string"
+        },
+        "evidence": {
+          "default": "",
+          "title": "Evidence",
+          "type": "string"
+        },
+        "met": {
+          "title": "Met",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "criterion",
+        "met"
+      ],
+      "title": "DoneCriterion",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "done_criteria_met": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/DoneCriterion"
+      },
+      "title": "Done Criteria Met",
+      "type": "array"
+    },
+    "open_issues": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Open Issues",
+      "type": "array"
+    },
+    "outputs": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Outputs",
+      "type": "array"
+    },
+    "summary": {
+      "minLength": 1,
+      "title": "Summary",
+      "type": "string"
+    }
+  },
+  "required": [
+    "summary"
+  ],
+  "title": "TaskReport",
+  "type": "object"
+}

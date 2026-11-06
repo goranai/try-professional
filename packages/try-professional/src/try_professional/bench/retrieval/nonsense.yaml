@@ -1,0 +1,22 @@
+# Queries with no matching skill. A good floor returns nothing for these.
+queries:
+  - {language: en, split: dev, text: "purple bicycle quantum oatmeal"}
+  - {language: en, split: dev, text: "how many moons does my grandmother's teapot have"}
+  - {language: en, split: heldout, text: "recipe for frozen thunder soup"}
+  - {language: en, split: heldout, text: "teach my goldfish to whistle jazz"}
+  - {language: id, split: dev, text: "sepeda ungu kuantum bubur"}
+  - {language: id, split: dev, text: "berapa bulan yang dimiliki teko nenek saya"}
+  - {language: id, split: heldout, text: "resep sup petir beku"}
+  - {language: id, split: heldout, text: "ajari ikan mas saya bersiul jazz"}
+  - {language: es, split: dev, text: "bicicleta morada cuántica avena"}
+  - {language: es, split: dev, text: "cuántas lunas tiene la tetera de mi abuela"}
+  - {language: es, split: heldout, text: "receta de sopa de truenos congelados"}
+  - {language: es, split: heldout, text: "enseña a mi pez dorado a silbar jazz"}
+  - {language: zh, split: dev, text: "紫色自行车量子燕麦片"}
+  - {language: zh, split: dev, text: "我奶奶的茶壶有几个月亮"}
+  - {language: zh, split: heldout, text: "冰冻雷声汤的做法"}
+  - {language: zh, split: heldout, text: "教我的金鱼吹爵士口哨"}
+  - {language: ar, split: dev, text: "دراجة أرجوانية كمومية شوفان"}
+  - {language: ar, split: dev, text: "كم قمرًا لإبريق شاي جدتي"}
+  - {language: ar, split: heldout, text: "وصفة حساء الرعد المجمد"}
+  - {language: ar, split: heldout, text: "علم سمكتي الذهبية صفير الجاز"}

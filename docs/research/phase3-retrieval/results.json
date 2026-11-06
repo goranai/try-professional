@@ -1,0 +1,291 @@
+{
+ "model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+ "skills": 40,
+ "margin": 0.02,
+ "catalog_build_seconds": 41.4,
+ "catalog_cosine": {
+  "dev": {
+   "nonsense_top_max": 0.256,
+   "correct_min": 0.283,
+   "correct_median": 0.566,
+   "recall_at_5_no_floor": {
+    "en": "19/20",
+    "id": "20/20",
+    "es": "19/20",
+    "zh": "19/20",
+    "ar": "18/20"
+   }
+  },
+  "chosen_floor": 0.276,
+  "heldout": {
+   "recall_at_5": {
+    "en": "14/20",
+    "id": "20/20",
+    "es": "19/20",
+    "zh": "19/20",
+    "ar": "19/20"
+   },
+   "top_1": {
+    "en": "10/20",
+    "id": "17/20",
+    "es": "15/20",
+    "zh": "16/20",
+    "ar": "13/20"
+   },
+   "total_recall_at_5": "91/100",
+   "review_status": {
+    "en": "not-required",
+    "id": "pending",
+    "es": "unreviewed",
+    "zh": "unreviewed",
+    "ar": "unreviewed"
+   },
+   "misses": [
+    {
+     "want": "invoice-gen",
+     "text": "I need this month's bill with when it has to be paid",
+     "got": [
+      "payment-reminder",
+      "tax-summary",
+      "cash-flow"
+     ]
+    },
+    {
+     "want": "docker-deploy",
+     "text": "release to prod and have a way back if it breaks",
+     "got": [
+      "press-release"
+     ]
+    },
+    {
+     "want": "ux-interview",
+     "text": "sum up what customers told us and where they got lost",
+     "got": [
+      "pricing-model",
+      "competitor-brief",
+      "support-macro"
+     ]
+    },
+    {
+     "want": "unit-test-gen",
+     "text": "this function has no test coverage, fix that",
+     "got": []
+    },
+    {
+     "want": "security-scan",
+     "text": "check our third-party libraries against published CVEs",
+     "got": [
+      "license-audit",
+      "seo-audit",
+      "contract-check"
+     ]
+    },
+    {
+     "want": "ci-pipeline",
+     "text": "automate builds and checks for this repository",
+     "got": [
+      "k8s-manifest",
+      "license-audit",
+      "security-scan"
+     ]
+    },
+    {
+     "want": "invoice-gen",
+     "text": "necesito la factura de este mes con las condiciones de pago",
+     "got": [
+      "cash-flow",
+      "tax-summary",
+      "payment-reminder"
+     ]
+    },
+    {
+     "want": "invoice-gen",
+     "text": "我需要本月的发票和付款条件",
+     "got": [
+      "payment-reminder",
+      "support-macro",
+      "cash-flow"
+     ]
+    },
+    {
+     "want": "invoice-gen",
+     "text": "أحتاج فاتورة هذا الشهر مع شروط السداد",
+     "got": [
+      "tax-summary",
+      "cash-flow",
+      "payment-reminder"
+     ]
+    }
+   ],
+   "nonsense_scores": [
+    0.27,
+    0.187,
+    0.331,
+    0.131,
+    0.324,
+    0.242,
+    0.323,
+    0.212,
+    0.262,
+    0.218
+   ],
+   "nonsense_rejected": "7/10"
+  }
+ },
+ "mnemosyne_gate0": {
+  "dev": {
+   "nonsense_top_max": 0.266,
+   "correct_min": 0.284,
+   "correct_median": 0.566,
+   "recall_at_5_no_floor": {
+    "en": "18/20",
+    "id": "20/20",
+    "es": "19/20",
+    "zh": "19/20",
+    "ar": "18/20"
+   }
+  },
+  "chosen_floor": 0.286,
+  "heldout": {
+   "recall_at_5": {
+    "en": "11/20",
+    "id": "20/20",
+    "es": "18/20",
+    "zh": "19/20",
+    "ar": "19/20"
+   },
+   "top_1": {
+    "en": "7/20",
+    "id": "16/20",
+    "es": "15/20",
+    "zh": "16/20",
+    "ar": "13/20"
+   },
+   "total_recall_at_5": "87/100",
+   "review_status": {
+    "en": "not-required",
+    "id": "pending",
+    "es": "unreviewed",
+    "zh": "unreviewed",
+    "ar": "unreviewed"
+   },
+   "misses": [
+    {
+     "want": "invoice-gen",
+     "text": "I need this month's bill with when it has to be paid",
+     "got": [
+      "cash-flow",
+      "payment-reminder",
+      "tax-summary"
+     ]
+    },
+    {
+     "want": "docker-deploy",
+     "text": "release to prod and have a way back if it breaks",
+     "got": [
+      "press-release"
+     ]
+    },
+    {
+     "want": "ux-interview",
+     "text": "sum up what customers told us and where they got lost",
+     "got": [
+      "payment-reminder",
+      "support-macro",
+      "survey-design"
+     ]
+    },
+    {
+     "want": "unit-test-gen",
+     "text": "this function has no test coverage, fix that",
+     "got": []
+    },
+    {
+     "want": "security-scan",
+     "text": "check our third-party libraries against published CVEs",
+     "got": []
+    },
+    {
+     "want": "ci-pipeline",
+     "text": "automate builds and checks for this repository",
+     "got": [
+      "license-audit",
+      "k8s-manifest",
+      "security-scan"
+     ]
+    },
+    {
+     "want": "newsletter",
+     "text": "draft the regular update we send to our mailing list",
+     "got": [
+      "payment-reminder",
+      "press-release",
+      "backlink-outreach"
+     ]
+    },
+    {
+     "want": "press-release",
+     "text": "write the official statement for media about the new product",
+     "got": [
+      "market-sizing",
+      "keyword-research"
+     ]
+    },
+    {
+     "want": "meeting-notes",
+     "text": "summarize today's meeting and list the follow-ups",
+     "got": []
+    },
+    {
+     "want": "invoice-gen",
+     "text": "necesito la factura de este mes con las condiciones de pago",
+     "got": [
+      "cash-flow",
+      "tax-summary",
+      "payment-reminder"
+     ]
+    },
+    {
+     "want": "unit-test-gen",
+     "text": "este código no tiene pruebas, créalas por favor",
+     "got": [
+      "commit-message",
+      "code-review"
+     ]
+    },
+    {
+     "want": "invoice-gen",
+     "text": "我需要本月的发票和付款条件",
+     "got": [
+      "payment-reminder",
+      "support-macro",
+      "cash-flow"
+     ]
+    },
+    {
+     "want": "invoice-gen",
+     "text": "أحتاج فاتورة هذا الشهر مع شروط السداد",
+     "got": [
+      "cash-flow",
+      "tax-summary",
+      "payment-reminder"
+     ]
+    }
+   ],
+   "nonsense_scores": [
+    0.274,
+    0.191,
+    0.336,
+    0.152,
+    0.329,
+    0.255,
+    0.33,
+    0.224,
+    0.265,
+    0.227
+   ],
+   "nonsense_rejected": "7/10"
+  }
+ },
+ "process_rss_gb_with_both_models_loaded": 1.26
+}

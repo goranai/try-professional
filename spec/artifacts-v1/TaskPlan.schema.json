@@ -1,0 +1,109 @@
+{
+  "$defs": {
+    "Flags": {
+      "additionalProperties": false,
+      "description": "Gate triggers. A flag can be added later but never cleared.",
+      "properties": {
+        "public_facing": {
+          "default": false,
+          "title": "Public Facing",
+          "type": "boolean"
+        },
+        "touches_license": {
+          "default": false,
+          "title": "Touches License",
+          "type": "boolean"
+        },
+        "touches_personal_data": {
+          "default": false,
+          "title": "Touches Personal Data",
+          "type": "boolean"
+        }
+      },
+      "title": "Flags",
+      "type": "object"
+    },
+    "TaskSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "definition_of_done": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Definition Of Done",
+          "type": "array"
+        },
+        "depends_on": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Depends On",
+          "type": "array"
+        },
+        "flags": {
+          "$ref": "#/$defs/Flags",
+          "default": {
+            "public_facing": false,
+            "touches_license": false,
+            "touches_personal_data": false
+          }
+        },
+        "id": {
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "output_type": {
+          "minLength": 1,
+          "title": "Output Type",
+          "type": "string"
+        },
+        "owner_role": {
+          "description": "department/role. Must be in this department",
+          "minLength": 1,
+          "title": "Owner Role",
+          "type": "string"
+        },
+        "title": {
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "owner_role",
+        "definition_of_done",
+        "output_type"
+      ],
+      "title": "TaskSpec",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "A department head's breakdown of one work package.",
+  "properties": {
+    "tasks": {
+      "items": {
+        "$ref": "#/$defs/TaskSpec"
+      },
+      "minItems": 1,
+      "title": "Tasks",
+      "type": "array"
+    },
+    "work_package_id": {
+      "minLength": 1,
+      "title": "Work Package Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "work_package_id",
+    "tasks"
+  ],
+  "title": "TaskPlan",
+  "type": "object"
+}

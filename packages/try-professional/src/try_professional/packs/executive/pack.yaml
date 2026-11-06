@@ -1,0 +1,7 @@
+id: executive
+name: Executive
+head: ceo
+activation: always
+roles:
+- ceo
+- chief-of-staff

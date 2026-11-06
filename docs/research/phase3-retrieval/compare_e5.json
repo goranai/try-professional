@@ -1,0 +1,56 @@
+{
+ "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2": {
+  "seconds_load_and_index": 891.9,
+  "rss_increase_gb": 0.6,
+  "dev_nonsense_top_max": 0.256,
+  "dev_correct_min": 0.283,
+  "chosen_floor": 0.276,
+  "heldout_recall_at_5": {
+   "en": "14/20",
+   "id": "20/20",
+   "es": "19/20",
+   "zh": "19/20",
+   "ar": "19/20"
+  },
+  "heldout_total": "91/100",
+  "heldout_recall_at_5_no_floor": {
+   "en": "16/20",
+   "id": "20/20",
+   "es": "19/20",
+   "zh": "19/20",
+   "ar": "19/20"
+  },
+  "heldout_total_no_floor": "93/100",
+  "heldout_top_1": "71/100",
+  "nonsense_rejected": "7/10",
+  "nonsense_max": 0.331,
+  "correct_min_heldout": 0.189
+ },
+ "intfloat/multilingual-e5-large": {
+  "seconds_load_and_index": 219.4,
+  "rss_increase_gb": 1.58,
+  "dev_nonsense_top_max": 0.786,
+  "dev_correct_min": 0.756,
+  "chosen_floor": 0.806,
+  "heldout_recall_at_5": {
+   "en": "10/20",
+   "id": "20/20",
+   "es": "14/20",
+   "zh": "15/20",
+   "ar": "12/20"
+  },
+  "heldout_total": "71/100",
+  "heldout_recall_at_5_no_floor": {
+   "en": "19/20",
+   "id": "20/20",
+   "es": "19/20",
+   "zh": "20/20",
+   "ar": "20/20"
+  },
+  "heldout_total_no_floor": "98/100",
+  "heldout_top_1": "87/100",
+  "nonsense_rejected": "10/10",
+  "nonsense_max": 0.772,
+  "correct_min_heldout": 0.777
+ }
+}

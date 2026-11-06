@@ -1,0 +1,253 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/goranai/try-professional/main/spec/org-v1.schema.json",
+  "title": "Organization definition, spec org/v1",
+  "type": "object",
+  "required": [
+    "spec",
+    "company",
+    "root_role",
+    "departments"
+  ],
+  "additionalProperties": false,
+  "patternProperties": {
+    "^x-": {}
+  },
+  "properties": {
+    "spec": {
+      "const": "org/v1"
+    },
+    "company": {
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x-": {}
+      },
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string"
+        }
+      }
+    },
+    "root_role": {
+      "$ref": "#/$defs/role_ref"
+    },
+    "departments": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/department"
+      }
+    },
+    "gates": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x-": {},
+        "^[a-z][a-z0-9-]*$": {
+          "$ref": "#/$defs/gate"
+        }
+      }
+    },
+    "pipeline": {
+      "$ref": "#/$defs/pipeline"
+    },
+    "llm_overrides": {
+      "description": "Per-department or per-role model settings. A role's fields win over its department's.",
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x-": {},
+        "^[a-z][a-z0-9-]*(/[a-z][a-z0-9-]*)?$": {
+          "$ref": "#/$defs/llm_override"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$"
+    },
+    "role_ref": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*/[a-z][a-z0-9-]*$"
+    },
+    "local_or_full_ref": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*(/[a-z][a-z0-9-]*)?$"
+    },
+    "flag": {
+      "enum": [
+        "public_facing",
+        "touches_license",
+        "touches_personal_data"
+      ]
+    },
+    "department": {
+      "type": "object",
+      "required": [
+        "id",
+        "head",
+        "roles"
+      ],
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x-": {}
+      },
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "head": {
+          "$ref": "#/$defs/id"
+        },
+        "activation": {
+          "enum": [
+            "always",
+            "on_demand"
+          ],
+          "default": "on_demand"
+        },
+        "qa_gate": {
+          "type": "object",
+          "required": [
+            "reviewer"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "reviewer": {
+              "$ref": "#/$defs/local_or_full_ref"
+            }
+          }
+        },
+        "roles": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        }
+      }
+    },
+    "gate": {
+      "type": "object",
+      "required": [
+        "reviewer",
+        "triggers"
+      ],
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x-": {}
+      },
+      "properties": {
+        "reviewer": {
+          "$ref": "#/$defs/role_ref"
+        },
+        "triggers": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/flag"
+          }
+        },
+        "on_unavailable": {
+          "enum": [
+            "block",
+            "waive"
+          ],
+          "default": "block"
+        }
+      }
+    },
+    "pipeline": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x-": {}
+      },
+      "properties": {
+        "max_parallel_tasks": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 4
+        },
+        "max_rework": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 2
+        },
+        "max_invalid_outputs": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 2
+        },
+        "working_language": {
+          "type": "string",
+          "minLength": 1,
+          "default": "auto"
+        },
+        "budget": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "max_tokens_per_run": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 1,
+              "default": null
+            },
+            "on_exceeded": {
+              "enum": [
+                "escalate"
+              ],
+              "default": "escalate"
+            }
+          }
+        }
+      }
+    },
+    "llm_override": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": false,
+      "dependentRequired": {
+        "base_url": [
+          "api_key_env"
+        ]
+      },
+      "properties": {
+        "base_url": {
+          "type": "string",
+          "description": "Must be https, or http on this machine. Requires api_key_env, so a default key can't be sent to a new endpoint.",
+          "pattern": "^(https://[^\\s]+|http://(localhost|127\\.0\\.0\\.1)(:[0-9]+)?(/[^\\s]*)?)$"
+        },
+        "model": {
+          "type": "string",
+          "minLength": 1
+        },
+        "api_key_env": {
+          "description": "The NAME of an environment variable, never the key itself. null means no key.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[A-Z][A-Z0-9_]*$"
+        }
+      }
+    }
+  }
+}

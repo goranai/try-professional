@@ -1,0 +1,53 @@
+# Workspace root. Never published: each package under packages/ has its own metadata.
+[project]
+name = "try-professional-workspace"
+version = "0"
+requires-python = ">=3.10"
+dependencies = []
+
+[dependency-groups]
+dev = [
+  "mypy>=1.11",
+  "pytest>=8",
+  "pytest-timeout>=2",
+  "ruff>=0.6",
+  "types-PyYAML",
+  "types-jsonschema",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = ["packages/*"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+extend-exclude = ["docs/research"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["try_professional"]
+
+[tool.ruff.lint.per-file-ignores]
+"packages/try-professional/tests/*" = ["E501"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+files = ["packages/try-professional/src"]
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = ["anthropic.*", "fastembed.*", "mnemosyne.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["packages/try-professional/tests"]
+addopts = "-q"
+timeout = 60
+timeout_method = "thread"
+markers = ["model: downloads and runs the real embedding model"]

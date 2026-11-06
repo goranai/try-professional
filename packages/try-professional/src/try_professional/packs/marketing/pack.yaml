@@ -1,0 +1,11 @@
+id: marketing
+name: Marketing
+head: marketing-lead
+activation: on_demand
+qa_gate:
+  reviewer: marketing-lead
+roles:
+- marketing-lead
+- content-writer
+- seo
+- social

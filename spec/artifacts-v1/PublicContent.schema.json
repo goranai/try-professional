@@ -1,0 +1,96 @@
+{
+  "$defs": {
+    "Claim": {
+      "additionalProperties": false,
+      "properties": {
+        "claim": {
+          "minLength": 1,
+          "title": "Claim",
+          "type": "string"
+        },
+        "source": {
+          "default": "",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "claim"
+      ],
+      "title": "Claim",
+      "type": "object"
+    },
+    "DoneCriterion": {
+      "additionalProperties": false,
+      "properties": {
+        "criterion": {
+          "minLength": 1,
+          "title": "Criterion",
+          "type": "string"
+        },
+        "evidence": {
+          "default": "",
+          "title": "Evidence",
+          "type": "string"
+        },
+        "met": {
+          "title": "Met",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "criterion",
+        "met"
+      ],
+      "title": "DoneCriterion",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "audience": {
+      "minLength": 1,
+      "title": "Audience",
+      "type": "string"
+    },
+    "body": {
+      "minLength": 1,
+      "title": "Body",
+      "type": "string"
+    },
+    "channel": {
+      "minLength": 1,
+      "title": "Channel",
+      "type": "string"
+    },
+    "claims": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Claim"
+      },
+      "title": "Claims",
+      "type": "array"
+    },
+    "done_criteria_met": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/DoneCriterion"
+      },
+      "title": "Done Criteria Met",
+      "type": "array"
+    },
+    "locale": {
+      "minLength": 1,
+      "title": "Locale",
+      "type": "string"
+    }
+  },
+  "required": [
+    "audience",
+    "channel",
+    "locale",
+    "body"
+  ],
+  "title": "PublicContent",
+  "type": "object"
+}

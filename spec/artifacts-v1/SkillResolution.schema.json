@@ -1,0 +1,68 @@
+{
+  "$defs": {
+    "SkillCandidate": {
+      "additionalProperties": false,
+      "properties": {
+        "score": {
+          "title": "Score",
+          "type": "number"
+        },
+        "skill_id": {
+          "minLength": 1,
+          "title": "Skill Id",
+          "type": "string"
+        },
+        "trust": {
+          "enum": [
+            "verified",
+            "indexed",
+            "quarantined"
+          ],
+          "title": "Trust",
+          "type": "string"
+        }
+      },
+      "required": [
+        "skill_id",
+        "score",
+        "trust"
+      ],
+      "title": "SkillCandidate",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "candidates": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/SkillCandidate"
+      },
+      "title": "Candidates",
+      "type": "array"
+    },
+    "query": {
+      "minLength": 1,
+      "title": "Query",
+      "type": "string"
+    },
+    "reason": {
+      "default": "",
+      "title": "Reason",
+      "type": "string"
+    },
+    "selected": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Selected",
+      "type": "array"
+    }
+  },
+  "required": [
+    "query"
+  ],
+  "title": "SkillResolution",
+  "type": "object"
+}

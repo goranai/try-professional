@@ -1,0 +1,83 @@
+# Labelled catalog for the skill-retrieval benchmark.
+# Descriptions are English on purpose: queries in every language must find them.
+skills:
+  - id: seo-audit
+    description: "Audit a website for search engine optimization problems and suggest keyword improvements."
+  - id: code-review
+    description: "Review a pull request for bugs, security issues, and code quality problems."
+  - id: invoice-gen
+    description: "Generate a customer invoice with line items, tax, and payment terms."
+  - id: contract-check
+    description: "Check a contract for risky clauses and summarize legal obligations."
+  - id: docker-deploy
+    description: "Build a Docker image and deploy the service to production with a rollback plan."
+  - id: ux-interview
+    description: "Plan and summarize user research interviews to find usability problems."
+  - id: social-calendar
+    description: "Create a monthly social media content calendar with post ideas."
+  - id: budget-forecast
+    description: "Forecast quarterly budget and track spending against the plan."
+  - id: keyword-research
+    description: "Find high-volume search keywords for a new product category."
+  - id: backlink-outreach
+    description: "Draft outreach emails to earn backlinks from relevant blogs."
+  - id: meta-tags
+    description: "Write page titles and meta descriptions for marketing pages."
+  - id: unit-test-gen
+    description: "Write unit tests for an existing Python module."
+  - id: refactor-plan
+    description: "Plan a safe refactor of a large legacy codebase."
+  - id: security-scan
+    description: "Scan application dependencies for known security vulnerabilities."
+  - id: commit-message
+    description: "Write clear git commit messages from a diff."
+  - id: payment-reminder
+    description: "Send polite reminders to customers about overdue payments."
+  - id: expense-report
+    description: "Summarize employee expense reports and flag policy violations."
+  - id: tax-summary
+    description: "Prepare a summary of annual tax obligations for a small company."
+  - id: nda-draft
+    description: "Draft a mutual non-disclosure agreement between two companies."
+  - id: privacy-policy
+    description: "Write a website privacy policy that covers personal data handling."
+  - id: license-audit
+    description: "Check open source dependency licenses for commercial compatibility."
+  - id: k8s-manifest
+    description: "Write Kubernetes manifests for a web service with autoscaling."
+  - id: ci-pipeline
+    description: "Set up a continuous integration pipeline that runs tests on each commit."
+  - id: incident-postmortem
+    description: "Write a blameless postmortem after a production outage."
+  - id: survey-design
+    description: "Design a customer satisfaction survey with unbiased questions."
+  - id: persona-builder
+    description: "Build user personas from customer data and interviews."
+  - id: wireframe-review
+    description: "Review interface wireframes for accessibility issues."
+  - id: tweet-thread
+    description: "Turn a blog post into a thread of short social media posts."
+  - id: newsletter
+    description: "Write a weekly email newsletter for subscribers."
+  - id: press-release
+    description: "Draft a press release for a product launch."
+  - id: cash-flow
+    description: "Project monthly cash flow and warn about shortfalls."
+  - id: pricing-model
+    description: "Compare pricing models for a subscription product."
+  - id: sales-proposal
+    description: "Write a sales proposal tailored to a prospective client."
+  - id: lead-qualify
+    description: "Score inbound sales leads and recommend who to contact first."
+  - id: market-sizing
+    description: "Estimate total addressable market for a new product."
+  - id: competitor-brief
+    description: "Summarize competitor products, pricing, and positioning."
+  - id: literature-review
+    description: "Summarize academic papers on a research question."
+  - id: support-macro
+    description: "Write canned replies for common customer support tickets."
+  - id: onboarding-doc
+    description: "Write an onboarding guide for new employees."
+  - id: meeting-notes
+    description: "Turn a meeting transcript into decisions and action items."

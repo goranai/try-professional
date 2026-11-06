@@ -1,0 +1,9 @@
+id: research
+name: Research
+head: research-lead
+activation: on_demand
+qa_gate:
+  reviewer: research-lead
+roles:
+- research-lead
+- analyst

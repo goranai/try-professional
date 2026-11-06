@@ -1,0 +1,110 @@
+description: All optional pipeline and gate fields
+org:
+  spec: org/v1
+  company:
+    name: Example
+  root_role: executive/ceo
+  departments:
+  - id: executive
+    head: ceo
+    activation: always
+    roles:
+    - ceo
+    - chief-of-staff
+  - id: engineering
+    head: lead
+    qa_gate:
+      reviewer: qa
+    roles:
+    - lead
+    - qa
+  gates:
+    legal:
+      reviewer: executive/chief-of-staff
+      triggers:
+      - public_facing
+      on_unavailable: waive
+  pipeline:
+    max_parallel_tasks: 2
+    max_rework: 0
+    max_invalid_outputs: 0
+    working_language: id
+    budget:
+      max_tokens_per_run: 1000
+      on_exceeded: escalate
+roles:
+  executive/ceo:
+    spec: role/v1
+    id: ceo
+    department: executive
+    mission: m
+    responsibilities:
+    - r
+    inputs:
+    - i
+    outputs:
+    - o
+    allowed_tools:
+    - t
+    allowed_skill_categories:
+    - c
+    escalation: human
+    reviewer: executive/chief-of-staff
+    system_prompt: p
+  executive/chief-of-staff:
+    spec: role/v1
+    id: chief-of-staff
+    department: executive
+    mission: m
+    responsibilities:
+    - r
+    inputs:
+    - i
+    outputs:
+    - o
+    allowed_tools:
+    - t
+    allowed_skill_categories:
+    - c
+    escalation: executive/ceo
+    reviewer: executive/ceo
+    system_prompt: p
+  engineering/lead:
+    spec: role/v1
+    id: lead
+    department: engineering
+    mission: m
+    responsibilities:
+    - r
+    inputs:
+    - i
+    outputs:
+    - o
+    allowed_tools:
+    - t
+    allowed_skill_categories:
+    - c
+    escalation: executive/ceo
+    reviewer: engineering/qa
+    system_prompt: p
+  engineering/qa:
+    spec: role/v1
+    id: qa
+    department: engineering
+    mission: m
+    responsibilities:
+    - r
+    inputs:
+    - i
+    outputs:
+    - o
+    allowed_tools:
+    - t
+    allowed_skill_categories:
+    - c
+    escalation: engineering/lead
+    reviewer: engineering/lead
+    system_prompt: p
+expect:
+  valid: true
+  errors: []

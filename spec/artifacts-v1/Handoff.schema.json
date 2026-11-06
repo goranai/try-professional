@@ -1,0 +1,45 @@
+{
+  "additionalProperties": false,
+  "description": "A logged request between department heads. The only cross-department channel.",
+  "properties": {
+    "acceptance": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Acceptance",
+      "type": "array"
+    },
+    "artifact_refs": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Artifact Refs",
+      "type": "array"
+    },
+    "from_department": {
+      "minLength": 1,
+      "title": "From Department",
+      "type": "string"
+    },
+    "request": {
+      "minLength": 1,
+      "title": "Request",
+      "type": "string"
+    },
+    "to_department": {
+      "minLength": 1,
+      "title": "To Department",
+      "type": "string"
+    }
+  },
+  "required": [
+    "from_department",
+    "to_department",
+    "request",
+    "acceptance"
+  ],
+  "title": "Handoff",
+  "type": "object"
+}

@@ -1,0 +1,46 @@
+# Chinese (Simplified) retrieval queries. Not yet reviewed by a native speaker.
+language: zh
+review:
+  status: unreviewed
+  reviewer: null
+queries:
+  - {skill: seo-audit, split: dev, text: "为什么在谷歌上搜不到我的网站，帮我查一下"}
+  - {skill: seo-audit, split: heldout, text: "找出我网店的 SEO 问题"}
+  - {skill: code-review, split: dev, text: "合并之前帮我看看这段改动"}
+  - {skill: code-review, split: heldout, text: "看一下我的 PR 有没有安全隐患"}
+  - {skill: invoice-gen, split: dev, text: "给客户开一张含增值税的账单"}
+  - {skill: invoice-gen, split: heldout, text: "我需要本月的发票和付款条件"}
+  - {skill: contract-check, split: dev, text: "这份协议里有对我不利的内容吗？"}
+  - {skill: contract-check, split: heldout, text: "总结这份合作合同里我要承担的法律责任"}
+  - {skill: docker-deploy, split: dev, text: "用容器把这个应用发布到线上服务器"}
+  - {skill: docker-deploy, split: heldout, text: "把服务上线，并准备好出问题时的回滚办法"}
+  - {skill: ux-interview, split: dev, text: "帮我准备访谈应用用户的问题清单"}
+  - {skill: ux-interview, split: heldout, text: "整理用户访谈结果，看看他们在哪里感到困惑"}
+  - {skill: social-calendar, split: dev, text: "规划接下来一个月的小红书和抖音发布内容"}
+  - {skill: social-calendar, split: heldout, text: "需要下个月的社媒排期和选题"}
+  - {skill: budget-forecast, split: dev, text: "估算未来三个月的开支"}
+  - {skill: budget-forecast, split: heldout, text: "对比本季度实际花费和预算计划"}
+  - {skill: unit-test-gen, split: dev, text: "给这个 Python 模块加单元测试"}
+  - {skill: unit-test-gen, split: heldout, text: "这段代码还没有测试，请补上"}
+  - {skill: security-scan, split: dev, text: "看看我们用的库有没有已知漏洞"}
+  - {skill: security-scan, split: heldout, text: "扫描项目依赖，查找公开的安全问题"}
+  - {skill: privacy-policy, split: dev, text: "为我们的网站写一份隐私政策"}
+  - {skill: privacy-policy, split: heldout, text: "我们保存了客户的个人信息，需要相应的隐私条款"}
+  - {skill: license-audit, split: dev, text: "这个开源库的许可证允许用在商业产品里吗？"}
+  - {skill: license-audit, split: heldout, text: "产品发售前检查所有依赖的授权协议"}
+  - {skill: ci-pipeline, split: dev, text: "让每次提交代码都自动跑测试"}
+  - {skill: ci-pipeline, split: heldout, text: "给这个仓库配置持续集成"}
+  - {skill: incident-postmortem, split: dev, text: "写一下昨晚服务器宕机的原因，不要指责任何人"}
+  - {skill: incident-postmortem, split: heldout, text: "生产环境故障后的复盘报告"}
+  - {skill: newsletter, split: dev, text: "写本周发给客户的邮件简报"}
+  - {skill: newsletter, split: heldout, text: "准备定期发给订阅者的最新动态邮件"}
+  - {skill: press-release, split: dev, text: "为新产品发布写一篇新闻稿"}
+  - {skill: press-release, split: heldout, text: "我们要向媒体宣布新产品，帮忙写通稿"}
+  - {skill: sales-proposal, split: dev, text: "给潜在客户写一份商务方案"}
+  - {skill: sales-proposal, split: heldout, text: "根据这家准客户的需求做一份带报价的方案"}
+  - {skill: market-sizing, split: dev, text: "这个新产品的市场有多大？"}
+  - {skill: market-sizing, split: heldout, text: "估算我们能触达的整体市场规模"}
+  - {skill: support-macro, split: dev, text: "给常见的客户投诉准备回复模板"}
+  - {skill: support-macro, split: heldout, text: "准备客服工单常用的标准答复"}
+  - {skill: meeting-notes, split: dev, text: "把这份会议记录整理成决定和待办事项"}
+  - {skill: meeting-notes, split: heldout, text: "帮我写今天的会议纪要和后续行动"}

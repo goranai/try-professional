@@ -45,6 +45,9 @@ Try Professional turns an LLM agent runtime into a structured company: a hierarc
 | Benchmark spending | Decided after Phase 5. The estimate is shown first, and the approved amount is never exceeded. All three setups use the same mid-priced model. | Owner |
 | Python | 3.10 to 3.13 required in CI. 3.14 allowed to fail until Mnemosyne officially supports it. | Owner |
 | Repository | `goranai/try-professional`, private until v0.1.0. | Owner |
+| LLM provider | Any OpenAI-compatible API, from `TRYPRO_LLM_BASE_URL`, `TRYPRO_LLM_API_KEY` and `TRYPRO_LLM_MODEL` in `.env`. Everyone uses these unless `llm_overrides` in `org.yaml` says otherwise. `OPENAI_API_KEY` is never used. | Owner |
+| Model | `deepseek-v4.1-flash-1017`: passed tool calling, a tool loop and JSON output. Phase 6 uses the same model. | Owner's preference, confirmed by test |
+| Secrets | `.env` is gitignored, and a scan of the working tree and full history runs before every push. | Owner |
 
 ## 2. Changes from the brief
 
@@ -126,7 +129,7 @@ try-professional/
 | Package | Required | Optional extras |
 |---|---|---|
 | `skill-customs` | `pyyaml` | none; HTTP uses the standard library |
-| `try-professional` | `skill-customs`, `pydantic`, `pyyaml`, `jsonschema`, `httpx`, `mnemosyne-memory[embeddings]` | `[mcp]`, `[bench]` |
+| `try-professional` | `skill-customs`, `pydantic`, `pyyaml`, `jsonschema`, `httpx`, `mnemosyne-memory[embeddings]` | `[anthropic]`, `[mcp]`, `[bench]` |
 
 There is no telemetry anywhere.
 
@@ -333,7 +336,7 @@ stateDiagram-v2
 |---|---|---|
 | Department QA | Every task result | `qa_gate.reviewer`, never the owner |
 | Legal | `public_facing`, `touches_license`, or `touches_personal_data` is true | `legal/counsel` |
-| CEO sign-off | Final deliverable | `executive/ceo` |
+| CEO sign-off | Final deliverable | `executive/ceo` produces it. A deterministic check then requires a result for every success criterion, and Legal reviews it if any flag is set anywhere in the run, including in the goal |
 
 An agent could understate a trigger flag, so flags are the union of three inputs: what the owner declares, what the Plan declares for the package, and a deterministic check (e.g. the output type is `PublicContent`, a changed file is a license file, a schema field matches a personal-data pattern). A flag can be added but never cleared, and only by a human can a gate be waived. Waivers are logged. Legal output carries a notice that it is not legal advice.
 
@@ -346,7 +349,9 @@ These are enforced by the orchestrator and tested. They do not rely on prompts.
 3. Parallelism is decided only by the orchestrator: tasks with no dependency path, up to `max_parallel_tasks`.
 4. An artifact that fails schema validation is not stored as a result.
 5. Nothing reaches `Approved` without the required verdicts.
-6. Every transition appends a hash-chained audit record, so later edits to the log are detectable.
+6. Every transition appends a hash-chained audit record, so later edits to the log are detectable. The ledger stores the latest hash, so removing records from the end is detectable too.
+7. A run can't loop forever. Each repeat escalation of a task goes one level higher (head, then CEO, then human), and no new model call starts while a run waits for a human.
+8. Only a human decision clears a blocked run. Results still in flight are accepted, but they don't unblock it.
 
 ### 6.5 How core stays runtime-agnostic
 
@@ -379,15 +384,17 @@ Pydantic v2 models are the source of truth. JSON Schema is generated into `spec/
 |---|---|---|
 | `GoalCharter` | CEO | `original_goal`, `restated_goal`, `user_language`, `constraints[]`, `success_criteria[]` |
 | `Plan` | CEO | `activated_departments[{id, reason}]`, `work_packages[{id, title, owner_department, depends_on[], acceptance[], flags}]` |
-| `TaskBrief` | Head | `task_id`, `work_package_id`, `owner_role`, `reviewer_role`, `definition_of_done[]`, `depends_on[]`, `context_refs[]`, `memory_context[]`, `output_type` |
+| `TaskPlan` | Head | `work_package_id`, `tasks[{id, title, owner_role, definition_of_done[], depends_on[], output_type, flags}]` |
+| `TaskBrief` | Orchestrator, from a `TaskPlan` | `task_id`, `work_package_id`, `title`, `owner_role`, `reviewer_role`, `definition_of_done[]`, `depends_on[]`, `output_type`. The reviewer comes from the org, so a head can't choose who reviews its own team |
 | `SkillResolution` | Orchestrator | `query`, `candidates[{skill_id, score, trust}]`, `selected[]`, `reason` |
 | `TaskReport` | Role | `summary`, `outputs[]`, `done_criteria_met[{criterion, met, evidence}]`, `open_issues[]` |
 | `CodeChange` | Engineering | `files[{path, sha256}]`, `tests[{command, result}]` |
 | `PublicContent` | Marketing, Sales, Support | `audience`, `channel`, `locale`, `body_ref`, `claims[{claim, source}]` |
 | `ResearchReport` | Research | `question`, `findings[{statement, confidence, sources[]}]` |
 | `ReviewVerdict` | Reviewer | `gate`, `subject_artifact_id`, `decision` (`approve`, `changes_requested`, `block`), `issues[{severity, description}]` |
-| `Handoff` | Head | `from_department`, `to_department`, `request`, `artifact_refs[]`, `needed_by_task` |
+| `Handoff` | Head | `from_department`, `to_department`, `request`, `acceptance[]`, `artifact_refs[]`. Creates a work package in the other department, and the requester resumes when it is approved |
 | `Escalation` | Any role | `reason`, `options[]`, `recommendation`, `blocking` |
+| `EscalationResolution` | The role escalated to | `decision` (`resume`, `abandon`, `escalate_further`, `amend_plan`), `guidance`, `activate_departments[]`, `added_work_packages[]`. Only the root role can amend the plan |
 | `FinalDeliverable` | CEO | `summary_in_user_language`, `artifact_refs[]`, `criteria_results[]`, `known_limits[]` |
 | `Retrospective` | CEO | `lessons[]`, `procedures[]`, `skill_proposals[]` |
 
@@ -418,15 +425,15 @@ Evidence for each is in §15.
 | `MNEMOSYNE_EMBEDDING_MODEL` | MiniLM multilingual | Upstream's default is an English model, `bge-small-en-v1.5` |
 | `MNEMOSYNE_EMBEDDING_DIM` | `384` | Must match the model |
 | `MNEMOSYNE_LEXICAL_GATE_MIN` | `0` | **Critical.** With the default keyword gate, cross-language recall mostly returns nothing (5/40). With `0`, recall@5 was 37/40. |
-| Dense score floor in `MemoryGateway` | Calibrated in Phase 3 | With the gate off, nonsense queries return a full page of results. Gateway filters on `dense_score`. |
+| Dense score floor in `MemoryGateway` | 0.28 for MiniLM | With the gate off, nonsense queries return a full page of results. **The floor is a weak filter:** on held-out queries it rejected 7 of 10 nonsense queries, because correct hits (as low as 0.283) and nonsense (as high as 0.336) overlap. It removes the worst noise, and can't detect "no match" reliably. |
 | `MNEMOSYNE_DATA_DIR` | `$TRYPRO_HOME/memory` | Keeps data out of `~/.hermes` |
-| Maintenance | `trypro memory maintain` | Unconsolidated working rows are trimmed after 168 hours by default. Consolidated rows are exempt. I read this in the code but did not test expiry; Phase 3 adds a test. |
+| `MNEMOSYNE_WM_TTL_HOURS`, `MNEMOSYNE_WM_MAX_ITEMS` | Effectively no limit | By default, unconsolidated rows are trimmed after 168 hours. Consolidating them instead could involve an LLM, so expiry is turned off. A test backdates a memory and confirms it survives. |
 
-`trypro doctor` reports the active model, whether vectors are in use, and whether any setting would send text off the machine. It matters because Mnemosyne falls back to keyword-only when embeddings are unavailable, and that fallback would silently break cross-language retrieval.
+Mnemosyne's `config.yaml` can outrank the environment, and it falls back to keywords silently if embeddings are unavailable. So at startup `MnemosyneBackend` checks the effective values after import: the model, the expiry, whether embeddings are available, and that text stays local. Any failure stops memory from starting.
 
 ### 8.4 Keeping text local
 
-Mnemosyne routes embeddings to a remote API when the model name looks like an API model, when `MNEMOSYNE_EMBEDDING_API_URL` is set to a non-OpenRouter URL, or when `MNEMOSYNE_EMBEDDINGS_VIA_API` is on. `MemoryGateway` checks these conditions at startup and refuses to start unless config sets `embeddings.remote_allowed: true`. The only expected network call in the local path is the model download on first use, and `trypro init` does that up front, so the user sees it.
+Mnemosyne routes embeddings to a remote API when the model name looks like an API model, when `MNEMOSYNE_EMBEDDING_API_URL` is set to a non-OpenRouter URL, or when `MNEMOSYNE_EMBEDDINGS_VIA_API` is on. `MemoryGateway`'s backend checks these conditions at startup and refuses to start unless `memory.remote_allowed: true` is set in `trypro.yaml`. The only expected network call in the local path is the model download on first use, and `trypro init` does that up front, so the user sees it. A test blocks all sockets and confirms remembering and recalling still work, with `OPENAI_API_KEY` set.
 
 ### 8.5 Decision: the skill catalog is not a memory bank
 
@@ -438,13 +445,13 @@ The brief asked for a change like this to be proposed with evidence before switc
 | Top-1 | 29/40 | 35/40 |
 | English recall@5 | 6/8 | 8/8 |
 
-The set is small, so the retrieval gap alone would not justify this. The structural reasons are stronger:
+That set was small, so a larger one followed in Phase 3 (200 queries, 100 of them held out): recall@5 was 91/100 for the catalog and 87/100 for the bank, and English 14/20 against 11/20. The structural reasons are still the stronger argument:
 
 - A catalog entry should not be subject to working-memory expiry, consolidation or summarization.
 - Recall updates `recall_count` and `last_recalled`, but catalog ranking should be deterministic for reproducible benchmarks.
 - A catalog must filter on license, trust and category before ranking, which are structured columns rather than memory text.
 
-**Implementation:** plain SQLite table with vectors stored as blobs, and NumPy cosine (already installed through `fastembed`). No new dependency. The catalog is rebuilt from `skills.lock`, so it holds no state of its own. Phase 3 reruns this comparison on a larger set to keep the evidence current and to set the score floor.
+**Implementation:** plain SQLite table with vectors stored as blobs, and NumPy cosine (already installed through `fastembed`). No new dependency. The catalog is rebuilt from `skills.lock`, so it holds no state of its own. The catalog stays empty until Phase 4 fills it from `skills.lock`. Evidence: [`docs/research/phase3-retrieval/`](research/phase3-retrieval/).
 
 ### 8.6 Model selection
 
@@ -454,7 +461,34 @@ The set is small, so the retrieval gap alone would not justify this. The structu
 | `intfloat/multilingual-e5-large` | 1024 | 2.24 GB | Yes | Documented upgrade; needs `query:`/`passage:` prefixes |
 | `BAAI/bge-m3` | not verified | not verified | Not in the lists I checked | Phase 3: measured only if it can run with an optional dependency |
 
-Sizes come from fastembed's model tables. Phase 3 measures RAM and retrieval on the same query set. Changing models changes the vector space, so `trypro memory reindex` is required.
+Sizes come from fastembed's model tables. Changing models changes the vector space, so memory and the catalog refuse to open with a different model than they were built with. Moving existing memories to a new model isn't built yet.
+
+**Phase 3 results for MiniLM,** on 100 held-out queries, with the floor chosen on the development split only:
+
+| Language | Recall@5 | Review status |
+|---|---|---|
+| Indonesian | 20/20 | Pending the owner's review |
+| Spanish | 19/20 | Not natively reviewed |
+| Chinese | 19/20 | Not natively reviewed |
+| Arabic | 19/20 | Not natively reviewed |
+| English | **14/20**, below the 80% target | Paraphrased furthest from the catalog |
+
+The languages aren't directly comparable, because the English queries are the most idiomatic in the set. These are hand-written queries over a 40-skill catalog, so they show the approach works, and they aren't a claim about general accuracy.
+
+**Comparison with `multilingual-e5-large`,** on the same 100 held-out queries with no floor (`compare_e5.json`):
+
+| | MiniLM (default) | e5-large |
+|---|---|---|
+| Recall@5 | 93/100 | 98/100 |
+| English recall@5 | 16/20 | 19/20 |
+| Top-1 | 71/100 | 87/100 |
+| Download | 0.22 GB | 2.24 GB |
+| Process memory added (one measurement) | 0.6 GB | 1.58 GB |
+
+- **e5-large retrieves better, at about 10 times the download and 2.6 times the memory.** MiniLM stays the default, by the owner's decision. e5-large would also need query and passage prefixes in `FastEmbedEmbedder`, and its own floor.
+- **The floor costs MiniLM recall.** It lowers MiniLM from 93 to 91, and English from 16 to 14, which is what puts English under the 80% target.
+- **The floor rule doesn't suit e5-large.** It chose 0.806, which cut recall to 71/100 while rejecting 10 of 10 nonsense queries. Its scores sit in a narrow range, so it would need a different approach.
+- **The held-out split has now been seen.** Any change made because of these numbers needs new queries to measure it fairly.
 
 ## 9. Skill supply chain
 
@@ -558,9 +592,9 @@ class RuntimeAdapter(Protocol):
     name: str
     mode: Literal["push", "pull", "queue"]
 
-    def capabilities(self) -> Capabilities: ...   # identity attestation, tool enforcement, parallelism
+    def capabilities(self) -> Capabilities: ...  # identity attestation, tool enforcement, parallelism
     def provision(self, org: Org, home: Path) -> ProvisionReport: ...
-    def verify(self) -> VerifyReport: ...         # used by each adapter's smoke test
+    def verify(self) -> VerifyReport: ...  # used by each adapter's smoke test
     def deliver(self, action: Action) -> Delivery: ...
     def collect(self) -> Iterable[Event]: ...
 ```
@@ -575,7 +609,12 @@ class RuntimeAdapter(Protocol):
 
 ### 10.2 API runner
 
-Provider-agnostic config with `anthropic` and `openai_compatible` clients (Grok and others through `base_url`), using `httpx` directly. `model_tier` maps to models in the user's config. Keys come only from environment variables. Identity is attested and tool permissions are fully enforced. The default tool set has no shell. A Docker-backed shell tool is opt-in.
+Provider-agnostic config with `anthropic` and `openai_compatible` clients. By default every role uses the `TRYPRO_LLM_*` values from the environment or `.env`, and `llm_overrides` in `org.yaml` can give a department or role its own model, key variable, or endpoint (see the [spec](spec/org-v1.md#model-overrides)). A role's override wins over its department's, one field at a time. An override with a new endpoint must also name its key variable, so a shared org file can't quietly send the default key elsewhere. Keys come only from environment variables, and are redacted from provider error messages. Identity is attested and tool permissions are fully enforced. There is no shell tool yet. A Docker-backed one is planned as opt-in.
+
+- **Anthropic** uses the official `anthropic` SDK as an optional extra (`try-professional[anthropic]`), rather than raw HTTP as first proposed. That API changes quickly, and the SDK tracks it.
+- **OpenAI-compatible APIs** (OpenAI, Grok, local servers) use `httpx` directly, so they need no extra dependency.
+- **Refusal fallbacks:** the default Anthropic config sets `fallbacks: default`, which lets the API retry a declined request on another model. The audit log records the model that answered. Set `fallbacks: null` to turn it off.
+- **Artifacts are submitted through a tool.** Current Claude models reject forced tool choice, so the runner uses automatic tool choice with a prompt instruction, and validates every submission itself. This works the same on every provider.
 
 ### 10.3 MCP server
 
@@ -701,7 +740,7 @@ Each task has a `tasks/<id>/` folder with fixtures, prompt, check and declared c
 
 ### 11.2 Setups
 
-All three use the same mid-priced model, plus the same tools, tasks, and per-task resource cap.
+All three use the same mid-priced model, plus the same tools, tasks, and per-task resource cap. Refusal fallbacks are turned off, because they could switch models mid-run. A refusal counts as a failed step.
 
 | Setup | Definition |
 |---|---|
@@ -746,6 +785,8 @@ Recall@5 for the same labelled skills queried in English, Indonesian, Spanish, C
 
 Nothing is marked complete without passing tests. Each phase ends with what was built, what was tested and what is missing.
 
+**Status (2026-11-06):** Phase 1 is approved. Phase 2 has run end to end on a live provider. Phase 3 passes its tests, except the 80% recall target for English, which stays visible as an expected failure.
+
 | Phase | Builds | Exit criteria |
 |---|---|---|
 | 1 | This document | Your approval |
@@ -764,6 +805,8 @@ Nothing is marked complete without passing tests. Each phase ends with what was 
 
 ## 13. Known limits
 
+- **A real run costs more than the step count suggests.** The smallest live run took 15 model calls and about 44,000 tokens on `deepseek-v4.1-flash-1017`, for 7 steps. Writing and reading files, rejected outputs, and resending context each add calls. New companies get a default ceiling of 200,000 tokens per run.
+- **The score floor can't detect "no match".** See §8.3. An agent can still receive a low-relevance skill or memory, labelled with its score.
 - **Access rules are policy, not a security boundary.** A role with a shell tool could open the SQLite files directly on the same machine. The rules prevent accidents and ordinary misbehavior. Containers are required for stronger isolation.
 - **The hierarchy may not win.** It will probably cost more tokens than a single agent on simple tasks. The benchmark exists to measure that.
 - **Static scanning can be bypassed.** Paraphrased injection will get past rules. That's why trust levels, runtime tool limits and human review exist.

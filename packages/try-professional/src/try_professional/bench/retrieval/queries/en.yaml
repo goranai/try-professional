@@ -1,0 +1,46 @@
+# English retrieval queries. Paraphrased on purpose: they avoid the catalog's wording.
+language: en
+review:
+  status: not-required
+  reviewer: null
+queries:
+  - {skill: seo-audit, split: dev, text: "why can't people find my site on Google"}
+  - {skill: seo-audit, split: heldout, text: "look for ranking problems on my online store"}
+  - {skill: code-review, split: dev, text: "take a look at this change before I merge it"}
+  - {skill: code-review, split: heldout, text: "go over my PR and tell me if anything looks unsafe"}
+  - {skill: invoice-gen, split: dev, text: "bill my client and include VAT"}
+  - {skill: invoice-gen, split: heldout, text: "I need this month's bill with when it has to be paid"}
+  - {skill: contract-check, split: dev, text: "is anything in this agreement bad for me?"}
+  - {skill: contract-check, split: heldout, text: "what am I legally on the hook for in this partnership deal"}
+  - {skill: docker-deploy, split: dev, text: "get this app running on the live server using containers"}
+  - {skill: docker-deploy, split: heldout, text: "release to prod and have a way back if it breaks"}
+  - {skill: ux-interview, split: dev, text: "write the questions for talking to our app's users"}
+  - {skill: ux-interview, split: heldout, text: "sum up what customers told us and where they got lost"}
+  - {skill: social-calendar, split: dev, text: "map out Instagram and TikTok posts for the next four weeks"}
+  - {skill: social-calendar, split: heldout, text: "I need next month's posting schedule and some topics"}
+  - {skill: budget-forecast, split: dev, text: "project our spending for the next three months"}
+  - {skill: budget-forecast, split: heldout, text: "are we over or under plan on costs this quarter"}
+  - {skill: unit-test-gen, split: dev, text: "add tests covering this Python file"}
+  - {skill: unit-test-gen, split: heldout, text: "this function has no test coverage, fix that"}
+  - {skill: security-scan, split: dev, text: "do the packages we use have any known holes"}
+  - {skill: security-scan, split: heldout, text: "check our third-party libraries against published CVEs"}
+  - {skill: privacy-policy, split: dev, text: "we need the legal page explaining what we do with user data"}
+  - {skill: privacy-policy, split: heldout, text: "draft the document telling visitors how we store their information"}
+  - {skill: license-audit, split: dev, text: "can we sell a product built on this open source library?"}
+  - {skill: license-audit, split: heldout, text: "make sure nothing we depend on forbids commercial use"}
+  - {skill: ci-pipeline, split: dev, text: "run the tests automatically whenever someone pushes"}
+  - {skill: ci-pipeline, split: heldout, text: "automate builds and checks for this repository"}
+  - {skill: incident-postmortem, split: dev, text: "explain why the site went down last night without blaming anyone"}
+  - {skill: incident-postmortem, split: heldout, text: "write up what we learned from yesterday's outage"}
+  - {skill: newsletter, split: dev, text: "put together this week's email for our readers"}
+  - {skill: newsletter, split: heldout, text: "draft the regular update we send to our mailing list"}
+  - {skill: press-release, split: dev, text: "announce our launch to journalists"}
+  - {skill: press-release, split: heldout, text: "write the official statement for media about the new product"}
+  - {skill: sales-proposal, split: dev, text: "write an offer for a company that might buy from us"}
+  - {skill: sales-proposal, split: heldout, text: "pitch document with pricing for this prospect"}
+  - {skill: market-sizing, split: dev, text: "how big is the opportunity for this new product?"}
+  - {skill: market-sizing, split: heldout, text: "estimate how much revenue this market could be worth"}
+  - {skill: support-macro, split: dev, text: "prepare standard answers for complaints we get all the time"}
+  - {skill: support-macro, split: heldout, text: "templates for the help desk's most frequent requests"}
+  - {skill: meeting-notes, split: dev, text: "turn this call transcript into who does what by when"}
+  - {skill: meeting-notes, split: heldout, text: "summarize today's meeting and list the follow-ups"}

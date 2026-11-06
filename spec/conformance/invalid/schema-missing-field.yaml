@@ -1,0 +1,95 @@
+description: company is required
+org:
+  spec: org/v1
+  root_role: executive/ceo
+  departments:
+  - id: executive
+    head: ceo
+    activation: always
+    roles:
+    - ceo
+    - chief-of-staff
+  - id: engineering
+    head: lead
+    qa_gate:
+      reviewer: qa
+    roles:
+    - lead
+    - qa
+roles:
+  executive/ceo:
+    spec: role/v1
+    id: ceo
+    department: executive
+    mission: m
+    responsibilities:
+    - r
+    inputs:
+    - i
+    outputs:
+    - o
+    allowed_tools:
+    - t
+    allowed_skill_categories:
+    - c
+    escalation: human
+    reviewer: executive/chief-of-staff
+    system_prompt: p
+  executive/chief-of-staff:
+    spec: role/v1
+    id: chief-of-staff
+    department: executive
+    mission: m
+    responsibilities:
+    - r
+    inputs:
+    - i
+    outputs:
+    - o
+    allowed_tools:
+    - t
+    allowed_skill_categories:
+    - c
+    escalation: executive/ceo
+    reviewer: executive/ceo
+    system_prompt: p
+  engineering/lead:
+    spec: role/v1
+    id: lead
+    department: engineering
+    mission: m
+    responsibilities:
+    - r
+    inputs:
+    - i
+    outputs:
+    - o
+    allowed_tools:
+    - t
+    allowed_skill_categories:
+    - c
+    escalation: executive/ceo
+    reviewer: engineering/qa
+    system_prompt: p
+  engineering/qa:
+    spec: role/v1
+    id: qa
+    department: engineering
+    mission: m
+    responsibilities:
+    - r
+    inputs:
+    - i
+    outputs:
+    - o
+    allowed_tools:
+    - t
+    allowed_skill_categories:
+    - c
+    escalation: engineering/lead
+    reviewer: engineering/lead
+    system_prompt: p
+expect:
+  valid: false
+  errors:
+  - SCHEMA

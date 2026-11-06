@@ -1,0 +1,99 @@
+{
+ "correct_hits": 37,
+ "correct_dense": {
+  "min": 0.423,
+  "p10": 0.548,
+  "median": 0.703,
+  "max": 0.893
+ },
+ "by_language_min_median": {
+  "en": [
+   0.423,
+   0.567
+  ],
+  "id": [
+   0.573,
+   0.732
+  ],
+  "es": [
+   0.575,
+   0.76
+  ],
+  "zh": [
+   0.641,
+   0.768
+  ],
+  "ar": [
+   0.548,
+   0.692
+  ]
+ },
+ "nonsense_top5_dense": {
+  "purple bicycle quantum oatmeal": [
+   0.204,
+   0.14,
+   0.122,
+   0.12,
+   0.107
+  ],
+  "sepeda ungu kuantum bubur": [
+   0.184,
+   0.181,
+   0.107,
+   0.0,
+   0.0
+  ],
+  "紫色自行车量子燕麦片": [
+   0.266,
+   0.183,
+   0.176,
+   0.144,
+   0.139
+  ],
+  "دراجة أرجوانية كمومية شوفان": [
+   0.173,
+   0.173,
+   0.118,
+   0.0,
+   0.0
+  ]
+ },
+ "nonsense_top_max": 0.266,
+ "floors": {
+  "0.3": {
+   "correct_kept": 37,
+   "of": 37,
+   "nonsense_queries_with_any_hit": 0
+  },
+  "0.4": {
+   "correct_kept": 37,
+   "of": 37,
+   "nonsense_queries_with_any_hit": 0
+  },
+  "0.5": {
+   "correct_kept": 35,
+   "of": 37,
+   "nonsense_queries_with_any_hit": 0
+  },
+  "0.6": {
+   "correct_kept": 29,
+   "of": 37,
+   "nonsense_queries_with_any_hit": 0
+  },
+  "0.62": {
+   "correct_kept": 29,
+   "of": 37,
+   "nonsense_queries_with_any_hit": 0
+  },
+  "0.7": {
+   "correct_kept": 19,
+   "of": 37,
+   "nonsense_queries_with_any_hit": 0
+  },
+  "0.8": {
+   "correct_kept": 7,
+   "of": 37,
+   "nonsense_queries_with_any_hit": 0
+  }
+ }
+}
