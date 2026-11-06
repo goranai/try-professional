@@ -1,0 +1,57 @@
+# Well-scoped first issues. Not posted anywhere yet: they get created when the repository goes public.
+- title: "skill-customs: CrewAI integration guide"
+  labels: [good first issue, skill-customs, integration]
+  body: |
+    Show how a CrewAI project loads skills from `skills/installed/` and `skills.lock`.
+    Start by confirming how CrewAI takes reference material today, because the README
+    doesn't claim anything about it yet. Add a tested example and a README section.
+- title: "skill-customs: MCP server exposing locked skills, read-only"
+  labels: [good first issue, skill-customs, integration]
+  body: |
+    A small MCP server with `skill_search` and `skill_get`, returning only non-quarantined skills.
+    It must not expose approve, add, or remove. Include a smoke test.
+- title: "skill-customs: Hermes install guide, tested on a real install"
+  labels: [good first issue, skill-customs, integration]
+  body: |
+    The README's Hermes section comes from Hermes's docs. Run it for real, and fix what's wrong.
+    Check how Hermes treats `external_dirs` skills, and whether its own scan and lock file conflict.
+- title: "skill-customs: scanner plugin for an existing skill scanner"
+  labels: [good first issue, skill-customs, integration]
+  body: |
+    Wrap an existing scanner, such as SkillGuardrail or skill-guard, through `command_scanners`
+    or the entry point. Add a worked example to the README.
+- title: "Scanner rule pack: Russian"
+  labels: [good first issue, skill-customs, i18n]
+  body: |
+    Add override, conceal, exfiltration, and credential rules. Add malicious and benign examples
+    to `test_sc_scan.py`. Benign examples matter as much: rules must not flag ordinary instructions.
+- title: "Scanner rule pack: Japanese, Korean, German, or French"
+  labels: [good first issue, skill-customs, i18n]
+  body: |
+    One language per pull request, in the same form as the existing rule packs.
+- title: "Review the Spanish, Chinese, or Arabic retrieval queries as a native speaker"
+  labels: [good first issue, i18n]
+  body: |
+    No native speaker has reviewed the queries in `bench/retrieval/queries/` yet.
+    Fix anything unnatural, set `review.status: reviewed`, and add your name.
+- title: "Add a language to the retrieval benchmark"
+  labels: [good first issue, i18n]
+  body: |
+    Add a query file with the same skills and splits as `en.yaml`, plus nonsense queries.
+- title: "Department pack: Customer Success"
+  labels: [good first issue, department-pack]
+  body: |
+    Add `packs/customer-success/` with a head and at least one role. The conformance tests and
+    the org tests must pass with the pack installed and removed.
+- title: "Department pack: Human Resources"
+  labels: [good first issue, department-pack]
+  body: |
+    Add a pack, and make sure its output can trigger the personal data gate.
+- title: "Department pack: Data"
+  labels: [good first issue, department-pack]
+  body: |
+    Add a pack with an analyst and a data engineer role.
+- title: "Adapter: a new runtime from adapters/template"
+  labels: [good first issue, adapter]
+  body: |
+    Copy the template adapter for a runtime you use. Include a README and a smoke test.

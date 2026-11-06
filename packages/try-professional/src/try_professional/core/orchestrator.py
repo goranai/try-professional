@@ -30,7 +30,7 @@ from .pipeline import (
     initial_state,
     open_actions,
 )
-from .ports import MemoryPort, NullMemory, NullSkills, SkillPort
+from .ports import MemoryPort, NullMemory, NullSkills, ProposalPort, SkillPort
 
 Clock = Callable[[], str]
 
@@ -47,12 +47,14 @@ class Orchestrator:
         *,
         memory: MemoryPort | None = None,
         skills: SkillPort | None = None,
+        proposals: ProposalPort | None = None,
         clock: Clock = utc_now,
     ) -> None:
         self.org = org
         self.home = home
         self.memory: MemoryPort = memory or NullMemory()
         self.skills: SkillPort = skills or NullSkills()
+        self.proposals = proposals
         self.clock = clock
         self.ledger = Ledger(home / "ledger.sqlite")
         self._lock = threading.RLock()
@@ -164,6 +166,14 @@ class Orchestrator:
                 log.append(self.clock(), "memory_error", {"role": self.org.root_role, "error": type(error).__name__})
                 return
         log.append(self.clock(), "lessons_stored", {"count": len(items), "source": artifact.artifact_id})
+        if self.proposals is None:
+            return
+        for text in artifact.payload.get("skill_proposals", []):
+            try:
+                name = self.proposals.propose(text, source=artifact.artifact_id)
+                log.append(self.clock(), "skill_proposed", {"name": name, "source": artifact.artifact_id})
+            except Exception as error:
+                log.append(self.clock(), "proposal_error", {"error": type(error).__name__})
 
     def record(self, run_id: str, kind: str, data: dict[str, Any]) -> None:
         """Add a non-state record, such as a refused tool call."""

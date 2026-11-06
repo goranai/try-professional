@@ -20,6 +20,12 @@ class MemoryPort(Protocol):
 class SkillPort(Protocol):
     def search(self, role: str, query: str) -> list[dict[str, Any]]: ...
 
+    def get(self, role: str, skill_id: str) -> str | None: ...
+
+
+class ProposalPort(Protocol):
+    def propose(self, text: str, *, source: str) -> str: ...
+
 
 class NullMemory:
     def recall(self, role: str, query: str) -> list[str]:
@@ -35,3 +41,6 @@ class NullMemory:
 class NullSkills:
     def search(self, role: str, query: str) -> list[dict[str, Any]]:
         return []
+
+    def get(self, role: str, skill_id: str) -> str | None:
+        return None

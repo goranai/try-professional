@@ -487,7 +487,7 @@ Sizes come from fastembed's model tables. Changing models changes the vector spa
 
 ### 9.1 Package
 
-`skill-customs` is the lockfile, license and pinning layer for agent skills. It is not positioned as another scanner: other scanners plug in, and ours is the default. It works with no Try Professional code installed, with a CLI and a Python API.
+`skill-customs` is the lockfile, license and pinning layer for agent skills. It is not positioned as another scanner: other scanners plug in, and ours is the default. It works with no Try Professional code installed, with a CLI and a Python API. See [its README](../packages/skill-customs/README.md).
 
 ```text
 skill-customs scan ./my-skill            # findings; exit 0 pass, 1 review, 2 block
@@ -546,9 +546,11 @@ flowchart TD
 
 **Approval is human-only.** `approve` is a CLI command. It is not exposed as an MCP tool or agent tool, and a test asserts this. Agent-proposed skills land in `skills/proposed/` as `quarantined`.
 
+**Tested on real skills.** 24 skills from `anthropics/skills` and `obra/superpowers`: 13 indexed, 8 quarantined, and 3 rejected on license, including the proprietary `docx` and `pdf` skills. An early version of the rules blocked ordinary code like `os.environ["GITHUB_TOKEN"]`, so those lines became benign test cases. Some flags are still false positives: `claude-api`, a skill about prompting, trips override rules by quoting the phrases they look for. That's an acceptable cost, because the result is a person looking at it.
+
 **Runtime treatment.** Skill text is data, so it is delivered inside a labelled untrusted block. Prompts tell the model it cannot override role or tool rules, but **delimiters reduce prompt injection rather than prevent it.** The real barrier is that tool permissions are enforced by the runtime from the role file, whatever the model was persuaded to attempt. A passing scan means no known signal was found. It does not mean a skill is safe, and the docs will say so.
 
-**Discovery.** Ranks by stars, recency, and maintenance signals (recent commits, open-issue ratio, repo age, license present). Stars can be bought, so ranking only nominates candidates, and every candidate still passes the gates. No daemon runs: refresh uses a schedule the user controls, with a GitHub Action template provided.
+**Discovery.** Ranks by stars, recency, and maintenance signals (recent commits, open-issue ratio, repo age, license present), keeping the top 40 per category from `skill-discovery.yaml`. Stars can be bought, so ranking only nominates candidates, and every candidate still passes the gates. No daemon runs: `.github/workflows/discover-skills.yml` refreshes the list on a schedule you can change, and only produces a list.
 
 ### 9.4 `skills.lock`
 
@@ -780,7 +782,7 @@ Recall@5 for the same labelled skills queried in English, Indonesian, Spanish, C
 
 Nothing is marked complete without passing tests. Each phase ends with what was built, what was tested and what is missing.
 
-**Status (2026-11-06):** Phases 1 to 3 are complete. Phase 2 has run end to end on a live provider. Phase 3's memory stack has run with a scripted model, not a live one.
+**Status (2026-11-06):** Phases 1 to 4 pass their tests. Phase 2 has run end to end on a live provider. The memory stack (Phase 3) and skills (Phase 4) have run with a scripted model, not a live one.
 
 | Phase | Builds | Exit criteria |
 |---|---|---|
@@ -800,7 +802,7 @@ Nothing is marked complete without passing tests. Each phase ends with what was 
 
 ## 13. Known limits
 
-- **A real run costs more than the step count suggests.** The smallest live run took 15 model calls and about 44,000 tokens on `deepseek-v4.1-flash-1017`, for 7 steps. Writing and reading files, rejected outputs, and resending context each add calls. New companies get a default ceiling of 200,000 tokens per run. Prompts were then cut by 23% (`scripts/measure_prompts.py`), which hasn't been re-measured on a live run. A test holds prompts to a size budget.
+- **A real run costs more than the step count suggests.** The smallest live run took 15 model calls and about 44,000 tokens on `deepseek-v4.1-flash-1017`, for 7 steps. Writing and reading files, rejected outputs, and resending context each add calls. New companies get a default ceiling of 200,000 tokens per run. Prompts were then cut by 22% (`scripts/measure_prompts.py`), which hasn't been re-measured on a live run. A test holds prompts to a size budget.
 - **Neither search can reliably say "no match".** See §8.3 and §8.5. An agent can still receive a low-relevance skill, labelled with its score, or weak memory above the floor.
 - **Access rules are policy, not a security boundary.** A role with a shell tool could open the SQLite files directly on the same machine. The rules prevent accidents and ordinary misbehavior. Containers are required for stronger isolation.
 - **The hierarchy may not win.** It will probably cost more tokens than a single agent on simple tasks. The benchmark exists to measure that.

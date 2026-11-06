@@ -21,6 +21,7 @@ allowed_tools:
 - workspace_list
 - memory_recall
 - skill_search
+- skill_get
 allowed_skill_categories:
 - strategy
 - planning

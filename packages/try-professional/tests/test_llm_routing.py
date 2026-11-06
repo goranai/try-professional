@@ -201,7 +201,7 @@ class TestOverrideSafety:
         assert self._issues(make_org, {"sales": {"api_key": "abc"}}, tmp_path) == {"SCHEMA"}
 
     def test_a_key_pasted_into_api_key_env_is_rejected(self, make_org: Callable[..., Org], tmp_path: Path) -> None:
-        assert self._issues(make_org, {"sales": {"api_key_env": "sk-abcdef123456"}}, tmp_path) == {"SCHEMA"}
+        assert self._issues(make_org, {"sales": {"api_key_env": "not-a-variable-name"}}, tmp_path) == {"SCHEMA"}
 
     def test_new_endpoint_cannot_inherit_the_default_key(self, make_org: Callable[..., Org], tmp_path: Path) -> None:
         overrides = {"sales": {"base_url": "https://attacker.example.com/v1"}}

@@ -23,6 +23,7 @@ TRUST_LEVELS = ("verified", "indexed", "quarantined")
 # Quarantined skills are never offered to an agent, whatever a caller asks for.
 SEARCHABLE_TRUST = ("verified", "indexed")
 DEFAULT_TOP_K = 5
+GENERAL_CATEGORY = "general"
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
@@ -114,6 +115,27 @@ class SkillCatalog:
                 ],
             )
 
+    def record(self, skill_id: str) -> SkillRecord | None:
+        with self._lock:
+            row = self._conn.execute(
+                "SELECT skill_id, name, description, category, departments, source_repo, commit_sha, license, trust "
+                "FROM skills WHERE skill_id = ?",
+                (skill_id,),
+            ).fetchone()
+        if row is None:
+            return None
+        return SkillRecord(
+            skill_id=row[0],
+            name=row[1],
+            description=row[2],
+            category=row[3],
+            departments=tuple(json.loads(row[4])),
+            source_repo=row[5],
+            commit_sha=row[6],
+            license=row[7],
+            trust=row[8],
+        )
+
     def count(self) -> int:
         with self._lock:
             return int(self._conn.execute("SELECT COUNT(*) FROM skills").fetchone()[0])
@@ -179,7 +201,7 @@ class CatalogSkills:
         self.catalog = catalog
 
     def search(self, role: str, query: str) -> list[dict[str, Any]]:
-        categories = self.org.role(role).allowed_skill_categories
+        categories = (*self.org.role(role).allowed_skill_categories, GENERAL_CATEGORY)
         hits = self.catalog.search(query, categories=categories)
         return [{"skill_id": h.record.skill_id, "score": round(h.score, 4), "trust": h.record.trust} for h in hits]
 

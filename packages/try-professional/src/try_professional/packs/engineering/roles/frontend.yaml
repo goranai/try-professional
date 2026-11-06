@@ -17,6 +17,7 @@ allowed_tools:
 - memory_recall
 - memory_write
 - skill_search
+- skill_get
 allowed_skill_categories:
 - frontend
 - accessibility

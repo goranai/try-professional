@@ -1,0 +1,9 @@
+# gitleaks reads this in CI. Keep the allowlist to exact strings that are known to be fake.
+title = "Try Professional"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "A made-up value from an old test, proving a pasted key is rejected. It was never a key."
+stopwords = ["sk-abcdef123456"]

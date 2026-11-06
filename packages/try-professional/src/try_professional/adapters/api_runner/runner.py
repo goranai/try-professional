@@ -41,7 +41,7 @@ TOOLS_BY_PURPOSE: dict[Purpose, frozenset[str]] = {
     Purpose.INTAKE: frozenset(),
     Purpose.PLAN: _MEMORY,
     Purpose.DISPATCH: _MEMORY,
-    Purpose.EXECUTE: _READ | _MEMORY | {"workspace_write", "memory_write", "skill_search"},
+    Purpose.EXECUTE: _READ | _MEMORY | {"workspace_write", "memory_write", "skill_search", "skill_get"},
     Purpose.REVIEW: _READ,
     Purpose.ESCALATION: _MEMORY,
     Purpose.INTEGRATE: _READ,

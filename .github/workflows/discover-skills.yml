@@ -1,0 +1,28 @@
+name: Discover skills
+
+# Change the schedule here. It only produces a list of candidates to review: it installs nothing,
+# changes nothing in the repository, and every candidate still has to pass the gates.
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: python -m pip install -e packages/skill-customs
+      - run: skill-customs discover --categories skill-discovery.yaml --out candidates.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: skill-candidates
+          path: candidates.json

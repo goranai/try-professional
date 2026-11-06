@@ -1,0 +1,23 @@
+# One search per category, for: skill-customs discover --categories skill-discovery.yaml
+# Keeps the top 40 per category. Roles' allowed_skill_categories decide who can use what.
+strategy: strategy planning agent skills SKILL.md
+project-management: project management agent skills SKILL.md
+product: product requirements agent skills SKILL.md
+ux-research: user research agent skills SKILL.md
+backend: backend development agent skills SKILL.md
+frontend: frontend development agent skills SKILL.md
+devops: devops deployment agent skills SKILL.md
+testing: software testing agent skills SKILL.md
+code-review: code review agent skills SKILL.md
+marketing: marketing agent skills SKILL.md
+copywriting: copywriting content agent skills SKILL.md
+seo: seo agent skills SKILL.md
+social-media: social media agent skills SKILL.md
+sales: sales agent skills SKILL.md
+proposals: proposal writing agent skills SKILL.md
+legal: legal contract review agent skills SKILL.md
+privacy: privacy compliance agent skills SKILL.md
+finance: finance budgeting agent skills SKILL.md
+operations: operations process agent skills SKILL.md
+customer-support: customer support agent skills SKILL.md
+research: research analysis agent skills SKILL.md

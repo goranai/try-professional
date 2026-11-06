@@ -16,7 +16,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
-      - run: python -m pip install -e "packages/try-professional[anthropic]" ruff mypy types-PyYAML types-jsonschema
+      - run: python -m pip install -e packages/skill-customs -e "packages/try-professional[anthropic]" ruff mypy types-PyYAML types-jsonschema
       - run: ruff check .
       - run: ruff format --check .
       - run: mypy
@@ -37,7 +37,7 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           allow-prereleases: true
-      - run: python -m pip install -e "packages/try-professional[anthropic]" pytest pytest-timeout
+      - run: python -m pip install -e packages/skill-customs -e "packages/try-professional[anthropic]" pytest pytest-timeout
       - run: python -m pytest -m "not model"
 
   cross-lingual:
@@ -52,8 +52,39 @@ jobs:
         with:
           path: ~/.cache/try-professional
           key: embedding-model-minilm-v1
-      - run: python -m pip install -e packages/try-professional pytest pytest-timeout
+      - run: python -m pip install -e packages/skill-customs -e packages/try-professional pytest pytest-timeout
       - run: python -m pytest -m model --timeout=600
+
+  skill-customs-alone:
+    # Other frameworks must be able to use it, so it's tested with nothing else installed.
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - run: python -m pip install -e packages/skill-customs pytest pytest-timeout
+      - run: python -c "import importlib.util as u, sys; sys.exit(u.find_spec('try_professional') is not None)"
+      - run: python -m pytest packages/skill-customs/tests -c /dev/null --rootdir=packages/skill-customs
+        if: runner.os != 'Windows'
+      - run: python -m pytest packages/skill-customs/tests -c NUL --rootdir=packages/skill-customs
+        if: runner.os == 'Windows'
+
+  skill-vetting:
+    # Every pull request: installed skills must match the lockfile, and credits must be current.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: python -m pip install -e packages/skill-customs
+      - run: skill-customs verify
+      - run: skill-customs attribution --check THIRD_PARTY_SKILLS.md
 
   secrets:
     runs-on: ubuntu-latest
@@ -67,7 +98,7 @@ jobs:
       - run: python scripts/secret_scan.py
       # The full history every time. The gitleaks action only scans the pushed range, and
       # scanned nothing at all on this repository's first push.
-      - run: docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.24.3 detect --source=/repo --redact --verbose
+      - run: docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.24.3 detect --source=/repo --config=/repo/.gitleaks.toml --redact --verbose
 
   audit:
     runs-on: ubuntu-latest
@@ -76,5 +107,5 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
-      - run: python -m pip install -e "packages/try-professional[anthropic]" pip-audit
+      - run: python -m pip install -e packages/skill-customs -e "packages/try-professional[anthropic]" pip-audit
       - run: pip-audit --skip-editable

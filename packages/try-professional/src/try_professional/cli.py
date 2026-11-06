@@ -6,8 +6,11 @@ import argparse
 import json
 import os
 import sys
+from collections import Counter
 from collections.abc import Sequence
 from pathlib import Path
+
+from skill_customs import Lockfile, SkillCustomsError, verify
 
 from . import __version__
 from .adapters.api_runner.clients import ClientError
@@ -30,6 +33,7 @@ from .memory import (
 from .org import Org, OrgValidationError, load_org, validate_bundle
 from .org.loader import read_documents
 from .packs import add_pack, available_packs, install_org, remove_pack
+from .skills import LockedSkills, ProposalWriter, SkillCatalog, sync_catalog
 
 
 def _print(text: str = "") -> None:
@@ -149,7 +153,13 @@ def _runner(args: argparse.Namespace) -> tuple[ApiRunner, Orchestrator]:
     router = ClientRouter(config.model, org)
     # Fail before a run exists if the default key or endpoint is missing, or memory isn't safe.
     router.route(org.role(org.root_role))
-    orchestrator = Orchestrator(org, config.home, memory=_memory(config, org))
+    orchestrator = Orchestrator(
+        org,
+        config.home,
+        memory=_memory(config, org),
+        skills=_skills(config, org),
+        proposals=ProposalWriter(config.root / "skills" / "proposed"),
+    )
     return ApiRunner(orchestrator, router=router), orchestrator
 
 
@@ -167,6 +177,35 @@ def _memory(config: ProjectConfig, org: Org) -> MemoryGateway | None:
     return MemoryGateway(
         org, MnemosyneBackend(_memory_settings(config)), floor=score_floor(config.memory.embedding_model)
     )
+
+
+def _catalog(config: ProjectConfig) -> SkillCatalog:
+    return SkillCatalog(config.home / "skills" / "catalog.sqlite", FastEmbedEmbedder(config.memory.embedding_model))
+
+
+def _skills(config: ProjectConfig, org: Org) -> LockedSkills | None:
+    """Agents get skills only once a catalog exists. Until then the search simply finds nothing."""
+    if not (config.home / "skills" / "catalog.sqlite").is_file():
+        return None
+    lock = Lockfile.load(config.root / "skills.lock")
+    return LockedSkills(org, _catalog(config), config.root / "skills", lock)
+
+
+def cmd_skills_sync(args: argparse.Namespace) -> int:
+    config = load_config(Path.cwd())
+    lock = Lockfile.load(config.root / "skills.lock")
+    problems = verify(lock, dest=config.root / "skills")
+    if problems:
+        for problem in problems:
+            _print(f"  {problem}")
+        _print("Not syncing: installed skills don't match skills.lock.")
+        return 1
+    catalog = _catalog(config)
+    count = sync_catalog(catalog, lock, config.root / "skills")
+    catalog.close()
+    trust = Counter(entry.trust for entry in lock.entries.values())
+    _print(f"Catalog holds {count} skill(s): {dict(trust)}. Quarantined skills are never offered to agents.")
+    return 0
 
 
 def cmd_run(args: argparse.Namespace) -> int:
@@ -360,6 +399,9 @@ def build_parser() -> argparse.ArgumentParser:
     audit.add_argument("--show", action="store_true")
     audit.set_defaults(func=cmd_audit)
 
+    skills = sub.add_parser("skills", help="Agent skills").add_subparsers(dest="skills_command", required=True)
+    skills.add_parser("sync", help="Rebuild the search catalog from skills.lock").set_defaults(func=cmd_skills_sync)
+
     sub.add_parser("doctor", help="Check this project's setup").set_defaults(func=cmd_doctor)
     return parser
 
@@ -369,7 +411,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         result: int = args.func(args)
         return result
-    except (FileNotFoundError, KeyError, OrgValidationError, ClientError, MemoryConfigError) as error:
+    except (
+        FileNotFoundError,
+        KeyError,
+        OrgValidationError,
+        ClientError,
+        MemoryConfigError,
+        SkillCustomsError,
+    ) as error:
         _print(f"Error: {error.args[0] if error.args else error}")
         return 2
 

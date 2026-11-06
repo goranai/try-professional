@@ -18,6 +18,9 @@ dev = [
 [tool.uv]
 package = false
 
+[tool.uv.sources]
+skill-customs = { workspace = true }
+
 [tool.uv.workspace]
 members = ["packages/*"]
 
@@ -30,15 +33,17 @@ extend-exclude = ["docs/research"]
 select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["try_professional"]
+known-first-party = ["try_professional", "skill_customs"]
 
 [tool.ruff.lint.per-file-ignores]
 "packages/try-professional/tests/*" = ["E501"]
+"packages/skill-customs/tests/*" = ["E501"]
+"packages/skill-customs/src/skill_customs/scan/rules.py" = ["E501"]
 
 [tool.mypy]
 python_version = "3.10"
 strict = true
-files = ["packages/try-professional/src"]
+files = ["packages/try-professional/src", "packages/skill-customs/src"]
 plugins = ["pydantic.mypy"]
 
 [[tool.mypy.overrides]]
@@ -46,7 +51,7 @@ module = ["anthropic.*", "fastembed.*", "mnemosyne.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
-testpaths = ["packages/try-professional/tests"]
+testpaths = ["packages/try-professional/tests", "packages/skill-customs/tests"]
 addopts = "-q"
 timeout = 60
 timeout_method = "thread"
