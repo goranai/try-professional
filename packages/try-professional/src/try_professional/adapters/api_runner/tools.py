@@ -91,7 +91,7 @@ _SPECS: dict[str, ToolSpec] = {
 
 _ESCALATE_SPEC = ToolSpec(
     ESCALATE,
-    "Send this item up the chain when you can't finish it or the decision isn't yours.",
+    "Send this up the chain if you can't finish it or the decision isn't yours.",
     {
         "type": "object",
         "properties": {
@@ -106,7 +106,7 @@ _ESCALATE_SPEC = ToolSpec(
 
 _HANDOFF_SPEC = ToolSpec(
     HANDOFF,
-    "Ask another department for work. Only department heads can. It is logged and waits for approval there.",
+    "Ask another department for work. Your work resumes when it is approved.",
     {
         "type": "object",
         "properties": {
@@ -122,27 +122,49 @@ _HANDOFF_SPEC = ToolSpec(
 )
 
 
-def submit_spec(output_type: str) -> ToolSpec:
-    schema = PAYLOAD_TYPES[output_type].model_json_schema()
+def compact_schema(node: Any) -> Any:
+    """Drop what a model doesn't need: generated titles, and defaults. Every call resends this.
+
+    A field that is itself named "title" stays, so the walk treats "properties" as a map of names.
+    """
+    if isinstance(node, list):
+        return [compact_schema(item) for item in node]
+    if not isinstance(node, dict):
+        return node
+    compact = {}
+    for key, value in node.items():
+        if key in ("title", "default"):
+            continue
+        if key in ("properties", "$defs"):
+            compact[key] = {name: compact_schema(child) for name, child in value.items()}
+        else:
+            compact[key] = compact_schema(value)
+    return compact
+
+
+def submit_spec(output_type: str, *, declares_flags: bool = False) -> ToolSpec:
+    schema = compact_schema(PAYLOAD_TYPES[output_type].model_json_schema())
     definitions = schema.pop("$defs", {})
+    properties: dict[str, Any] = {"payload": schema}
+    if declares_flags:
+        properties["flags"] = compact_schema(Flags.model_json_schema())
+        properties["language"] = {"type": "string", "description": "BCP 47 tag"}
     wrapper: dict[str, Any] = {
         "type": "object",
-        "properties": {
-            "payload": schema,
-            "flags": Flags.model_json_schema(),
-            "language": {"type": "string", "description": "BCP 47 tag of this artifact's free text"},
-        },
+        "properties": properties,
         "required": ["payload"],
         "additionalProperties": False,
     }
     if definitions:
         wrapper["$defs"] = definitions
-    return ToolSpec(SUBMIT, f"Submit your finished {output_type}. This ends your assignment.", wrapper)
+    return ToolSpec(SUBMIT, f"Submit your finished {output_type}.", wrapper)
 
 
-def tools_for(allowed: tuple[str, ...], output_type: str, *, is_head: bool) -> list[ToolSpec]:
+def tools_for(
+    allowed: tuple[str, ...], output_type: str, *, is_head: bool, declares_flags: bool = False
+) -> list[ToolSpec]:
     specs = [_SPECS[name] for name in allowed if name in _SPECS]
-    specs += [submit_spec(output_type), _ESCALATE_SPEC]
+    specs += [submit_spec(output_type, declares_flags=declares_flags), _ESCALATE_SPEC]
     if is_head:
         specs.append(_HANDOFF_SPEC)
     return specs

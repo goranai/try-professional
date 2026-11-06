@@ -85,6 +85,8 @@ class RunResult:
     questions: list[AskHuman] = field(default_factory=list)
     input_tokens: int = 0
     output_tokens: int = 0
+    cached_input_tokens: int = 0
+    calls: int = 0
 
 
 class ApiRunner:
@@ -212,6 +214,8 @@ class ApiRunner:
             questions=questions or [],
             input_tokens=state.usage.input_tokens,
             output_tokens=state.usage.output_tokens,
+            cached_input_tokens=state.usage.cached_input_tokens,
+            calls=state.usage.calls,
         )
 
     # ---- one role, one assignment ---------------------------------------------------
@@ -225,7 +229,9 @@ class ApiRunner:
         may_handoff = self.org.is_head(role.ref) and role.ref != self.org.root_role
         may_handoff = may_handoff and action.purpose in (Purpose.DISPATCH, Purpose.EXECUTE)
         usable = tuple(t for t in role.allowed_tools if t in TOOLS_BY_PURPOSE[action.purpose])
-        tools = tools_for(usable, action.output_type, is_head=may_handoff)
+        tools = tools_for(
+            usable, action.output_type, is_head=may_handoff, declares_flags=action.purpose == Purpose.EXECUTE
+        )
         context = ToolContext(
             role=role.ref,
             allowed=usable,
@@ -265,6 +271,8 @@ class ApiRunner:
                     model=response.model,
                     input_tokens=response.input_tokens,
                     output_tokens=response.output_tokens,
+                    cached_input_tokens=response.cached_input_tokens,
+                    role=role.ref,
                 ),
             )
 

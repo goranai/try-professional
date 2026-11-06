@@ -61,7 +61,7 @@ def cmd_init(args: argparse.Namespace) -> int:
     _print(f"Created a company with {len(org.departments)} departments and {len(org.roles)} roles in {root}")
     if not args.skip_model:
         _print(f"Downloading the local embedding model if needed (about 0.22 GB, once) to {model_cache_dir()}")
-        FastEmbedEmbedder().embed(["ready"])
+        FastEmbedEmbedder().embed_documents(["ready"])
     _print('Try it with no key or cost: trypro run --dry-run "Build a health check endpoint"')
     _print(f"To use a real model, edit {CONFIG_NAME} and set the API key variable it names.")
     return 0
@@ -117,7 +117,11 @@ def cmd_pack(args: argparse.Namespace) -> int:
 
 def _print_result(result: RunResult) -> int:
     _print(f"Run {result.run_id}: {result.status}")
-    _print(f"Tokens: {result.input_tokens} in, {result.output_tokens} out")
+    total = result.input_tokens + result.output_tokens
+    cached = f", {result.cached_input_tokens} of the input cached" if result.cached_input_tokens else ""
+    _print(
+        f"Tokens: {total} total ({result.input_tokens} in, {result.output_tokens} out{cached}), {result.calls} calls"
+    )
     if result.final:
         _print()
         _print(result.final["summary_in_user_language"])
@@ -224,7 +228,9 @@ def cmd_status(args: argparse.Namespace) -> int:
         _print(f"Active departments: {', '.join(state.activated)}")
         for task in state.tasks.values():
             _print(f"  {task.task_id}: {task.status.value} (owner {task.owner_role})")
-        _print(f"Tokens: {state.usage.total}")
+        _print(f"Tokens: {state.usage.total} total, {state.usage.calls} calls")
+        for role, usage in sorted(state.usage_by_role.items(), key=lambda item: -item[1].total):
+            _print(f"  {role}: {usage.total} tokens, {usage.calls} calls")
         _print(f"Counters: {state.counters.model_dump()}")
         return 0
     finally:

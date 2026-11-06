@@ -11,7 +11,7 @@ from collections.abc import Mapping, MutableMapping
 from dataclasses import dataclass
 from pathlib import Path
 
-from .embedding import DEFAULT_MODEL, MODEL_DIMENSIONS, model_cache_dir
+from .embedding import DEFAULT_MODEL, MODEL_DIMENSIONS, model_cache_dir, model_prefixes
 
 _TRUE = {"1", "true", "yes", "on"}
 # Long enough that nothing expires in practice. Organizational memory must not vanish
@@ -74,11 +74,14 @@ def apply_to_environment(settings: MemorySettings, env: MutableMapping[str, str]
     """Set what Mnemosyne reads. Some of it is read once at import, so call this before importing it."""
     target = os.environ if env is None else env
     check_local_only(settings, target)
+    query_prefix, document_prefix = model_prefixes(settings.embedding_model)
     target.update(
         {
             "MNEMOSYNE_DATA_DIR": str(settings.data_dir),
             "MNEMOSYNE_EMBEDDING_MODEL": settings.embedding_model,
             "MNEMOSYNE_EMBEDDING_DIM": str(settings.dimension),
+            "MNEMOSYNE_EMBEDDING_QUERY_PREFIX": query_prefix,
+            "MNEMOSYNE_EMBEDDING_DOC_PREFIX": document_prefix,
             "MNEMOSYNE_FASTEMBED_CACHE_DIR": str(settings.cache_dir or model_cache_dir()),
             # The default gate requires keyword overlap, so cross-language queries return nothing.
             "MNEMOSYNE_LEXICAL_GATE_MIN": "0",

@@ -1,0 +1,29 @@
+# A second, fresh set of English queries, written before measuring anything with it.
+# It exists because the first heldout set was seen while deciding to remove the catalog's
+# score floor, so it could no longer confirm that decision. Same style: paraphrases that
+# avoid the catalog's wording. Same author as the other sets, so not independent.
+language: en
+review:
+  status: not-required
+  reviewer: null
+queries:
+  - {skill: seo-audit, split: fresh, text: "our pages barely show up when people search, what is wrong"}
+  - {skill: code-review, split: fresh, text: "second pair of eyes on this diff please"}
+  - {skill: invoice-gen, split: fresh, text: "charge the customer for last month's consulting hours"}
+  - {skill: contract-check, split: fresh, text: "anything sketchy in the terms this vendor sent us"}
+  - {skill: docker-deploy, split: fresh, text: "push the new container live and keep the old one ready in case"}
+  - {skill: ux-interview, split: fresh, text: "set up conversations with customers about what frustrates them in the app"}
+  - {skill: social-calendar, split: fresh, text: "what should we post each day on LinkedIn in December"}
+  - {skill: budget-forecast, split: fresh, text: "how much money will we burn through by the end of Q3"}
+  - {skill: unit-test-gen, split: fresh, text: "cover these helper functions with pytest cases"}
+  - {skill: security-scan, split: fresh, text: "is anything in our requirements file known to be hackable"}
+  - {skill: privacy-policy, split: fresh, text: "visitors need to know how we use their information, write that page"}
+  - {skill: license-audit, split: fresh, text: "will any of our open source packages stop us charging for this"}
+  - {skill: ci-pipeline, split: fresh, text: "every push should build and test by itself"}
+  - {skill: incident-postmortem, split: fresh, text: "document what went wrong during Tuesday's downtime and how to prevent it"}
+  - {skill: newsletter, split: fresh, text: "monthly roundup email for everyone who signed up"}
+  - {skill: press-release, split: fresh, text: "tell reporters about our funding round"}
+  - {skill: sales-proposal, split: fresh, text: "we need a quote and scope document to win this account"}
+  - {skill: market-sizing, split: fresh, text: "how many potential buyers exist and what are they worth in total"}
+  - {skill: support-macro, split: fresh, text: "ready-made replies so agents answer password reset requests faster"}
+  - {skill: meeting-notes, split: fresh, text: "who agreed to do what on this morning's call"}

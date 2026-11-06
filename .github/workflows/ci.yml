@@ -61,9 +61,13 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: python scripts/secret_scan.py
+      # The full history every time. The gitleaks action only scans the pushed range, and
+      # scanned nothing at all on this repository's first push.
+      - run: docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.24.3 detect --source=/repo --redact --verbose
 
   audit:
     runs-on: ubuntu-latest

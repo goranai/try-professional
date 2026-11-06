@@ -1,0 +1,52 @@
+{
+ "fresh_english": {
+  "recall_at_5": "16/20",
+  "top_1": "12/20",
+  "misses": [
+   {
+    "want": "code-review",
+    "text": "second pair of eyes on this diff please",
+    "got": [
+     "k8s-manifest",
+     "docker-deploy",
+     "meta-tags"
+    ]
+   },
+   {
+    "want": "invoice-gen",
+    "text": "charge the customer for last month's consulting hours",
+    "got": [
+     "payment-reminder",
+     "cash-flow",
+     "expense-report"
+    ]
+   },
+   {
+    "want": "contract-check",
+    "text": "anything sketchy in the terms this vendor sent us",
+    "got": [
+     "payment-reminder",
+     "sales-proposal",
+     "docker-deploy"
+    ]
+   },
+   {
+    "want": "sales-proposal",
+    "text": "we need a quote and scope document to win this account",
+    "got": [
+     "persona-builder",
+     "contract-check",
+     "meeting-notes"
+    ]
+   }
+  ]
+ },
+ "heldout_no_floor": {
+  "en": "16/20",
+  "id": "20/20",
+  "es": "19/20",
+  "zh": "19/20",
+  "ar": "19/20"
+ },
+ "heldout_no_floor_total": "93/100"
+}

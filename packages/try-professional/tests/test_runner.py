@@ -188,6 +188,38 @@ class TestWhatARoleSees:
         assert events[0].kind == "artifact_submitted"
         assert orchestrator.state(run_id).counters.violations == 1
 
+    def test_flags_are_only_offered_when_declaring_them_matters(self, org: Org, harness: Callable[..., Any]) -> None:
+        run = harness(org)
+        schemas: dict[str, Any] = {}
+        original = run.client.complete
+
+        def capture(request: Any) -> Any:
+            submit = next(t for t in request.tools if t.name == "submit_artifact")
+            schemas[request.metadata["invocation"].purpose.value] = submit.input_schema
+            return original(request)
+
+        run.client.complete = capture
+        assert run.runner.run("Goal").status == "done"
+        assert "flags" in schemas["execute"]["properties"]
+        assert "flags" not in schemas["intake"]["properties"]
+
+    def test_compact_schema_keeps_fields_named_title(self) -> None:
+        from try_professional.adapters.api_runner.tools import submit_spec
+
+        schema = submit_spec("TaskPlan").input_schema
+        text = str(schema)
+        assert "'Title'" not in text and "default" not in text
+        task = schema["$defs"]["TaskSpec"]["properties"]
+        assert "title" in task and "definition_of_done" in task
+
+    def test_compacted_schemas_still_describe_every_artifact(self) -> None:
+        from try_professional.adapters.api_runner.tools import submit_spec
+        from try_professional.core.artifacts import PAYLOAD_TYPES
+
+        for name, model in PAYLOAD_TYPES.items():
+            payload = submit_spec(name).input_schema["properties"]["payload"]
+            assert set(payload["properties"]) == set(model.model_fields), name
+
     def test_new_companies_have_a_token_ceiling_by_default(self, org: Org) -> None:
         assert org.pipeline.max_tokens_per_run == 200_000
 
@@ -337,6 +369,14 @@ class TestAgentLoop:
         client = SequenceClient([bad, _submit()])
         events, _, _ = _first_invocation(org, tmp_path, client)
         assert events[0].kind == "artifact_submitted"
+
+    def test_tokens_are_tracked_per_role_with_calls(self, org: Org, harness: Callable[..., Any]) -> None:
+        run = harness(org)
+        result = run.runner.run("Goal")
+        state = run.orchestrator.state(result.run_id)
+        assert result.calls == 7
+        assert state.usage_by_role["executive/ceo"].calls == 4
+        assert sum(u.total for u in state.usage_by_role.values()) == state.usage.total
 
     def test_usage_is_recorded_for_every_turn(self, org: Org, tmp_path: Path) -> None:
         client = SequenceClient([text_response("thinking"), _submit()])

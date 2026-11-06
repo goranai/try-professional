@@ -20,5 +20,6 @@ No LLM key is needed. `compare_e5.py` downloads about 2.2 GB.
 |---|---|
 | `run_retrieval.py`, `results.json` | Catalog against a Mnemosyne bank, with the default model |
 | `compare_e5.py`, `compare_e5.json` | The default model against `intfloat/multilingual-e5-large` |
+| `results_no_floor.json` | The catalog after removing its floor: held-out, plus 20 fresh English queries |
 
 The same labelled data ships in `try_professional/bench/retrieval/`, and `tests/test_cross_lingual.py` checks it on every run of `pytest -m model`.

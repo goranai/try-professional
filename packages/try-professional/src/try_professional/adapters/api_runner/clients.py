@@ -73,6 +73,7 @@ class ChatResponse:
     assistant_message: Any
     input_tokens: int = 0
     output_tokens: int = 0
+    cached_input_tokens: int = 0
     model: str = ""
     detail: str = ""
 
@@ -188,9 +189,16 @@ class AnthropicClient:
             assistant_message={"role": "assistant", "content": response.content},
             input_tokens=response.usage.input_tokens,
             output_tokens=response.usage.output_tokens,
+            cached_input_tokens=getattr(response.usage, "cache_read_input_tokens", 0) or 0,
             model=response.model,
             detail=str(getattr(stop_details, "category", "") or "") if response.stop_reason == "refusal" else "",
         )
+
+
+def _cached_tokens(usage: dict[str, Any]) -> int:
+    """Providers report prompt caching differently, and many report nothing."""
+    details = usage.get("prompt_tokens_details") or {}
+    return int(details.get("cached_tokens") or usage.get("prompt_cache_hit_tokens") or 0)
 
 
 class OpenAICompatibleClient:
@@ -297,5 +305,6 @@ class OpenAICompatibleClient:
             assistant_message=message,
             input_tokens=usage.get("prompt_tokens", 0),
             output_tokens=usage.get("completion_tokens", 0),
+            cached_input_tokens=_cached_tokens(usage),
             model=data.get("model", request.model),
         )

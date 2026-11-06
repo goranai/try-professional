@@ -50,6 +50,7 @@ from .state import (
     Submission,
     TaskState,
     TaskStatus,
+    Usage,
     UsageRecorded,
 )
 
@@ -915,8 +916,14 @@ def _on_context(step: _Step, event: ContextResolved) -> None:
 
 def _on_usage(step: _Step, event: UsageRecorded) -> None:
     state = step.state
-    state.usage.input_tokens += event.input_tokens
-    state.usage.output_tokens += event.output_tokens
+    buckets = [state.usage]
+    if event.role:
+        buckets.append(state.usage_by_role.setdefault(event.role, Usage()))
+    for bucket in buckets:
+        bucket.input_tokens += event.input_tokens
+        bucket.output_tokens += event.output_tokens
+        bucket.cached_input_tokens += event.cached_input_tokens
+        bucket.calls += 1
     limit = state.budget_override or step.org.pipeline.max_tokens_per_run
     if limit is None or state.usage.total <= limit or state.phase in TERMINAL_PHASES:
         return

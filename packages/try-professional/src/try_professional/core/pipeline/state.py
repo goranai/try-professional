@@ -128,6 +128,8 @@ class Counters(_Model):
 class Usage(_Model):
     input_tokens: int = 0
     output_tokens: int = 0
+    cached_input_tokens: int = 0
+    calls: int = 0
 
     @property
     def total(self) -> int:
@@ -164,6 +166,7 @@ class RunState(_Model):
     waivers: list[dict[str, str]] = []
     counters: Counters = Counters()
     usage: Usage = Usage()
+    usage_by_role: dict[str, Usage] = {}
     budget_override: int | None = None
     failure_reason: str | None = None
 
@@ -225,6 +228,8 @@ class UsageRecorded(_Model):
     model: str = ""
     input_tokens: int = 0
     output_tokens: int = 0
+    cached_input_tokens: int = 0
+    role: str | None = None
 
 
 class HumanDecided(_Model):

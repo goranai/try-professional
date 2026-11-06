@@ -51,23 +51,24 @@ class LanguageResult:
         return self.top5 / self.total if self.total else 0.0
 
 
+def evaluate_file(rank: Ranker, name: str, split: str, floor: float = 0.0) -> LanguageResult:
+    document = load_queries(name)
+    result = LanguageResult(document["language"], document["review"]["status"])
+    for query in document["queries"]:
+        if query["split"] != split:
+            continue
+        ranked = [skill for skill, score in rank(query["text"]) if score >= floor][:5]
+        result.total += 1
+        result.top1 += int(ranked[:1] == [query["skill"]])
+        if query["skill"] in ranked:
+            result.top5 += 1
+        else:
+            result.misses.append({"want": query["skill"], "text": query["text"], "got": ranked[:3]})
+    return result
+
+
 def evaluate(rank: Ranker, split: str, floor: float = 0.0) -> dict[str, LanguageResult]:
-    results = {}
-    for language in LANGUAGES:
-        document = load_queries(language)
-        result = LanguageResult(language, document["review"]["status"])
-        for query in document["queries"]:
-            if query["split"] != split:
-                continue
-            ranked = [skill for skill, score in rank(query["text"]) if score >= floor][:5]
-            result.total += 1
-            result.top1 += int(ranked[:1] == [query["skill"]])
-            if query["skill"] in ranked:
-                result.top5 += 1
-            else:
-                result.misses.append({"want": query["skill"], "text": query["text"], "got": ranked[:3]})
-        results[language] = result
-    return results
+    return {language: evaluate_file(rank, language, split, floor) for language in LANGUAGES}
 
 
 def nonsense_top_scores(rank: Ranker, split: str) -> list[float]:

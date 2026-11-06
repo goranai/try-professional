@@ -89,7 +89,7 @@ class SkillCatalog:
 
     def rebuild(self, records: list[SkillRecord]) -> None:
         """Replace everything in one transaction, so a failure leaves the old catalog intact."""
-        vectors = self.embedder.embed([r.search_text for r in records])
+        vectors = self.embedder.embed_documents([r.search_text for r in records])
         with self._lock, self._conn:
             self._conn.execute("DELETE FROM skills")
             self._conn.execute(
@@ -124,9 +124,13 @@ class SkillCatalog:
         *,
         categories: tuple[str, ...] | None = None,
         top_k: int = DEFAULT_TOP_K,
-        floor: float = 0.0,
     ) -> list[SkillHit]:
-        """Filter on structured columns first, then rank by cosine. Ties break by ID, so it's repeatable."""
+        """Filter on structured columns first, then rank by cosine. Ties break by ID, so it's repeatable.
+
+        There is deliberately no score floor. A weak suggestion costs little, since it carries its
+        score and an agent can ignore it, while a skill filtered out is lost for good. Measured in
+        docs/research/phase3-retrieval/.
+        """
         placeholders = ",".join("?" for _ in SEARCHABLE_TRUST)
         sql = (
             "SELECT skill_id, name, description, category, departments, source_repo, commit_sha, license, trust, "
@@ -142,14 +146,12 @@ class SkillCatalog:
             rows = self._conn.execute(sql, params).fetchall()
         if not rows:
             return []
-        query_vector = self.embedder.embed([query])[0]
+        query_vector = self.embedder.embed_query(query)
         matrix = np.vstack([np.frombuffer(row[9], dtype=np.float32) for row in rows])
         scores = matrix @ query_vector
         ranked = sorted(zip(scores.tolist(), rows, strict=True), key=lambda item: (-item[0], item[1][0]))
         hits = []
         for score, row in ranked[:top_k]:
-            if score < floor:
-                break
             record = SkillRecord(
                 skill_id=row[0],
                 name=row[1],
@@ -172,14 +174,13 @@ class SkillCatalog:
 class CatalogSkills:
     """Skill search for a role: limited to the categories its role file allows."""
 
-    def __init__(self, org: Org, catalog: SkillCatalog, *, floor: float = 0.0) -> None:
+    def __init__(self, org: Org, catalog: SkillCatalog) -> None:
         self.org = org
         self.catalog = catalog
-        self.floor = floor
 
     def search(self, role: str, query: str) -> list[dict[str, Any]]:
         categories = self.org.role(role).allowed_skill_categories
-        hits = self.catalog.search(query, categories=categories, floor=self.floor)
+        hits = self.catalog.search(query, categories=categories)
         return [{"skill_id": h.record.skill_id, "score": round(h.score, 4), "trust": h.record.trust} for h in hits]
 
 

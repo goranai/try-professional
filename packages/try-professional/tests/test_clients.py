@@ -80,6 +80,18 @@ class TestOpenAICompatible:
         assert (response.stop_reason, response.input_tokens, response.output_tokens) == ("tool_use", 11, 7)
         assert response.model == "served-model"
 
+    @pytest.mark.parametrize(
+        "usage",
+        [{"prompt_tokens_details": {"cached_tokens": 40}}, {"prompt_cache_hit_tokens": 40}],
+    )
+    def test_cached_tokens_are_read_from_either_format(self, usage: dict[str, Any]) -> None:
+        def handler(request: httpx.Request) -> httpx.Response:
+            body = self._ok({"content": "hi"})
+            body["usage"].update(usage)
+            return httpx.Response(200, json=body)
+
+        assert self._client(handler).complete(_request()).cached_input_tokens == 40
+
     def test_max_tokens_parameter_is_configurable(self) -> None:
         seen: dict[str, Any] = {}
 

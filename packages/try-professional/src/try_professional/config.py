@@ -47,6 +47,8 @@ model:
 #     standard: claude-opus-5-5
 
 # Embeddings run on this machine, and memory text is never sent to a remote API.
+# intfloat/multilingual-e5-large retrieves better but needs far more disk and memory, and
+# can't read memory built with another model. See docs/embeddings.md.
 memory:
   enabled: true
   embedding_model: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2

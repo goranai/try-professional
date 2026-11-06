@@ -38,7 +38,10 @@ class FakeEmbedder:
     def __init__(self, model_name: str = "fake-model") -> None:
         self.model_name = model_name
 
-    def embed(self, texts: list[str]) -> Any:
+    def embed_query(self, text: str) -> Any:
+        return self.embed_documents([text])[0]
+
+    def embed_documents(self, texts: list[str]) -> Any:
         rows = []
         for text in texts:
             row = np.zeros(64, dtype=np.float32)
@@ -269,9 +272,11 @@ class TestCatalog:
         assert (tmp_path / "c.sqlite").read_bytes() == before, "reading must not change anything"
         assert first == ["s0", "s1", "s2", "s3", "s4"]
 
-    def test_floor_can_return_nothing(self, catalog: SkillCatalog) -> None:
+    def test_there_is_no_floor_and_each_result_carries_its_score(self, catalog: SkillCatalog) -> None:
         catalog.rebuild([_record("a", "deploy service")])
-        assert catalog.search("unrelated words entirely", floor=0.5) == []
+        hits = catalog.search("unrelated words entirely")
+        assert [h.record.skill_id for h in hits] == ["a"]
+        assert hits[0].score < 0.5
 
     def test_rebuild_replaces_everything(self, catalog: SkillCatalog) -> None:
         catalog.rebuild([_record("a", "one"), _record("b", "two")])
@@ -351,3 +356,47 @@ class TestPipelineUsesMemory:
         assert result.status == "done"
         errors = [r for r in run.records(result.run_id) if r["kind"] == "memory_error"]
         assert errors and "disk full" not in str(errors), "details stay out of the log"
+
+
+class TestE5Option:
+    """e5-large is a documented upgrade. Its prefixes have to reach both paths that embed text."""
+
+    E5 = "intfloat/multilingual-e5-large"
+
+    def test_prefixes_reach_the_mnemosyne_settings(self, tmp_path: Path) -> None:
+        env: dict[str, str] = {}
+        apply_to_environment(MemorySettings(data_dir=tmp_path, embedding_model=self.E5), env)
+        assert env["MNEMOSYNE_EMBEDDING_QUERY_PREFIX"] == "query: "
+        assert env["MNEMOSYNE_EMBEDDING_DOC_PREFIX"] == "passage: "
+        assert env["MNEMOSYNE_EMBEDDING_DIM"] == "1024"
+
+    def test_the_default_model_clears_any_prefix(self, tmp_path: Path) -> None:
+        env = {"MNEMOSYNE_EMBEDDING_QUERY_PREFIX": "query: "}
+        apply_to_environment(MemorySettings(data_dir=tmp_path), env)
+        assert env["MNEMOSYNE_EMBEDDING_QUERY_PREFIX"] == ""
+
+    def test_catalog_embedder_applies_the_right_prefix_to_each_side(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        from try_professional.memory import FastEmbedEmbedder
+
+        seen: list[str] = []
+
+        class Stub:
+            def embed(self, texts: list[str]) -> Any:
+                seen.extend(texts)
+                return iter([np.ones(4, dtype=np.float32) for _ in texts])
+
+        embedder = FastEmbedEmbedder(self.E5)
+        monkeypatch.setattr(embedder, "_load", Stub)
+        embedder.embed_documents(["a doc"])
+        embedder.embed_query("a question")
+        assert seen == ["passage: a doc", "query: a question"]
+
+        seen.clear()
+        plain = FastEmbedEmbedder()
+        monkeypatch.setattr(plain, "_load", Stub)
+        plain.embed_documents(["a doc"])
+        plain.embed_query("a question")
+        assert seen == ["a doc", "a question"]
+
+    def test_e5_has_no_memory_floor_because_none_was_measured_to_work(self) -> None:
+        assert score_floor(self.E5) == 0.0

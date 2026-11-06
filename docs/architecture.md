@@ -33,7 +33,10 @@ Try Professional turns an LLM agent runtime into a structured company: a hierarc
 | Names | Display "Try Professional", repo `try-professional`, PyPI `try-professional`, import `try_professional`, CLI `trypro`. Free on PyPI, no conflicting GitHub project found. No trademark search done. | Owner |
 | Runtime priority | API, then MCP, then Hermes. The Hermes design is fully specified here (§10.4); its implementation comes last. | Owner |
 | Departments | All nine ship as removable packs. Installed does not mean invoked (§5.3). | Owner |
-| Embeddings | Local. `paraphrase-multilingual-MiniLM-L12-v2` by default, `multilingual-e5-large` as a documented upgrade. Reopened if MiniLM fails the Phase 3 tests. | Owner |
+| Embeddings | Local. `paraphrase-multilingual-MiniLM-L12-v2` by default, confirmed after Phase 3. `multilingual-e5-large` is a documented optional upgrade ([docs/embeddings.md](embeddings.md)). | Owner |
+| Score floor | Memory recall keeps one. The skill catalog has none. | Owner |
+| Paid API calls | Before re-running anything that calls the paid API, tell the owner and wait, even with token ceilings in place. | Owner |
+| Tokens per run | A first-class metric, reported in every live test and in Phase 6. The hierarchy must not cost much more than a flat swarm for the same result, or the README says so. | Owner |
 | Skill licenses | MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC. Configurable. | Owner |
 | Extra runtime stub | Generic `adapters/template/` only, with no named stub. | Owner |
 | Supply chain | Standalone package in a monorepo. Try Professional depends on it like any other user. | Owner |
@@ -425,7 +428,7 @@ Evidence for each is in §15.
 | `MNEMOSYNE_EMBEDDING_MODEL` | MiniLM multilingual | Upstream's default is an English model, `bge-small-en-v1.5` |
 | `MNEMOSYNE_EMBEDDING_DIM` | `384` | Must match the model |
 | `MNEMOSYNE_LEXICAL_GATE_MIN` | `0` | **Critical.** With the default keyword gate, cross-language recall mostly returns nothing (5/40). With `0`, recall@5 was 37/40. |
-| Dense score floor in `MemoryGateway` | 0.28 for MiniLM | With the gate off, nonsense queries return a full page of results. **The floor is a weak filter:** on held-out queries it rejected 7 of 10 nonsense queries, because correct hits (as low as 0.283) and nonsense (as high as 0.336) overlap. It removes the worst noise, and can't detect "no match" reliably. |
+| Dense score floor, memory only | 0.28 for MiniLM | With the gate off, nonsense queries return a full page of results, and recall results go straight into a task's context. **The floor is a weak filter:** on held-out queries it rejected 7 of 10 nonsense queries, because correct hits (as low as 0.283) and nonsense (as high as 0.336) overlap. It removes the worst noise, and can't detect "no match" reliably. |
 | `MNEMOSYNE_DATA_DIR` | `$TRYPRO_HOME/memory` | Keeps data out of `~/.hermes` |
 | `MNEMOSYNE_WM_TTL_HOURS`, `MNEMOSYNE_WM_MAX_ITEMS` | Effectively no limit | By default, unconsolidated rows are trimmed after 168 hours. Consolidating them instead could involve an LLM, so expiry is turned off. A test backdates a memory and confirms it survives. |
 
@@ -445,13 +448,15 @@ The brief asked for a change like this to be proposed with evidence before switc
 | Top-1 | 29/40 | 35/40 |
 | English recall@5 | 6/8 | 8/8 |
 
-That set was small, so a larger one followed in Phase 3 (200 queries, 100 of them held out): recall@5 was 91/100 for the catalog and 87/100 for the bank, and English 14/20 against 11/20. The structural reasons are still the stronger argument:
+That set was small, so a larger one followed in Phase 3 (200 queries, 100 of them held out). With a score floor on both, recall@5 was 91/100 for the catalog and 87/100 for the bank, and English 14/20 against 11/20. The structural reasons are still the stronger argument:
 
 - A catalog entry should not be subject to working-memory expiry, consolidation or summarization.
 - Recall updates `recall_count` and `last_recalled`, but catalog ranking should be deterministic for reproducible benchmarks.
 - A catalog must filter on license, trust and category before ranking, which are structured columns rather than memory text.
 
-**Implementation:** plain SQLite table with vectors stored as blobs, and NumPy cosine (already installed through `fastembed`). No new dependency. The catalog is rebuilt from `skills.lock`, so it holds no state of its own. The catalog stays empty until Phase 4 fills it from `skills.lock`. Evidence: [`docs/research/phase3-retrieval/`](research/phase3-retrieval/).
+**Implementation:** plain SQLite table with vectors stored as blobs, and NumPy cosine (already installed through `fastembed`). No new dependency. The catalog is rebuilt from `skills.lock`, so it holds no state of its own. **The catalog has no score floor.** The floor cost 2 of 100 held-out hits, both in English, in return for filtering out noise that a skill search can tolerate: a weak suggestion carries its score and an agent can ignore it, while a filtered-out skill is lost for good. Without it, nonsense queries also get results, each with a low score.
+
+Phase 4 fills the catalog from `skills.lock`. Evidence: [`docs/research/phase3-retrieval/`](research/phase3-retrieval/).
 
 ### 8.6 Model selection
 
@@ -463,7 +468,7 @@ That set was small, so a larger one followed in Phase 3 (200 queries, 100 of the
 
 Sizes come from fastembed's model tables. Changing models changes the vector space, so memory and the catalog refuse to open with a different model than they were built with. Moving existing memories to a new model isn't built yet.
 
-**Phase 3 results for MiniLM,** on 100 held-out queries, with the floor chosen on the development split only:
+**Phase 3 results for the catalog with MiniLM and no floor,** on 100 held-out queries:
 
 | Language | Recall@5 | Review status |
 |---|---|---|
@@ -471,24 +476,12 @@ Sizes come from fastembed's model tables. Changing models changes the vector spa
 | Spanish | 19/20 | Not natively reviewed |
 | Chinese | 19/20 | Not natively reviewed |
 | Arabic | 19/20 | Not natively reviewed |
-| English | **14/20**, below the 80% target | Paraphrased furthest from the catalog |
+| English | 16/20 | Not needed |
+| **Total** | **93/100** | |
 
-The languages aren't directly comparable, because the English queries are the most idiomatic in the set. These are hand-written queries over a 40-skill catalog, so they show the approach works, and they aren't a claim about general accuracy.
+**The 80% target is met in every language, English only just.** Because the held-out set had been seen when the floor was removed, English was confirmed on 20 fresh queries written before measuring: 16/20, exactly at the target. The same author wrote both, so this isn't independent. The languages aren't directly comparable either, because the English queries are the most idiomatic in the set. These are hand-written queries over a 40-skill catalog, so they show the approach works, and they aren't a claim about general accuracy.
 
-**Comparison with `multilingual-e5-large`,** on the same 100 held-out queries with no floor (`compare_e5.json`):
-
-| | MiniLM (default) | e5-large |
-|---|---|---|
-| Recall@5 | 93/100 | 98/100 |
-| English recall@5 | 16/20 | 19/20 |
-| Top-1 | 71/100 | 87/100 |
-| Download | 0.22 GB | 2.24 GB |
-| Process memory added (one measurement) | 0.6 GB | 1.58 GB |
-
-- **e5-large retrieves better, at about 10 times the download and 2.6 times the memory.** MiniLM stays the default, by the owner's decision. e5-large would also need query and passage prefixes in `FastEmbedEmbedder`, and its own floor.
-- **The floor costs MiniLM recall.** It lowers MiniLM from 93 to 91, and English from 16 to 14, which is what puts English under the 80% target.
-- **The floor rule doesn't suit e5-large.** It chose 0.806, which cut recall to 71/100 while rejecting 10 of 10 nonsense queries. Its scores sit in a narrow range, so it would need a different approach.
-- **The held-out split has now been seen.** Any change made because of these numbers needs new queries to measure it fairly.
+`e5-large` scored 98/100 on the same queries, at about 10 times the download and 2.6 times the memory. See [docs/embeddings.md](embeddings.md).
 
 ## 9. Skill supply chain
 
@@ -755,7 +748,7 @@ The swarm has to be a fair baseline, or the comparison is worthless. It gets the
 From one shared event format, recorded by the shared LLM client wrapper:
 
 - Success rate.
-- Total tokens and cost, from provider-reported usage, with the price table and date recorded in the results.
+- **Tokens per run, as a headline number:** total, by role, cached if the provider reports it, and tokens per successful task. Failed runs still count their tokens. Cost comes from provider-reported usage, with the price table and date recorded in the results.
 - Wall-clock time.
 - Failed or redone steps: invalid outputs, failed tool calls, rework loops and retries. The counting rule is defined per setup before the first run.
 
@@ -777,6 +770,8 @@ Recall@5 for the same labelled skills queried in English, Indonesian, Spanish, C
 - `docs/benchmarks.md` is generated from those raw results and always shows the model, date and version. CI fails if it doesn't match.
 - There is no flag to exclude tasks or setups from a report. Failed and aborted runs count as failures. Results are published wherever the hierarchy loses.
 - The README has no benchmark numbers, only a link to `docs/benchmarks.md`. CI enforces this with a lint rule.
+- **If the hierarchy costs much more than the flat swarm for the same result, the README says so** in words, next to that link. Reducing tokens per run is ongoing work, and each live test reports them.
+- **Paid runs wait for approval.** `--estimate` is free. Everything else that calls the paid API is announced to the owner first.
 - A `--mock` mode replays recorded responses to test the harness in CI. Its output is marked as mock and can't be published.
 
 **What "reproduces" means:** model outputs aren't deterministic and hosted models change over time. The command reruns the exact procedure, and results should agree within the reported variance, not digit for digit. The docs will say this.
@@ -785,7 +780,7 @@ Recall@5 for the same labelled skills queried in English, Indonesian, Spanish, C
 
 Nothing is marked complete without passing tests. Each phase ends with what was built, what was tested and what is missing.
 
-**Status (2026-11-06):** Phase 1 is approved. Phase 2 has run end to end on a live provider. Phase 3 passes its tests, except the 80% recall target for English, which stays visible as an expected failure.
+**Status (2026-11-06):** Phases 1 to 3 are complete. Phase 2 has run end to end on a live provider. Phase 3's memory stack has run with a scripted model, not a live one.
 
 | Phase | Builds | Exit criteria |
 |---|---|---|
@@ -805,8 +800,8 @@ Nothing is marked complete without passing tests. Each phase ends with what was 
 
 ## 13. Known limits
 
-- **A real run costs more than the step count suggests.** The smallest live run took 15 model calls and about 44,000 tokens on `deepseek-v4.1-flash-1017`, for 7 steps. Writing and reading files, rejected outputs, and resending context each add calls. New companies get a default ceiling of 200,000 tokens per run.
-- **The score floor can't detect "no match".** See §8.3. An agent can still receive a low-relevance skill or memory, labelled with its score.
+- **A real run costs more than the step count suggests.** The smallest live run took 15 model calls and about 44,000 tokens on `deepseek-v4.1-flash-1017`, for 7 steps. Writing and reading files, rejected outputs, and resending context each add calls. New companies get a default ceiling of 200,000 tokens per run. Prompts were then cut by 23% (`scripts/measure_prompts.py`), which hasn't been re-measured on a live run. A test holds prompts to a size budget.
+- **Neither search can reliably say "no match".** See §8.3 and §8.5. An agent can still receive a low-relevance skill, labelled with its score, or weak memory above the floor.
 - **Access rules are policy, not a security boundary.** A role with a shell tool could open the SQLite files directly on the same machine. The rules prevent accidents and ordinary misbehavior. Containers are required for stronger isolation.
 - **The hierarchy may not win.** It will probably cost more tokens than a single agent on simple tasks. The benchmark exists to measure that.
 - **Static scanning can be bypassed.** Paraphrased injection will get past rules. That's why trust levels, runtime tool limits and human review exist.

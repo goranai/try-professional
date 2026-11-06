@@ -1,8 +1,9 @@
 """Cross-lingual retrieval with the real model and real Mnemosyne. Runs with: pytest -m model
 
-The target is recall@5 of at least 80% in every language on the heldout split, set
-before the first measurement. A language that misses it is marked xfail with a reason,
-so the gap stays visible rather than the target quietly moving.
+The target is recall@5 of at least 80% in every language, set before the first measurement.
+A language that misses it is marked xfail with a reason, so the gap stays visible rather than
+the target quietly moving. English also has a fresh set, because the first heldout set was
+seen while deciding to remove the catalog's floor.
 """
 
 from __future__ import annotations
@@ -16,17 +17,13 @@ from typing import Any
 
 import pytest
 
-from try_professional.bench.retrieval.evaluate import LANGUAGES, evaluate, load_catalog, load_queries
-from try_professional.memory import FastEmbedEmbedder, score_floor
-from try_professional.memory.embedding import DEFAULT_MODEL
+from try_professional.bench.retrieval.evaluate import LANGUAGES, evaluate, evaluate_file, load_catalog, load_queries
+from try_professional.memory import FastEmbedEmbedder
 from try_professional.org import Org
 from try_professional.skills import SkillCatalog, SkillRecord
 
 pytestmark = pytest.mark.model
 TARGET = 0.80
-KNOWN_GAPS = {
-    "en": "14/20 on heldout. The English queries are the most idiomatic in the set, and paraphrase far from the catalog."
-}
 
 
 @pytest.fixture(scope="module")
@@ -44,24 +41,22 @@ def _rank(catalog: SkillCatalog) -> Any:
     return rank
 
 
-@pytest.mark.parametrize(
-    "language",
-    [
-        pytest.param(lang, marks=pytest.mark.xfail(reason=KNOWN_GAPS[lang], strict=True))
-        if lang in KNOWN_GAPS
-        else lang
-        for lang in LANGUAGES
-    ],
-)
+@pytest.mark.parametrize("language", LANGUAGES)
 def test_heldout_recall_meets_the_target(catalog: SkillCatalog, language: str) -> None:
-    result = evaluate(_rank(catalog), "heldout", score_floor(DEFAULT_MODEL))[language]
+    result = evaluate(_rank(catalog), "heldout")[language]
+    assert result.total == 20
+    assert result.recall_at_5 >= TARGET, result.misses
+
+
+def test_fresh_english_queries_meet_the_target(catalog: SkillCatalog) -> None:
+    result = evaluate_file(_rank(catalog), "en_fresh", "fresh")
     assert result.total == 20
     assert result.recall_at_5 >= TARGET, result.misses
 
 
 def test_overall_recall_does_not_regress(catalog: SkillCatalog) -> None:
-    results = evaluate(_rank(catalog), "heldout", score_floor(DEFAULT_MODEL))
-    assert sum(r.top5 for r in results.values()) >= 88
+    results = evaluate(_rank(catalog), "heldout")
+    assert sum(r.top5 for r in results.values()) >= 90
 
 
 def test_the_same_skill_is_found_from_all_five_languages(catalog: SkillCatalog) -> None:
