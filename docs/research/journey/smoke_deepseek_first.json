@@ -1,0 +1,79 @@
+{
+ "model": "deepseek-v4.1-flash-1017",
+ "check_model": {
+  "model": "deepseek-v4.1-flash-1017",
+  "verdict": "suitable",
+  "checks": [
+   {
+    "name": "Calling a tool",
+    "required": true,
+    "passed": true,
+    "first_try": true,
+    "detail": ""
+   },
+   {
+    "name": "Filling in a strict structure",
+    "required": true,
+    "passed": true,
+    "first_try": true,
+    "detail": ""
+   },
+   {
+    "name": "Following a brief",
+    "required": false,
+    "passed": true,
+    "first_try": true,
+    "detail": ""
+   },
+   {
+    "name": "Replying in the command's language",
+    "required": false,
+    "passed": true,
+    "first_try": true,
+    "detail": ""
+   },
+   {
+    "name": "Treating data as data",
+    "required": false,
+    "passed": true,
+    "first_try": true,
+    "detail": ""
+   }
+  ],
+  "caveats": [],
+  "tokens": {
+   "input": 3097,
+   "cached_input": 768,
+   "output": 628
+  },
+  "calls": 7,
+  "seconds": 18.0
+ },
+ "small_command": {
+  "goal": "Write a two-sentence welcome note for a new newsletter subscriber.",
+  "status": "blocked",
+  "size": "small",
+  "final": null,
+  "counters": {
+   "invalid_outputs": 14,
+   "rework_loops": 4,
+   "failed_invocations": 0,
+   "escalations": 2,
+   "handoffs": 0,
+   "violations": 0,
+   "package_overruns": 0,
+   "assignments": 11,
+   "amendments": 0
+  },
+  "questions": [
+   "This run used 208291 tokens, over the limit of 200000. Continue with a higher limit, or abandon?"
+  ],
+  "audit_ok": true
+ },
+ "tokens": {
+  "input": 176240,
+  "cached_input": 120064,
+  "output": 35776
+ },
+ "outage_waits": 4
+}

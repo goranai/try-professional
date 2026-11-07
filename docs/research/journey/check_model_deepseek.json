@@ -1,0 +1,63 @@
+{
+ "model": "deepseek-v4.1-flash-1017",
+ "verdict": "usable with caveats",
+ "checks": [
+  {
+   "name": "Calling a tool",
+   "required": true,
+   "passed": true,
+   "first_try": true,
+   "detail": ""
+  },
+  {
+   "name": "Filling in a strict structure",
+   "required": true,
+   "passed": true,
+   "first_try": true,
+   "detail": ""
+  },
+  {
+   "name": "Following a brief",
+   "required": false,
+   "passed": true,
+   "first_try": true,
+   "detail": ""
+  },
+  {
+   "name": "Replying in the command's language",
+   "required": false,
+   "passed": true,
+   "first_try": true,
+   "detail": ""
+  },
+  {
+   "name": "Treating data as data",
+   "required": false,
+   "passed": true,
+   "first_try": true,
+   "detail": ""
+  }
+ ],
+ "small_command": {
+  "goal": "Write a two-sentence welcome note for a new newsletter subscriber.",
+  "finished": true,
+  "status": "done",
+  "tokens": 25020,
+  "limit": 40000,
+  "assignments": 6,
+  "rejected_outputs": 2,
+  "rework_rounds": 0,
+  "escalations": 0,
+  "why": ""
+ },
+ "caveats": [
+  "The small command finished, but 2 of its outputs were rejected, and each one costs tokens."
+ ],
+ "tokens": {
+  "input": 22983,
+  "cached_input": 9984,
+  "output": 5762
+ },
+ "calls": 16,
+ "seconds": 56.9
+}
