@@ -22,7 +22,7 @@ trypro check-model --dry-run
 
 ### With Claude Code
 
-No API key is needed. It uses your own Claude plan, and each role runs as its own subagent:
+No API key is needed. It uses your own Claude plan, and each role runs as its own subagent. Set `GITHUB_TOKEN` first, so it can search GitHub for skills. Without one a company gets no skills, and the review screen says so.
 
 ```bash
 pip install 'try-professional[mcp]'
@@ -46,7 +46,7 @@ Restart Claude Code in that folder, and run:
 
 ### With any OpenAI-compatible model
 
-Copy `.env.example` to `.env`, and set `TRYPRO_LLM_BASE_URL`, `TRYPRO_LLM_API_KEY`, and `TRYPRO_LLM_MODEL`. **Check the model first:**
+Copy `.env.example` to `.env`, and set `TRYPRO_LLM_BASE_URL`, `TRYPRO_LLM_API_KEY`, `TRYPRO_LLM_MODEL`, and `GITHUB_TOKEN` to find skills. **Check the model first:**
 
 ```bash
 trypro check-model
@@ -83,11 +83,28 @@ Results are files, in `deliverables/<run-id>/`. Start with `index.md`.
 | Model | How | Result |
 |---|---|---|
 | `claude-sonnet-5-5` for every role, and `claude-haiku-5-5` for matching skills | Claude Code 2.1.319 on Windows 11, through MCP, each role as its own process with only that role's server | 9 of 9 commands finished, on 3 businesses. All 108 artifacts were recorded as coming from the right role's own server. [Details](https://github.com/goranai/try-professional/blob/main/docs/research/journey/README.md) |
+| `claude-sonnet-5-5` for every role | `/company` in one Claude Code session, each role as a subagent, on a business kept out of all training | One prompt to a company, a command, and a later related command that followed the first. All 23 artifacts came from the right role's own server. It passed on its sixth run, and the fifth stopped at the token limit. [Every run](https://github.com/goranai/try-professional/blob/main/docs/research/journey/README.md#acceptance-journey) |
 | `deepseek-v4.1-flash-1017` | API runner | `check-model`: usable with caveats. **The same small command finished once in three runs**, and the other two blocked. [Why](https://github.com/goranai/try-professional/blob/main/docs/research/journey/deepseek-diagnosis.md) |
 
 Those are the only models tested. The test suite runs on a scripted model, on Linux, macOS, and Windows.
 
 **This doesn't show that a cheap model does good work.** Quality on a cheap model is for v0.2.
+
+## Do reviews catch flawed work?
+
+We put flawed documents into real runs over MCP, and counted how many reviewers rejected for that flaw. [How it ran, and every verdict](https://github.com/goranai/try-professional/blob/main/docs/research/qa_gates/README.md).
+
+| Flaw | Caught, on the current review rules |
+|---|---|
+| A wrong number | 6 of 6 |
+| A claim with no source | 6 of 6 |
+| The wrong language | 6 of 6 |
+| A requirement missed from the brief | 6 of 6 |
+| A clean document wrongly sent back | 1 of 6 |
+
+**This is a small test, and it only shows so much.** One run of each document, on `claude-sonnet-5-5` only. The documents are short, with one flaw each, and every fact could be checked against the command. Long documents, wrong facts about the world, Legal on its own, and cheap models weren't tested.
+
+The rules are stricter because of this test. On the earlier rules, a reviewer noted an invented claim as minor, and 3 of 4 were caught. The stricter rules also cost something: reviewers now send back some work that didn't need it.
 
 ## What it costs
 
@@ -105,7 +122,15 @@ Tokens per command on Claude, measured. It's run through Claude Code, so each ro
 | Indonesian snacks | One customer reply | 36 | 22,775 | 86,890 | 4,230 | $0.14 |
 | Indonesian snacks | The next two weeks | 44 | 39,627 | 138,566 | 13,481 | $0.31 |
 
-A hierarchy spends more than one agent would. On the small commands, reviews alone took 39% to 46% of the output tokens. No comparison with a flat setup has been measured yet, and that benchmark is planned for v0.2.
+Those ran before reviews got stricter, which adds rework. The acceptance run on the current rules shows that, with a `/company` session and its subagents together:
+
+| Business | Command | Input | Cache write | Cache read | Output | List price |
+|---|---|---|---|---|---|---|
+| Web design agency | Design the company, from one prompt | 36 | 46,635 | 471,088 | 6,075 | $0.29 |
+| Web design agency | One-page proposal, 1 round of rework | 90 | 77,480 | 743,298 | 15,794 | $0.46 |
+| Web design agency | Homepage copy, 2 rounds of rework | 130 | 106,645 | 1,063,112 | 25,436 | $0.66 |
+
+A hierarchy spends more than one agent would. On the first table's small commands, reviews alone took 39% to 46% of the output tokens. No comparison with a flat setup has been measured yet, and that benchmark is planned for v0.2.
 
 On DeepSeek through the API runner, the one small command that finished took 25,020 tokens: [details](https://github.com/goranai/try-professional/blob/main/docs/research/journey/check_model_deepseek.json).
 
@@ -121,8 +146,9 @@ On DeepSeek through the API runner, the one small command that finished took 25,
 - **Cost per command is high** for small jobs. See above. A two-sentence reply goes through intake, the work, QA, legal, and a final report.
 - **It works with files only.** It doesn't publish, send, buy, render video, or browse the web unless you turn on search. Its output tells you what a person must check.
 - **It can't check facts without sources.** With no web access, it marks claims as unverified, and leaves placeholders such as `[Bakery name]` or `[ISI PROMO]` for you to fill in.
-- **Reviews approved everything in the final journey.** Earlier passes did send work back, but these 9 commands don't show reviews catching a problem. A weak reviewer can still approve weak work.
-- **Over MCP, token limits run on an estimate** of what passes through the server, which undercounts by several times. Your client's own limits matter more there.
+- **Reviews aren't proof.** [The test above](https://github.com/goranai/try-professional/blob/main/docs/research/qa_gates/README.md) is small, and a weak reviewer can still approve weak work. They can also be too strict, and send back good work.
+- **A command can stop at its token limit.** Rework costs tokens. In one acceptance run a small command stopped at its 40,000 limit just short of finishing, and asked a person, and in the run that finished the same command used about 37,800. Until it finishes, its work isn't exported as files.
+- **Over MCP, token limits run on an estimate** of what passes through the server, which undercounts by several times, so the 40,000 above is that estimate. Your client's own limits matter more there.
 - **Operator mode over MCP** has one model play every role, so separation there is only procedural. Use `trypro agents claude-code`, or one bound server per role.
 - **Hermes isn't supported yet.** There's no Hermes adapter in this version, so it's untested. `skill-customs` has a guide for it that hasn't been tried on a real install.
 - **Indonesian output hasn't been reviewed by a native speaker.** Other languages haven't been tried on full commands. Retrieval queries in other languages haven't been natively reviewed either.

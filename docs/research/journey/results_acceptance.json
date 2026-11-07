@@ -1,0 +1,372 @@
+{
+ "design": {
+  "result": "prop-585199104a",
+  "is_error": false,
+  "operator_could_use": [
+   "mcp__trypro__audit_tail",
+   "mcp__trypro__org_get",
+   "mcp__trypro__org_proposal_get",
+   "mcp__trypro__org_proposal_submit",
+   "mcp__trypro__org_propose",
+   "mcp__trypro__org_skill_judgment_submit",
+   "mcp__trypro__run_next_action",
+   "mcp__trypro__run_start",
+   "mcp__trypro__run_status"
+  ],
+  "operator_called": {
+   "mcp__trypro__org_propose": 1,
+   "mcp__trypro__org_proposal_submit": 1,
+   "mcp__trypro__org_skill_judgment_submit": 15
+  },
+  "role_agents_called": {},
+  "role_agents_outside_their_server": {},
+  "session_did_more_than_coordinate": [
+   "mcp__trypro__org_propose",
+   "mcp__trypro__org_proposal_submit",
+   "mcp__trypro__org_skill_judgment_submit"
+  ],
+  "usage": {
+   "input": 36,
+   "cache_write": 46635,
+   "cache_read": 471088,
+   "output": 6075,
+   "cost_usd_at_list_price": 0.2944708
+  },
+  "usage_by_model": {
+   "claude-sonnet-5-5": {
+    "inputTokens": 36,
+    "cacheCreationInputTokens": 46635,
+    "cacheReadInputTokens": 471088,
+    "outputTokens": 6075
+   }
+  },
+  "subagents": {
+   "spawned": 0,
+   "requested": {
+    "background": 0,
+    "foreground": 0,
+    "unset": 0
+   },
+   "started_in_background": 0,
+   "max_depth": 0,
+   "spawned_by_subagents": 0,
+   "completed": 0,
+   "failed": 0,
+   "killed": {
+    "parent": 0,
+    "user": 0,
+    "system": 0
+   },
+   "refused": {
+    "depth_limit": 0,
+    "concurrency_limit": 0,
+    "budget": 0
+   },
+   "by_type": {}
+  },
+  "turns": 18
+ },
+ "activated": "prop-585199104a",
+ "first": {
+  "result": "The one-page proposal is written and approved by the Sales Lead and by Legal, but nobody has checked that it fits on one page. It runs about 450 words and was never rendered, so check the PDF or a printout before you send it.\n\n**Deliverable:** `<company>/deliverables/run-8e76df264e84/index.md`\n\nThe proposal covers:\n- what the bakery asked for\n- what the site will do\n- the scope, including how pre-ordering works (pick items, choose a pickup date and time, send the order, owner confirms)\n- what is not included\n- a timeline\n- a price\n- the assumptions\n- a next step\n\nReview changed the draft once. The Sales Lead asked for changes: it had an unsupported claim about customers and invented bakery details. The writer fixed both, and both reviewers then approved.\n\n**Known limits:**\n- **Placeholders:** the bakery name, date, contact details and price are all placeholders.\n- **No facts about the bakery:** I had no real details, so its menu and current ordering process are assumed.\n- **Unconfirmed proposals** (marked \"proposed, to be confirmed\" in the text):\n  - a timeline of about 4–6 weeks\n  - pay at pickup, with no online card payment\n  - a short training session for the owner\n  - a setting to close orders after a cut-off time\n  - an extra fee for menu descriptions and photo editing\n  - a 30-minute call as the next step\n- **Fixed price:** the proposal promises a fixed written price before work starts. Sales has to confirm that when the price is filled in.\n- **Legal notes:** the proposal doesn't mention privacy, though the order form collects customers' names and phone numbers. It also doesn't say the bakery must have the right to use the photos and menu it supplies.",
+  "is_error": false,
+  "operator_could_use": [
+   "Task",
+   "Bash",
+   "CronCreate",
+   "CronDelete",
+   "CronList",
+   "DesignSync",
+   "Edit",
+   "EnterWorktree",
+   "ExitWorktree",
+   "Glob",
+   "Grep",
+   "ListAgents",
+   "ListMcpResourcesTool",
+   "Monitor",
+   "NotebookEdit",
+   "PowerShell",
+   "PushNotification",
+   "Read",
+   "ReadMcpResourceDirTool",
+   "ReadMcpResourceTool",
+   "RemoteTrigger",
+   "ReportFindings",
+   "ScheduleWakeup",
+   "SendMessage",
+   "Skill",
+   "TaskStop",
+   "ToolSearch",
+   "WebSearch",
+   "Write",
+   "mcp__claude_ai_Claude_Docs__batch",
+   "mcp__claude_ai_Claude_Docs__create",
+   "mcp__claude_ai_Claude_Docs__delete",
+   "mcp__claude_ai_Claude_Docs__export",
+   "mcp__claude_ai_Claude_Docs__guide",
+   "mcp__claude_ai_Claude_Docs__query",
+   "mcp__claude_ai_Claude_Docs__read",
+   "mcp__claude_ai_Claude_Docs__update",
+   "mcp__trypro__audit_tail",
+   "mcp__trypro__org_get",
+   "mcp__trypro__org_proposal_get",
+   "mcp__trypro__org_proposal_submit",
+   "mcp__trypro__org_propose",
+   "mcp__trypro__org_skill_judgment_submit",
+   "mcp__trypro__run_next_action",
+   "mcp__trypro__run_start",
+   "mcp__trypro__run_status"
+  ],
+  "operator_called": {
+   "ToolSearch": 1,
+   "mcp__trypro__run_start": 1,
+   "Agent": 8,
+   "mcp__trypro__run_next_action": 8
+  },
+  "role_agents_called": {
+   "trypro-executive-ceo": {
+    "mcp__trypro_role__run_next_action": 2,
+    "mcp__trypro_role__artifact_submit": 2
+   },
+   "trypro-sales-proposal-writer": {
+    "mcp__trypro_role__run_next_action": 2,
+    "mcp__trypro_role__artifact_submit": 3
+   },
+   "trypro-sales-sales-lead": {
+    "mcp__trypro_role__run_next_action": 2,
+    "mcp__trypro_role__review_submit": 2
+   },
+   "trypro-legal-counsel": {
+    "mcp__trypro_role__run_next_action": 2,
+    "mcp__trypro_role__review_submit": 2
+   }
+  },
+  "role_agents_outside_their_server": {},
+  "session_did_more_than_coordinate": [],
+  "usage": {
+   "input": 90,
+   "cache_write": 77480,
+   "cache_read": 743298,
+   "output": 15794,
+   "cost_usd_at_list_price": 0.4556713
+  },
+  "usage_by_model": {
+   "claude-sonnet-5-5": {
+    "inputTokens": 90,
+    "cacheCreationInputTokens": 77480,
+    "cacheReadInputTokens": 743298,
+    "outputTokens": 15794
+   }
+  },
+  "subagents": {
+   "spawned": 8,
+   "requested": {
+    "background": 0,
+    "foreground": 8,
+    "unset": 0
+   },
+   "started_in_background": 0,
+   "max_depth": 1,
+   "spawned_by_subagents": 0,
+   "completed": 8,
+   "failed": 0,
+   "killed": {
+    "parent": 0,
+    "user": 0,
+    "system": 0
+   },
+   "refused": {
+    "depth_limit": 0,
+    "concurrency_limit": 0,
+    "budget": 0
+   },
+   "by_type": {
+    "trypro-executive-ceo": 2,
+    "trypro-sales-proposal-writer": 2,
+    "trypro-sales-sales-lead": 2,
+    "trypro-legal-counsel": 2
+   }
+  },
+  "turns": 19,
+  "minutes": 3.0
+ },
+ "second": {
+  "result": "The homepage copy is written and passed marketing and legal review, but it isn't ready to publish. Several bakery details are still placeholders. The run took two rounds of changes from the marketing lead before it was approved.\n\n**Where the copy is:** `<company>/deliverables/run-f5322a3e3612/index.md`\n\nIt's in English, matching the proposal, and has these sections:\n- a hero with the headline and pre-order button\n- how pre-ordering works\n- pickup and payment\n- a menu teaser\n- visit details\n- an About section\n- a closing call to action\n- the footer\n\n**Changes made in review:**\n- **Removed claims:** \"ready when you arrive\" and \"Fresh from our kitchen\" are gone, because the proposal doesn't support them.\n- **Privacy wording:** the footer privacy line was cut back to what the proposal says.\n- **Marked as unconfirmed:** pickup now carries a \"to be confirmed\" marker.\n\n**Known limits:**\n- **Bakery facts missing:** the bakery name, hours, address, phone, email, menu items and About text are bracketed placeholders. The proposal didn't give them, so the bakery has to supply them.\n- **Terms not confirmed:** pickup only, pay on collection and the order cut-off came from the proposal as suggestions. They stay marked \"to be confirmed\" until the bakery agrees to them in writing. Delete the cut-off and pay-on-collection lines if the bakery doesn't confirm them.\n- **Privacy wording unsettled:** the page collects a name and phone number, and the footer wording on how they're used and how long they're kept is still a placeholder. The bakery and a qualified person need to settle it. The legal check was automated and isn't legal advice.\n- **Internal note in the copy:** a \"NOTE FOR THE BAKERY\" sits at the top of the body, and both reviewers flagged it. Remove it before the copy goes on the page.\n- **Not checked:** the reviews didn't cover allergen rules for any menu details added later, cookies or analytics, the order form, or the final page build.\n- **Writer's claims list only:** beyond the two reviews, the CEO's final check relied on the writer's claims list and verified nothing further.\n\nEvery bracketed item has to be filled in or removed before the page goes live.",
+  "is_error": false,
+  "operator_could_use": [
+   "Task",
+   "Bash",
+   "CronCreate",
+   "CronDelete",
+   "CronList",
+   "DesignSync",
+   "Edit",
+   "EnterWorktree",
+   "ExitWorktree",
+   "Glob",
+   "Grep",
+   "ListAgents",
+   "ListMcpResourcesTool",
+   "Monitor",
+   "NotebookEdit",
+   "PowerShell",
+   "PushNotification",
+   "Read",
+   "ReadMcpResourceDirTool",
+   "ReadMcpResourceTool",
+   "RemoteTrigger",
+   "ReportFindings",
+   "ScheduleWakeup",
+   "SendMessage",
+   "Skill",
+   "TaskStop",
+   "ToolSearch",
+   "WebSearch",
+   "Write",
+   "mcp__claude_ai_Claude_Docs__batch",
+   "mcp__claude_ai_Claude_Docs__create",
+   "mcp__claude_ai_Claude_Docs__delete",
+   "mcp__claude_ai_Claude_Docs__export",
+   "mcp__claude_ai_Claude_Docs__guide",
+   "mcp__claude_ai_Claude_Docs__query",
+   "mcp__claude_ai_Claude_Docs__read",
+   "mcp__claude_ai_Claude_Docs__update",
+   "mcp__trypro__audit_tail",
+   "mcp__trypro__org_get",
+   "mcp__trypro__org_proposal_get",
+   "mcp__trypro__org_proposal_submit",
+   "mcp__trypro__org_propose",
+   "mcp__trypro__org_skill_judgment_submit",
+   "mcp__trypro__run_next_action",
+   "mcp__trypro__run_start",
+   "mcp__trypro__run_status"
+  ],
+  "operator_called": {
+   "ToolSearch": 1,
+   "mcp__trypro__run_start": 1,
+   "Agent": 10,
+   "mcp__trypro__run_next_action": 10
+  },
+  "role_agents_called": {
+   "trypro-executive-ceo": {
+    "mcp__trypro_role__run_next_action": 2,
+    "mcp__trypro_role__artifact_submit": 3
+   },
+   "trypro-marketing-content-writer": {
+    "mcp__trypro_role__run_next_action": 3,
+    "mcp__trypro_role__workspace_read": 5,
+    "mcp__trypro_role__artifact_submit": 5,
+    "mcp__trypro_role__workspace_list": 1
+   },
+   "trypro-marketing-marketing-lead": {
+    "mcp__trypro_role__run_next_action": 3,
+    "mcp__trypro_role__workspace_read": 3,
+    "mcp__trypro_role__review_submit": 3
+   },
+   "trypro-legal-counsel": {
+    "mcp__trypro_role__run_next_action": 2,
+    "mcp__trypro_role__workspace_read": 2,
+    "mcp__trypro_role__review_submit": 2
+   }
+  },
+  "role_agents_outside_their_server": {},
+  "session_did_more_than_coordinate": [],
+  "usage": {
+   "input": 130,
+   "cache_write": 106645,
+   "cache_read": 1063112,
+   "output": 25436,
+   "cost_usd_at_list_price": 0.6597367
+  },
+  "usage_by_model": {
+   "claude-sonnet-5-5": {
+    "inputTokens": 130,
+    "cacheCreationInputTokens": 106645,
+    "cacheReadInputTokens": 1063112,
+    "outputTokens": 25436
+   }
+  },
+  "subagents": {
+   "spawned": 10,
+   "requested": {
+    "background": 0,
+    "foreground": 10,
+    "unset": 0
+   },
+   "started_in_background": 0,
+   "max_depth": 1,
+   "spawned_by_subagents": 0,
+   "completed": 10,
+   "failed": 0,
+   "killed": {
+    "parent": 0,
+    "user": 0,
+    "system": 0
+   },
+   "refused": {
+    "depth_limit": 0,
+    "concurrency_limit": 0,
+    "budget": 0
+   },
+   "by_type": {
+    "trypro-executive-ceo": 2,
+    "trypro-marketing-content-writer": 3,
+    "trypro-marketing-marketing-lead": 3,
+    "trypro-legal-counsel": 2
+   }
+  },
+  "turns": 23,
+  "minutes": 4.3
+ },
+ "attestation": {
+  "run-8e76df264e84": {
+   "goal": "Write a one-page website proposal for a family bakery that wants online pre-orders.",
+   "phase": "done",
+   "size": "small",
+   "counters": {
+    "invalid_outputs": 0,
+    "rework_loops": 1,
+    "failed_invocations": 0,
+    "escalations": 0,
+    "handoffs": 0,
+    "violations": 0,
+    "package_overruns": 0,
+    "assignments": 8,
+    "amendments": 0
+   },
+   "attested": 10,
+   "claimed": 0,
+   "by_role": [
+    "executive/ceo",
+    "legal/counsel",
+    "sales/proposal-writer",
+    "sales/sales-lead"
+   ]
+  },
+  "run-f5322a3e3612": {
+   "goal": "The bakery liked the proposal. Write the homepage copy for the site we proposed, following that proposal.",
+   "phase": "done",
+   "size": "small",
+   "counters": {
+    "invalid_outputs": 0,
+    "rework_loops": 2,
+    "failed_invocations": 0,
+    "escalations": 0,
+    "handoffs": 0,
+    "violations": 0,
+    "package_overruns": 0,
+    "assignments": 10,
+    "amendments": 0
+   },
+   "attested": 13,
+   "claimed": 0,
+   "by_role": [
+    "executive/ceo",
+    "legal/counsel",
+    "marketing/content-writer",
+    "marketing/marketing-lead"
+   ]
+  }
+ }
+}

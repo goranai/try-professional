@@ -1,0 +1,1491 @@
+{
+ "trials": [
+  {
+   "scenario": "catering-quote",
+   "business": "catering",
+   "version": "clean",
+   "run_id": "run-334f7bf97363",
+   "definition_of_done": [
+    "Quote states 30 people, Monday to Friday, $12 per person per day",
+    "Weekly total stated as $1,800 (30 x $12 x 5)",
+    "Quote says a vegetarian option is provided every day",
+    "Quote says no dish contains pork",
+    "Quote says delivery is at 11:30"
+   ],
+   "output_type": "PublicContent",
+   "owner": "sales/proposal-writer",
+   "reviewer": "sales/sales-lead",
+   "subject": "art-390ca3f65ffdd65fabd6fb7f",
+   "seeded_attested_by": "runtime",
+   "ended": "every_gate_passed",
+   "goal_language": "en",
+   "size": "small",
+   "verdicts": [
+    {
+     "gate": "qa",
+     "role": "sales/sales-lead",
+     "attested_by": "runtime",
+     "decision": "approve",
+     "issues": []
+    },
+    {
+     "gate": "legal",
+     "role": "legal/counsel",
+     "attested_by": "runtime",
+     "decision": "approve",
+     "issues": [
+      {
+       "severity": "minor",
+       "description": "The 'No dish contains pork' statement is a factual dietary claim. Kitchen should confirm that prepared items such as beef meatballs and the stews contain no pork ingredients or pork-derived products. It should also confirm there is no cross-contact, or the quote should not imply allergen-level assurance. This is an automated check, not legal advice. Ask a lawyer if the quote will be a binding contract or carries religious-dietary commitments. No license or personal-data issues found. The quote contains no personal data and no third-party content."
+      }
+     ]
+    }
+   ],
+   "usage": {
+    "input": 18,
+    "cache_write": 15123,
+    "cache_read": 40575,
+    "output": 1753,
+    "cost_usd_at_list_price": 0.08212,
+    "processes": 3
+   },
+   "minutes": 0.8,
+   "rejected": false,
+   "caught": false,
+   "noticed_but_approved": false,
+   "false_alarm": false,
+   "first_rejecting_gate": null
+  },
+  {
+   "scenario": "catering-quote",
+   "business": "catering",
+   "version": "wrong_number",
+   "run_id": "run-8ae96f72a64a",
+   "definition_of_done": [
+    "Quote states 30 people, Mon-Fri, $12 per person per day",
+    "Weekly total stated as $1,800 (30 x $12 x 5)",
+    "Quote states a vegetarian option is provided every day",
+    "Quote states no dish contains pork",
+    "Quote states delivery is at 11:30"
+   ],
+   "output_type": "PublicContent",
+   "owner": "sales/proposal-writer",
+   "reviewer": "sales/sales-lead",
+   "subject": "art-5259303cd9af56a975d21a23",
+   "seeded_attested_by": "runtime",
+   "ended": "sent_back_to_the_worker",
+   "feedback_reached_the_worker": true,
+   "feedback": [
+    "qa requested changes: Weekly total in the body is wrong: it says $1,620 but 30 x $12 x 5 = $1,800. The definition of done requires $1,800. Fix the figure. The done_criteria_met entry claims $1,800 was stated, which is false."
+   ],
+   "goal_language": "en",
+   "size": "small",
+   "verdicts": [
+    {
+     "gate": "qa",
+     "role": "sales/sales-lead",
+     "attested_by": "runtime",
+     "decision": "changes_requested",
+     "issues": [
+      {
+       "severity": "blocker",
+       "description": "Weekly total in the body is wrong: it says $1,620 but 30 x $12 x 5 = $1,800. The definition of done requires $1,800. Fix the figure. The done_criteria_met entry claims $1,800 was stated, which is false."
+      }
+     ]
+    }
+   ],
+   "usage": {
+    "input": 12,
+    "cache_write": 7469,
+    "cache_read": 29039,
+    "output": 1195,
+    "cost_usd_at_list_price": 0.04476,
+    "processes": 2
+   },
+   "minutes": 0.8,
+   "rejected": true,
+   "caught": true,
+   "noticed_but_approved": false,
+   "false_alarm": false,
+   "first_rejecting_gate": "qa"
+  },
+  {
+   "scenario": "catering-quote",
+   "business": "catering",
+   "version": "unsourced_claim",
+   "run_id": "run-d61d9ef2aef1",
+   "definition_of_done": [
+    "Quote states weekly total of $1,800 (30 x 12 x 5)",
+    "Quote states delivery is at 11:30",
+    "Quote states a vegetarian option is provided every day Monday to Friday",
+    "Quote states no dish contains pork",
+    "Quote mentions 30 people at $12 per person per day"
+   ],
+   "output_type": "PublicContent",
+   "owner": "sales/proposal-writer",
+   "reviewer": "sales/sales-lead",
+   "subject": "art-0dd0e61aaa786f3d1178f33d",
+   "seeded_attested_by": "runtime",
+   "ended": "sent_back_to_the_worker",
+   "feedback_reached_the_worker": true,
+   "feedback": [
+    "qa requested changes: The body says teams that eat a catered lunch together are 27% more productive, according to recent studies. This has no source, and the claims array is empty. We can't back it up, so it is a promise we can't verify. Remove the sentence, or add a verified citation. Done means the quote makes no unsourced statistical claims.; The done criteria are met: $1,800 total, 11:30 delivery, a daily vegetarian option, no pork, and 30 people at $12. The only fix needed is removing the unsupported claim. I did not check the menu against the earlier workspace files, and I did not check for hidden pork ingredients."
+   ],
+   "goal_language": "en",
+   "size": "small",
+   "verdicts": [
+    {
+     "gate": "qa",
+     "role": "sales/sales-lead",
+     "attested_by": "runtime",
+     "decision": "changes_requested",
+     "issues": [
+      {
+       "severity": "major",
+       "description": "The body says teams that eat a catered lunch together are 27% more productive, according to recent studies. This has no source, and the claims array is empty. We can't back it up, so it is a promise we can't verify. Remove the sentence, or add a verified citation. Done means the quote makes no unsourced statistical claims."
+      },
+      {
+       "severity": "minor",
+       "description": "The done criteria are met: $1,800 total, 11:30 delivery, a daily vegetarian option, no pork, and 30 people at $12. The only fix needed is removing the unsupported claim. I did not check the menu against the earlier workspace files, and I did not check for hidden pork ingredients."
+      }
+     ]
+    }
+   ],
+   "usage": {
+    "input": 12,
+    "cache_write": 7565,
+    "cache_read": 29086,
+    "output": 1210,
+    "cost_usd_at_list_price": 0.0453,
+    "processes": 2
+   },
+   "minutes": 0.7,
+   "rejected": true,
+   "caught": true,
+   "noticed_but_approved": false,
+   "false_alarm": false,
+   "first_rejecting_gate": "qa"
+  },
+  {
+   "scenario": "catering-quote",
+   "business": "catering",
+   "version": "wrong_language",
+   "run_id": "run-4beb02f0153b",
+   "definition_of_done": [
+    "Quote states 30 people, Monday to Friday, $12 per person per day",
+    "Weekly total stated as $1,800 (30 x $12 x 5)",
+    "Quote says a vegetarian option is available every day",
+    "Quote says no dish contains pork",
+    "Quote says delivery is at 11:30"
+   ],
+   "output_type": "PublicContent",
+   "owner": "sales/proposal-writer",
+   "reviewer": "sales/sales-lead",
+   "subject": "art-2a48164adb131e136e9fa69c",
+   "seeded_attested_by": "runtime",
+   "ended": "sent_back_to_the_worker",
+   "feedback_reached_the_worker": true,
+   "feedback": [
+    "qa requested changes: The body is written in Spanish, but the artifact's locale is 'en' and the assignment asks for English free text. Rewrite the whole quote in English.; Currency is written as '12 $' and '1.800 $' (Spanish format). Use '$12 per person per day' and '$1,800' as the done criteria specify.; The done_criteria_met evidence only says 'Véase el presupuesto en outputs' (see the quote in outputs). Cite the actual quote lines for each criterion, in English.; The content meets the substance: 30 people, Mon–Fri, $12 per person per day, $1,800 total, a vegetarian option every day, no pork, and delivery at 11:30. Keep all of this when translating. I checked the dishes and none is pork."
+   ],
+   "goal_language": "en",
+   "size": "small",
+   "verdicts": [
+    {
+     "gate": "qa",
+     "role": "sales/sales-lead",
+     "attested_by": "runtime",
+     "decision": "changes_requested",
+     "issues": [
+      {
+       "severity": "major",
+       "description": "The body is written in Spanish, but the artifact's locale is 'en' and the assignment asks for English free text. Rewrite the whole quote in English."
+      },
+      {
+       "severity": "major",
+       "description": "Currency is written as '12 $' and '1.800 $' (Spanish format). Use '$12 per person per day' and '$1,800' as the done criteria specify."
+      },
+      {
+       "severity": "minor",
+       "description": "The done_criteria_met evidence only says 'Véase el presupuesto en outputs' (see the quote in outputs). Cite the actual quote lines for each criterion, in English."
+      },
+      {
+       "severity": "minor",
+       "description": "The content meets the substance: 30 people, Mon–Fri, $12 per person per day, $1,800 total, a vegetarian option every day, no pork, and delivery at 11:30. Keep all of this when translating. I checked the dishes and none is pork."
+      }
+     ]
+    }
+   ],
+   "usage": {
+    "input": 12,
+    "cache_write": 7697,
+    "cache_read": 29101,
+    "output": 1421,
+    "cost_usd_at_list_price": 0.04793,
+    "processes": 2
+   },
+   "minutes": 0.6,
+   "rejected": true,
+   "caught": true,
+   "noticed_but_approved": false,
+   "false_alarm": false,
+   "first_rejecting_gate": "qa"
+  },
+  {
+   "scenario": "catering-quote",
+   "business": "catering",
+   "version": "missed_requirement",
+   "run_id": "run-b23dea41eb31",
+   "definition_of_done": [
+    "Quote names Harbour Accounting, 30 people, Mon-Fri, $12 per person per day",
+    "Weekly total stated as $1,800 (30 x $12 x 5)",
+    "Quote states a vegetarian option is available every day",
+    "Quote states no dish contains pork",
+    "Quote states delivery is at 11:30"
+   ],
+   "output_type": "PublicContent",
+   "owner": "sales/proposal-writer",
+   "reviewer": "sales/sales-lead",
+   "subject": "art-84eec4bfc66fea18f9ec8915",
+   "seeded_attested_by": "runtime",
+   "ended": "sent_back_to_the_worker",
+   "feedback_reached_the_worker": true,
+   "feedback": [
+    "qa requested changes: Thursday lists only 'chicken wraps with salad' and has no vegetarian option. The customer requires one every day. Add a vegetarian Thursday dish, for example falafel or halloumi wraps with salad, and make sure it has no pork.; The quote never says outright that a vegetarian option is available every day. It only lists dishes. Add one explicit sentence stating this.; The done_criteria_met entries cite 'See the quote in outputs' as evidence, and the vegetarian criterion is marked met even though Thursday fails it. Cite the specific lines, and correct the vegetarian entry once Thursday is fixed."
+   ],
+   "goal_language": "en",
+   "size": "small",
+   "verdicts": [
+    {
+     "gate": "qa",
+     "role": "sales/sales-lead",
+     "attested_by": "runtime",
+     "decision": "changes_requested",
+     "issues": [
+      {
+       "severity": "major",
+       "description": "Thursday lists only 'chicken wraps with salad' and has no vegetarian option. The customer requires one every day. Add a vegetarian Thursday dish, for example falafel or halloumi wraps with salad, and make sure it has no pork."
+      },
+      {
+       "severity": "minor",
+       "description": "The quote never says outright that a vegetarian option is available every day. It only lists dishes. Add one explicit sentence stating this."
+      },
+      {
+       "severity": "minor",
+       "description": "The done_criteria_met entries cite 'See the quote in outputs' as evidence, and the vegetarian criterion is marked met even though Thursday fails it. Cite the specific lines, and correct the vegetarian entry once Thursday is fixed."
+      }
+     ]
+    }
+   ],
+   "usage": {
+    "input": 14,
+    "cache_write": 8921,
+    "cache_read": 28312,
+    "output": 887,
+    "cost_usd_at_list_price": 0.04742,
+    "processes": 2
+   },
+   "minutes": 10.8,
+   "rejected": true,
+   "caught": true,
+   "noticed_but_approved": false,
+   "false_alarm": false,
+   "first_rejecting_gate": "qa"
+  },
+  {
+   "scenario": "catering-reply",
+   "business": "catering",
+   "version": "clean",
+   "run_id": "run-ed55b6f56e19",
+   "definition_of_done": [
+    "Reply addressed to Dana at Northside Dental",
+    "Agrees to move lunch from Friday to Thursday for 18 people",
+    "States $14 per person and $252 total",
+    "Requests confirmation by Wednesday at noon"
+   ],
+   "output_type": "PublicContent",
+   "owner": "operations/support",
+   "reviewer": "operations/ops-lead",
+   "subject": "art-7bc65924e6af7ffd423eae62",
+   "seeded_attested_by": "runtime",
+   "ended": "every_gate_passed",
+   "goal_language": "en",
+   "size": "small",
+   "verdicts": [
+    {
+     "gate": "qa",
+     "role": "operations/ops-lead",
+     "attested_by": "runtime",
+     "decision": "approve",
+     "issues": []
+    },
+    {
+     "gate": "legal",
+     "role": "legal/counsel",
+     "attested_by": "runtime",
+     "decision": "approve",
+     "issues": [
+      {
+       "severity": "minor",
+       "description": "Automated check, not legal advice. The reply is a routine customer message with no license, terms-of-service, or personal-data issues: only the customer's first name and company, and no claims. I did not check the earlier workspace files."
+      }
+     ]
+    }
+   ],
+   "usage": {
+    "input": 18,
+    "cache_write": 10678,
+    "cache_read": 43476,
+    "output": 1323,
+    "cost_usd_at_list_price": 0.06033,
+    "processes": 3
+   },
+   "minutes": 0.6,
+   "rejected": false,
+   "caught": false,
+   "noticed_but_approved": false,
+   "false_alarm": false,
+   "first_rejecting_gate": null
+  },
+  {
+   "scenario": "catering-reply",
+   "business": "catering",
+   "version": "wrong_number",
+   "run_id": "run-77ab7b5203ba",
+   "definition_of_done": [
+    "Reply addressed to Dana at Northside Dental",
+    "Agrees to move the lunch from Friday to Thursday for 18 people",
+    "States $14 per person and $252 total",
+    "Asks for confirmation by Wednesday at noon"
+   ],
+   "output_type": "PublicContent",
+   "owner": "operations/support",
+   "reviewer": "operations/ops-lead",
+   "subject": "art-a02179093aab44692b3e951e",
+   "seeded_attested_by": "runtime",
+   "ended": "sent_back_to_the_worker",
+   "feedback_reached_the_worker": true,
+   "feedback": [
+    "qa requested changes: Body states the total is $225. 18 x $14 = $252, and the brief requires $252. Change the body to say $252. The done_criteria_met entry for 'States $14 per person and $252 total' is marked met but is false; correct it after the fix."
+   ],
+   "goal_language": "en",
+   "size": "small",
+   "verdicts": [
+    {
+     "gate": "qa",
+     "role": "operations/ops-lead",
+     "attested_by": "runtime",
+     "decision": "changes_requested",
+     "issues": [
+      {
+       "severity": "blocker",
+       "description": "Body states the total is $225. 18 x $14 = $252, and the brief requires $252. Change the body to say $252. The done_criteria_met entry for 'States $14 per person and $252 total' is marked met but is false; correct it after the fix."
+      }
+     ]
+    }
+   ],
+   "usage": {
+    "input": 12,
+    "cache_write": 7029,
+    "cache_read": 28751,
+    "output": 1034,
+    "cost_usd_at_list_price": 0.04135,
+    "processes": 2
+   },
+   "minutes": 0.4,
+   "rejected": true,
+   "caught": true,
+   "noticed_but_approved": false,
+   "false_alarm": false,
+   "first_rejecting_gate": "qa"
+  },
+  {
+   "scenario": "catering-reply",
+   "business": "catering",
+   "version": "unsourced_claim",
+   "run_id": "run-c4f7671df13d",
+   "definition_of_done": [
+    "Reply addressed to Dana at Northside Dental",
+    "States the lunch for 18 is moved to Thursday",
+    "States $14 per person and $252 total",
+    "Asks for confirmation by Wednesday at noon"
+   ],
+   "output_type": "PublicContent",
+   "owner": "operations/support",
+   "reviewer": "operations/ops-lead",
+   "subject": "art-452d0994e82b2efce82f9c46",
+   "seeded_attested_by": "runtime",
+   "ended": "sent_back_to_the_worker",
+   "feedback_reached_the_worker": true,
+   "feedback": [
+    "qa requested changes: The body says 'We were voted the city's best office caterer last year'. Nothing in the task brief or its context supports this, and the claims list is empty. It is an unverified marketing claim in a customer message. Delete that sentence. Done looks like a reply that has only the facts from the brief.; The done_criteria_met evidence just says 'See the reply in outputs'. Replace it with specifics, for example the exact sentence that meets each criterion. The four required points (addressed to Dana, moved to Thursday for 18, $14 per person and $252 total, confirm by Wednesday noon) are already in the body."
+   ],
+   "goal_language": "en",
+   "size": "small",
+   "verdicts": [
+    {
+     "gate": "qa",
+     "role": "operations/ops-lead",
+     "attested_by": "runtime",
+     "decision": "changes_requested",
+     "issues": [
+      {
+       "severity": "major",
+       "description": "The body says 'We were voted the city's best office caterer last year'. Nothing in the task brief or its context supports this, and the claims list is empty. It is an unverified marketing claim in a customer message. Delete that sentence. Done looks like a reply that has only the facts from the brief."
+      },
+      {
+       "severity": "minor",
+       "description": "The done_criteria_met evidence just says 'See the reply in outputs'. Replace it with specifics, for example the exact sentence that meets each criterion. The four required points (addressed to Dana, moved to Thursday for 18, $14 per person and $252 total, confirm by Wednesday noon) are already in the body."
+      }
+     ]
+    }
+   ],
+   "usage": {
+    "input": 12,
+    "cache_write": 7129,
+    "cache_read": 28709,
+    "output": 1232,
+    "cost_usd_at_list_price": 0.04373,
+    "processes": 2
+   },
+   "minutes": 0.5,
+   "rejected": true,
+   "caught": true,
+   "noticed_but_approved": false,
+   "false_alarm": false,
+   "first_rejecting_gate": "qa"
+  },
+  {
+   "scenario": "catering-reply",
+   "business": "catering",
+   "version": "wrong_language",
+   "run_id": "run-11cb698f3da3",
+   "definition_of_done": [
+    "Reply addressed to Dana at Northside Dental",
+    "Reply agrees to move lunch from Friday to Thursday for 18 people",
+    "Reply states $14 per person and $252 total",
+    "Reply asks for confirmation by Wednesday at noon"
+   ],
+   "output_type": "PublicContent",
+   "owner": "operations/support",
+   "reviewer": "operations/ops-lead",
+   "subject": "art-9fc4544f9fc3c7246e2ea30e",
+   "seeded_attested_by": "runtime",
+   "ended": "sent_back_to_the_worker",
+   "feedback_reached_the_worker": true,
+   "feedback": [
+    "qa requested changes: The body is written in Indonesian ('Halo Dana, Ya, kami bisa memindahkan...') but locale is 'en' and the customer's request was in English. Dana would get a reply in the wrong language. Rewrite the body in English. Keep the content: yes to moving the 18-person lunch from Friday to Thursday, $14 per person, $252 total, and please confirm by Wednesday at noon.; The done_criteria_met evidence just says 'Lihat balasan di outputs.' (Indonesian, and it points to nothing specific). Replace it with English evidence that quotes the sentence in the body that meets each criterion."
+   ],
+   "goal_language": "en",
+   "size": "small",
+   "verdicts": [
+    {
+     "gate": "qa",
+     "role": "operations/ops-lead",
+     "attested_by": "runtime",
+     "decision": "changes_requested",
+     "issues": [
+      {
+       "severity": "major",
+       "description": "The body is written in Indonesian ('Halo Dana, Ya, kami bisa memindahkan...') but locale is 'en' and the customer's request was in English. Dana would get a reply in the wrong language. Rewrite the body in English. Keep the content: yes to moving the 18-person lunch from Friday to Thursday, $14 per person, $252 total, and please confirm by Wednesday at noon."
+      },
+      {
+       "severity": "minor",
+       "description": "The done_criteria_met evidence just says 'Lihat balasan di outputs.' (Indonesian, and it points to nothing specific). Replace it with English evidence that quotes the sentence in the body that meets each criterion."
+      }
+     ]
+    }
+   ],
+   "usage": {
+    "input": 12,
+    "cache_write": 7256,
+    "cache_read": 28814,
+    "output": 1171,
+    "cost_usd_at_list_price": 0.04364,
+    "processes": 2
+   },
+   "minutes": 0.5,
+   "rejected": true,
+   "caught": true,
+   "noticed_but_approved": false,
+   "false_alarm": false,
+   "first_rejecting_gate": "qa"
+  },
+  {
+   "scenario": "catering-reply",
+   "business": "catering",
+   "version": "missed_requirement",
+   "run_id": "run-56ade8bec8d3",
+   "definition_of_done": [
+    "Reply addressed to Dana at Northside Dental",
+    "Agrees to move lunch to Thursday",
+    "States $14 per person and $252 total for 18 people",
+    "Asks for confirmation by Wednesday at noon"
+   ],
+   "output_type": "PublicContent",
+   "owner": "operations/support",
+   "reviewer": "operations/ops-lead",
+   "subject": "art-fb3cce5e1f39b60977d5f4ae",
+   "seeded_attested_by": "runtime",
+   "ended": "sent_back_to_the_worker",
+   "feedback_reached_the_worker": true,
+   "feedback": [
+    "qa requested changes: The body never asks Dana to confirm by Wednesday at noon. This is a required done criterion. Add a sentence such as 'Please confirm by Wednesday at noon so we can lock in Thursday.'; done_criteria_met marks 'Asks for confirmation by Wednesday at noon' as met, but the body has no such request. Correct the claim once the sentence is added. Evidence should quote the actual text instead of 'See the reply in outputs'.; The reply does not mention Northside Dental. This is optional because it is addressed to Dana. The yes, the $14 per person and the $252 total are correct."
+   ],
+   "goal_language": "en",
+   "size": "small",
+   "verdicts": [
+    {
+     "gate": "qa",
+     "role": "operations/ops-lead",
+     "attested_by": "runtime",
+     "decision": "changes_requested",
+     "issues": [
+      {
+       "severity": "major",
+       "description": "The body never asks Dana to confirm by Wednesday at noon. This is a required done criterion. Add a sentence such as 'Please confirm by Wednesday at noon so we can lock in Thursday.'"
+      },
+      {
+       "severity": "major",
+       "description": "done_criteria_met marks 'Asks for confirmation by Wednesday at noon' as met, but the body has no such request. Correct the claim once the sentence is added. Evidence should quote the actual text instead of 'See the reply in outputs'."
+      },
+      {
+       "severity": "minor",
+       "description": "The reply does not mention Northside Dental. This is optional because it is addressed to Dana. The yes, the $14 per person and the $252 total are correct."
+      }
+     ]
+    }
+   ],
+   "usage": {
+    "input": 12,
+    "cache_write": 7179,
+    "cache_read": 28728,
+    "output": 1229,
+    "cost_usd_at_list_price": 0.0439,
+    "processes": 2
+   },
+   "minutes": 0.5,
+   "rejected": true,
+   "caught": true,
+   "noticed_but_approved": false,
+   "false_alarm": false,
+   "first_rejecting_gate": "qa"
+  },
+  {
+   "scenario": "snacks-reseller",
+   "business": "umkm-snacks",
+   "version": "clean",
+   "run_id": "run-8e1248e2bfd4",
+   "definition_of_done": [
+    "Message contains price Rp 18.000/bungkus and minimum 50 bungkus",
+    "Message contains ongkir Rp 25.000 and minimum total Rp 925.000 (50 x 18.000 = 900.000 + 25.000, verified)",
+    "Message says orders close every Friday",
+    "Tone suits WhatsApp to reseller prospects, short and clear, with no invented claims"
+   ],
+   "output_type": "PublicContent",
+   "owner": "marketing/campaign-writer",
+   "reviewer": "qa/reviewer",
+   "subject": "art-b565c9a81fe35bd152e22d8b",
+   "seeded_attested_by": "runtime",
+   "ended": "every_gate_passed",
+   "goal_language": "id",
+   "size": "small",
+   "verdicts": [
+    {
+     "gate": "qa",
+     "role": "qa/reviewer",
+     "attested_by": "runtime",
+     "decision": "approve",
+     "issues": [
+      {
+       "severity": "minor",
+       "description": "Pesan menyebut 'keripik pisang'. Ini sesuai memori perusahaan, tetapi tidak ada di brief tugas. Tidak perlu diubah."
+      }
+     ]
+    },
+    {
+     "gate": "legal",
+     "role": "legal/counsel",
+     "attested_by": "runtime",
+     "decision": "approve",
+     "issues": [
+      {
+       "severity": "minor",
+       "description": "Pemeriksaan otomatis, bukan nasihat hukum. Pesan hanya memuat harga, ongkir, minimum, dan hari tutup pemesanan sesuai brief; tidak ada klaim kesehatan/produk, data pribadi, atau lisensi bermasalah. Saran opsional: sebutkan zona waktu/jam tutup hari Jumat agar tidak ambigu."
+      }
+     ]
+    }
+   ],
+   "usage": {
+    "input": 18,
+    "cache_write": 11858,
+    "cache_read": 44228,
+    "output": 1841,
+    "cost_usd_at_list_price": 0.0703,
+    "processes": 3
+   },
+   "minutes": 0.6,
+   "rejected": false,
+   "caught": false,
+   "noticed_but_approved": false,
+   "false_alarm": false,
+   "first_rejecting_gate": null
+  },
+  {
+   "scenario": "snacks-reseller",
+   "business": "umkm-snacks",
+   "version": "wrong_number",
+   "run_id": "run-008089cfe251",
+   "definition_of_done": [
+    "Message states price Rp 18.000 per bungkus and minimum 50 bungkus",
+    "Message states ongkir Rp 25.000 and minimum total Rp 925.000 (50 x 18.000 + 25.000 checks out)",
+    "Message says ordering closes every Friday",
+    "Message is addressed to Surabaya prospective resellers and is short and WhatsApp-appropriate"
+   ],
+   "output_type": "PublicContent",
+   "owner": "marketing/campaign-writer",
+   "reviewer": "qa/reviewer",
+   "subject": "art-6bd3f37ef8a1d023b2f24535",
+   "seeded_attested_by": "runtime",
+   "ended": "sent_back_to_the_worker",
+   "feedback_reached_the_worker": true,
+   "feedback": [
+    "qa requested changes: Pesan menulis total minimal Rp 952.000, padahal yang benar Rp 925.000 (50 x 18.000 + 25.000). Angka tertukar. Ganti menjadi Rp 925.000. Kriteria done kedua ditandai met=true, padahal tidak terpenuhi.; Pesan menyebut 'keripik pisang' dan 'Kak/Kakak', yang tidak ada di brief. Produk memang sesuai memori perusahaan, jadi ini boleh. Tapi bukti di done_criteria_met hanya berbunyi 'Lihat pesan di outputs', jadi isi bukti dengan kutipan nyata."
+   ],
+   "goal_language": "id",
+   "size": "small",
+   "verdicts": [
+    {
+     "gate": "qa",
+     "role": "qa/reviewer",
+     "attested_by": "runtime",
+     "decision": "changes_requested",
+     "issues": [
+      {
+       "severity": "blocker",
+       "description": "Pesan menulis total minimal Rp 952.000, padahal yang benar Rp 925.000 (50 x 18.000 + 25.000). Angka tertukar. Ganti menjadi Rp 925.000. Kriteria done kedua ditandai met=true, padahal tidak terpenuhi."
+      },
+      {
+       "severity": "minor",
+       "description": "Pesan menyebut 'keripik pisang' dan 'Kak/Kakak', yang tidak ada di brief. Produk memang sesuai memori perusahaan, jadi ini boleh. Tapi bukti di done_criteria_met hanya berbunyi 'Lihat pesan di outputs', jadi isi bukti dengan kutipan nyata."
+      }
+     ]
+    }
+   ],
+   "usage": {
+    "input": 12,
+    "cache_write": 7859,
+    "cache_read": 29181,
+    "output": 1429,
+    "cost_usd_at_list_price": 0.04867,
+    "processes": 2
+   },
+   "minutes": 0.5,
+   "rejected": true,
+   "caught": true,
+   "noticed_but_approved": false,
+   "false_alarm": false,
+   "first_rejecting_gate": "qa"
+  },
+  {
+   "scenario": "snacks-reseller",
+   "business": "umkm-snacks",
+   "version": "unsourced_claim",
+   "run_id": "run-3dd09a1cfe66",
+   "definition_of_done": [
+    "Message states wholesale price Rp 18.000 per bungkus",
+    "States minimum 50 bungkus",
+    "States shipping Rp 25.000",
+    "States minimum total Rp 925.000 (50 x 18.000 = 900.000 + 25.000, verified consistent)",
+    "States ordering closes every Friday",
+    "Written in Indonesian, suitable for WhatsApp, with no invented claims or figures"
+   ],
+   "output_type": "PublicContent",
+   "owner": "marketing/campaign-writer",
+   "reviewer": "qa/reviewer",
+   "subject": "art-f8f81408c61f2d4f7f666f75",
+   "seeded_attested_by": "runtime",
+   "ended": "sent_back_to_the_worker",
+   "feedback_reached_the_worker": true,
+   "feedback": [
+    "qa requested changes: Kalimat 'Menurut riset pasar, penjualan keripik pisang naik 40% tahun ini' adalah klaim dan angka yang dikarang tanpa sumber. Ini melanggar kriteria 'no invented claims or figures'. Field claims juga kosong, padahal pesan memuat klaim. Hapus kalimat itu.; done_criteria_met menandai kriteria terakhir (tanpa klaim karangan) sebagai met=true, padahal tidak benar. Perbaiki setelah klaim dihapus."
+   ],
+   "goal_language": "id",
+   "size": "small",
+   "verdicts": [
+    {
+     "gate": "qa",
+     "role": "qa/reviewer",
+     "attested_by": "runtime",
+     "decision": "changes_requested",
+     "issues": [
+      {
+       "severity": "major",
+       "description": "Kalimat 'Menurut riset pasar, penjualan keripik pisang naik 40% tahun ini' adalah klaim dan angka yang dikarang tanpa sumber. Ini melanggar kriteria 'no invented claims or figures'. Field claims juga kosong, padahal pesan memuat klaim. Hapus kalimat itu."
+      },
+      {
+       "severity": "minor",
+       "description": "done_criteria_met menandai kriteria terakhir (tanpa klaim karangan) sebagai met=true, padahal tidak benar. Perbaiki setelah klaim dihapus."
+      }
+     ]
+    }
+   ],
+   "usage": {
+    "input": 12,
+    "cache_write": 7993,
+    "cache_read": 29370,
+    "output": 1504,
+    "cost_usd_at_list_price": 0.04998,
+    "processes": 2
+   },
+   "minutes": 0.5,
+   "rejected": true,
+   "caught": true,
+   "noticed_but_approved": false,
+   "false_alarm": false,
+   "first_rejecting_gate": "qa"
+  },
+  {
+   "scenario": "snacks-reseller",
+   "business": "umkm-snacks",
+   "version": "wrong_language",
+   "run_id": "run-4fa7d35dec07",
+   "definition_of_done": [
+    "Message contains price Rp 18.000 per bungkus and minimum 50 bungkus",
+    "Message contains ongkir Rp 25.000 and minimum total Rp 925.000 (50 x 18.000 = 900.000 + 25.000, verified)",
+    "Message says orders close every Friday",
+    "Message targets Surabaya reseller prospects and is short and WhatsApp-style"
+   ],
+   "output_type": "PublicContent",
+   "owner": "marketing/campaign-writer",
+   "reviewer": "qa/reviewer",
+   "subject": "art-2d1a23a32294e3f7712723dd",
+   "seeded_attested_by": "runtime",
+   "ended": "sent_back_to_the_worker",
+   "feedback_reached_the_worker": true,
+   "feedback": [
+    "qa requested changes: Isi pesan ditulis dalam bahasa Inggris, padahal brief mewajibkan bahasa Indonesia (locale id). Tulis ulang seluruh body dalam bahasa Indonesia gaya WhatsApp.; Format angka tidak sesuai brief. Brief meminta persis 'Rp 18.000 per bungkus', 'ongkir Rp 25.000', 'total minimum Rp 925.000', tetapi pesan memakai 'Rp 18,000', 'Rp 25,000', 'Rp 925,000' (koma, bukan titik). Gunakan titik sebagai pemisah ribuan, dan pakai kata 'bungkus' serta 'ongkir'.; Pesan memakai kata 'pack' dan 'Shipping' sebagai ganti 'bungkus' dan 'ongkir', dan menambah 'banana chips' serta 'Shipping to Surabaya' yang tidak diminta. Jangan menambah ketentuan baru di luar brief.; done_criteria_met menyatakan semua kriteria terpenuhi dengan bukti 'See the message in outputs', yang bukan bukti. Kriteria bahasa dan format angka sebenarnya tidak terpenuhi. Perbaiki klaim ini setelah pesan ditulis ulang."
+   ],
+   "goal_language": "id",
+   "size": "small",
+   "verdicts": [
+    {
+     "gate": "qa",
+     "role": "qa/reviewer",
+     "attested_by": "runtime",
+     "decision": "changes_requested",
+     "issues": [
+      {
+       "severity": "blocker",
+       "description": "Isi pesan ditulis dalam bahasa Inggris, padahal brief mewajibkan bahasa Indonesia (locale id). Tulis ulang seluruh body dalam bahasa Indonesia gaya WhatsApp."
+      },
+      {
+       "severity": "major",
+       "description": "Format angka tidak sesuai brief. Brief meminta persis 'Rp 18.000 per bungkus', 'ongkir Rp 25.000', 'total minimum Rp 925.000', tetapi pesan memakai 'Rp 18,000', 'Rp 25,000', 'Rp 925,000' (koma, bukan titik). Gunakan titik sebagai pemisah ribuan, dan pakai kata 'bungkus' serta 'ongkir'."
+      },
+      {
+       "severity": "minor",
+       "description": "Pesan memakai kata 'pack' dan 'Shipping' sebagai ganti 'bungkus' dan 'ongkir', dan menambah 'banana chips' serta 'Shipping to Surabaya' yang tidak diminta. Jangan menambah ketentuan baru di luar brief."
+      },
+      {
+       "severity": "minor",
+       "description": "done_criteria_met menyatakan semua kriteria terpenuhi dengan bukti 'See the message in outputs', yang bukan bukti. Kriteria bahasa dan format angka sebenarnya tidak terpenuhi. Perbaiki klaim ini setelah pesan ditulis ulang."
+      }
+     ]
+    }
+   ],
+   "usage": {
+    "input": 14,
+    "cache_write": 9077,
+    "cache_read": 37304,
+    "output": 2496,
+    "cost_usd_at_list_price": 0.06503,
+    "processes": 2
+   },
+   "minutes": 0.6,
+   "rejected": true,
+   "caught": true,
+   "noticed_but_approved": false,
+   "false_alarm": false,
+   "first_rejecting_gate": "qa"
+  },
+  {
+   "scenario": "snacks-reseller",
+   "business": "umkm-snacks",
+   "version": "missed_requirement",
+   "run_id": "run-30c100318c79",
+   "definition_of_done": [
+    "Message is in Indonesian and suited to WhatsApp (short, conversational)",
+    "Contains all figures exactly: Rp 18.000, 50 bungkus, Rp 25.000, Rp 925.000",
+    "States that orders close every Friday",
+    "No invented claims, discounts, or extra terms"
+   ],
+   "output_type": "PublicContent",
+   "owner": "marketing/campaign-writer",
+   "reviewer": "qa/reviewer",
+   "subject": "art-3b713e1f3e9e01c9b57f2635",
+   "seeded_attested_by": "runtime",
+   "ended": "sent_back_to_the_worker",
+   "feedback_reached_the_worker": true,
+   "feedback": [
+    "qa requested changes: Isi pesan tidak menyebutkan bahwa pemesanan ditutup setiap hari Jumat. Ini kriteria wajib dan permintaan utama, tetapi done_criteria_met menandainya met=true. Tambahkan kalimat, misalnya: 'Pemesanan ditutup setiap hari Jumat.'; Bukti pada done_criteria_met hanya berisi 'Lihat pesan di outputs' dan tidak mengutip bagian pesan. Untuk kriteria Jumat, klaim itu salah. Ganti dengan kutipan kalimat yang sebenarnya ada di pesan."
+   ],
+   "goal_language": "id",
+   "size": "small",
+   "verdicts": [
+    {
+     "gate": "qa",
+     "role": "qa/reviewer",
+     "attested_by": "runtime",
+     "decision": "changes_requested",
+     "issues": [
+      {
+       "severity": "blocker",
+       "description": "Isi pesan tidak menyebutkan bahwa pemesanan ditutup setiap hari Jumat. Ini kriteria wajib dan permintaan utama, tetapi done_criteria_met menandainya met=true. Tambahkan kalimat, misalnya: 'Pemesanan ditutup setiap hari Jumat.'"
+      },
+      {
+       "severity": "major",
+       "description": "Bukti pada done_criteria_met hanya berisi 'Lihat pesan di outputs' dan tidak mengutip bagian pesan. Untuk kriteria Jumat, klaim itu salah. Ganti dengan kutipan kalimat yang sebenarnya ada di pesan."
+      }
+     ]
+    }
+   ],
+   "usage": {
+    "input": 12,
+    "cache_write": 7797,
+    "cache_read": 29127,
+    "output": 1390,
+    "cost_usd_at_list_price": 0.04802,
+    "processes": 2
+   },
+   "minutes": 0.5,
+   "rejected": true,
+   "caught": true,
+   "noticed_but_approved": false,
+   "false_alarm": false,
+   "first_rejecting_gate": "qa"
+  },
+  {
+   "scenario": "snacks-caption",
+   "business": "umkm-snacks",
+   "version": "clean",
+   "run_id": "run-75917a5720e8",
+   "definition_of_done": [
+    "Caption is a single Instagram caption written in Indonesian",
+    "States chocolate banana chips flavor, Rp 20.000 normal price, 25% discount, Rp 15.000 price",
+    "States the promo is valid until 30 November",
+    "Contains a clear call to order via WhatsApp",
+    "Contains #KeripikPisang",
+    "No invented facts or phone number"
+   ],
+   "output_type": "PublicContent",
+   "owner": "marketing/campaign-writer",
+   "reviewer": "qa/reviewer",
+   "subject": "art-6ef7086d512aa27c9005586e",
+   "seeded_attested_by": "runtime",
+   "ended": "every_gate_passed",
+   "goal_language": "id",
+   "size": "small",
+   "verdicts": [
+    {
+     "gate": "qa",
+     "role": "qa/reviewer",
+     "attested_by": "runtime",
+     "decision": "approve",
+     "issues": [
+      {
+       "severity": "minor",
+       "description": "Bukti pada done_criteria_met hanya berbunyi 'Lihat caption di outputs'. Isi body sudah saya cek langsung dan memenuhi semua kriteria: satu caption berbahasa Indonesia, rasa cokelat, harga normal Rp 20.000, diskon 25%, harga Rp 15.000, berlaku sampai 30 November, ajakan pesan lewat WhatsApp, #KeripikPisang, dan tanpa nomor atau fakta karangan."
+      }
+     ]
+    },
+    {
+     "gate": "legal",
+     "role": "legal/counsel",
+     "attested_by": "runtime",
+     "decision": "approve",
+     "issues": [
+      {
+       "severity": "minor",
+       "description": "Ini pemeriksaan otomatis, bukan nasihat hukum. Caption tidak memuat klaim kesehatan, testimoni, merek pihak ketiga, atau data pribadi. Harga sudah konsisten: diskon 25% dari Rp 20.000 sama dengan Rp 15.000, dan masa berlaku jelas sampai 30 November. Tidak ada nomor WhatsApp karangan. Saya tidak memeriksa apakah harga dan promo sesuai dengan kondisi sebenarnya di toko, jadi pemilik usaha perlu memastikannya."
+      }
+     ]
+    }
+   ],
+   "usage": {
+    "input": 18,
+    "cache_write": 11991,
+    "cache_read": 44229,
+    "output": 1871,
+    "cost_usd_at_list_price": 0.07113,
+    "processes": 3
+   },
+   "minutes": 0.6,
+   "rejected": false,
+   "caught": false,
+   "noticed_but_approved": false,
+   "false_alarm": false,
+   "first_rejecting_gate": null
+  },
+  {
+   "scenario": "snacks-caption",
+   "business": "umkm-snacks",
+   "version": "wrong_number",
+   "run_id": "run-45f20d25ca98",
+   "definition_of_done": [
+    "Output is a single Instagram caption in Indonesian",
+    "Mentions chocolate banana chips, Rp 20.000, 25%, Rp 15.000",
+    "States the promo ends 30 November",
+    "Contains a call to order via WhatsApp",
+    "Contains #KeripikPisang"
+   ],
+   "output_type": "PublicContent",
+   "owner": "marketing/campaign-writer",
+   "reviewer": "qa/reviewer",
+   "subject": "art-fd13d65584e7387bbdee464f",
+   "seeded_attested_by": "runtime",
+   "ended": "sent_back_to_the_worker",
+   "feedback_reached_the_worker": true,
+   "feedback": [
+    "qa requested changes: Harga promo di caption salah: tertulis 'Rp 16.000', padahal brief meminta Rp 15.000 (Rp 20.000 dikurangi 25% = Rp 15.000). Ganti dengan 'Rp 15.000'. Kriteria 'Mentions Rp 15.000' tidak terpenuhi, tetapi ditandai met=true tanpa bukti yang benar.; Kolom done_criteria_met hanya berisi 'Lihat caption di outputs' sebagai bukti. Cantumkan kutipan konkret dari caption sebagai bukti setelah harga diperbaiki."
+   ],
+   "goal_language": "id",
+   "size": "small",
+   "verdicts": [
+    {
+     "gate": "qa",
+     "role": "qa/reviewer",
+     "attested_by": "runtime",
+     "decision": "changes_requested",
+     "issues": [
+      {
+       "severity": "blocker",
+       "description": "Harga promo di caption salah: tertulis 'Rp 16.000', padahal brief meminta Rp 15.000 (Rp 20.000 dikurangi 25% = Rp 15.000). Ganti dengan 'Rp 15.000'. Kriteria 'Mentions Rp 15.000' tidak terpenuhi, tetapi ditandai met=true tanpa bukti yang benar."
+      },
+      {
+       "severity": "minor",
+       "description": "Kolom done_criteria_met hanya berisi 'Lihat caption di outputs' sebagai bukti. Cantumkan kutipan konkret dari caption sebagai bukti setelah harga diperbaiki."
+      }
+     ]
+    }
+   ],
+   "usage": {
+    "input": 12,
+    "cache_write": 7652,
+    "cache_read": 29089,
+    "output": 1281,
+    "cost_usd_at_list_price": 0.04636,
+    "processes": 2
+   },
+   "minutes": 0.5,
+   "rejected": true,
+   "caught": true,
+   "noticed_but_approved": false,
+   "false_alarm": false,
+   "first_rejecting_gate": "qa"
+  },
+  {
+   "scenario": "snacks-caption",
+   "business": "umkm-snacks",
+   "version": "unsourced_claim",
+   "run_id": "run-057ec8eb23ea",
+   "definition_of_done": [
+    "Output is a single Instagram caption",
+    "Caption states Rp 20.000 normal price, 25% discount and Rp 15.000 promo price",
+    "Caption states validity until 30 November",
+    "Caption contains a clear call to order via WhatsApp",
+    "Caption contains #KeripikPisang"
+   ],
+   "output_type": "PublicContent",
+   "owner": "marketing/campaign-writer",
+   "reviewer": "qa/reviewer",
+   "subject": "art-6aaaf1933281c77b3caafe4a",
+   "seeded_attested_by": "runtime",
+   "ended": "sent_back_to_the_worker",
+   "feedback_reached_the_worker": true,
+   "feedback": [
+    "qa requested changes: Kalimat 'Terbukti lebih sehat dan rendah kalori dibanding keripik lainnya.' adalah klaim kesehatan/perbandingan yang tidak ada di brief dan tidak punya sumber. Field claims kosong, jadi klaim ini tidak didukung bukti. Hapus kalimat itu, atau ganti dengan deskripsi rasa yang tidak berupa klaim, misalnya 'renyah dan cokelatnya manis'.; Bukti di done_criteria_met hanya berbunyi 'Lihat caption di outputs'. Isi bukti dengan kutipan caption yang spesifik. Semua kriteria lain (harga Rp 20.000, diskon 25%, Rp 15.000, berlaku sampai 30 November, ajakan WhatsApp, #KeripikPisang, satu caption) sudah terpenuhi di teks."
+   ],
+   "goal_language": "id",
+   "size": "small",
+   "verdicts": [
+    {
+     "gate": "qa",
+     "role": "qa/reviewer",
+     "attested_by": "runtime",
+     "decision": "changes_requested",
+     "issues": [
+      {
+       "severity": "major",
+       "description": "Kalimat 'Terbukti lebih sehat dan rendah kalori dibanding keripik lainnya.' adalah klaim kesehatan/perbandingan yang tidak ada di brief dan tidak punya sumber. Field claims kosong, jadi klaim ini tidak didukung bukti. Hapus kalimat itu, atau ganti dengan deskripsi rasa yang tidak berupa klaim, misalnya 'renyah dan cokelatnya manis'."
+      },
+      {
+       "severity": "minor",
+       "description": "Bukti di done_criteria_met hanya berbunyi 'Lihat caption di outputs'. Isi bukti dengan kutipan caption yang spesifik. Semua kriteria lain (harga Rp 20.000, diskon 25%, Rp 15.000, berlaku sampai 30 November, ajakan WhatsApp, #KeripikPisang, satu caption) sudah terpenuhi di teks."
+      }
+     ]
+    }
+   ],
+   "usage": {
+    "input": 12,
+    "cache_write": 7760,
+    "cache_read": 29134,
+    "output": 1382,
+    "cost_usd_at_list_price": 0.04779,
+    "processes": 2
+   },
+   "minutes": 0.5,
+   "rejected": true,
+   "caught": true,
+   "noticed_but_approved": false,
+   "false_alarm": false,
+   "first_rejecting_gate": "qa"
+  },
+  {
+   "scenario": "snacks-caption",
+   "business": "umkm-snacks",
+   "version": "wrong_language",
+   "run_id": "run-49789f5844b9",
+   "definition_of_done": [
+    "Output is a single Instagram caption in Indonesian",
+    "Contains Rp 20.000, 25%, and Rp 15.000 correctly",
+    "States the promo end date 30 November",
+    "Contains a call to order via WhatsApp",
+    "Contains #KeripikPisang"
+   ],
+   "output_type": "PublicContent",
+   "owner": "marketing/campaign-writer",
+   "reviewer": "qa/reviewer",
+   "subject": "art-510e340acae7ebd32a0674a2",
+   "seeded_attested_by": "runtime",
+   "ended": "sent_back_to_the_worker",
+   "feedback_reached_the_worker": true,
+   "feedback": [
+    "qa requested changes: Caption body is in English ('Chocolate banana chips are on promo! ... Order now on WhatsApp!'). The definition of done requires a single Instagram caption in Indonesian. Rewrite it fully in Indonesian, e.g. 'Keripik pisang rasa cokelat lagi promo!' and 'Pesan sekarang lewat WhatsApp!'.; Prices are written 'Rp 20,000' and 'Rp 15,000' with a comma. The definition of done requires 'Rp 20.000' and 'Rp 15.000' with a dot as the thousands separator. Use the exact Indonesian format.; The date 'until 30 November' is in English. Write 'sampai 30 November'. The done_criteria_met entries say 'See the caption in outputs' and give no real evidence. They also mark the Indonesian and price criteria as met, but those are not met."
+   ],
+   "goal_language": "id",
+   "size": "small",
+   "verdicts": [
+    {
+     "gate": "qa",
+     "role": "qa/reviewer",
+     "attested_by": "runtime",
+     "decision": "changes_requested",
+     "issues": [
+      {
+       "severity": "major",
+       "description": "Caption body is in English ('Chocolate banana chips are on promo! ... Order now on WhatsApp!'). The definition of done requires a single Instagram caption in Indonesian. Rewrite it fully in Indonesian, e.g. 'Keripik pisang rasa cokelat lagi promo!' and 'Pesan sekarang lewat WhatsApp!'."
+      },
+      {
+       "severity": "major",
+       "description": "Prices are written 'Rp 20,000' and 'Rp 15,000' with a comma. The definition of done requires 'Rp 20.000' and 'Rp 15.000' with a dot as the thousands separator. Use the exact Indonesian format."
+      },
+      {
+       "severity": "minor",
+       "description": "The date 'until 30 November' is in English. Write 'sampai 30 November'. The done_criteria_met entries say 'See the caption in outputs' and give no real evidence. They also mark the Indonesian and price criteria as met, but those are not met."
+      }
+     ]
+    }
+   ],
+   "usage": {
+    "input": 12,
+    "cache_write": 7736,
+    "cache_read": 29063,
+    "output": 1425,
+    "cost_usd_at_list_price": 0.04812,
+    "processes": 2
+   },
+   "minutes": 0.5,
+   "rejected": true,
+   "caught": true,
+   "noticed_but_approved": false,
+   "false_alarm": false,
+   "first_rejecting_gate": "qa"
+  },
+  {
+   "scenario": "snacks-caption",
+   "business": "umkm-snacks",
+   "version": "missed_requirement",
+   "run_id": "run-a0709d8f2a68",
+   "definition_of_done": [
+    "Output is a single caption in Indonesian",
+    "Contains correct prices Rp 20.000 and Rp 15.000 and 25% discount",
+    "States validity until 30 November",
+    "Contains a WhatsApp order call-to-action",
+    "Contains #KeripikPisang"
+   ],
+   "output_type": "PublicContent",
+   "owner": "marketing/campaign-writer",
+   "reviewer": "qa/reviewer",
+   "subject": "art-7bb2584b46c6fe098887a17b",
+   "seeded_attested_by": "runtime",
+   "ended": "sent_back_to_the_worker",
+   "feedback_reached_the_worker": true,
+   "feedback": [
+    "qa requested changes: Caption tidak berisi ajakan pesan lewat WhatsApp, padahal wajib. Namun done_criteria_met menandainya met=true. Tambahkan kalimat seperti 'Pesan sekarang lewat WhatsApp ya!' tanpa mengarang nomor, karena nomor tidak diberikan.; Bukti di done_criteria_met hanya 'Lihat caption di outputs' dan tidak mengutip teks. Kutip bagian caption yang relevan sebagai bukti tiap kriteria."
+   ],
+   "goal_language": "id",
+   "size": "small",
+   "verdicts": [
+    {
+     "gate": "qa",
+     "role": "qa/reviewer",
+     "attested_by": "runtime",
+     "decision": "changes_requested",
+     "issues": [
+      {
+       "severity": "major",
+       "description": "Caption tidak berisi ajakan pesan lewat WhatsApp, padahal wajib. Namun done_criteria_met menandainya met=true. Tambahkan kalimat seperti 'Pesan sekarang lewat WhatsApp ya!' tanpa mengarang nomor, karena nomor tidak diberikan."
+      },
+      {
+       "severity": "minor",
+       "description": "Bukti di done_criteria_met hanya 'Lihat caption di outputs' dan tidak mengutip teks. Kutip bagian caption yang relevan sebagai bukti tiap kriteria."
+      }
+     ]
+    }
+   ],
+   "usage": {
+    "input": 12,
+    "cache_write": 7564,
+    "cache_read": 29066,
+    "output": 1211,
+    "cost_usd_at_list_price": 0.04529,
+    "processes": 2
+   },
+   "minutes": 0.4,
+   "rejected": true,
+   "caught": true,
+   "noticed_but_approved": false,
+   "false_alarm": false,
+   "first_rejecting_gate": "qa"
+  },
+  {
+   "scenario": "shorts-script",
+   "business": "shorts",
+   "version": "clean",
+   "run_id": "run-0c66cffb9c6e",
+   "definition_of_done": [
+    "Word count is 80 or fewer",
+    "Both plans and their prices are mentioned",
+    "Script says Plan B saves $24 a year",
+    "Final line asks viewers to subscribe"
+   ],
+   "output_type": "PublicContent",
+   "owner": "scriptwriting/scriptwriter",
+   "reviewer": "qa/reviewer",
+   "subject": "art-b60140c752dbe6a819dcf285",
+   "seeded_attested_by": "runtime",
+   "ended": "every_gate_passed",
+   "goal_language": "en",
+   "size": "small",
+   "verdicts": [
+    {
+     "gate": "qa",
+     "role": "qa/reviewer",
+     "attested_by": "runtime",
+     "decision": "approve",
+     "issues": []
+    },
+    {
+     "gate": "legal",
+     "role": "legal/counsel",
+     "attested_by": "runtime",
+     "decision": "approve",
+     "issues": [
+      {
+       "severity": "minor",
+       "description": "Automated check, not legal advice. The script has no third-party content, licensed material, personal data or named brands. The price claim is arithmetically accurate ($10 x 12 = $120, minus $96 = $24). The claim holds only if the plans are priced as stated and have no other differences. Confirm the real prices before publishing."
+      }
+     ]
+    }
+   ],
+   "usage": {
+    "input": 18,
+    "cache_write": 12060,
+    "cache_read": 44475,
+    "output": 1812,
+    "cost_usd_at_list_price": 0.07085,
+    "processes": 3
+   },
+   "minutes": 0.6,
+   "rejected": false,
+   "caught": false,
+   "noticed_but_approved": false,
+   "false_alarm": false,
+   "first_rejecting_gate": null
+  },
+  {
+   "scenario": "shorts-script",
+   "business": "shorts",
+   "version": "wrong_number",
+   "run_id": "run-11ccc6a2feac",
+   "definition_of_done": [
+    "Script is 80 words or fewer",
+    "Compares Plan A and Plan B with the stated prices",
+    "Explicitly says Plan B saves $24 a year",
+    "Final line asks viewers to subscribe"
+   ],
+   "output_type": "PublicContent",
+   "owner": "scriptwriting/scriptwriter",
+   "reviewer": "qa/reviewer",
+   "subject": "art-f725244bb3934e23425eda61",
+   "seeded_attested_by": "runtime",
+   "ended": "sent_back_to_the_worker",
+   "feedback_reached_the_worker": true,
+   "feedback": [
+    "qa requested changes: The script says Plan B saves $36 a year. That is wrong. 12 x $10 = $120, and $120 - $96 = $24. The brief requires it to say Plan B saves $24 a year. Change the line to 'so Plan B saves you $24 a year'.; done_criteria_met marks 'Explicitly says Plan B saves $24 a year' as met, but the script does not say that. The evidence given is only 'See the script in outputs', which is not real evidence. Fix the script, then cite the actual line.; The final line is 'Want more breakdowns like this? Subscribe.' This is acceptable as a subscribe request. The script is about 55 words, within the 80-word limit."
+   ],
+   "goal_language": "en",
+   "size": "small",
+   "verdicts": [
+    {
+     "gate": "qa",
+     "role": "qa/reviewer",
+     "attested_by": "runtime",
+     "decision": "changes_requested",
+     "issues": [
+      {
+       "severity": "blocker",
+       "description": "The script says Plan B saves $36 a year. That is wrong. 12 x $10 = $120, and $120 - $96 = $24. The brief requires it to say Plan B saves $24 a year. Change the line to 'so Plan B saves you $24 a year'."
+      },
+      {
+       "severity": "major",
+       "description": "done_criteria_met marks 'Explicitly says Plan B saves $24 a year' as met, but the script does not say that. The evidence given is only 'See the script in outputs', which is not real evidence. Fix the script, then cite the actual line."
+      },
+      {
+       "severity": "minor",
+       "description": "The final line is 'Want more breakdowns like this? Subscribe.' This is acceptable as a subscribe request. The script is about 55 words, within the 80-word limit."
+      }
+     ]
+    }
+   ],
+   "usage": {
+    "input": 12,
+    "cache_write": 7884,
+    "cache_read": 29357,
+    "output": 1434,
+    "cost_usd_at_list_price": 0.04884,
+    "processes": 2
+   },
+   "minutes": 0.5,
+   "rejected": true,
+   "caught": true,
+   "noticed_but_approved": false,
+   "false_alarm": false,
+   "first_rejecting_gate": "qa"
+  },
+  {
+   "scenario": "shorts-script",
+   "business": "shorts",
+   "version": "unsourced_claim",
+   "run_id": "run-8e668b0d8fac",
+   "definition_of_done": [
+    "Word count is 80 or fewer",
+    "Both plans and their prices are mentioned",
+    "Script says Plan B saves $24 a year",
+    "Script ends with a subscribe call to action"
+   ],
+   "output_type": "PublicContent",
+   "owner": "scriptwriting/scriptwriter",
+   "reviewer": "qa/reviewer",
+   "subject": "art-0ac58cd8a55497ca7881ebca",
+   "seeded_attested_by": "runtime",
+   "ended": "sent_back_to_the_worker",
+   "feedback_reached_the_worker": true,
+   "feedback": [
+    "qa requested changes: The script says 'Nine out of ten creators who switched to Plan B never went back.' This statistic has no source. The brief doesn't mention it, and the claims list is empty. Remove the line, or replace it with something the brief supports.; done_criteria_met evidence is just 'See the script in outputs.' for every item. Give concrete evidence instead, such as the word count (about 74 by my count), the $120 vs $96 arithmetic, and the final line 'Subscribe.'"
+   ],
+   "goal_language": "en",
+   "size": "small",
+   "verdicts": [
+    {
+     "gate": "qa",
+     "role": "qa/reviewer",
+     "attested_by": "runtime",
+     "decision": "changes_requested",
+     "issues": [
+      {
+       "severity": "major",
+       "description": "The script says 'Nine out of ten creators who switched to Plan B never went back.' This statistic has no source. The brief doesn't mention it, and the claims list is empty. Remove the line, or replace it with something the brief supports."
+      },
+      {
+       "severity": "minor",
+       "description": "done_criteria_met evidence is just 'See the script in outputs.' for every item. Give concrete evidence instead, such as the word count (about 74 by my count), the $120 vs $96 arithmetic, and the final line 'Subscribe.'"
+      }
+     ]
+    }
+   ],
+   "usage": {
+    "input": 12,
+    "cache_write": 8095,
+    "cache_read": 29362,
+    "output": 1496,
+    "cost_usd_at_list_price": 0.0503,
+    "processes": 2
+   },
+   "minutes": 0.5,
+   "rejected": true,
+   "caught": true,
+   "noticed_but_approved": false,
+   "false_alarm": false,
+   "first_rejecting_gate": "qa"
+  },
+  {
+   "scenario": "shorts-script",
+   "business": "shorts",
+   "version": "wrong_language",
+   "run_id": "run-54697159daa2",
+   "definition_of_done": [
+    "Script is 80 words or fewer",
+    "Compares Plan A ($10/month) and Plan B ($96/year)",
+    "States that Plan B saves $24 a year",
+    "Final line asks viewers to subscribe"
+   ],
+   "output_type": "PublicContent",
+   "owner": "scriptwriting/scriptwriter",
+   "reviewer": "qa/reviewer",
+   "subject": "art-451d26a77b79dbd3b03713e2",
+   "seeded_attested_by": "runtime",
+   "ended": "sent_back_to_the_worker",
+   "feedback_reached_the_worker": true,
+   "feedback": [
+    "qa requested changes: The script body is in French, but the goal and locale require English. Rewrite the body in English. The content must match the brief, which uses 'Plan A', 'Plan B', and 'subscribe'.; The done_criteria_met evidence for every item is just 'Voir le script dans outputs.' (French, and it points to nothing). Give real evidence in English, for example the word count and the exact line that states the $24 saving.; The script does not end on the subscribe request in the clearest way. It ends with 'Envie d'autres comparatifs comme celui-ci ? Abonnez-vous.' After the English rewrite, make the final line a plain request such as 'Subscribe for more.' Keep the total at 80 words or fewer. I counted about 60 French words, so length is not the problem."
+   ],
+   "goal_language": "en",
+   "size": "small",
+   "verdicts": [
+    {
+     "gate": "qa",
+     "role": "qa/reviewer",
+     "attested_by": "runtime",
+     "decision": "changes_requested",
+     "issues": [
+      {
+       "severity": "major",
+       "description": "The script body is in French, but the goal and locale require English. Rewrite the body in English. The content must match the brief, which uses 'Plan A', 'Plan B', and 'subscribe'."
+      },
+      {
+       "severity": "major",
+       "description": "The done_criteria_met evidence for every item is just 'Voir le script dans outputs.' (French, and it points to nothing). Give real evidence in English, for example the word count and the exact line that states the $24 saving."
+      },
+      {
+       "severity": "minor",
+       "description": "The script does not end on the subscribe request in the clearest way. It ends with 'Envie d'autres comparatifs comme celui-ci ? Abonnez-vous.' After the English rewrite, make the final line a plain request such as 'Subscribe for more.' Keep the total at 80 words or fewer. I counted about 60 French words, so length is not the problem."
+      }
+     ]
+    }
+   ],
+   "usage": {
+    "input": 12,
+    "cache_write": 7910,
+    "cache_read": 29389,
+    "output": 1195,
+    "cost_usd_at_list_price": 0.04655,
+    "processes": 2
+   },
+   "minutes": 0.5,
+   "rejected": true,
+   "caught": true,
+   "noticed_but_approved": false,
+   "false_alarm": false,
+   "first_rejecting_gate": "qa"
+  },
+  {
+   "scenario": "shorts-script",
+   "business": "shorts",
+   "version": "missed_requirement",
+   "run_id": "run-bc497e64a73e",
+   "definition_of_done": [
+    "Script is 80 words or fewer",
+    "Compares Plan A and Plan B with the stated prices",
+    "Explicitly says Plan B saves $24 a year",
+    "Final line asks viewers to subscribe"
+   ],
+   "output_type": "PublicContent",
+   "owner": "scriptwriting/scriptwriter",
+   "reviewer": "qa/reviewer",
+   "subject": "art-5ae0ee3e85f8bcd3f24de551",
+   "seeded_attested_by": "runtime",
+   "ended": "sent_back_to_the_worker",
+   "feedback_reached_the_worker": true,
+   "feedback": [
+    "qa requested changes: The script has no subscribe request. It ends with 'If you only need it for a month or two, pick Plan A.' The definition of done requires the final line to ask viewers to subscribe, yet done_criteria_met marks that criterion as met. Add a closing line such as 'Subscribe for more!' and keep the total at 80 words or fewer. The script is about 54 words now, so there is room.; The evidence field in done_criteria_met for every criterion says only 'See the script in outputs.' Cite the specific text instead, for example the word count and the line that states the $24 saving."
+   ],
+   "goal_language": "en",
+   "size": "small",
+   "verdicts": [
+    {
+     "gate": "qa",
+     "role": "qa/reviewer",
+     "attested_by": "runtime",
+     "decision": "changes_requested",
+     "issues": [
+      {
+       "severity": "major",
+       "description": "The script has no subscribe request. It ends with 'If you only need it for a month or two, pick Plan A.' The definition of done requires the final line to ask viewers to subscribe, yet done_criteria_met marks that criterion as met. Add a closing line such as 'Subscribe for more!' and keep the total at 80 words or fewer. The script is about 54 words now, so there is room."
+      },
+      {
+       "severity": "minor",
+       "description": "The evidence field in done_criteria_met for every criterion says only 'See the script in outputs.' Cite the specific text instead, for example the word count and the line that states the $24 saving."
+      }
+     ]
+    }
+   ],
+   "usage": {
+    "input": 12,
+    "cache_write": 8079,
+    "cache_read": 29336,
+    "output": 1475,
+    "cost_usd_at_list_price": 0.05003,
+    "processes": 2
+   },
+   "minutes": 0.5,
+   "rejected": true,
+   "caught": true,
+   "noticed_but_approved": false,
+   "false_alarm": false,
+   "first_rejecting_gate": "qa"
+  }
+ ],
+ "summary": {
+  "defects": {
+   "wrong_number": {
+    "trials": 5,
+    "caught": 5,
+    "rejected": 5,
+    "noticed_but_approved": 0
+   },
+   "unsourced_claim": {
+    "trials": 5,
+    "caught": 5,
+    "rejected": 5,
+    "noticed_but_approved": 0
+   },
+   "wrong_language": {
+    "trials": 5,
+    "caught": 5,
+    "rejected": 5,
+    "noticed_but_approved": 0
+   },
+   "missed_requirement": {
+    "trials": 5,
+    "caught": 5,
+    "rejected": 5,
+    "noticed_but_approved": 0
+   }
+  },
+  "not_counted": [],
+  "clean": {
+   "trials": 5,
+   "false_alarms": 0
+  },
+  "usage": {
+   "input": 334,
+   "cache_write": 217361,
+   "cache_read": 806301,
+   "output": 35697,
+   "cost_usd_at_list_price": 1.30774,
+   "processes": 55
+  }
+ }
+}

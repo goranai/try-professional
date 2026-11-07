@@ -13,7 +13,7 @@ mkdir my-company && cd my-company
 trypro mcp --help                 # Check it's installed
 ```
 
-Add the server to Claude Code, and ask it to design your company:
+Set `GITHUB_TOKEN`, so it can search GitHub for skills. Without one a company gets no skills, and the review screen says so. Add the server to Claude Code, and ask it to design your company:
 
 ```bash
 claude mcp add trypro -- trypro mcp --coordinator --dir "$PWD"
@@ -57,7 +57,7 @@ trypro mcp --coordinator                # Starts and follows work, and can't do 
 1. `run_start` with a goal.
 2. `run_next_action` returns what to do, each with its role's instructions, the assignment, and the output schema.
 3. Do each action as the role it names, and submit it with the tool it names.
-4. A rejection says what to fix, and the same action stays open. Repeat until the status is `done`.
+4. A rejection says what to fix, and the same action stays open. Repeat until the status is `done`, and the response gives the path of the deliverables.
 
 If a run needs a person, the status is `blocked`, and the response gives the question and a `trypro decide` command. A client can't answer it.
 

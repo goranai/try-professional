@@ -1,0 +1,371 @@
+{
+ "design": {
+  "result": "prop-d6450f2b81",
+  "is_error": false,
+  "operator_could_use": [
+   "mcp__trypro__audit_tail",
+   "mcp__trypro__org_get",
+   "mcp__trypro__org_proposal_get",
+   "mcp__trypro__org_proposal_submit",
+   "mcp__trypro__org_propose",
+   "mcp__trypro__org_skill_judgment_submit",
+   "mcp__trypro__run_next_action",
+   "mcp__trypro__run_start",
+   "mcp__trypro__run_status"
+  ],
+  "operator_called": {
+   "mcp__trypro__org_propose": 1,
+   "mcp__trypro__org_proposal_submit": 1,
+   "mcp__trypro__org_skill_judgment_submit": 15
+  },
+  "role_agents_called": {},
+  "role_agents_outside_their_server": {},
+  "session_did_more_than_coordinate": [
+   "mcp__trypro__org_propose",
+   "mcp__trypro__org_proposal_submit",
+   "mcp__trypro__org_skill_judgment_submit"
+  ],
+  "usage": {
+   "input": 36,
+   "cache_write": 44420,
+   "cache_read": 416064,
+   "output": 5508,
+   "cost_usd_at_list_price": 0.27443839999999997
+  },
+  "usage_by_model": {
+   "claude-sonnet-5-5": {
+    "inputTokens": 36,
+    "cacheCreationInputTokens": 44420,
+    "cacheReadInputTokens": 416064,
+    "outputTokens": 5508
+   }
+  },
+  "subagents": {
+   "spawned": 0,
+   "requested": {
+    "background": 0,
+    "foreground": 0,
+    "unset": 0
+   },
+   "started_in_background": 0,
+   "max_depth": 0,
+   "spawned_by_subagents": 0,
+   "completed": 0,
+   "failed": 0,
+   "killed": {
+    "parent": 0,
+    "user": 0,
+    "system": 0
+   },
+   "refused": {
+    "depth_limit": 0,
+    "concurrency_limit": 0,
+    "budget": 0
+   },
+   "by_type": {}
+  },
+  "turns": 18
+ },
+ "activated": "prop-d6450f2b81",
+ "first": {
+  "result": "The run finished, and the one-page proposal is written. The company didn't render it, so nobody has checked that it fits on one page.\n\n**What came back:** A proposal for a family bakery that wants online pre-orders. It covers:\n- the bakery's need and the proposed simple website;\n- a 5-step customer pre-order flow;\n- the proposed scope and deliverables;\n- what's not included: card payment, delivery, ongoing updates, and domain and hosting fees;\n- a next step, which is replying to arrange a short call.\n\nThe sales lead asked for changes twice before approving it, and legal approved it twice.\n\n**Known limits:**\n- **Page length:** At about 330 words, it should fit one page. A person needs to confirm that after layout.\n- **Contact details:** The studio's contact line is a placeholder. Fill it in before sending.\n- **Bakery facts:** Everything about the bakery is an assumption, not checked with the owner.\n- **Price:** No price was given, so it reads \"To be confirmed\". The proposal promises a written quote after the call.\n- **Timeline:** The 3 to 4 week timeline is an assumption.\n- **Unverified claims:** The owner needs to confirm or correct these before the proposal is used:\n  - The bakery currently takes orders by phone or message.\n  - Customers pay at pickup, and online payment is excluded.\n  - Orders are pickup only, and delivery is excluded.\n  - The scope inclusions (testing, walkthrough, confirmation message, order view) and exclusions (ongoing updates, domain and hosting fees) are proposed only.\n  - A short call will be offered, and a written quote sent after it.\n- **Privacy:** Legal noted the order form collects customer names and contact details, but the proposal says nothing about privacy. A lawyer should confirm what notice is needed.\n\n**Deliverable:** `<company>/deliverables/run-6db911930aeb/index.md`",
+  "is_error": false,
+  "operator_could_use": [
+   "Task",
+   "Bash",
+   "CronCreate",
+   "CronDelete",
+   "CronList",
+   "DesignSync",
+   "Edit",
+   "EnterWorktree",
+   "ExitWorktree",
+   "Glob",
+   "Grep",
+   "ListAgents",
+   "ListMcpResourcesTool",
+   "Monitor",
+   "NotebookEdit",
+   "PowerShell",
+   "PushNotification",
+   "Read",
+   "ReadMcpResourceDirTool",
+   "ReadMcpResourceTool",
+   "RemoteTrigger",
+   "ReportFindings",
+   "ScheduleWakeup",
+   "SendMessage",
+   "Skill",
+   "TaskStop",
+   "ToolSearch",
+   "WebSearch",
+   "Write",
+   "mcp__claude_ai_Claude_Docs__batch",
+   "mcp__claude_ai_Claude_Docs__create",
+   "mcp__claude_ai_Claude_Docs__delete",
+   "mcp__claude_ai_Claude_Docs__export",
+   "mcp__claude_ai_Claude_Docs__guide",
+   "mcp__claude_ai_Claude_Docs__query",
+   "mcp__claude_ai_Claude_Docs__read",
+   "mcp__claude_ai_Claude_Docs__update",
+   "mcp__trypro__audit_tail",
+   "mcp__trypro__org_get",
+   "mcp__trypro__org_proposal_get",
+   "mcp__trypro__org_proposal_submit",
+   "mcp__trypro__org_propose",
+   "mcp__trypro__org_skill_judgment_submit",
+   "mcp__trypro__run_next_action",
+   "mcp__trypro__run_start",
+   "mcp__trypro__run_status"
+  ],
+  "operator_called": {
+   "ToolSearch": 1,
+   "mcp__trypro__run_start": 1,
+   "Agent": 10,
+   "mcp__trypro__run_next_action": 10
+  },
+  "role_agents_called": {
+   "trypro-executive-ceo": {
+    "mcp__trypro_role__run_next_action": 2,
+    "mcp__trypro_role__artifact_submit": 2
+   },
+   "trypro-sales-proposal-writer": {
+    "mcp__trypro_role__run_next_action": 3,
+    "mcp__trypro_role__artifact_submit": 4
+   },
+   "trypro-sales-sales-lead": {
+    "mcp__trypro_role__run_next_action": 3,
+    "mcp__trypro_role__review_submit": 3
+   },
+   "trypro-legal-counsel": {
+    "mcp__trypro_role__run_next_action": 2,
+    "mcp__trypro_role__review_submit": 2
+   }
+  },
+  "role_agents_outside_their_server": {},
+  "session_did_more_than_coordinate": [],
+  "usage": {
+   "input": 110,
+   "cache_write": 91933,
+   "cache_read": 925072,
+   "output": 19795,
+   "cost_usd_at_list_price": 0.5551476999999997
+  },
+  "usage_by_model": {
+   "claude-sonnet-5-5": {
+    "inputTokens": 110,
+    "cacheCreationInputTokens": 91933,
+    "cacheReadInputTokens": 925072,
+    "outputTokens": 19795
+   }
+  },
+  "subagents": {
+   "spawned": 10,
+   "requested": {
+    "background": 0,
+    "foreground": 10,
+    "unset": 0
+   },
+   "started_in_background": 0,
+   "max_depth": 1,
+   "spawned_by_subagents": 0,
+   "completed": 10,
+   "failed": 0,
+   "killed": {
+    "parent": 0,
+    "user": 0,
+    "system": 0
+   },
+   "refused": {
+    "depth_limit": 0,
+    "concurrency_limit": 0,
+    "budget": 0
+   },
+   "by_type": {
+    "trypro-executive-ceo": 2,
+    "trypro-sales-proposal-writer": 3,
+    "trypro-sales-sales-lead": 3,
+    "trypro-legal-counsel": 2
+   }
+  },
+  "turns": 23,
+  "minutes": 3.9
+ },
+ "second": {
+  "result": "The run is blocked, and only you can unblock it. It stopped at 40,385 tokens, which is over its 40,000 limit. Nothing more will be spent until you decide.\n\n**The question for you:** continue with a higher limit, or abandon?\n- Resume: `trypro decide run-34a4ce5929f0 hum-0009 resume`\n- Abandon: `trypro decide run-34a4ce5929f0 hum-0009 abandon`\n\n**Where the work stands:** so far there have been 8 assignments, 4 rejected outputs, 2 rounds of rework and 0 escalations.\n\n- **Homepage copy:** the writer produced it, and it went through two rounds of changes from the marketing lead. The marketing lead then approved it. Legal also approved it, with three minor issues. The copy is a draft and must not be published yet.\n- **What's missing:** the story and opening hours sections are only placeholders. The bakery has to supply that content, along with its name, products, prices, address, contact details and privacy link. The copy therefore doesn't yet meet the criterion that it covers the proposal's homepage sections.\n- **Unconfirmed in the proposal:** \"pickup only\", \"pay when you collect\", the menu page and link, and the confirmation message are all still \"to be confirmed\". They carry `[[CONFIRM BEFORE PUBLISHING]]` markers under a banner at the top. That safeguard exists only in the text, so a person has to block publication until the bakery confirms them.\n- **Issues still open from the last two reviews:**\n  - The hero subheadline's \"pick a pickup day\" is not inside a confirm marker.\n  - Steps 3 and 4 depend on the unconfirmed order form but have no markers.\n  - The privacy notice is still a placeholder, even though the order form collects names and contact details.\n\n**Deliverable:** there is no deliverable path yet, because the run hasn't finished.",
+  "is_error": false,
+  "operator_could_use": [
+   "Task",
+   "Bash",
+   "CronCreate",
+   "CronDelete",
+   "CronList",
+   "DesignSync",
+   "Edit",
+   "EnterWorktree",
+   "ExitWorktree",
+   "Glob",
+   "Grep",
+   "ListAgents",
+   "ListMcpResourcesTool",
+   "Monitor",
+   "NotebookEdit",
+   "PowerShell",
+   "PushNotification",
+   "Read",
+   "ReadMcpResourceDirTool",
+   "ReadMcpResourceTool",
+   "RemoteTrigger",
+   "ReportFindings",
+   "ScheduleWakeup",
+   "SendMessage",
+   "Skill",
+   "TaskStop",
+   "ToolSearch",
+   "WebSearch",
+   "Write",
+   "mcp__claude_ai_Claude_Docs__batch",
+   "mcp__claude_ai_Claude_Docs__create",
+   "mcp__claude_ai_Claude_Docs__delete",
+   "mcp__claude_ai_Claude_Docs__export",
+   "mcp__claude_ai_Claude_Docs__guide",
+   "mcp__claude_ai_Claude_Docs__query",
+   "mcp__claude_ai_Claude_Docs__read",
+   "mcp__claude_ai_Claude_Docs__update",
+   "mcp__trypro__audit_tail",
+   "mcp__trypro__org_get",
+   "mcp__trypro__org_proposal_get",
+   "mcp__trypro__org_proposal_submit",
+   "mcp__trypro__org_propose",
+   "mcp__trypro__org_skill_judgment_submit",
+   "mcp__trypro__run_next_action",
+   "mcp__trypro__run_start",
+   "mcp__trypro__run_status"
+  ],
+  "operator_called": {
+   "ToolSearch": 1,
+   "mcp__trypro__run_start": 1,
+   "Agent": 8,
+   "mcp__trypro__run_next_action": 8
+  },
+  "role_agents_called": {
+   "trypro-executive-ceo": {
+    "mcp__trypro_role__run_next_action": 1,
+    "mcp__trypro_role__artifact_submit": 1
+   },
+   "trypro-marketing-content-writer": {
+    "mcp__trypro_role__run_next_action": 3,
+    "mcp__trypro_role__workspace_read": 4,
+    "mcp__trypro_role__artifact_submit": 9,
+    "mcp__trypro_role__workspace_list": 2
+   },
+   "trypro-marketing-marketing-lead": {
+    "mcp__trypro_role__run_next_action": 3,
+    "mcp__trypro_role__workspace_read": 3,
+    "mcp__trypro_role__review_submit": 3
+   },
+   "trypro-legal-counsel": {
+    "mcp__trypro_role__run_next_action": 1,
+    "mcp__trypro_role__workspace_read": 1,
+    "mcp__trypro_role__review_submit": 1
+   }
+  },
+  "role_agents_outside_their_server": {},
+  "session_did_more_than_coordinate": [],
+  "usage": {
+   "input": 114,
+   "cache_write": 100229,
+   "cache_read": 919217,
+   "output": 34959,
+   "cost_usd_at_list_price": 0.7213461999999999
+  },
+  "usage_by_model": {
+   "claude-sonnet-5-5": {
+    "inputTokens": 114,
+    "cacheCreationInputTokens": 100229,
+    "cacheReadInputTokens": 919217,
+    "outputTokens": 34959
+   }
+  },
+  "subagents": {
+   "spawned": 8,
+   "requested": {
+    "background": 0,
+    "foreground": 8,
+    "unset": 0
+   },
+   "started_in_background": 0,
+   "max_depth": 1,
+   "spawned_by_subagents": 0,
+   "completed": 8,
+   "failed": 0,
+   "killed": {
+    "parent": 0,
+    "user": 0,
+    "system": 0
+   },
+   "refused": {
+    "depth_limit": 0,
+    "concurrency_limit": 0,
+    "budget": 0
+   },
+   "by_type": {
+    "trypro-executive-ceo": 1,
+    "trypro-marketing-content-writer": 3,
+    "trypro-marketing-marketing-lead": 3,
+    "trypro-legal-counsel": 1
+   }
+  },
+  "turns": 19,
+  "minutes": 4.7
+ },
+ "attestation": {
+  "run-6db911930aeb": {
+   "goal": "Write a one-page website proposal for a family bakery that wants online pre-orders.",
+   "phase": "done",
+   "size": "small",
+   "counters": {
+    "invalid_outputs": 0,
+    "rework_loops": 2,
+    "failed_invocations": 0,
+    "escalations": 0,
+    "handoffs": 0,
+    "violations": 0,
+    "package_overruns": 0,
+    "assignments": 10,
+    "amendments": 0
+   },
+   "attested": 13,
+   "claimed": 0,
+   "by_role": [
+    "executive/ceo",
+    "legal/counsel",
+    "sales/proposal-writer",
+    "sales/sales-lead"
+   ]
+  },
+  "run-34a4ce5929f0": {
+   "goal": "The bakery liked the proposal. Write the homepage copy for the site we proposed, following that proposal.",
+   "phase": "blocked",
+   "size": "small",
+   "counters": {
+    "invalid_outputs": 4,
+    "rework_loops": 2,
+    "failed_invocations": 0,
+    "escalations": 0,
+    "handoffs": 0,
+    "violations": 0,
+    "package_overruns": 0,
+    "assignments": 8,
+    "amendments": 0
+   },
+   "attested": 10,
+   "claimed": 0,
+   "by_role": [
+    "executive/ceo",
+    "marketing/content-writer",
+    "marketing/marketing-lead"
+   ]
+  }
+ }
+}

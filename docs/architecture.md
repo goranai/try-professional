@@ -1006,7 +1006,7 @@ Nothing is marked complete without passing tests. Each phase ends with what was 
 
 **Status (2026-11-07):** the release plan changed. v0.1.0 ships as a preview with the org generator, loadouts, `skill-customs`, the permanent company, playbooks, and the MCP adapter. **Moved to v0.2:** self-refinement and cheap-model parity (4d), the Hermes adapter, the three-way benchmark, and dreaming. The table below is the original plan, and those rows now belong to v0.2.
 
-The permanent-company journey (4c) ran on Claude through the MCP adapter, with each role as its own process, on three businesses. See `docs/research/journey/README.md`. **It proves the system and the MCP path, and it doesn't prove quality on a cheap model.**
+The permanent-company journey (4c) ran on Claude through the MCP adapter, with each role as its own process, on three businesses. See `docs/research/journey/README.md`. **It proves the system and the MCP path, and it doesn't prove quality on a cheap model.** The acceptance journey passed on 2026-11-08, on its sixth run, and reviewers were tested with seeded flaws: see that README and `docs/research/qa_gates/README.md`.
 
 Rules that matter are now enforced by code, whichever model runs, and `test_misbehaving_model.py` plays a bad model against them. Every command has a token limit by default. Each company shares one embedding process. `trypro check-model` needs a model to finish one small real command before calling it suitable.
 
