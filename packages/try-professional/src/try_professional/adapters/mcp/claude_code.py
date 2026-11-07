@@ -44,8 +44,8 @@ Run this through the company: $ARGUMENTS
 You coordinate, and you aren't a role in the company. Your {server} tools can't do a role's work, and they don't show \
 you what a role was asked. Use them like this:
 
-1. Call run_start with the command as written. It returns a run_id, and the first actions. But if it says to \
-continue a run_id, don't start anything: call run_next_action with that run_id.
+1. If the command is "continue" and a run_id, don't start anything: call run_next_action with that run_id. \
+Otherwise, call run_start with the command as written. It returns a run_id, and the first actions.
 2. For each action, start the subagent named trypro-<department>-<role> for its role (a role of marketing/seo is \
 trypro-marketing-seo). Give it only the run_id. Run them one at a time. Never add what another role did.
 3. Call run_next_action, and repeat until its status isn't "working".

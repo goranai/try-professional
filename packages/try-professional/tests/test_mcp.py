@@ -399,10 +399,32 @@ class TestAStoppedCommand:
         }
         assert models == expected or (chosen is None and models <= {"sonnet", "haiku"})
 
+    @pytest.mark.parametrize("asked", ["continue {run}", "/company continue {run}", "  Continue {run} "])
+    def test_starting_continue_picks_up_that_run(
+        self, make_org: Callable[..., Org], tmp_path: Path, asked: str
+    ) -> None:
+        """Haiku once passed "continue <run-id>" straight to run_start, which made a stray new run."""
+        service, run_id, _ = self._stopped(make_org, tmp_path)
+        before = len(service.orchestrator.ledger.list_runs())
+        answer = service.run_start(asked.format(run=run_id))
+        assert answer["run_id"] == run_id and answer["continued"]
+        assert answer["status"] == "blocked"
+        assert len(service.orchestrator.ledger.list_runs()) == before
+
+    def test_continuing_a_run_that_isnt_there_is_refused(self, make_org: Callable[..., Org], tmp_path: Path) -> None:
+        service, _, _ = self._stopped(make_org, tmp_path)
+        with pytest.raises(ToolError):
+            service.run_start("continue run-000000000000")
+
+    def test_an_ordinary_goal_that_mentions_continuing_starts_a_run(
+        self, make_org: Callable[..., Org], tmp_path: Path
+    ) -> None:
+        service, run_id, _ = self._stopped(make_org, tmp_path)
+        assert service.run_start(f"Continue the work from {run_id}, and add a summary")["run_id"] != run_id
+
     def test_company_tells_the_session_how_to_continue(self) -> None:
         text = claude_code._COMMAND
-        assert "continue a run_id" in text
-        assert "don't start anything" in text
+        assert text.index("don't start anything") < text.index("call run_start")
         assert "tell_the_person" in text
 
     def test_company_says_what_to_do_when_a_role_wont_start(self) -> None:

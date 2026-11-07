@@ -21,6 +21,7 @@ received, and budgets run on that. What a client reports is kept beside it, mark
 from __future__ import annotations
 
 import json
+import re
 from typing import Any
 
 from ...core.artifacts import Flags
@@ -68,6 +69,8 @@ COORDINATOR_TOOLS = ("org_get", "run_start", "run_status", "run_next_action", "a
 DEFAULT_AUDIT_TAIL = 20
 MAX_AUDIT_TAIL = 200
 CHARS_PER_TOKEN = 3.5
+
+_CONTINUE = re.compile(r"\s*/?(?:company\s+)?continue\s+(run-[0-9a-f]+)\s*", re.IGNORECASE)
 
 
 class ToolError(Exception):
@@ -169,6 +172,13 @@ class McpService:
     def run_start(self, goal: str) -> dict[str, Any]:
         if self.bound_role and self.bound_role != self.org.root_role:
             raise ToolError(f"Only {self.org.root_role} starts a run. This server acts as {self.bound_role}.")
+        # On Haiku, "/company continue <run-id>" was once passed straight to run_start, which made a new run.
+        wanted = _CONTINUE.fullmatch(goal)
+        if wanted:
+            run_id = wanted.group(1)
+            if run_id not in {row[0] for row in self.orchestrator.ledger.list_runs()}:
+                raise ToolError(f"There's no run {run_id} to continue. Check the run_id.")
+            return {"run_id": run_id, "continued": True, **self.run_next_action(run_id)}
         run_id, _ = self.orchestrator.start(goal)
         return {"run_id": run_id, **self.run_next_action(run_id)}
 

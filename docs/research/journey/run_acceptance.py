@@ -57,13 +57,15 @@ COORDINATING = (
 )
 
 
-def session(prompt: str, cwd: Path, flags: list[str], allowed: str) -> dict[str, Any]:
-    """One Claude Code session. It waits out a usage limit."""
+def session(
+    prompt: str, cwd: Path, flags: list[str], allowed: str, model: str = OPERATOR_MODEL, save: Path | None = None
+) -> dict[str, Any]:
+    """One Claude Code session. It waits out a usage limit. `save` keeps its whole stream, to read in order later."""
     command = [
         _claude(), "-p", prompt,
         *flags,
         "--allowedTools", allowed,
-        "--model", OPERATOR_MODEL,
+        "--model", model,
         "--output-format", "stream-json",
         "--verbose",
         "--no-session-persistence",
@@ -84,6 +86,8 @@ def session(prompt: str, cwd: Path, flags: list[str], allowed: str) -> dict[str,
             timeout=SESSION_TIMEOUT_SECONDS,
         )
         summary = read_stream(done.stdout)
+        if save is not None:
+            save.write_text(done.stdout, encoding="utf-8")
         message = str(summary.get("result", ""))
         if not (summary.get("is_error") and _LIMIT.search(message)):
             return summary
@@ -144,7 +148,10 @@ def read_stream(stdout: str) -> dict[str, Any]:
             "cost_usd_at_list_price": result.get("total_cost_usd"),
         },
         "usage_by_model": {
-            name: {k: m.get(k, 0) for k in ("inputTokens", "cacheCreationInputTokens", "cacheReadInputTokens", "outputTokens")}
+            name: {
+                k: m.get(k, 0)
+                for k in ("inputTokens", "cacheCreationInputTokens", "cacheReadInputTokens", "outputTokens")
+            }
             for name, m in by_model.items()
         },
         "subagents": result.get("subagent_stats"),
