@@ -30,6 +30,12 @@ def running(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[Path]:
     stand_in = StandIn()
     monkeypatch.setattr(embed_service, "shared_model", lambda name, cache_dir=None: stand_in)
     monkeypatch.setattr(embed_service.os, "_exit", lambda code: None)
+
+    def must_not_start(home: Path, cache_dir: Any) -> None:
+        raise AssertionError("A test reached for a second service, so the first one didn't answer.")
+
+    # Without this a broken service looks fine: a client quietly starts another, or loads its own copy.
+    monkeypatch.setattr(embed_service, "_start", must_not_start)
     thread = threading.Thread(target=serve, args=(tmp_path,), daemon=True)
     thread.start()
     deadline = time.monotonic() + 10
@@ -84,6 +90,27 @@ class TestTheService:
         assert ".recv()" not in source and ".send(" not in source and "pickle.load" not in source
 
 
+@pytest.mark.model
+class TestTheRealThing:
+    def test_a_real_service_gives_the_same_vectors_as_a_model_here(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Otherwise memory written before this change, or by a process that fell back, wouldn't match."""
+        monkeypatch.delenv("TRYPRO_EMBED_SERVICE", raising=False)
+        texts = ["Weekly lunch menu for an office", "Menu makan siang mingguan untuk kantor"]
+        served = ServiceModel(tmp_path, embedding.DEFAULT_MODEL).embed(texts)
+        address = json.loads((tmp_path / ADDRESS_FILE).read_text(encoding="utf-8"))
+        try:
+            here = list(
+                embedding.shared_model(embedding.DEFAULT_MODEL).embed(texts, batch_size=embedding.EMBED_BATCH_SIZE)
+            )
+            for one, other in zip(served, here, strict=True):
+                assert np.allclose(one, other, atol=1e-5)
+        finally:
+            psutil_process = pytest.importorskip("psutil").Process(address["pid"])
+            psutil_process.terminate()
+
+
 class TestItCantLeakBetweenRoles:
     def test_it_knows_nothing_about_memory_skills_or_roles(self) -> None:
         source = Path(embed_service.__file__).read_text(encoding="utf-8")
@@ -108,6 +135,7 @@ class TestItCantLeakBetweenRoles:
 
 class TestUsingIt:
     def test_a_process_set_to_use_it_holds_no_model(self, running: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.delenv("TRYPRO_EMBED_SERVICE", raising=False)
         monkeypatch.setattr(embedding, "_models", {})
         monkeypatch.setattr(embedding, "_service_home", None)
         embedding.use_embedding_service(running)

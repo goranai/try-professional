@@ -27,6 +27,7 @@ from try_professional.adapters.mcp.claude_code import server_config, write_claud
 from try_professional.cli import _seed_company_memory, _write_project_files
 from try_professional.generator import activate, load_proposal
 from try_professional.memory import FastEmbedEmbedder
+from try_professional.memory.embedding import use_embedding_service
 from try_professional.org import load_org
 
 DESCRIPTION = "a web design agency for small local businesses"
@@ -175,6 +176,7 @@ def main(output: Path) -> None:
             raise SystemExit(f"No proposal came back: {str(progress['design'])[:500]}")
         bundle = load_proposal(root, proposal_id.group())
         by = "the journey harness, standing in for a person"
+        use_embedding_service(root / ".trypro")
         _write_project_files(root)
         activate(bundle, root, FastEmbedEmbedder(), by=by)
         _seed_company_memory(bundle, root, by)

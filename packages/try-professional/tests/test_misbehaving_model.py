@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+import yaml
 
 from try_professional.adapters.api_runner.clients import ChatRequest, ChatResponse, ToolCall
 from try_professional.adapters.api_runner.runner import ApiRunner, ModelRoutes
@@ -20,7 +21,9 @@ from try_professional.adapters.mcp.service import McpService, ToolError
 from try_professional.core.lock import StateLock
 from try_professional.core.orchestrator import Orchestrator
 from try_professional.core.pipeline import Purpose, Submission
+from try_professional.core.pipeline.machine import _token_limit
 from try_professional.org import Org, load_org
+from try_professional.org.model import DEFAULT_MAX_TOKENS_PER_RUN, DEFAULT_MAX_TOKENS_PER_SMALL_COMMAND
 from try_professional.packs import available_packs, install_org
 
 ROUTES = ModelRoutes({"standard": "m", "executive": "m", "fast": "m"})
@@ -482,6 +485,71 @@ class TestEndlessBehaviour:
         ApiRunner(company, ScriptedClient(), ROUTES).resume(run_id)
         assert company.state(run_id).phase.value == "blocked"
         assert any(r.kind == "runaway" for r in company.state(run_id).human_requests.values())
+
+    def test_every_command_has_a_limit_even_if_nobody_set_one(self, company: Orchestrator) -> None:
+        assert company.org.pipeline.max_tokens_per_run == DEFAULT_MAX_TOKENS_PER_RUN
+        assert company.org.pipeline.max_tokens_per_small_command == DEFAULT_MAX_TOKENS_PER_SMALL_COMMAND
+
+    def test_a_company_with_no_budget_written_down_still_has_one(self, tmp_path: Path) -> None:
+        install_org(tmp_path / "bare", "Bare", available_packs())
+        path = tmp_path / "bare" / "org.yaml"
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        del data["pipeline"]["budget"]
+        path.write_text(yaml.safe_dump(data), encoding="utf-8")
+        assert load_org(tmp_path / "bare").pipeline.max_tokens_per_run == DEFAULT_MAX_TOKENS_PER_RUN
+
+    def test_a_small_command_stops_at_its_own_smaller_limit(self, company: Orchestrator) -> None:
+        """A stuck small command once spent 212,016 tokens. It stops well before that now, and says what happened."""
+
+        def reply(invocation: Any, state: Any, org: Org, _: Any) -> Any:
+            if invocation.purpose == Purpose.INTAKE:
+                small = {"size": "small", "route_department": "marketing", "route_role": "marketing/content-writer"}
+                return _submit({**default_payload(invocation, state, org), **small})
+            return None
+
+        class Expensive(BadModel):
+            def complete(self, request: ChatRequest) -> ChatResponse:
+                response = super().complete(request)
+                response.input_tokens = 30_000
+                return response
+
+        result = ApiRunner(company, Expensive(reply), ROUTES, max_turns=8).run("Write a short note")
+        state = company.state(result.run_id)
+        assert result.status == "blocked"
+        assert state.size == "small"
+        assert state.usage.total < 2 * DEFAULT_MAX_TOKENS_PER_SMALL_COMMAND
+        question = next(iter(state.human_requests.values())).question
+        assert f"over its limit of {DEFAULT_MAX_TOKENS_PER_SMALL_COMMAND}" in question and "assignments" in question
+
+    def test_a_large_command_stops_before_it_can_spend_200000(self, company: Orchestrator) -> None:
+        class Expensive(BadModel):
+            def complete(self, request: ChatRequest) -> ChatResponse:
+                response = super().complete(request)
+                response.input_tokens = 40_000
+                return response
+
+        result = ApiRunner(company, Expensive(lambda *_: None), ROUTES, max_turns=8).run("A big piece of work")
+        state = company.state(result.run_id)
+        assert result.status == "blocked"
+        assert state.size == "large" and state.usage.total < 200_000
+
+    def test_a_blocked_command_spends_nothing_more(self, company: Orchestrator) -> None:
+        class Expensive(BadModel):
+            def complete(self, request: ChatRequest) -> ChatResponse:
+                response = super().complete(request)
+                response.input_tokens = 200_000
+                return response
+
+        client = Expensive(lambda *_: None)
+        result = ApiRunner(company, client, ROUTES, max_turns=8).run("Goal")
+        assert result.status == "blocked" and len(client.calls) == 1
+        ApiRunner(company, client, ROUTES, max_turns=8).resume(result.run_id)
+        assert len(client.calls) == 1, "resuming doesn't spend until a person decides"
+
+    def test_a_person_can_raise_the_limit_for_one_command(self, company: Orchestrator) -> None:
+        run_id, _ = company.start("Goal")
+        _limit_tokens(company, run_id, 500_000)
+        assert _token_limit(company.state(run_id), company.org) == 500_000
 
     def test_a_token_limit_stops_a_run(self, company: Orchestrator) -> None:
         run_id, _ = company.start("Goal")

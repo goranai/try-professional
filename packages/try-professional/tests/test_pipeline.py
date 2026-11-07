@@ -559,7 +559,7 @@ class TestBudget:
         run = harness(org)
         result = run.runner.run("Goal")
         assert result.status == "blocked"
-        assert "over the limit" in result.questions[0].question
+        assert "over its limit" in result.questions[0].question
         assert len(run.client.calls) == 1
 
     def test_human_can_raise_the_budget_and_continue(

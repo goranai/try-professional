@@ -2,6 +2,19 @@
 
 How much RAM Try Professional's steps need, read from the operating system, and how the numbers changed when the second copy of the embedding model was removed.
 
+## A whole company over MCP
+
+Each role runs its own MCP server, so before this fix each one could hold its own copy of the embedding model. Now one process per company holds it, and every role's server asks it. It only turns text into vectors, and knows nothing about roles or memory, so isolation stays in the memory rules, the skill loadouts, and each server's tool list. `measure_company_ram.py` measured a 22-role company on Windows 11 on 2026-11-07, with every server really recalling memory, in unique memory, so nothing shared is counted twice. Raw numbers are in `company_ram.json`.
+
+| | Peak |
+|---|---|
+| A typical command: the operator, one role at a time, and the service | **743 MB** |
+| Every role's server open at once, sharing the service (22 servers at about 97 MB, and the service at 581 MB) | **2,712 MB** |
+| One server per role before the fix, measured on 3 servers (1,856 MB, or about 619 MB each) | 619 MB per server |
+| Every role before the fix, computed and not measured, because it could have taken the machine down | about 13.6 GB |
+
+Agents run one at a time, so the typical line is what an ordinary command needs. The service exits after 10 minutes idle. `TRYPRO_EMBED_SERVICE=off` turns it off, and if it can't start, a process loads its own copy.
+
 ## Reproduce
 
 ```bash

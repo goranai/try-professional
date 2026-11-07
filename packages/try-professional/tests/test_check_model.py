@@ -8,8 +8,10 @@ from typing import Any
 import pytest
 
 from try_professional.adapters.api_runner.clients import ChatRequest, ChatResponse, ClientError, ToolCall, ToolResult
+from try_professional.adapters.api_runner.scripted import ScriptedClient, default_payload
 from try_professional.check_model import CAVEATS, NOT_RECOMMENDED, SUITABLE, ModelUnreachable, check_model, render_check
 from try_professional.cli import main
+from try_professional.core.pipeline import Purpose
 
 GOOD_NOTE = {
     "audience": "local customers",
@@ -40,10 +42,11 @@ def _last_prompt(messages: list[Any]) -> str:
 class Fake:
     """A model that does everything right, unless a test changes one answer."""
 
-    def __init__(self, **changes: Any) -> None:
+    def __init__(self, on_command: Any = None, **changes: Any) -> None:
         self.changes = changes
         self.calls = 0
         self.seen: list[str] = []
+        self.company = ScriptedClient(on_command)
 
     def user_message(self, text: str) -> Any:
         return {"role": "user", "content": text}
@@ -66,6 +69,8 @@ class Fake:
         raise AssertionError(prompt)
 
     def complete(self, request: ChatRequest) -> ChatResponse:
+        if "invocation" in request.metadata:
+            return self.company.complete(request)
         self.calls += 1
         prompt = next(m["content"] for m in request.messages if m["role"] == "user")
         self.seen.append(prompt)
@@ -148,11 +153,76 @@ class TestVerdicts:
         assert check_model(Fake(**{"record_number with the number": broken}), "m").verdict == NOT_RECOMMENDED
 
 
+class TestItHasToFinishARealCommand:
+    """A model passed every rule check and then couldn't finish a two-sentence note, twice, so that's not enough."""
+
+    def test_finishing_it_is_what_earns_suitable(self) -> None:
+        report = check_model(Fake(), "m")
+        assert report.verdict == SUITABLE
+        assert report.command is not None and report.command.finished
+        assert report.command.tokens <= report.command.limit
+
+    def test_a_command_that_blocks_means_not_recommended(self) -> None:
+        def legal_blocks(invocation: Any, state: Any, org: Any) -> dict[str, Any] | None:
+            if invocation.purpose == Purpose.REVIEW:
+                issue = {"severity": "blocker", "description": "No sender details"}
+                return {**default_payload(invocation, state, org), "decision": "block", "issues": [issue]}
+            return None
+
+        report = check_model(Fake(on_command=legal_blocks), "m")
+        assert all(c.passed for c in report.checks), "it passed every rule check"
+        assert report.verdict == NOT_RECOMMENDED
+        assert report.command is not None and report.command.why
+        assert "didn't finish" in render_check(report)
+
+    def test_going_over_the_limit_means_not_recommended(self) -> None:
+        report = check_model(Fake(), "m", command_limit=1)
+        assert report.verdict == NOT_RECOMMENDED
+        assert report.command is not None and not report.command.finished
+        assert report.command.tokens > 1
+
+    def test_the_limit_stops_it_spending(self) -> None:
+        fake = Fake()
+        check_model(fake, "m", command_limit=1)
+        assert len(fake.company.calls) == 1
+
+    def test_it_skips_the_command_if_the_rule_checks_already_failed(self) -> None:
+        fake = Fake(**{"record_number with the number": "text"})
+        report = check_model(fake, "m")
+        assert report.command is None and not fake.company.calls
+        assert report.verdict == NOT_RECOMMENDED
+
+    def test_an_outage_during_the_command_gives_no_verdict(self) -> None:
+        class DownLater(Fake):
+            def complete(self, request: ChatRequest) -> ChatResponse:
+                if "invocation" in request.metadata:
+                    raise ClientError("HTTP 502", retryable=True)
+                return super().complete(request)
+
+        with pytest.raises(ModelUnreachable):
+            check_model(DownLater(), "m")
+
+    def test_rejected_outputs_on_the_way_are_a_caveat(self) -> None:
+        seen = {"rejected": False}
+
+        def slips_once(invocation: Any, state: Any, org: Any) -> dict[str, Any] | None:
+            if invocation.purpose == Purpose.INTAKE and not seen["rejected"]:
+                seen["rejected"] = True
+                return {**default_payload(invocation, state, org), "made_up_field": 1}
+            return None
+
+        report = check_model(Fake(on_command=slips_once), "m")
+        assert report.verdict == CAVEATS
+        assert any("rejected" in line for line in report.caveats)
+
+
 class TestWhatItReports:
     def test_tokens_are_split(self) -> None:
-        report = check_model(Fake(), "m")
-        assert report.calls == 7
-        assert (report.input_tokens, report.cached_input_tokens, report.output_tokens) == (700, 280, 70)
+        fake = Fake()
+        report = check_model(fake, "m")
+        assert report.calls == 7 + len(fake.company.calls)
+        assert report.input_tokens > 700 and report.output_tokens > 70
+        assert report.cached_input_tokens == 280
 
     def test_it_says_what_it_doesnt_measure(self) -> None:
         assert "doesn't measure the quality" in render_check(check_model(Fake(), "m"))

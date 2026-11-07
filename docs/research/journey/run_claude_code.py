@@ -22,10 +22,12 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 from pathlib import Path
 from typing import Any
 
+import psutil
 from mcp import Client, StdioServerParameters
 
 from try_professional.adapters.mcp import MCP_TOOLS
@@ -33,6 +35,7 @@ from try_professional.adapters.mcp.claude_code import server_config, write_claud
 from try_professional.cli import _seed_company_memory, _write_project_files
 from try_professional.generator import activate, load_proposal
 from try_professional.memory import FastEmbedEmbedder
+from try_professional.memory.embedding import use_embedding_service
 from try_professional.org import load_org
 
 BUSINESSES: dict[str, dict[str, str]] = {
@@ -63,6 +66,7 @@ MAX_TRIES_PER_ACTION = 3
 ROLE_TIMEOUT_SECONDS = 1200
 WAIT_FOR_LIMIT_SECONDS = 600
 MAX_LIMIT_WAITS = 200
+SAMPLE_SECONDS = 3
 _LIMIT = re.compile(r"usage limit|rate.?limit|limit reached|hit your limit|too many requests|overloaded", re.IGNORECASE)
 _ROLE_SYSTEM = """You are one role in a company, and you work on one assignment, then stop.
 
@@ -138,6 +142,42 @@ def _add_usage(total: dict[str, Any], result: dict[str, Any]) -> None:
     total["output"] += usage.get("output_tokens", 0)
     total["cost_usd_at_list_price"] = round(total["cost_usd_at_list_price"] + float(result.get("total_cost_usd") or 0), 5)
     total["processes"] += 1
+
+
+class PeakRam:
+    """The most the company's own processes held: its servers and its embedding service, not Claude Code."""
+
+    def __init__(self, root: Path) -> None:
+        self.marker = str(root).replace("\\", "/").lower()
+        self.peak_mb = 0
+        self.lowest_free_mb = round(psutil.virtual_memory().available / 1048576)
+        self._stop = threading.Event()
+        self._thread = threading.Thread(target=self._sample, daemon=True)
+
+    def _belongs(self, process: psutil.Process) -> bool:
+        try:
+            return self.marker in " ".join(process.cmdline()).replace("\\", "/").lower()
+        except psutil.Error:
+            return False
+
+    def _sample(self) -> None:
+        while not self._stop.wait(SAMPLE_SECONDS):
+            total = 0
+            for process in psutil.process_iter():
+                if self._belongs(process):
+                    try:
+                        total += process.memory_full_info().uss
+                    except psutil.Error:
+                        continue
+            self.peak_mb = max(self.peak_mb, round(total / 1048576))
+            self.lowest_free_mb = min(self.lowest_free_mb, round(psutil.virtual_memory().available / 1048576))
+
+    def __enter__(self) -> PeakRam:
+        self._thread.start()
+        return self
+
+    def __exit__(self, *_: object) -> None:
+        self._stop.set()
 
 
 class Progress:
@@ -273,6 +313,8 @@ async def design(operator: Operator, root: Path, description: str, progress: Pro
 def approve(root: Path, proposal_id: str) -> None:
     """A person approves at a terminal. This script stands in for one, by the owner's say-so, and the record says so."""
     by = "the journey harness, standing in for a person"
+    # The same process every role uses, so this script doesn't hold a copy of the model for the rest of the journey.
+    use_embedding_service(root / ".trypro")
     embedder = FastEmbedEmbedder()
     bundle = load_proposal(root, proposal_id)
     _write_project_files(root)
@@ -366,7 +408,10 @@ async def run_business(business_id: str, output: Path) -> None:
         for label in COMMANDS:
             if label in done:
                 continue
-            row = await run_command(operator, root, label, business[label], progress, org)
+            with PeakRam(root) as ram:
+                row = await run_command(operator, root, label, business[label], progress, org)
+            row["company_peak_ram_mb"] = ram.peak_mb
+            row["lowest_free_ram_mb"] = ram.lowest_free_mb
             progress.data["commands"].append(row)
             progress.data["open"].pop(label, None)
             progress.save()

@@ -10,6 +10,8 @@ import pytest
 
 # A busy machine must not make the tests wait for memory. test_resources.py turns the check back on.
 os.environ["TRYPRO_MEMORY_CHECK"] = "off"
+# A test that starts an MCP server must not leave a real embedding service running behind it.
+os.environ["TRYPRO_EMBED_SERVICE"] = "off"
 
 from try_professional.adapters.api_runner.clients import ChatRequest, ChatResponse, ToolCall, ToolResult
 from try_professional.adapters.api_runner.runner import ApiRunner, ModelRoutes

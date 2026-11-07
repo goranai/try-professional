@@ -1,9 +1,9 @@
 """One embedding process for a whole company, so 20 roles don't hold 20 copies of a 600 MB model.
 
 The service only turns text into vectors. It can't read memory, skills, or anything about a role, so isolation between
-roles stays where it was: in the memory rules, the skill loadouts, and each server's tool list. It listens on this machine
-only, needs a key kept in the company's private folder, and speaks JSON and raw numbers, never pickle, so a connection
-can't run code. It starts when first needed, and exits once it has been idle for a while.
+roles stays where it was: in the memory rules, the skill loadouts, and each server's tool list. It listens on this
+machine only, needs a key kept in the company's private folder, and speaks JSON and raw numbers, never pickle, so a
+connection can't run code. It starts when first needed, and exits once it has been idle for a while.
 
 If it can't start, a process loads its own copy, as before, so a problem here can't stop a company.
 """
@@ -18,6 +18,7 @@ import sys
 import threading
 import time
 from collections.abc import Iterable
+from multiprocessing import AuthenticationError
 from multiprocessing.connection import Client, Listener
 from pathlib import Path
 from typing import Any
@@ -29,6 +30,7 @@ from .embedding import EMBED_BATCH_SIZE, shared_model
 ADDRESS_FILE = "embed-service.json"
 LOCK_FILE = "embed-service.lock"
 IDLE_SECONDS = 600
+BACKLOG = 64
 START_TIMEOUT_SECONDS = 180
 REQUEST_TIMEOUT_SECONDS = 300
 OFF = "TRYPRO_EMBED_SERVICE"
@@ -89,7 +91,8 @@ def serve(home: Path, cache_dir: str | None = None, idle_seconds: float = IDLE_S
     home.mkdir(parents=True, exist_ok=True)
     seen = [time.monotonic()]
     lock = threading.Lock()
-    with Listener(("127.0.0.1", 0), authkey=key.encode("ascii")) as listener:
+    # The default backlog is 1, which refuses roles that connect at the same moment.
+    with Listener(("127.0.0.1", 0), backlog=BACKLOG, authkey=key.encode("ascii")) as listener:
         host, port = listener.address
         _write_private(_address_path(home), json.dumps({"host": host, "port": port, "key": key, "pid": os.getpid()}))
 
@@ -103,7 +106,8 @@ def serve(home: Path, cache_dir: str | None = None, idle_seconds: float = IDLE_S
         while True:
             try:
                 connection = listener.accept()
-            except OSError:  # A client with the wrong key is refused here, and the service carries on.
+            except (OSError, EOFError, AuthenticationError):
+                # A wrong key, or a client gone mid-handshake. It's refused, and the service carries on for the rest.
                 continue
             threading.Thread(target=_serve_connection, args=(connection, seen, lock, cache_dir), daemon=True).start()
 

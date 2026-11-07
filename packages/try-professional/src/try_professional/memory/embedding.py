@@ -88,7 +88,7 @@ def shared_model(model_name: str, cache_dir: Path | None = None) -> Any:
         if _service_home is not None:
             from .embed_service import ServiceModel
 
-            key = f"service:{model_name}"
+            key = f"service:{_service_home}:{model_name}"
             if key not in _models:
                 _models[key] = ServiceModel(_service_home, model_name, cache_dir)
             return _models[key]

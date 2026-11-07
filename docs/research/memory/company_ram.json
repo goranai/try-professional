@@ -1,0 +1,56 @@
+{
+ "roles": 22,
+ "free_mb_at_start": 5191,
+ "old_way": {
+  "opened": 3,
+  "stopped_early": false,
+  "per_server_unique_mb": [
+   619,
+   618,
+   618
+  ],
+  "servers_unique_mb": 1856,
+  "servers_resident_mb": 2006,
+  "service_unique_mb": 0,
+  "service_resident_mb": 0,
+  "total_unique_mb": 1856,
+  "computed_for_every_role_mb": 13603
+ },
+ "typical": {
+  "total_unique_mb": 743,
+  "seconds": 46
+ },
+ "all_roles_shared": {
+  "opened": 22,
+  "stopped_early": false,
+  "per_server_unique_mb": [
+   97,
+   97,
+   97,
+   97,
+   96,
+   97,
+   97,
+   98,
+   97,
+   97,
+   97,
+   97,
+   97,
+   97,
+   97,
+   97,
+   97,
+   97,
+   97,
+   96,
+   97,
+   97
+  ],
+  "servers_unique_mb": 2131,
+  "servers_resident_mb": 3126,
+  "service_unique_mb": 581,
+  "service_resident_mb": 621,
+  "total_unique_mb": 2712
+ }
+}
