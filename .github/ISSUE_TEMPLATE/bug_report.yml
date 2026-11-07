@@ -1,0 +1,34 @@
+name: Bug report
+description: Something doesn't work as the docs say.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Never paste a key. For a security problem, [report it privately](https://github.com/goranai/try-professional/security/advisories/new) instead.
+  - type: textarea
+    id: doctor
+    attributes:
+      label: The output of `trypro doctor --report`
+      description: Run it in your company's folder, and paste what it prints. It holds versions and check results, and no keys, paths, or names.
+      placeholder: "```text\ntrypro doctor --report\n...\n```"
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What you ran, and what happened
+      description: The command, and the message you saw.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: input
+    id: run
+    attributes:
+      label: Which model or client you used, if it isn't Claude Code
+      placeholder: "For example: the API runner, with deepseek-v4.1-flash-1017"

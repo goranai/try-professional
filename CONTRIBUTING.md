@@ -2,6 +2,17 @@
 
 Thanks for helping. The issues labelled `good first issue` are scoped so you can finish one without learning the whole project: templates, department packs, scanner rule packs, and language reviews need no knowledge of the pipeline.
 
+## Your first pull request
+
+1. **Pick something small.** The [good first issues](https://github.com/goranai/try-professional/issues?q=is%3Aissue+is%3Aopen+label%3A%22good%20first%20issue%22) are scoped for this. A template, a language review, or a runtime you already use are good places to start.
+2. **Say you're on it** with a comment on the issue, so nobody duplicates it. If you have a question, ask there.
+3. **Set up,** as below. It takes a few minutes, and no key.
+4. **Make the change, with a test** that would have failed before it. A docs change or a language review doesn't need one.
+5. **Commit.** The hook runs lint, types, and the fast tests, in about a minute, and blocks the commit if they fail.
+6. **Open the pull request,** and fill in the template. Small ones get reviewed fastest.
+
+Stuck? Open a draft pull request and ask, or use [Discussions](https://github.com/goranai/try-professional/discussions/categories/q-a). Nothing you can do in a fork can break anything here.
+
 ## Set up
 
 ```bash

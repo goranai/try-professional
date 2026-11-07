@@ -2,7 +2,7 @@
 
 **Turn Claude Code into a permanent AI company: one prompt builds a hierarchy of agents with roles, memory and vetted skills. Multi-agent orchestration via MCP.**
 
-*Preview (v0.1.0). It works, it has rough edges, and it has only been proven on Claude.*
+*Preview (v0.1.1). It works, it has rough edges, and it has only been proven on Claude.*
 
 You describe a business, and Claude Code designs a company for it: departments, roles, and skills from GitHub that are checked before they're used. You approve it, and then you give it commands. It works only when you give it a command, and it remembers between commands: every role, from the CEO down, keeps its own memory and knows what it's working on.
 
@@ -97,6 +97,7 @@ Your session only coordinates. Results are files, in `deliverables/<run-id>/`. S
 
 ```text
 /company <a command>                          Give it more work. It remembers earlier work
+trypro doctor                                 Check your setup, and how to fix what's wrong
 trypro status                                 Memory size, and tokens by month and command
 trypro audit <run-id>                         Verify a run's audit log
 trypro decide <run-id> <request-id> resume    Answer a command that stopped to ask you
@@ -173,12 +174,20 @@ On DeepSeek through the API runner, the one small command that finished took 25,
 - **It works with files only.** It doesn't publish, send, buy, render video, or browse the web unless you turn on search. Its output tells you what a person must check.
 - **It can't check facts without sources.** With no web access, it marks claims as unverified, and leaves placeholders such as `[Bakery name]` or `[ISI PROMO]` for you to fill in.
 - **Reviews aren't proof.** [The test above](docs/research/qa_gates/README.md) is small, and a weak reviewer can still approve weak work. They can also be too strict, and send back good work.
-- **A command can stop at its token limit.** Rework costs tokens. In one acceptance run a small command stopped at its 40,000 limit just short of finishing, and asked a person, and in the run that finished the same command used about 37,800. Until it finishes, its work isn't exported as files. Once you answer its question, `/company continue <run-id>` picks it up, and it did finish when we tried it.
+- **A command can stop at its token limit.** Rework costs tokens. In one acceptance run a small command stopped at its 40,000 limit just short of finishing, and asked a person, and in the run that finished the same command used about 37,800. Until it finishes, its work isn't exported as files. It tells you what happened and the exact lines to run: `trypro decide`, and then `/company continue <run-id>`, and it did finish when we tried it.
 - **Over MCP, token limits run on an estimate** of what passes through the server, which undercounts by several times, so the 40,000 above is that estimate. Your client's own limits matter more there.
 - **Keep Claude Code's permission prompts on.** Your own session only coordinates through its server, but with every permission on it also has a shell. Approving a company and answering a run's questions refuse anything but a real terminal, and a session with a shell could still change your files, including the company's records. In testing, one with every permission on tried to answer a budget question for its person, which is why those checks exist.
 - **Operator mode over MCP** has one model play every role, so separation there is only procedural. `trypro agents claude-code` doesn't use it.
 - **Indonesian output hasn't been reviewed by a native speaker.** Other languages haven't been tried on full commands. Retrieval queries in other languages haven't been natively reviewed either.
 - **The journey ran on one Windows machine,** and on Claude Code 2.1.319. Linux and macOS have only run the test suite.
+
+## Getting help
+
+- **Something isn't working:** run `trypro doctor`. It says what's wrong and how to fix it.
+- **To report a bug:** [open one](https://github.com/goranai/try-professional/issues/new?template=bug_report.yml), and paste the output of `trypro doctor --report`. It holds versions and check results, and no keys, paths, or names.
+- **Skills for your industry:** [ask here](https://github.com/goranai/try-professional/issues/new?template=skill_request.yml).
+- **Questions, and companies you've built:** [Discussions](https://github.com/goranai/try-professional/discussions).
+- **To help:** [your first pull request](CONTRIBUTING.md#your-first-pull-request).
 
 ## FAQ
 
@@ -218,9 +227,12 @@ trypro check-model --dry-run
 
 ## Roadmap
 
-- **More runtimes.** Hermes and others. There's no Hermes adapter yet, and `skill-customs`' guide for it hasn't been tried on a real install. "Add support for <runtime>" issues are open to anyone.
-- **Quality on cheap models,** through self-refinement.
+In a rough order, which [your feedback can change](docs/roadmap-v0.2.md):
+
 - **A three-way benchmark** against a flat swarm and a single agent.
+- **Quality on cheap models,** through self-refinement.
+- **A Claude Code plugin,** if it can keep roles separate, to make setup shorter.
+- **More runtimes.** Hermes and others. There's no Hermes adapter yet, and `skill-customs`' guide for it hasn't been tried on a real install. ["Add support for <runtime>" issues](https://github.com/goranai/try-professional/issues?q=is%3Aissue+is%3Aopen+label%3Aadapter) are open to anyone.
 - **Dreaming,** where a company consolidates what it learned.
 
 ## Learn more
@@ -228,6 +240,6 @@ trypro check-model --dry-run
 - [Architecture](docs/architecture.md)
 - [The MCP adapter, and what it can and can't guarantee](packages/try-professional/src/try_professional/adapters/mcp/README.md)
 - [Example: a YouTube Shorts studio](examples/youtube-shorts-studio/README.md), on the experimental API runner
-- [Contributing](CONTRIBUTING.md), and [security](SECURITY.md)
+- [Changelog](CHANGELOG.md), [contributing](CONTRIBUTING.md), and [security](SECURITY.md)
 
 MIT licensed. No telemetry. Keys come from environment variables, and are never logged.

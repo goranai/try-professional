@@ -1,0 +1,38 @@
+name: Support for a runtime
+description: Run a company on something other than Claude Code.
+labels: [adapter]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Claude Code is the only runtime this release stands behind. Check the [open requests](https://github.com/goranai/try-professional/issues?q=is%3Aissue+is%3Aopen+label%3Aadapter) first, and add a thumbs-up to one that fits, because that's how we see demand.
+  - type: input
+    id: runtime
+    attributes:
+      label: The runtime or client
+      placeholder: "For example: Cursor, Codex, Gemini CLI, or Hermes"
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: What you'd use it for, and why this runtime
+    validations:
+      required: true
+  - type: dropdown
+    id: isolation
+    attributes:
+      label: Can it give each role only its own tools?
+      description: Each role must reach only its own assignment, memory, and skills. If the runtime can't enforce that, roles aren't really separate.
+      options:
+        - "Yes"
+        - "No"
+        - I don't know
+    validations:
+      required: true
+  - type: checkboxes
+    id: help
+    attributes:
+      label: Would you build it?
+      options:
+        - label: I'd like to try building it. See `adapters/template`.

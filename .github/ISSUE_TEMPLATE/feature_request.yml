@@ -1,0 +1,26 @@
+name: Feature request
+description: Something it should do, and doesn't.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Not sure yet? [Ideas in Discussions](https://github.com/goranai/try-professional/discussions/categories/ideas) is a good place to start.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What you were trying to do
+      description: The problem, more than the solution. What did you run into?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would help
+    validations:
+      required: true
+  - type: textarea
+    id: rules
+    attributes:
+      label: Anything it would change about reviews, budgets, memory, or permissions
+      description: These are enforced by code on purpose. See "The rules this project keeps" in CONTRIBUTING.md.

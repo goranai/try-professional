@@ -1,0 +1,32 @@
+name: Skills for my industry
+description: The review screen said coverage is thin, or your roles lack a skill they need.
+labels: [skill-request]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This helps us find skills for an industry and add a template for it. Only write what you're happy to have in public.
+  - type: input
+    id: industry
+    attributes:
+      label: Your industry
+      placeholder: "For example: office catering, bookkeeping, or a podcast studio"
+    validations:
+      required: true
+  - type: input
+    id: coverage
+    attributes:
+      label: The "Skill coverage" line from your review screen
+      placeholder: "Skill coverage: 8 of 52 role needs have a skill (15%)."
+  - type: textarea
+    id: gaps
+    attributes:
+      label: Which needs matter most
+      description: The `GAP` lines you most want filled, from the review screen or `trypro skills gaps`.
+    validations:
+      required: true
+  - type: textarea
+    id: known
+    attributes:
+      label: Skills you already know of
+      description: Links to public skills on GitHub, if you know any. They still have to pass the license check and the scan.

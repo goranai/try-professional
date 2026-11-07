@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security problem
+    url: https://github.com/goranai/try-professional/security/advisories/new
+    about: Please report it privately, not in a public issue.
+  - name: A question
+    url: https://github.com/goranai/try-professional/discussions/categories/q-a
+    about: Ask in Discussions.
+  - name: Show a company you built
+    url: https://github.com/goranai/try-professional/discussions/categories/show-and-tell
+    about: What you built, how it went, and what it cost.
+  - name: An idea
+    url: https://github.com/goranai/try-professional/discussions/categories/ideas
+    about: Talk it through before it becomes a request.
