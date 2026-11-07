@@ -20,7 +20,18 @@ from .adapters.api_runner.clients import ClientError
 from .adapters.api_runner.runner import ApiRunner, ModelRoutes, RunResult
 from .adapters.api_runner.scripted import ScriptedClient
 from .adapters.mcp import McpService
-from .config import CONFIG_NAME, CONFIG_TEMPLATE, ClientRouter, ProjectConfig, build_client, build_search, load_config
+from .check_model import NOT_RECOMMENDED, ModelUnreachable, ScriptedModel, check_model, render_check
+from .config import (
+    CONFIG_NAME,
+    CONFIG_TEMPLATE,
+    ClientRouter,
+    ModelConfig,
+    ProjectConfig,
+    build_client,
+    build_search,
+    load_config,
+    load_env_file,
+)
 from .core.audit import read_records
 from .core.brief import build_brief, role_card
 from .core.lock import command_lock
@@ -630,6 +641,39 @@ def cmd_mcp(args: argparse.Namespace) -> int:
     return 0
 
 
+def _model_to_check(args: argparse.Namespace) -> tuple[Any, str]:
+    if args.dry_run:
+        return ScriptedModel(), "scripted (a stand-in, to show the command working)"
+    try:
+        config = load_config(Path.cwd()).model
+    except FileNotFoundError:
+        load_env_file(Path.cwd())
+        config = ModelConfig(
+            provider="openai_compatible",
+            tiers={},
+            api_key_env="TRYPRO_LLM_API_KEY",
+            base_url=os.environ.get("TRYPRO_LLM_BASE_URL"),
+            default_model=os.environ.get("TRYPRO_LLM_MODEL"),
+        )
+    return build_client(config), args.model or config.model_for_tier("standard")
+
+
+def cmd_check_model(args: argparse.Namespace) -> int:
+    """0 if it can run a company, 1 if it's not recommended, 2 if it isn't set up, and 3 if it can't be reached."""
+    try:
+        client, model = _model_to_check(args)
+    except ClientError as error:
+        _print(f"Can't check a model yet: {error}")
+        return 2
+    try:
+        report = check_model(client, model)
+    except ModelUnreachable as error:
+        _print(f"Couldn't reach {model}, so there's no verdict. That says nothing about the model: {error}")
+        return 3
+    _print(json.dumps(report.to_dict(), ensure_ascii=False, indent=1) if args.json else render_check(report))
+    return 1 if report.verdict == NOT_RECOMMENDED else 0
+
+
 def _show_unfinished(orchestrator: Orchestrator) -> None:
     unfinished = orchestrator.company.unfinished()
     if unfinished:
@@ -1105,6 +1149,12 @@ def build_parser() -> argparse.ArgumentParser:
     mcp.set_defaults(func=cmd_mcp)
 
     sub.add_parser("doctor", help="Check this project's setup").set_defaults(func=cmd_doctor)
+
+    check = sub.add_parser("check-model", help="Test whether a model suits running a company. A few thousand tokens")
+    check.add_argument("--model", help="The model to test. Default: the standard tier, or TRYPRO_LLM_MODEL")
+    check.add_argument("--dry-run", action="store_true", help="Show it working on a scripted model, at no cost")
+    check.add_argument("--json", action="store_true", help="Print the result as JSON")
+    check.set_defaults(func=cmd_check_model)
     return parser
 
 
