@@ -1,6 +1,6 @@
 # MCP adapter
 
-Pull mode: any MCP client can drive the company. The client's own model does the work, so Try Professional needs no model key here.
+Pull mode: an MCP client drives the company, and its own model does the work, so Try Professional needs no model key here. **Claude Code is the client this is built and tested for. Others are experimental: available, not promised.**
 
 ```bash
 pip install 'try-professional[mcp]'
@@ -27,7 +27,7 @@ trypro init --review <proposal-id>
 trypro agents claude-code
 ```
 
-That writes one subagent per role and a `/company` command. Restart Claude Code in this folder, so it loads them, and run:
+That writes one subagent per role and a `/company` command. Restart Claude Code in this folder, so it loads them. Say yes when it asks whether you trust the folder, or each role's server can't start. Then run:
 
 ```text
 /company Write a weekly lunch menu and a price list for a new office client with 30 people
@@ -35,7 +35,11 @@ That writes one subagent per role and a `/company` command. Restart Claude Code 
 
 Your session only coordinates. Its server can start work and see who's next, and it can't read an assignment or submit anything, so it can't do a role's work. Each role's subagent has no shell and no file tools. Its only tools come from a server started for that role, so it can't read another role's memory or see the rest of the company, whatever it tries. Claude Code's own limits apply to its usage: Try Professional can't see them.
 
-## In any other client
+If a command stops, for example at its token limit, it shows you a `trypro decide` command. Run that, and then `/company continue <run-id>`.
+
+## In any other client (experimental)
+
+This hasn't been tried on Cursor, Codex, or any client but Claude Code.
 
 ```bash
 trypro mcp                              # Operator mode: one client plays every role

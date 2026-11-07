@@ -81,7 +81,33 @@
   body: |
     Add `templates/nonprofit/template.yaml`. See `templates/README.md`. Grant writing, donor
     communications, and impact reports are good starting points.
-- title: "Adapter: a new runtime from adapters/template"
+- title: "Add support for Hermes"
   labels: [good first issue, adapter]
   body: |
-    Copy the template adapter for a runtime you use. Include a README and a smoke test.
+    Claude Code is the only runtime this release stands behind. Start from `adapters/base.py` and
+    `adapters/template`, and look at how `adapters/mcp/claude_code.py` gives each role its own tools.
+    Each role must reach only its own assignment, memory, and skills, enforced by something other than
+    asking the model. Include a README, a smoke test, and what you really ran it on.
+- title: "Add support for Cursor"
+  labels: [good first issue, adapter]
+  body: |
+    The MCP server should work with Cursor, and nobody has tried it. Try it, and write down what happens.
+    A role's own tools matter most: see `adapters/mcp/claude_code.py` for how Claude Code does it, and say
+    plainly if Cursor can't hold that. Include a README section and what you really ran it on.
+- title: "Add support for Codex"
+  labels: [good first issue, adapter]
+  body: |
+    The MCP server should work with Codex, and nobody has tried it. Try it, and write down what happens.
+    A role's own tools matter most: see `adapters/mcp/claude_code.py` for how Claude Code does it, and say
+    plainly if Codex can't hold that. Include a README section and what you really ran it on.
+- title: "Add support for Gemini CLI"
+  labels: [good first issue, adapter]
+  body: |
+    The MCP server should work with Gemini CLI, and nobody has tried it. Try it, and write down what
+    happens. A role's own tools matter most: see `adapters/mcp/claude_code.py` for how Claude Code does it,
+    and say plainly if it can't hold that. Include a README section and what you really ran it on.
+- title: "Add support for your runtime"
+  labels: [good first issue, adapter]
+  body: |
+    Using something else? Copy `adapters/template` for it, and open a pull request. Each role must reach
+    only its own assignment, memory, and skills. Include a README, a smoke test, and what you really ran it on.

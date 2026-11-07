@@ -1,6 +1,6 @@
 # Try Professional
 
-**Preview (v0.1.0). It works, it has rough edges, and it has only been proven on Claude.**
+**Preview (v0.1.0), for Claude Code. It works, it has rough edges, and it has only been proven on Claude.**
 
 Turn an agent into a permanent company, not a one-off project. Describe a business, approve the company it designs, and give it commands. It works only when you give it a command, and it remembers between commands: every role, from the CEO down, keeps its own memory and knows what it's working on.
 
@@ -8,66 +8,63 @@ Each piece of work has one owner, gets reviewed, and leaves an audit log you can
 
 ## Quickstart
 
-No key, no cost. A scripted model stands in, so this shows how the company works, not what a model would write:
+For Claude Code. You need Python 3.10 or newer, and Claude Code signed in. It uses your own Claude plan, with no API key, and each role runs as its own subagent.
+
+**1. Install it, and make a folder for your company.**
 
 ```bash
-pip install try-professional
+pip install "try-professional[mcp]"
 mkdir my-company && cd my-company
-trypro init
-trypro run --dry-run "Build a health check endpoint"
-trypro check-model --dry-run
 ```
 
-`trypro init` downloads a local embedding model, about 0.22 GB, once. Your text is embedded on your machine and isn't sent anywhere.
-
-### With Claude Code
-
-No API key is needed. It uses your own Claude plan, and each role runs as its own subagent. Set `GITHUB_TOKEN` first, so it can search GitHub for skills. Without one a company gets no skills, and the review screen says so.
+**2. Set a GitHub token, so it can search for skills.** Without one a company gets no skills, and the review screen says so. If you use the GitHub CLI:
 
 ```bash
-pip install 'try-professional[mcp]'
-mkdir my-company && cd my-company
+export GITHUB_TOKEN=$(gh auth token)
+```
+
+**3. Add it to Claude Code.**
+
+```bash
 claude mcp add trypro -- trypro mcp --coordinator --dir "$PWD"
+```
+
+**4. Describe your business.** Claude Code designs a company and chooses skills, and then gives you a proposal id.
+
+```bash
 claude "Use the trypro tools to design a company for a catering business that delivers office lunches."
 ```
 
-It stops at a review screen, because **a person approves a company, in a terminal:**
+**5. Read the proposal, and approve it.** A person has to do this, in a terminal. No model can. The first approval downloads a local embedding model, about 0.22 GB. Your text is embedded on your machine and isn't sent anywhere.
 
 ```bash
 trypro init --review <proposal-id>
+```
+
+**6. Create the company's roles.** This writes one subagent per role, and the `/company` command.
+
+```bash
 trypro agents claude-code
 ```
 
-Restart Claude Code in that folder, and run:
+**7. Start Claude Code again in this folder, and give the company a command.** When it asks whether you trust this folder, say yes. Otherwise each role's server can't start, and `/company` stops rather than do a role's work itself.
 
 ```text
 /company Write a weekly lunch menu and a price list for a new office client with 30 people
 ```
 
-### With any OpenAI-compatible model
-
-Copy `.env.example` to `.env`, and set `TRYPRO_LLM_BASE_URL`, `TRYPRO_LLM_API_KEY`, `TRYPRO_LLM_MODEL`, and `GITHUB_TOKEN` to find skills. **Check the model first:**
-
-```bash
-trypro check-model
-trypro init "a YouTube Shorts content company"
-trypro run "Make 5 Shorts about AI tools for this week"
-```
-
-`check-model` tests tool calling, strict structures, following a brief, replying in the command's language, and treating data as data. Then it has the model finish one small real command, through every review, within 40,000 tokens. It reports **suitable**, **usable with caveats**, or **not recommended**, and it can spend up to about 45,000 tokens. It's one run, so a different run can go differently.
+Your session only coordinates. Results are files, in `deliverables/<run-id>/`. Start with `index.md`.
 
 ### Once a company exists
 
-```bash
-trypro run "<a command>"          # Or --queue to add it to the backlog
-trypro next                       # Run the oldest queued command
-trypro resume <run-id>            # Continue unfinished work
-trypro cancel <run-id>            # Stop it. Its records stay
-trypro status                     # Backlog, memory size, tokens by month and command
-trypro audit <run-id>             # Verify a run's audit log
+```text
+/company <a command>                          Give it more work. It remembers earlier work
+trypro status                                 Memory size, and tokens by month and command
+trypro audit <run-id>                         Verify a run's audit log
+trypro decide <run-id> <request-id> resume    Answer a command that stopped to ask you
+/company continue <run-id>                    Then carry on with it
+trypro cancel <run-id>                        Stop it. Its records stay
 ```
-
-Results are files, in `deliverables/<run-id>/`. Start with `index.md`.
 
 ## What works
 
@@ -141,7 +138,7 @@ On DeepSeek through the API runner, the one small command that finished took 25,
 
 ## Known limits
 
-- **It's only been proven on Claude.** On a cheap model, expect blocked commands and wasted tokens. Run `trypro check-model`, and start small.
+- **It's only been proven on Claude.** On a cheap model, expect blocked commands and wasted tokens.
 - **Skill coverage is thin.** In real generations, 14% to 29% of what roles need had a matching skill, and the review screen says so. Roles without a skill rely on their instructions. Judged on a labelled set, skill matching found 33 of 44 right skills, and 19 of its 52 suggestions were wrong, so read what you approve.
 - **Cost per command is high** for small jobs. See above. A two-sentence reply goes through intake, the work, QA, legal, and a final report.
 - **It works with files only.** It doesn't publish, send, buy, render video, or browse the web unless you turn on search. Its output tells you what a person must check.
@@ -149,20 +146,49 @@ On DeepSeek through the API runner, the one small command that finished took 25,
 - **Reviews aren't proof.** [The test above](https://github.com/goranai/try-professional/blob/main/docs/research/qa_gates/README.md) is small, and a weak reviewer can still approve weak work. They can also be too strict, and send back good work.
 - **A command can stop at its token limit.** Rework costs tokens. In one acceptance run a small command stopped at its 40,000 limit just short of finishing, and asked a person, and in the run that finished the same command used about 37,800. Until it finishes, its work isn't exported as files.
 - **Over MCP, token limits run on an estimate** of what passes through the server, which undercounts by several times, so the 40,000 above is that estimate. Your client's own limits matter more there.
-- **Operator mode over MCP** has one model play every role, so separation there is only procedural. Use `trypro agents claude-code`, or one bound server per role.
-- **Hermes isn't supported yet.** There's no Hermes adapter in this version, so it's untested. `skill-customs` has a guide for it that hasn't been tried on a real install.
+- **Keep Claude Code's permission prompts on.** Your own session only coordinates through its server, but with every permission on it also has a shell. Approving a company and answering a run's questions refuse anything but a real terminal, and a session with a shell could still change your files, including the company's records. In testing, one with every permission on tried to answer a budget question for its person, which is why those checks exist.
+- **Operator mode over MCP** has one model play every role, so separation there is only procedural. `trypro agents claude-code` doesn't use it.
 - **Indonesian output hasn't been reviewed by a native speaker.** Other languages haven't been tried on full commands. Retrieval queries in other languages haven't been natively reviewed either.
 - **The journey ran on one Windows machine,** and on Claude Code 2.1.319. Linux and macOS have only run the test suite.
 
-## Coming in v0.2
+## Experimental
 
-Self-refinement toward quality on cheap models, a Hermes adapter, a three-way benchmark against a flat swarm and a single agent, and dreaming, where a company consolidates what it learned.
+Available, not promised. These exist and have tests, and they aren't what this release stands behind.
+
+**The API runner,** for any OpenAI-compatible model: `deepseek-v4.1-flash-1017` is the only one tried, and the table above shows how that went. Grok and others should work the same way, and haven't been tried. Copy `.env.example` to `.env`, set `TRYPRO_LLM_BASE_URL`, `TRYPRO_LLM_API_KEY`, `TRYPRO_LLM_MODEL`, and `GITHUB_TOKEN`, and **check the model first:**
+
+```bash
+trypro check-model
+trypro init "a YouTube Shorts content company"
+trypro run "Make 5 Shorts about AI tools for this week"
+trypro run --queue "<a command>"    # Then: trypro next
+trypro resume <run-id>              # Continue unfinished work
+```
+
+`check-model` tests tool calling, strict structures, following a brief, replying in the command's language, and treating data as data. Then it has the model finish one small real command, through every review, within 40,000 tokens. It reports **suitable**, **usable with caveats**, or **not recommended**, and it can spend up to about 45,000 tokens. It's one run, so a different run can go differently.
+
+**A look with no model at all.** A scripted model stands in, so this shows how the company works, not what a model would write:
+
+```bash
+trypro init
+trypro run --dry-run "Build a health check endpoint"
+trypro check-model --dry-run
+```
+
+**Other MCP clients,** such as Cursor and Codex: the server should work with them, and none has been tried. [Setting one up, and what it can't guarantee](https://github.com/goranai/try-professional/blob/main/packages/try-professional/src/try_professional/adapters/mcp/README.md).
+
+## Roadmap
+
+- **More runtimes.** Hermes and others. There's no Hermes adapter yet, and `skill-customs`' guide for it hasn't been tried on a real install. "Add support for <runtime>" issues are open to anyone.
+- **Quality on cheap models,** through self-refinement.
+- **A three-way benchmark** against a flat swarm and a single agent.
+- **Dreaming,** where a company consolidates what it learned.
 
 ## Learn more
 
 - [Architecture](https://github.com/goranai/try-professional/blob/main/docs/architecture.md)
 - [The MCP adapter, and what it can and can't guarantee](https://github.com/goranai/try-professional/blob/main/packages/try-professional/src/try_professional/adapters/mcp/README.md)
-- [Flagship example: a YouTube Shorts studio](https://github.com/goranai/try-professional/blob/main/examples/youtube-shorts-studio/README.md)
+- [Example: a YouTube Shorts studio](https://github.com/goranai/try-professional/blob/main/examples/youtube-shorts-studio/README.md), on the experimental API runner
 - [Contributing](https://github.com/goranai/try-professional/blob/main/CONTRIBUTING.md), and [security](https://github.com/goranai/try-professional/blob/main/SECURITY.md)
 
 MIT licensed. No telemetry. Keys come from environment variables, and are never logged.

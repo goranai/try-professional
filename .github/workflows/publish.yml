@@ -1,0 +1,84 @@
+name: Publish to PyPI
+
+# Trusted Publishing: PyPI trusts this workflow, in this repository and this environment, so no token exists to leak.
+# It only runs when someone starts it by hand, from main, on a commit whose full CI run passed.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Require a passing full CI run on this commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          passed=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow ci.yml --commit "$GITHUB_SHA" \
+            --event workflow_dispatch --status success --json databaseId --jq length)
+          if [ "$passed" -eq 0 ]; then
+            echo "No passing manual CI run on $GITHUB_SHA. Run the CI workflow by hand first."
+            exit 1
+          fi
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: python -m pip install build twine
+      - run: python -m build packages/skill-customs --outdir dist/skill-customs
+      - run: python -m build packages/try-professional --outdir dist/try-professional
+      - run: python -m twine check --strict dist/*/*
+      - uses: actions/upload-artifact@v4
+        with:
+          name: skill-customs
+          path: dist/skill-customs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: try-professional
+          path: dist/try-professional
+
+  # try-professional depends on skill-customs, so skill-customs goes first.
+  publish-skill-customs:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: pypi
+      url: https://pypi.org/project/skill-customs/
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: skill-customs
+          path: dist
+      - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
+        with:
+          packages-dir: dist
+
+  publish-try-professional:
+    needs: publish-skill-customs
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: pypi
+      url: https://pypi.org/project/try-professional/
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: try-professional
+          path: dist
+      - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
+        with:
+          packages-dir: dist
