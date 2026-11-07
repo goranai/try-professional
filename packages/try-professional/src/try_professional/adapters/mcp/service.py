@@ -193,6 +193,7 @@ class McpService:
                         "question": q.question,
                         "options": q.options,
                         "command": f"trypro decide {run_id} {q.request_id} <option>",
+                        "tell_the_person": self._how_to_answer(run_id, q),
                     }
                     for q in questions
                 ],
@@ -201,6 +202,12 @@ class McpService:
         if self.bound_role:
             work = [a for a in work if a.role == self.bound_role]
         return {"status": "working", "actions": [self._describe(run_id, action) for action in work]}
+
+    def _how_to_answer(self, run_id: str, question: AskHuman) -> str:
+        """Ready to run, so nobody has to work out a command. Only a person at a terminal can answer."""
+        answers = "\n".join(f"  trypro decide {run_id} {question.request_id} {o}" for o in question.options)
+        carry_on = f"/company continue {run_id}" if self.coordinator else f"Call run_next_action with run_id {run_id}"
+        return f"{question.question}\n\nIn a terminal, run one of these:\n{answers}\n\nThen, to carry on:\n  {carry_on}"
 
     def _index_of(self, run_id: str, status: str) -> str | None:
         """Where a person finds the result, so whoever is coordinating can tell them."""

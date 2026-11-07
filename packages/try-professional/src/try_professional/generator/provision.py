@@ -53,6 +53,21 @@ from ..skills.loadouts import DUPLICATE_SIMILARITY, SHORT_DESCRIPTION
 from ..skills.trade import off_trade_reason
 
 GAP_SIMILARITY = 0.35
+GITHUB_TOKEN_HELP = """Without a GitHub token, a company gets no skills, and its roles work from their written \
+instructions alone.
+To set one, if you use the GitHub CLI:
+  macOS or Linux:      export GITHUB_TOKEN=$(gh auth token)
+  Windows PowerShell:  $env:GITHUB_TOKEN = (gh auth token)
+Or make a token at https://github.com/settings/tokens with no boxes ticked, and put this in a .env file in this folder:
+  GITHUB_TOKEN=<your token>
+If you use Claude Code, set it before you start Claude Code. Only skill phrases go to GitHub, never your business \
+description."""
+
+
+def github_token_is_set() -> bool:
+    return bool(os.environ.get("GITHUB_TOKEN"))
+
+
 QA = "qa"
 MAX_QUERIES = 20
 MAX_SKILLS = 60
@@ -216,8 +231,8 @@ def discover_skills(
     sleep: Callable[[float], None] = time.sleep,
 ) -> list[str]:
     """Pin what GitHub has for these needs. A slow or failed search leaves gaps, and never fails init."""
-    if client is None and not os.environ.get("GITHUB_TOKEN"):
-        return ["Skipped skill discovery: GITHUB_TOKEN isn't set. Set it to search GitHub for skills."]
+    if client is None and not github_token_is_set():
+        return [f"Skipped skill discovery: GITHUB_TOKEN isn't set, so nothing was searched.\n{GITHUB_TOKEN_HELP}"]
     remove_stale_temp_folders()
     report: list[str] = []
     queries = list(dict.fromkeys(q for q in (search_terms(need) for need in needs) if q))[:MAX_QUERIES]

@@ -1214,11 +1214,13 @@ def _on_usage(step: _Step, event: UsageRecorded) -> None:
     if state.phase == RunPhase.BLOCKED:
         return
     counters = state.counters
+    how = " by the server's estimate" if state.usage.estimated else ""
     step.ask_human(
-        f"This command stopped at {state.usage.total} tokens, over its limit of {limit}. Nothing more is spent until "
-        f"you decide. So far: {counters.assignments} assignments, {counters.invalid_outputs} rejected outputs, "
+        f"This command stopped at {state.usage.total} tokens{how}, "
+        f"over its limit of {limit}. Nothing more is spent until you decide, and its work so far is saved. "
+        f"So far: {counters.assignments} assignments, {counters.invalid_outputs} rejected outputs, "
         f"{counters.rework_loops} rounds of rework, {counters.escalations} escalations. "
-        "Continue with a higher limit, or abandon? Resuming adds half a limit, unless you name an amount.",
+        f"Resuming adds {limit // 2} tokens, unless you name an amount with --token-budget. Abandoning stops it here.",
         ["resume", "abandon"],
         "budget",
     )

@@ -49,8 +49,8 @@ continue a run_id, don't start anything: call run_next_action with that run_id.
 2. For each action, start the subagent named trypro-<department>-<role> for its role (a role of marketing/seo is \
 trypro-marketing-seo). Give it only the run_id. Run them one at a time. Never add what another role did.
 3. Call run_next_action, and repeat until its status isn't "working".
-4. If its status is "blocked", show me the questions under needs_a_person, with their commands, and say that after \
-answering I can run /company continue <run_id>. Only I can answer them.
+4. If its status is "blocked", show me each tell_the_person under needs_a_person, word for word. Only I can answer \
+them.
 5. If a role's subagent won't start, stop, and tell me that this folder may need to be trusted in Claude Code. Never \
 do a role's work yourself.
 6. If its status is "done", tell me what came back, including everything under known_limits, and give me the path \

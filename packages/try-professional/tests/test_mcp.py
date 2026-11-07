@@ -392,7 +392,7 @@ class TestAStoppedCommand:
         text = claude_code._COMMAND
         assert "continue a run_id" in text
         assert "don't start anything" in text
-        assert "/company continue <run_id>" in text
+        assert "tell_the_person" in text
 
     def test_company_says_what_to_do_when_a_role_wont_start(self) -> None:
         """In a folder Claude Code doesn't trust yet, a role's own server doesn't start, and it has no tools."""

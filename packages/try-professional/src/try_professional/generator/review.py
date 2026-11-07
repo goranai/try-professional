@@ -6,6 +6,7 @@ from .flow import Proposal
 from .provision import RoleMatch
 from .templates import load_template
 
+SKILL_REQUEST_URL = "https://github.com/goranai/try-professional/issues/new?template=skill_request.yml"
 THIN_COVERAGE_PERCENT = 50
 _SOURCES = {
     "declared": "declared by its author",
@@ -39,9 +40,13 @@ def _coverage(bundle: Proposal) -> tuple[int, int]:
     return sum(len(needs) for needs in bundle.provisioned.gaps.values()), total
 
 
+def _covered_percent(unfilled: int, total: int) -> int:
+    return round(100 * (total - unfilled) / total) if total else 0
+
+
 def _coverage_line(unfilled: int, total: int) -> str:
     filled = total - unfilled
-    percent = round(100 * filled / total) if total else 0
+    percent = _covered_percent(unfilled, total)
     line = f"Skill coverage: {filled} of {total} role needs have a skill ({percent}%)."
     if percent < THIN_COVERAGE_PERCENT:
         line += " That's thin. Roles marked GAP start without a skill for that work, and rely on their instructions."
@@ -71,6 +76,9 @@ def render(bundle: Proposal) -> str:
     matched = any(bundle.provisioned.matches.values()) or unfilled
     if matched:
         lines.append(_coverage_line(unfilled, total_needs))
+        searched = not any("GITHUB_TOKEN" in message for message in bundle.provisioned.discovery)
+        if searched and _covered_percent(unfilled, total_needs) < THIN_COVERAGE_PERCENT:
+            lines.append(f"  Want more for your industry? Ask for skills here: {SKILL_REQUEST_URL}")
     lines.append("")
 
     root_department = org.root_role.split("/", 1)[0]

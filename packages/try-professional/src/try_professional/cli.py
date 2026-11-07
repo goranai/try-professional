@@ -38,6 +38,7 @@ from .core.brief import build_brief, role_card
 from .core.lock import command_lock
 from .core.orchestrator import Orchestrator, utc_now
 from .core.pipeline import HumanDecided, IllegalEvent, Purpose
+from .doctor import print_checks, report, run_checks
 from .generator import (
     ActivationError,
     ArchitectFailed,
@@ -54,6 +55,7 @@ from .generator import (
     render,
     template_ids,
 )
+from .generator.provision import GITHUB_TOKEN_HELP, github_token_is_set
 from .memory import (
     FastEmbedEmbedder,
     MemoryConfigError,
@@ -61,7 +63,6 @@ from .memory import (
     MemorySettings,
     MnemosyneBackend,
     bank_size,
-    check_local_only,
     model_cache_dir,
     score_floor,
     tier_sizes,
@@ -202,6 +203,13 @@ def _init_company(args: argparse.Namespace, root: Path) -> int:
     if (root / "org" / "org.yaml").exists() and not args.review:
         _print(f"{root} already has a company in org/. Move it first, or use another --dir.")
         return 1
+    load_env_file(root)
+    if not args.review and not args.no_discover and not args.dry_run and not github_token_is_set():
+        _print(GITHUB_TOKEN_HELP)
+        _print()
+        if _person_at_terminal() and not input("Go on with no skills? [y/N]: ").strip().lower().startswith("y"):
+            _print("Nothing was changed. Set the token, and run this again.")
+            return 2
     _write_project_files(root)
     config = load_config(root)
     embedder = FastEmbedEmbedder(config.memory.embedding_model)
@@ -278,6 +286,8 @@ def cmd_init(args: argparse.Namespace) -> int:
         FastEmbedEmbedder().embed_documents(["ready"])
     _print('Try it with no key or cost: trypro run --dry-run "Build a health check endpoint"')
     _print(f"To use a real model, edit {CONFIG_NAME} and set the API key variable it names.")
+    if not github_token_is_set():
+        _print("This default company has no skills. To design one with skills, set GITHUB_TOKEN. See: trypro doctor")
     return 0
 
 
@@ -356,6 +366,7 @@ def _print_result(result: RunResult, deliverables: Path | None = None) -> int:
         _print(f"Needs a decision: {question.question}")
         options = "|".join(question.options)
         _print(f"  trypro decide {result.run_id} {question.request_id} <{options}>")
+        _print(f"Then: trypro resume {result.run_id}")
     return {"done": 0, "blocked": 3}.get(result.status, 1)
 
 
@@ -627,6 +638,8 @@ def cmd_mcp(args: argparse.Namespace) -> int:
         print("The MCP server needs: pip install 'try-professional[mcp]'", file=sys.stderr)
         return 2
     root = Path(args.dir).resolve() if args.dir else Path.cwd()
+    # Designing a company needs what's in .env, and there's no trypro.yaml yet to load it.
+    load_env_file(root)
     # One server per role, so they share one copy of the model. Roles stay apart in the gateway and each tool list.
     use_embedding_service(root / ".trypro")
 
@@ -915,7 +928,11 @@ def cmd_decide(args: argparse.Namespace) -> int:
         return 1
     finally:
         orchestrator.close()
-    _print(f"Recorded. To continue, in Claude Code: /company continue {args.run_id}")
+    if args.decision == "abandon":
+        _print("Recorded. That work is abandoned, and its records stay.")
+        return 0
+    _print("Recorded. To continue, in Claude Code:")
+    _print(f"  /company continue {args.run_id}")
     _print(f"With the API runner: trypro resume {args.run_id}")
     return 0
 
@@ -1046,57 +1063,11 @@ def cmd_audit(args: argparse.Namespace) -> int:
 
 
 def cmd_doctor(args: argparse.Namespace) -> int:
-    config = load_config(Path.cwd())
-    ok = True
-    org = load_org(config.org_dir)
-    _print(f"[ok] org: {len(org.departments)} departments, {len(org.roles)} roles")
-    _print(f"[ok] python {sys.version.split()[0]}")
-    provider = config.model.provider
-    _print(f"[--] model provider: {provider}")
-    env = config.model.api_key_env
-    if env:
-        present = bool(os.environ.get(env))
-        ok = ok and present
-        _print(f"[{'ok' if present else '!!'}] {env} is {'set' if present else 'not set'}")
-    if provider == "anthropic":
-        try:
-            import anthropic  # noqa: F401
-
-            _print("[ok] anthropic SDK installed")
-        except ImportError:
-            ok = False
-            _print("[!!] anthropic SDK missing: pip install 'try-professional[anthropic]'")
-    if provider == "openai_compatible" and not config.model.base_url:
-        ok = False
-        _print("[!!] no model endpoint: set TRYPRO_LLM_BASE_URL")
-    router = ClientRouter(config.model, org)
-    try:
-        for ref, role in org.roles.items():
-            if org.llm_override_for(ref):
-                resolved = router.resolve(role)
-                variable = resolved.api_key_env
-                state = "no key" if variable is None else ("set" if os.environ.get(variable) else "NOT SET")
-                _print(f"[--] {ref}: model {resolved.model}, key variable {variable} ({state})")
-        _print(f"[ok] default model: {config.model.model_for_tier('standard')}")
-    except ClientError as error:
-        ok = False
-        _print(f"[!!] {error}")
-    if config.memory.enabled:
-        try:
-            settings = _memory_settings(config)
-            check_local_only(settings, os.environ)
-            _print(
-                f"[ok] memory: {settings.embedding_model}, local only"
-                if not settings.remote_allowed
-                else "[--] memory: remote allowed"
-            )
-        except MemoryConfigError as error:
-            ok = False
-            _print(f"[!!] {error}")
-    else:
-        _print("[--] memory is turned off")
-    _print("Ready." if ok else "Not ready for real model runs. 'trypro run --dry-run' still works.")
-    return 0 if ok else 1
+    checks = run_checks(Path.cwd())
+    if args.report:
+        _print(report(checks))
+        return 0
+    return 0 if print_checks(checks, _print) else 1
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -1223,7 +1194,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     mcp.set_defaults(func=cmd_mcp)
 
-    sub.add_parser("doctor", help="Check this project's setup").set_defaults(func=cmd_doctor)
+    doctor = sub.add_parser("doctor", help="Check this project's setup")
+    doctor.add_argument(
+        "--report", action="store_true", help="Print a diagnostic to paste into a bug report: no keys, paths, or names"
+    )
+    doctor.set_defaults(func=cmd_doctor)
 
     agents = sub.add_parser("agents", help="Set up an agent runtime to run this company")
     agents.add_argument("runtime", choices=["claude-code"])

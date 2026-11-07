@@ -15,6 +15,7 @@ from typing import Any
 import yaml
 
 from ..adapters.api_runner.clients import ChatRequest, ClientError, ToolResult
+from ..config import load_env_file
 from ..core.audit import AuditLog
 from ..memory.embedding import Embedder
 from ..org import load_bundle
@@ -23,6 +24,7 @@ from .architect import MAX_ATTEMPTS, _settle, check_proposal, submit_spec, syste
 from .compiler import ProposalError, compile_org
 from .flow import _empty_tokens, _finish, _now, _wait_for_room, load_proposal, proposals_dir
 from .proposal import OrgProposal
+from .provision import GITHUB_TOKEN_HELP, github_token_is_set
 from .review import render
 from .templates import load_template, rank_templates
 
@@ -120,7 +122,12 @@ def begin_design(
     }
     _write_json(path / _META, meta)
     _note(path, "proposal_started", {"description": description, "template": template_id, "model": CLIENT_MODEL})
-    return _design_action(path, meta)
+    action = _design_action(path, meta)
+    load_env_file(root)
+    if not github_token_is_set():
+        # Before a client spends anything on the design, so a person can set it first.
+        action = {"tell_the_person_first": GITHUB_TOKEN_HELP, **action}
+    return action
 
 
 def submit_design(

@@ -61,7 +61,8 @@ def build_server(
 
         @server.tool()
         def org_propose(description: str, company_name: str | None = None) -> Any:
-            """Start designing a company for a business, in any language. Returns the design work to do."""
+            """Start designing a company for a business, in any language. Returns the design work to do.
+            If the answer has tell_the_person_first, tell them that before doing anything else."""
             return _guard(design.propose, description, company_name)
 
         @server.tool()
