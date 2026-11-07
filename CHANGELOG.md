@@ -21,13 +21,14 @@ Fixes for what someone is likely to hit in their first ten minutes. No new featu
 
 ### Added
 
-- **`trypro agents claude-code --model haiku`** runs every role on one model, such as Haiku for a lighter plan. By default, each role's tier still chooses.
+- **`trypro agents claude-code --model haiku`** runs every role on one model. By default, each role's tier still chooses. **Haiku for every role finished none of 6 commands in our test,** though its rules and reviews held. See [the Haiku test](docs/research/haiku/README.md).
 - **`trypro doctor --report`** prints a diagnostic to paste into a bug report: versions, system, and check results, with no keys, paths, or names.
 - **Issue forms** for bugs, features, skills for an industry, and runtime support. Blank issues now point to Discussions, and security problems to private reporting.
 - **"Your first pull request"** in `CONTRIBUTING.md`, this changelog, a [release checklist](docs/releasing.md), and a [v0.2 plan](docs/roadmap-v0.2.md).
 
 ### Fixed
 
+- **`/company continue <run-id>` could start a stray new run first.** Haiku did, before carrying on with the right run. `run_start` now picks up a run it's asked to continue, and the `/company` wording says this first.
 - A `GITHUB_TOKEN` in `.env` wasn't seen when designing a company through Claude Code, so that company got no skills.
 
 ## 0.1.0 (2026-11-08)

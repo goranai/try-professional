@@ -111,6 +111,7 @@ trypro cancel <run-id>                        Stop it. Its records stay
 |---|---|---|
 | `claude-sonnet-5-5` for every role, and `claude-haiku-5-5` for matching skills | Claude Code 2.1.319 on Windows 11, through MCP, each role as its own process with only that role's server | 9 of 9 commands finished, on 3 businesses. All 108 artifacts were recorded as coming from the right role's own server. [Details](docs/research/journey/README.md) |
 | `claude-sonnet-5-5` for every role | `/company` in one Claude Code session, each role as a subagent, on a business kept out of all training | One prompt to a company, a command, and a later related command that followed the first. All 23 artifacts came from the right role's own server. It passed on its sixth run, and the fifth stopped at the token limit. [Every run](docs/research/journey/README.md#acceptance-journey) |
+| `claude-haiku-5-5` for every role, and for the session | `/company` in Claude Code, on the acceptance journey, twice | **0 of 6 commands finished.** Each stopped for a person after its rework limit, or because earlier work wasn't approved. Isolation held: 90 artifacts, none claimed. Its reviewers caught 22 of 22 seeded flaws, and sent back 2 of 4 clean documents. [Details](docs/research/haiku/README.md) |
 | `deepseek-v4.1-flash-1017` | API runner | `check-model`: usable with caveats. **The same small command finished once in three runs**, and the other two blocked. [Why](docs/research/journey/deepseek-diagnosis.md) |
 
 Those are the only models tested. The test suite runs on a scripted model, on Linux, macOS, and Windows.
@@ -197,7 +198,7 @@ On DeepSeek through the API runner, the one small command that finished took 25,
 
 **What does a command cost?** On a Claude plan, it comes out of your plan's usage. At API list prices, the small commands we measured came to about $0.13 to $0.66, and the largest to $1.67. Rework makes it cost more. See [the tables](#what-it-costs). A command stops and asks you at 60,000 tokens if small, or 200,000 if large.
 
-**Which models work?** It has been proven on `claude-sonnet-5-5` and `claude-haiku-5-5`, through Claude Code. On `deepseek-v4.1-flash-1017`, the same small command finished in one run of three. No other model has been tried. See [what was tested](#what-was-tested-and-how).
+**Which models work?** It has been proven on `claude-sonnet-5-5` through Claude Code, with `claude-haiku-5-5` matching skills. **With every role on Haiku, it finished none of 6 commands.** Its rules held, and its reviewers caught every seeded flaw, but its writers couldn't get work past those reviewers. [Details](docs/research/haiku/README.md). On `deepseek-v4.1-flash-1017`, the same small command finished in one run of three. No other model has been tried. See [what was tested](#what-was-tested-and-how).
 
 ## Experimental
 

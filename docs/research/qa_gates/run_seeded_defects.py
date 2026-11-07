@@ -1,6 +1,6 @@
 """Do the reviewers catch flawed work? Uses your Claude plan, not an API key.
 
-usage: python run_seeded_defects.py <companies_dir> <output_dir> <results.json> [first|harder|retest]
+usage: python run_seeded_defects.py <companies_dir> <output_dir> <results.json> [first|harder|retest] [model]
 
 Each trial is a real run over real MCP, on a fresh copy of a real company, so no reviewer learns from an earlier trial.
 The CEO's intake and every review are real, each its own `claude -p` process with only that role's server. The one thing
@@ -46,6 +46,8 @@ from try_professional.memory.embed_service import ADDRESS_FILE, _connect_or_none
 from try_professional.org import load_org  # noqa: E402
 
 MAX_STEPS = 12
+# Every role on one model, for a run like Haiku's. None keeps each role's tier.
+ONE_MODEL: str | None = None
 MAX_TRIES = 3
 FRESH_IGNORES = shutil.ignore_patterns(ADDRESS_FILE, "embed-service.lock", "__pycache__")
 
@@ -219,7 +221,7 @@ async def trial(scenario: Scenario, version: str, base: Path, folder: Path, hub:
             if tries[invocation] > MAX_TRIES:
                 row["ended"] = f"stuck_at_{purpose}"
                 break
-            model = TIER_MODELS.get(org.role(action["role"]).model_tier, "sonnet")
+            model = ONE_MODEL or TIER_MODELS.get(org.role(action["role"]).model_tier, "sonnet")
             result = await asyncio.to_thread(
                 run_claude,
                 f"run_id: {run_id}\ninvocation_id: {invocation}",
@@ -298,4 +300,5 @@ async def main(companies: Path, output: Path, results: Path, chosen: str) -> Non
 
 if __name__ == "__main__":
     chosen_set = sys.argv[4] if len(sys.argv) > 4 else "first"
+    ONE_MODEL = sys.argv[5] if len(sys.argv) > 5 else None
     asyncio.run(main(Path(sys.argv[1]).resolve(), Path(sys.argv[2]).resolve(), Path(sys.argv[3]).resolve(), chosen_set))

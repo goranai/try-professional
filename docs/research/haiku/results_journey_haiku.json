@@ -1,0 +1,727 @@
+{
+ "no_token": {
+  "result": "The design is ready, but it needs your approval before the company is created. I can't approve it from here.\n\n**Proposal:** `prop-15b3fbd249`, named **Local Web Studio** (I picked the name; you can change it at review).\n\n**Departments (8 active, 16 roles):**\n- **Executive, Legal & Compliance, Quality Assurance:** added automatically by the template.\n- **Strategy:** Chief Strategy Officer, Market Researcher. Kept from the template.\n- **Creative:** Creative Director, Copywriter, Designer. Kept from the template.\n- **Web Build (new):** Web Lead (head) and Front-End Developer. Writes the site's HTML and CSS as files.\n- **Local Search:** renamed from Channels. Head of Channels and SEO Specialist, for Google Business Profile and local search.\n- **Client Services:** Account Manager. Kept from the template.\n\nThe company produces files only: plans, copy, briefs, and site code. It can't publish or upload sites.\n\n**Two things to know before you approve:**\n1. **No skills were attached.** `GITHUB_TOKEN` isn't set, so skill discovery was skipped and all 39 role needs are gaps. Roles will work from their written instructions alone. To add skills, set the token before you start Claude Code (`$env:GITHUB_TOKEN = (gh auth token)` in PowerShell, or a token in a `.env` file in this folder), then re-run the design.\n2. **Cost estimate:** about 95,000–204,000 tokens per typical run of 6 tasks. This is a rough estimate from one run, and it could reach the 200,000-token ceiling, which stops a run and asks you.\n\n**To approve:** run `trypro init --review prop-15b3fbd249` in a terminal. Once it's approved, I can start a run for a first client job.",
+  "is_error": false,
+  "operator_could_use": [
+   "mcp__trypro__audit_tail",
+   "mcp__trypro__org_get",
+   "mcp__trypro__org_proposal_get",
+   "mcp__trypro__org_proposal_submit",
+   "mcp__trypro__org_propose",
+   "mcp__trypro__org_skill_judgment_submit",
+   "mcp__trypro__run_next_action",
+   "mcp__trypro__run_start",
+   "mcp__trypro__run_status"
+  ],
+  "operator_called": {
+   "mcp__trypro__org_propose": 1,
+   "mcp__trypro__org_proposal_submit": 1
+  },
+  "role_agents_called": {},
+  "role_agents_outside_their_server": {},
+  "session_did_more_than_coordinate": [
+   "mcp__trypro__org_propose",
+   "mcp__trypro__org_proposal_submit"
+  ],
+  "usage": {
+   "input": 6,
+   "cache_write": 10811,
+   "cache_read": 21016,
+   "output": 4326,
+   "cost_usd_at_list_price": 0.00453596
+  },
+  "usage_by_model": {
+   "claude-haiku-5-5": {
+    "inputTokens": 6,
+    "cacheCreationInputTokens": 10811,
+    "cacheReadInputTokens": 21016,
+    "outputTokens": 4326
+   }
+  },
+  "subagents": {
+   "spawned": 0,
+   "requested": {
+    "background": 0,
+    "foreground": 0,
+    "unset": 0
+   },
+   "started_in_background": 0,
+   "max_depth": 0,
+   "spawned_by_subagents": 0,
+   "completed": 0,
+   "failed": 0,
+   "killed": {
+    "parent": 0,
+    "user": 0,
+    "system": 0
+   },
+   "refused": {
+    "depth_limit": 0,
+    "concurrency_limit": 0,
+    "budget": 0
+   },
+   "by_type": {}
+  },
+  "turns": 3,
+  "told_the_person": true,
+  "gave_the_command": true,
+  "told_before_designing": false,
+  "went_on_to_design": true
+ },
+ "design": {
+  "result": "prop-85103ddcae",
+  "is_error": false,
+  "operator_could_use": [
+   "mcp__trypro__audit_tail",
+   "mcp__trypro__org_get",
+   "mcp__trypro__org_proposal_get",
+   "mcp__trypro__org_proposal_submit",
+   "mcp__trypro__org_propose",
+   "mcp__trypro__org_skill_judgment_submit",
+   "mcp__trypro__run_next_action",
+   "mcp__trypro__run_start",
+   "mcp__trypro__run_status"
+  ],
+  "operator_called": {
+   "mcp__trypro__org_propose": 1,
+   "mcp__trypro__org_proposal_submit": 1,
+   "mcp__trypro__org_skill_judgment_submit": 18
+  },
+  "role_agents_called": {},
+  "role_agents_outside_their_server": {},
+  "session_did_more_than_coordinate": [
+   "mcp__trypro__org_propose",
+   "mcp__trypro__org_proposal_submit",
+   "mcp__trypro__org_skill_judgment_submit"
+  ],
+  "usage": {
+   "input": 42,
+   "cache_write": 62876,
+   "cache_read": 739633,
+   "output": 10967,
+   "cost_usd_at_list_price": 0.02545923
+  },
+  "usage_by_model": {
+   "claude-haiku-5-5": {
+    "inputTokens": 42,
+    "cacheCreationInputTokens": 62876,
+    "cacheReadInputTokens": 739633,
+    "outputTokens": 10967
+   }
+  },
+  "subagents": {
+   "spawned": 0,
+   "requested": {
+    "background": 0,
+    "foreground": 0,
+    "unset": 0
+   },
+   "started_in_background": 0,
+   "max_depth": 0,
+   "spawned_by_subagents": 0,
+   "completed": 0,
+   "failed": 0,
+   "killed": {
+    "parent": 0,
+    "user": 0,
+    "system": 0
+   },
+   "refused": {
+    "depth_limit": 0,
+    "concurrency_limit": 0,
+    "budget": 0
+   },
+   "by_type": {}
+  },
+  "turns": 21
+ },
+ "activated": "prop-85103ddcae",
+ "review_screen_coverage": "Skill coverage: 15 of 56 role needs have a skill (27%). That's thin. Roles marked GAP start without a skill for that work, and rely on their instructions.",
+ "first": {
+  "result": "The run is blocked and needs you. The run-558f8202bee4 proposal hit the rework limit. Here is the question word for word:\n\n> Escalated by executive/ceo: Rework limit reached: qa requested changes: Client-facing body contains internal provenance notes. The PROPOSED OPTIONS lines end with 'Source: goal of this proposal itself.' and 'Source: proposal suggestion, not in brief.' Remove the source notes from the body. They belong in internal metadata only.; Unsupported capability claims. The claims list marks as supported: a bakery website, item and pick-up date/time selection, per-slot limits, daily cut-off, minimum lead time, automatic customer and owner emails, and basic SEO setup. Their only source is 'Proposal suggestion, not in brief' or the proposal's own goal. Nothing in the brief or workspace (empty) backs these as things the company can deliver. Per the review rule these are major. Either remove them, or reword them as optional items the client may request, with the Sales Lead confirming feasibility before the proposal is sent.; Definition of done 'The deliverable fits on one page' is marked met=false and was not verified. Nothing was rendered. The artifact cannot be approved until a rendered PDF of the final template is confirmed as one page. The one-page requirement is the primary constraint in the brief, so the claimed 'about 300 words, 11pt' estimate is not sufficient evidence.; Definition of done 'The proposal is for a website for a family bakery' is marked met=true, but the only website content is in PROPOSED OPTIONS, which the body states are 'not committed'. The committed scope covers only online pre-order support. Either the website is committed scope, or the criterion is only partly met and the artifact should say so.; Client-facing status text ('Price, scope and timeline are pending a Sales Lead decision', 'DRAFT. Not final.') is internal process language. Reword it for the client, or make clear it is removed before sending. Also, the placeholders ([Bakery Name], [to confirm] for date, price, timeline, terms and minimum lead time) must be filled or flagged as drafting placeholders before the one-page check.\n\nOptions: `resume` or `abandon`.\n\nTo decide, run one of these in a terminal:\n- `trypro decide run-558f8202bee4 hum-0015 resume`\n- `trypro decide run-558f8202bee4 hum-0015 abandon`\n\nThen to carry on: `/company continue run-558f8202bee4`\n\nNo deliverable has been produced yet, so there is no file path to report. Once you choose, I can continue the run from here.",
+  "is_error": false,
+  "operator_could_use": [
+   "Task",
+   "Bash",
+   "CronCreate",
+   "CronDelete",
+   "CronList",
+   "DesignSync",
+   "Edit",
+   "EnterWorktree",
+   "ExitWorktree",
+   "Glob",
+   "Grep",
+   "ListAgents",
+   "ListMcpResourcesTool",
+   "Monitor",
+   "NotebookEdit",
+   "PowerShell",
+   "PushNotification",
+   "Read",
+   "ReadMcpResourceDirTool",
+   "ReadMcpResourceTool",
+   "RemoteTrigger",
+   "ReportFindings",
+   "ScheduleWakeup",
+   "SendMessage",
+   "Skill",
+   "TaskStop",
+   "ToolSearch",
+   "WebSearch",
+   "Write",
+   "mcp__claude_ai_Claude_Docs__batch",
+   "mcp__claude_ai_Claude_Docs__create",
+   "mcp__claude_ai_Claude_Docs__delete",
+   "mcp__claude_ai_Claude_Docs__export",
+   "mcp__claude_ai_Claude_Docs__guide",
+   "mcp__claude_ai_Claude_Docs__query",
+   "mcp__claude_ai_Claude_Docs__read",
+   "mcp__claude_ai_Claude_Docs__update",
+   "mcp__trypro__audit_tail",
+   "mcp__trypro__org_get",
+   "mcp__trypro__org_proposal_get",
+   "mcp__trypro__org_proposal_submit",
+   "mcp__trypro__org_propose",
+   "mcp__trypro__org_skill_judgment_submit",
+   "mcp__trypro__run_next_action",
+   "mcp__trypro__run_start",
+   "mcp__trypro__run_status"
+  ],
+  "operator_called": {
+   "ToolSearch": 1,
+   "mcp__trypro__run_start": 1,
+   "Agent": 12,
+   "mcp__trypro__run_next_action": 12
+  },
+  "role_agents_called": {
+   "trypro-executive-ceo": {
+    "mcp__trypro_role__run_next_action": 2,
+    "mcp__trypro_role__artifact_submit": 2
+   },
+   "trypro-sales-proposal-writer": {
+    "mcp__trypro_role__run_next_action": 5,
+    "mcp__trypro_role__artifact_submit": 8
+   },
+   "trypro-sales-sales-lead": {
+    "mcp__trypro_role__run_next_action": 5,
+    "mcp__trypro_role__review_submit": 5,
+    "mcp__trypro_role__artifact_submit": 1
+   }
+  },
+  "role_agents_outside_their_server": {},
+  "session_did_more_than_coordinate": [],
+  "usage": {
+   "input": 182,
+   "cache_write": 126526,
+   "cache_read": 1741997,
+   "output": 37013,
+   "cost_usd_at_list_price": 0.054086995000000006
+  },
+  "usage_by_model": {
+   "claude-haiku-5-5": {
+    "inputTokens": 182,
+    "cacheCreationInputTokens": 126526,
+    "cacheReadInputTokens": 1741997,
+    "outputTokens": 37013
+   }
+  },
+  "subagents": {
+   "spawned": 12,
+   "requested": {
+    "background": 0,
+    "foreground": 0,
+    "unset": 12
+   },
+   "started_in_background": 12,
+   "max_depth": 1,
+   "spawned_by_subagents": 0,
+   "completed": 12,
+   "failed": 0,
+   "killed": {
+    "parent": 0,
+    "user": 0,
+    "system": 0
+   },
+   "refused": {
+    "depth_limit": 0,
+    "concurrency_limit": 0,
+    "budget": 0
+   },
+   "by_type": {
+    "trypro-executive-ceo": 2,
+    "trypro-sales-proposal-writer": 5,
+    "trypro-sales-sales-lead": 5
+   }
+  },
+  "turns": 2,
+  "minutes": 4.6,
+  "session_other_calls": []
+ },
+ "second": {
+  "result": "The run is blocked and needs you. Here is the question from the company, word for word:\n\n> Escalated by executive/ceo: Rework limit reached: qa requested changes: Criterion 1 (sections and pre-order message match the proposal) cannot be checked. I checked workspace_list and inputs/: both are empty, so the one-page proposal is not in this run. The four sections (Hero, Pre-order online, About the family, Contact) and the pre-order line come from the escalated draft, not the proposal. Done looks like: the proposal is placed in inputs/ or the run workspace, and the writer re-checks each section heading and the pre-order wording against it, citing the proposal line for each. If the proposal cannot be supplied, the run should be escalated to the person; the copy must not be published on this basis.; Criterion 2 (every claim traces to the proposal or bakery-supplied facts) is not met. The claims 'family bakery' and 'offers online pre-orders' trace only to the run goal text, and the artifact marks them unverified: true. Done looks like: each claim cites the proposal section it comes from, or the bakery confirms it, and the unverified flags are cleared on that basis.; Body wording: the first two lines of the body ('Pre-order from [Bakery Name] online.' under the title, and 'You can pre-order from [Bakery Name] online.' under the Pre-order heading) repeat the same message. Consider keeping one, once the proposal wording is confirmed. Language check: English is consistent throughout; no other language issues found. The placeholders for name, address, phone, hours, and description are correctly left unasserted.\n\nIn a terminal, run one of these:\n  trypro decide run-ade9d4b7ece9 hum-0013 resume\n  trypro decide run-ade9d4b7ece9 hum-0013 abandon\n\nThen, to carry on:\n  /company continue run-ade9d4b7ece9\n\n**What you need to do:** Put the one-page proposal into the run's inputs/ folder or workspace. The workspace and inputs are currently empty. Then choose `resume` or `abandon`. Without the proposal, the company says the copy must not be published.\n\nNo deliverable path yet, since the run hasn't finished. The current draft is in the review artifact art-7759d6a04e6955f749a52b72.",
+  "is_error": false,
+  "operator_could_use": [
+   "Task",
+   "Bash",
+   "CronCreate",
+   "CronDelete",
+   "CronList",
+   "DesignSync",
+   "Edit",
+   "EnterWorktree",
+   "ExitWorktree",
+   "Glob",
+   "Grep",
+   "ListAgents",
+   "ListMcpResourcesTool",
+   "Monitor",
+   "NotebookEdit",
+   "PowerShell",
+   "PushNotification",
+   "Read",
+   "ReadMcpResourceDirTool",
+   "ReadMcpResourceTool",
+   "RemoteTrigger",
+   "ReportFindings",
+   "ScheduleWakeup",
+   "SendMessage",
+   "Skill",
+   "TaskStop",
+   "ToolSearch",
+   "WebSearch",
+   "Write",
+   "mcp__claude_ai_Claude_Docs__batch",
+   "mcp__claude_ai_Claude_Docs__create",
+   "mcp__claude_ai_Claude_Docs__delete",
+   "mcp__claude_ai_Claude_Docs__export",
+   "mcp__claude_ai_Claude_Docs__guide",
+   "mcp__claude_ai_Claude_Docs__query",
+   "mcp__claude_ai_Claude_Docs__read",
+   "mcp__claude_ai_Claude_Docs__update",
+   "mcp__trypro__audit_tail",
+   "mcp__trypro__org_get",
+   "mcp__trypro__org_proposal_get",
+   "mcp__trypro__org_proposal_submit",
+   "mcp__trypro__org_propose",
+   "mcp__trypro__org_skill_judgment_submit",
+   "mcp__trypro__run_next_action",
+   "mcp__trypro__run_start",
+   "mcp__trypro__run_status"
+  ],
+  "operator_called": {
+   "ToolSearch": 1,
+   "mcp__trypro__run_start": 1,
+   "Agent": 12,
+   "mcp__trypro__run_next_action": 12
+  },
+  "role_agents_called": {
+   "trypro-executive-ceo": {
+    "mcp__trypro_role__run_next_action": 2,
+    "mcp__trypro_role__artifact_submit": 2,
+    "mcp__trypro_role__memory_recall": 1
+   },
+   "trypro-marketing-content-writer": {
+    "mcp__trypro_role__run_next_action": 5,
+    "mcp__trypro_role__workspace_list": 2,
+    "mcp__trypro_role__memory_recall": 3,
+    "mcp__trypro_role__escalate": 1,
+    "mcp__trypro_role__artifact_submit": 8
+   },
+   "trypro-marketing-marketing-lead": {
+    "mcp__trypro_role__run_next_action": 5,
+    "mcp__trypro_role__memory_recall": 1,
+    "mcp__trypro_role__artifact_submit": 2,
+    "mcp__trypro_role__workspace_list": 4,
+    "mcp__trypro_role__review_submit": 4,
+    "mcp__trypro_role__workspace_read": 1
+   }
+  },
+  "role_agents_outside_their_server": {},
+  "session_did_more_than_coordinate": [],
+  "usage": {
+   "input": 200,
+   "cache_write": 115850,
+   "cache_read": 1850465,
+   "output": 34608,
+   "cost_usd_at_list_price": 0.05267104999999998
+  },
+  "usage_by_model": {
+   "claude-haiku-5-5": {
+    "inputTokens": 200,
+    "cacheCreationInputTokens": 115850,
+    "cacheReadInputTokens": 1850465,
+    "outputTokens": 34608
+   }
+  },
+  "subagents": {
+   "spawned": 12,
+   "requested": {
+    "background": 0,
+    "foreground": 0,
+    "unset": 12
+   },
+   "started_in_background": 12,
+   "max_depth": 1,
+   "spawned_by_subagents": 0,
+   "completed": 12,
+   "failed": 0,
+   "killed": {
+    "parent": 0,
+    "user": 0,
+    "system": 0
+   },
+   "refused": {
+    "depth_limit": 0,
+    "concurrency_limit": 0,
+    "budget": 0
+   },
+   "by_type": {
+    "trypro-executive-ceo": 2,
+    "trypro-marketing-content-writer": 5,
+    "trypro-marketing-marketing-lead": 5
+   }
+  },
+  "turns": 2,
+  "minutes": 3.9,
+  "session_other_calls": []
+ },
+ "stopped": {
+  "result": "The run is blocked, and only you can answer this. Here is the message from the server, word for word:\n\n> This command stopped at 8432 tokens by the server's estimate, over its limit of 8000. Nothing more is spent until you decide, and its work so far is saved. So far: 5 assignments, 0 rejected outputs, 1 rounds of rework, 1 escalations. Resuming adds 4000 tokens, unless you name an amount with --token-budget. Abandoning stops it here.\n>\n> In a terminal, run one of these:\n>   trypro decide run-fe6416fd63ee hum-0006 resume\n>   trypro decide run-fe6416fd63ee hum-0006 abandon\n>\n> Then, to carry on:\n>   /company continue run-fe6416fd63ee\n\n**Status:** Blocked, not done, so there is no final deliverable path yet. The FAQ draft was submitted and revised, but the review hasn't passed.\n\n**What's known so far:**\n- The content writer couldn't find the homepage copy in the workspace or memory, so it did not invent bakery details. It wrote the five-question FAQ with bracketed placeholders.\n- The marketing lead reviewed the first draft and requested changes. The homepage-consistency check could not be done, and the placeholder answers have to be shown as unconfirmed.\n- The revised draft was submitted, with the homepage-consistency criterion marked as not met.\n\n**To finish:** Paste the homepage copy into the workspace or send it to me, then pick resume or abandon. If you resume, use `/company continue run-fe6416fd63ee`. The FAQ can't be checked against the homepage until that copy is available.",
+  "is_error": false,
+  "operator_could_use": [
+   "Task",
+   "Bash",
+   "CronCreate",
+   "CronDelete",
+   "CronList",
+   "DesignSync",
+   "Edit",
+   "EnterWorktree",
+   "ExitWorktree",
+   "Glob",
+   "Grep",
+   "ListAgents",
+   "ListMcpResourcesTool",
+   "Monitor",
+   "NotebookEdit",
+   "PowerShell",
+   "PushNotification",
+   "Read",
+   "ReadMcpResourceDirTool",
+   "ReadMcpResourceTool",
+   "RemoteTrigger",
+   "ReportFindings",
+   "ScheduleWakeup",
+   "SendMessage",
+   "Skill",
+   "TaskStop",
+   "ToolSearch",
+   "WebSearch",
+   "Write",
+   "mcp__claude_ai_Claude_Docs__batch",
+   "mcp__claude_ai_Claude_Docs__create",
+   "mcp__claude_ai_Claude_Docs__delete",
+   "mcp__claude_ai_Claude_Docs__export",
+   "mcp__claude_ai_Claude_Docs__guide",
+   "mcp__claude_ai_Claude_Docs__query",
+   "mcp__claude_ai_Claude_Docs__read",
+   "mcp__claude_ai_Claude_Docs__update",
+   "mcp__trypro__audit_tail",
+   "mcp__trypro__org_get",
+   "mcp__trypro__org_proposal_get",
+   "mcp__trypro__org_proposal_submit",
+   "mcp__trypro__org_propose",
+   "mcp__trypro__org_skill_judgment_submit",
+   "mcp__trypro__run_next_action",
+   "mcp__trypro__run_start",
+   "mcp__trypro__run_status"
+  ],
+  "operator_called": {
+   "ToolSearch": 1,
+   "mcp__trypro__run_start": 1,
+   "Agent": 6,
+   "mcp__trypro__run_next_action": 6
+  },
+  "role_agents_called": {
+   "trypro-executive-ceo": {
+    "mcp__trypro_role__run_next_action": 1,
+    "mcp__trypro_role__artifact_submit": 1
+   },
+   "trypro-marketing-content-writer": {
+    "mcp__trypro_role__run_next_action": 3,
+    "mcp__trypro_role__workspace_list": 3,
+    "mcp__trypro_role__memory_recall": 2,
+    "mcp__trypro_role__escalate": 1,
+    "mcp__trypro_role__artifact_submit": 2
+   },
+   "trypro-marketing-marketing-lead": {
+    "mcp__trypro_role__run_next_action": 2,
+    "mcp__trypro_role__memory_recall": 1,
+    "mcp__trypro_role__artifact_submit": 1,
+    "mcp__trypro_role__workspace_list": 1,
+    "mcp__trypro_role__review_submit": 1
+   }
+  },
+  "role_agents_outside_their_server": {},
+  "session_did_more_than_coordinate": [],
+  "usage": {
+   "input": 100,
+   "cache_write": 59968,
+   "cache_read": 855864,
+   "output": 13965,
+   "cost_usd_at_list_price": 0.024688139999999997
+  },
+  "usage_by_model": {
+   "claude-haiku-5-5": {
+    "inputTokens": 100,
+    "cacheCreationInputTokens": 59968,
+    "cacheReadInputTokens": 855864,
+    "outputTokens": 13965
+   }
+  },
+  "subagents": {
+   "spawned": 6,
+   "requested": {
+    "background": 0,
+    "foreground": 0,
+    "unset": 6
+   },
+   "started_in_background": 6,
+   "max_depth": 1,
+   "spawned_by_subagents": 0,
+   "completed": 6,
+   "failed": 0,
+   "killed": {
+    "parent": 0,
+    "user": 0,
+    "system": 0
+   },
+   "refused": {
+    "depth_limit": 0,
+    "concurrency_limit": 0,
+    "budget": 0
+   },
+   "by_type": {
+    "trypro-executive-ceo": 1,
+    "trypro-marketing-content-writer": 3,
+    "trypro-marketing-marketing-lead": 2
+   }
+  },
+  "turns": 2,
+  "minutes": 1.8,
+  "session_other_calls": [],
+  "run_named": "run-fe6416fd63ee",
+  "checks": {
+   "gave_the_decide_lines": true,
+   "gave_the_continue_line": true,
+   "said_it_stopped_at_the_limit": true
+  }
+ },
+ "answered": {
+  "run": "run-fe6416fd63ee",
+  "budget_override": 38432
+ },
+ "continued": {
+  "result": "The run is blocked and needs you. The rework limit was reached on the FAQ (`wp1/t1`). Here is the question word for word:\n\n> Escalated by executive/ceo: Rework limit reached: qa requested changes: Definition of done 2 ('No answer contradicts the homepage copy') is not met and cannot be checked. The workspace is empty (workspace_list returned []), and the artifact itself says the homepage copy was not found. Fix: put the homepage copy into the run workspace (or supply it in the brief), then compare each of the five answers against it and record the result in the artifact.; All five answers are bracketed placeholders (body items 1-5, '[OWNER TO CONFIRM: ...]'). The FAQ does not yet answer any question, so it cannot be published and the 'each followed by an answer' criterion is met only in form. Fix: draft each answer from facts the owner has confirmed (products, pickup location and hours, lead time and cut-off, change/cancel/refund policy, contact details), and mark any fact still missing as an explicit open item rather than writing it as fact. Every claim needs a source.; Verified: the body has exactly five numbered questions, each followed by one answer slot, and the channel and audience fields name the bakery's pre-order page. The claim 'family bakery with an online pre-order page' is sourced only to the task brief, which states it. Language is English and matches the locale field.\n>\n> In a terminal, run one of these:\n>   trypro decide run-fe6416fd63ee hum-0012 resume\n>   trypro decide run-fe6416fd63ee hum-0012 abandon\n>\n> Then, to carry on:\n>   /company continue run-fe6416fd63ee\n\nOptions: `resume` or `abandon`.\n\nStatus: the run isn't finished, so there is no deliverable path or known-limits list yet. Once you decide, run `/company continue run-fe6416fd63ee`. If you resume, the homepage copy needs to go into the workspace or the brief first, or the consistency check will fail again.",
+  "is_error": false,
+  "operator_could_use": [
+   "Task",
+   "Bash",
+   "CronCreate",
+   "CronDelete",
+   "CronList",
+   "DesignSync",
+   "Edit",
+   "EnterWorktree",
+   "ExitWorktree",
+   "Glob",
+   "Grep",
+   "ListAgents",
+   "ListMcpResourcesTool",
+   "Monitor",
+   "NotebookEdit",
+   "PowerShell",
+   "PushNotification",
+   "Read",
+   "ReadMcpResourceDirTool",
+   "ReadMcpResourceTool",
+   "RemoteTrigger",
+   "ReportFindings",
+   "ScheduleWakeup",
+   "SendMessage",
+   "Skill",
+   "TaskStop",
+   "ToolSearch",
+   "WebSearch",
+   "Write",
+   "mcp__claude_ai_Claude_Docs__batch",
+   "mcp__claude_ai_Claude_Docs__create",
+   "mcp__claude_ai_Claude_Docs__delete",
+   "mcp__claude_ai_Claude_Docs__export",
+   "mcp__claude_ai_Claude_Docs__guide",
+   "mcp__claude_ai_Claude_Docs__query",
+   "mcp__claude_ai_Claude_Docs__read",
+   "mcp__claude_ai_Claude_Docs__update",
+   "mcp__trypro__audit_tail",
+   "mcp__trypro__org_get",
+   "mcp__trypro__org_proposal_get",
+   "mcp__trypro__org_proposal_submit",
+   "mcp__trypro__org_propose",
+   "mcp__trypro__org_skill_judgment_submit",
+   "mcp__trypro__run_next_action",
+   "mcp__trypro__run_start",
+   "mcp__trypro__run_status"
+  ],
+  "operator_called": {
+   "ToolSearch": 1,
+   "mcp__trypro__run_next_action": 7,
+   "Agent": 6
+  },
+  "role_agents_called": {
+   "trypro-marketing-content-writer": {
+    "mcp__trypro_role__run_next_action": 3,
+    "mcp__trypro_role__workspace_list": 2,
+    "mcp__trypro_role__memory_recall": 2,
+    "mcp__trypro_role__escalate": 1,
+    "mcp__trypro_role__artifact_submit": 3
+   },
+   "trypro-executive-ceo": {
+    "mcp__trypro_role__run_next_action": 1,
+    "mcp__trypro_role__memory_recall": 1,
+    "mcp__trypro_role__artifact_submit": 3
+   },
+   "trypro-marketing-marketing-lead": {
+    "mcp__trypro_role__run_next_action": 2,
+    "mcp__trypro_role__workspace_list": 2,
+    "mcp__trypro_role__review_submit": 2
+   }
+  },
+  "role_agents_outside_their_server": {},
+  "session_did_more_than_coordinate": [],
+  "usage": {
+   "input": 106,
+   "cache_write": 58314,
+   "cache_read": 902103,
+   "output": 17493,
+   "cost_usd_at_list_price": 0.026762605000000005
+  },
+  "usage_by_model": {
+   "claude-haiku-5-5": {
+    "inputTokens": 106,
+    "cacheCreationInputTokens": 58314,
+    "cacheReadInputTokens": 902103,
+    "outputTokens": 17493
+   }
+  },
+  "subagents": {
+   "spawned": 6,
+   "requested": {
+    "background": 0,
+    "foreground": 0,
+    "unset": 6
+   },
+   "started_in_background": 6,
+   "max_depth": 1,
+   "spawned_by_subagents": 0,
+   "completed": 6,
+   "failed": 0,
+   "killed": {
+    "parent": 0,
+    "user": 0,
+    "system": 0
+   },
+   "refused": {
+    "depth_limit": 0,
+    "concurrency_limit": 0,
+    "budget": 0
+   },
+   "by_type": {
+    "trypro-marketing-content-writer": 3,
+    "trypro-executive-ceo": 1,
+    "trypro-marketing-marketing-lead": 2
+   }
+  },
+  "turns": 2,
+  "minutes": 2.0,
+  "session_other_calls": [],
+  "started_a_new_run": false
+ },
+ "attestation": {
+  "run-558f8202bee4": {
+   "goal": "Write a one-page website proposal for a family bakery that wants online pre-orders.",
+   "phase": "blocked",
+   "size": "small",
+   "counters": {
+    "invalid_outputs": 3,
+    "rework_loops": 5,
+    "failed_invocations": 0,
+    "escalations": 3,
+    "handoffs": 0,
+    "violations": 0,
+    "package_overruns": 0,
+    "assignments": 11,
+    "amendments": 0
+   },
+   "attested": 17,
+   "claimed": 0,
+   "by_role": [
+    "executive/ceo",
+    "sales/proposal-writer",
+    "sales/sales-lead"
+   ]
+  },
+  "run-ade9d4b7ece9": {
+   "goal": "The bakery liked the proposal. Write the homepage copy for the site we proposed, following that proposal.",
+   "phase": "blocked",
+   "size": "small",
+   "counters": {
+    "invalid_outputs": 5,
+    "rework_loops": 4,
+    "failed_invocations": 0,
+    "escalations": 3,
+    "handoffs": 0,
+    "violations": 0,
+    "package_overruns": 0,
+    "assignments": 10,
+    "amendments": 0
+   },
+   "attested": 16,
+   "claimed": 0,
+   "by_role": [
+    "executive/ceo",
+    "marketing/content-writer",
+    "marketing/marketing-lead"
+   ]
+  },
+  "run-fe6416fd63ee": {
+   "goal": "Write a short FAQ, of five questions and answers, for the bakery's pre-order page, following the homepage copy.",
+   "phase": "blocked",
+   "size": "small",
+   "counters": {
+    "invalid_outputs": 2,
+    "rework_loops": 3,
+    "failed_invocations": 0,
+    "escalations": 3,
+    "handoffs": 0,
+    "violations": 0,
+    "package_overruns": 0,
+    "assignments": 9,
+    "amendments": 0
+   },
+   "attested": 14,
+   "claimed": 0,
+   "by_role": [
+    "executive/ceo",
+    "marketing/content-writer",
+    "marketing/marketing-lead"
+   ]
+  }
+ },
+ "unfinished": [
+  "run-558f8202bee4 (Write a one-page website proposal for a ) ended at blocked",
+  "run-ade9d4b7ece9 (The bakery liked the proposal. Write the) ended at blocked",
+  "run-fe6416fd63ee (Write a short FAQ, of five questions and) ended at blocked"
+ ],
+ "problems": []
+}

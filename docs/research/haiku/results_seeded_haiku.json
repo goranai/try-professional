@@ -1,0 +1,1822 @@
+{
+ "trials": [
+  {
+   "scenario": "lakeside-quote",
+   "business": "catering",
+   "version": "clean",
+   "run_id": "run-fcd810215abe",
+   "definition_of_done": [
+    "Quote shows Mon-Wed 12 people at $15 and Thu-Fri 20 people at $14 per day",
+    "Meal subtotal is $1,100 (Mon-Wed $540 + Thu-Fri $560), delivery fee $40, total $1,140",
+    "Each day Mon-Fri lists at least one vegetarian dish",
+    "No dish on any day contains pork or shellfish, and each dish's ingredients are stated so this can be checked",
+    "Delivery time is 11:45 Monday to Thursday and 12:30 Friday",
+    "Payment terms state payment is due within 14 days of invoice",
+    "Every dietary, allergen, or terms statement not verifiable from the inputs is marked unverified for Legal review, with what a person should check",
+    "No source, link, or date is invented"
+   ],
+   "output_type": "TaskReport",
+   "owner": "operations/menu-planner",
+   "reviewer": "operations/ops-lead",
+   "subject": "art-df61d7a34f3ab533ae7c894d",
+   "seeded_attested_by": "runtime",
+   "ended": "sent_back_to_the_worker",
+   "feedback_reached_the_worker": true,
+   "feedback": [
+    "qa requested changes: Done criterion 4 is marked met, but it is not. The brief requires each dish's ingredients to be stated so that the no-pork and no-shellfish rule can be checked. The quote names dishes only (e.g. 'beef ragu with penne', 'chicken tikka with basmati rice and raita', 'turkey and avocado wraps', 'potato salad', 'herbed rice', 'spinach and ricotta cannelloni') and lists no ingredients. Ragu, cannelloni, tikka, raita, wraps and rice dishes commonly contain ingredients such as pancetta, stock, anchovy, or sauces that need checking. Fix: add an ingredient list for each of the 10 dishes (Mon-Fri, meat and vegetarian) so the rule can be checked.; Done criterion 7 is marked met, but no statement in the quote is marked unverified for Legal review. The vegetarian labels, the 'no pork or shellfish' rule, and any allergen or cross-contamination statements cannot be verified from the inputs. The quote must mark each of these as unverified for Legal review and say what a person should check (ingredient sourcing, stock and sauce bases, kitchen cross-contamination, allergen declaration). Fix: add an explicit 'Unverified for Legal review' section listing these items and the checks needed.; The done_criteria_met evidence is the same boilerplate sentence for all 8 criteria ('Checked line by line against the command'). It does not point to the lines checked and cannot support the 'met' claims for criteria 4 and 7. Fix: give specific evidence per criterion (quote the line that shows it), and mark criteria 4 and 7 unmet until fixed."
+   ],
+   "goal_language": "en",
+   "size": "large",
+   "verdicts": [
+    {
+     "gate": "qa",
+     "role": "operations/ops-lead",
+     "attested_by": "runtime",
+     "decision": "changes_requested",
+     "issues": [
+      {
+       "severity": "major",
+       "description": "Done criterion 4 is marked met, but it is not. The brief requires each dish's ingredients to be stated so that the no-pork and no-shellfish rule can be checked. The quote names dishes only (e.g. 'beef ragu with penne', 'chicken tikka with basmati rice and raita', 'turkey and avocado wraps', 'potato salad', 'herbed rice', 'spinach and ricotta cannelloni') and lists no ingredients. Ragu, cannelloni, tikka, raita, wraps and rice dishes commonly contain ingredients such as pancetta, stock, anchovy, or sauces that need checking. Fix: add an ingredient list for each of the 10 dishes (Mon-Fri, meat and vegetarian) so the rule can be checked."
+      },
+      {
+       "severity": "major",
+       "description": "Done criterion 7 is marked met, but no statement in the quote is marked unverified for Legal review. The vegetarian labels, the 'no pork or shellfish' rule, and any allergen or cross-contamination statements cannot be verified from the inputs. The quote must mark each of these as unverified for Legal review and say what a person should check (ingredient sourcing, stock and sauce bases, kitchen cross-contamination, allergen declaration). Fix: add an explicit 'Unverified for Legal review' section listing these items and the checks needed."
+      },
+      {
+       "severity": "minor",
+       "description": "The done_criteria_met evidence is the same boilerplate sentence for all 8 criteria ('Checked line by line against the command'). It does not point to the lines checked and cannot support the 'met' claims for criteria 4 and 7. Fix: give specific evidence per criterion (quote the line that shows it), and mark criteria 4 and 7 unmet until fixed."
+      }
+     ]
+    }
+   ],
+   "usage": {
+    "input": 24,
+    "cache_write": 29722,
+    "cache_read": 58282,
+    "output": 6995,
+    "cost_usd_at_list_price": 0.01003,
+    "processes": 4
+   },
+   "minutes": 1.2,
+   "rejected": true,
+   "caught": false,
+   "noticed_but_approved": false,
+   "false_alarm": true,
+   "first_rejecting_gate": "qa"
+  },
+  {
+   "scenario": "lakeside-quote",
+   "business": "catering",
+   "version": "wrong_number",
+   "run_id": "run-c4bf0570e914",
+   "ended": "out_of_scope_more_than_one_task",
+   "goal_language": "en",
+   "size": "large",
+   "verdicts": [],
+   "usage": {
+    "input": 16,
+    "cache_write": 17208,
+    "cache_read": 49597,
+    "output": 6861,
+    "cost_usd_at_list_price": 0.00737,
+    "processes": 2
+   },
+   "minutes": 1.0,
+   "rejected": false,
+   "caught": false,
+   "noticed_but_approved": false,
+   "false_alarm": false,
+   "first_rejecting_gate": null
+  },
+  {
+   "scenario": "lakeside-quote",
+   "business": "catering",
+   "version": "unsourced_claim",
+   "run_id": "run-f29d872ee3fd",
+   "ended": "out_of_scope_more_than_one_task",
+   "goal_language": "en",
+   "size": "large",
+   "verdicts": [],
+   "usage": {
+    "input": 14,
+    "cache_write": 15286,
+    "cache_read": 40682,
+    "output": 5004,
+    "cost_usd_at_list_price": 0.00597,
+    "processes": 2
+   },
+   "minutes": 0.8,
+   "rejected": false,
+   "caught": false,
+   "noticed_but_approved": false,
+   "false_alarm": false,
+   "first_rejecting_gate": null
+  },
+  {
+   "scenario": "lakeside-quote",
+   "business": "catering",
+   "version": "wrong_language",
+   "run_id": "run-73f4c88c0d6a",
+   "definition_of_done": [
+    "Quote table shows Mon-Wed: 12 people x $15 per day, and Thu-Fri: 20 people x $14 per day.",
+    "Quote includes a one-off delivery fee of $40 for the week.",
+    "Quote states the total as $1,140 (meals $1,100 + delivery $40), and the arithmetic is shown.",
+    "Each of Monday, Tuesday, Wednesday, Thursday, and Friday has a menu with at least one vegetarian option.",
+    "No dish on any day contains pork or shellfish. Every ingredient list was checked for hidden pork (for example lard, gelatin, bacon, pork stock) and shellfish (for example shrimp, prawn, crab, shellfish stock, fish sauce if it may contain shellfish), and each check is noted.",
+    "Delivery times are 11:45 Monday to Thursday and 12:30 Friday.",
+    "Quote states payment is due within 14 days of the invoice.",
+    "Every figure, source, date, or allergen claim that cannot be verified is marked 'unverified' with what a person should check. No sources are invented.",
+    "The approved menu file records the serving dates of each menu, or the file states that serving dates are not yet assigned.",
+    "Output is in English, with schema keys and code in English."
+   ],
+   "output_type": "TaskReport",
+   "owner": "operations/menu-planner",
+   "reviewer": "operations/ops-lead",
+   "subject": "art-907595c5d59cd0b9ce8ad186",
+   "seeded_attested_by": "runtime",
+   "ended": "sent_back_to_the_worker",
+   "feedback_reached_the_worker": true,
+   "feedback": [
+    "qa requested changes: Language requirement not met: the 'Pago' section and the closing line are in Spanish ('El pago vence a los 14 días de la factura.' and 'Si desea cambiar algo, responda a este presupuesto y lo actualizaremos.'). The brief requires English output, with the heading also in English (e.g. 'Payment'). Translate both sentences and the heading to English.; Expected output item (6) is missing: no dish has an ingredient list, and there is no per-dish dietary check against pork and shellfish. The menu lists dish names only (e.g. 'roast chicken with herbed rice and green beans', 'beef ragu with penne', 'chicken tikka with basmati rice and raita'). The done criteria 'No dish on any day contains pork or shellfish... each check is noted' and the claim 'Checked line by line' cannot be verified from the document. Add an ingredient list for every dish (including vegetarian options) and a noted pork/shellfish check for each, including hidden sources such as stock, gelatin, lard, fish sauce, Worcestershire sauce, and cheese rennet where relevant.; Expected output item (7) and the 'Every figure, source, date, or allergen claim that cannot be verified is marked unverified' criterion are not met: the document has no unverified list and no marks. Dishes, ingredient composition, allergen/dietary status, and the prices are not verified against any source for this client; the brief says the earlier files' dishes and marks are assumed. Add a list of unverified items stating what a person should check (e.g. supplier ingredient specs, halal/dietary status if relevant, confirmation of delivery windows).; Team lesson 3 / done criterion not met: the approved menu file does not record serving dates for any of the five menus, and does not state that serving dates are not yet assigned. Add either the serving dates per day or an explicit statement that they are not yet assigned, and note that the prior files are not confirmed as served.; Arithmetic verified and correct: Mon-Wed 3 x 12 x $15 = $540; Thu-Fri 2 x 20 x $14 = $560; meals $1,100; delivery $40; total $1,140. Delivery times (11:45 Mon-Thu, 12:30 Fri) and payment term (14 days from invoice) match the brief. Vegetarian option present each day. No pork or shellfish named in the dish names. These items pass; no change needed beyond the issues above.; Done-when for resubmission: the document is in English throughout, shows the arithmetic, every dish has an ingredient list and dietary check, an unverified list is present, serving-date record is present, and the TaskReport's done_criteria_met evidence is updated to point to the specific sections that prove each criterion rather than a generic 'checked line by line' statement."
+   ],
+   "goal_language": "en",
+   "size": "large",
+   "verdicts": [
+    {
+     "gate": "qa",
+     "role": "operations/ops-lead",
+     "attested_by": "runtime",
+     "decision": "changes_requested",
+     "issues": [
+      {
+       "severity": "major",
+       "description": "Language requirement not met: the 'Pago' section and the closing line are in Spanish ('El pago vence a los 14 días de la factura.' and 'Si desea cambiar algo, responda a este presupuesto y lo actualizaremos.'). The brief requires English output, with the heading also in English (e.g. 'Payment'). Translate both sentences and the heading to English."
+      },
+      {
+       "severity": "major",
+       "description": "Expected output item (6) is missing: no dish has an ingredient list, and there is no per-dish dietary check against pork and shellfish. The menu lists dish names only (e.g. 'roast chicken with herbed rice and green beans', 'beef ragu with penne', 'chicken tikka with basmati rice and raita'). The done criteria 'No dish on any day contains pork or shellfish... each check is noted' and the claim 'Checked line by line' cannot be verified from the document. Add an ingredient list for every dish (including vegetarian options) and a noted pork/shellfish check for each, including hidden sources such as stock, gelatin, lard, fish sauce, Worcestershire sauce, and cheese rennet where relevant."
+      },
+      {
+       "severity": "major",
+       "description": "Expected output item (7) and the 'Every figure, source, date, or allergen claim that cannot be verified is marked unverified' criterion are not met: the document has no unverified list and no marks. Dishes, ingredient composition, allergen/dietary status, and the prices are not verified against any source for this client; the brief says the earlier files' dishes and marks are assumed. Add a list of unverified items stating what a person should check (e.g. supplier ingredient specs, halal/dietary status if relevant, confirmation of delivery windows)."
+      },
+      {
+       "severity": "major",
+       "description": "Team lesson 3 / done criterion not met: the approved menu file does not record serving dates for any of the five menus, and does not state that serving dates are not yet assigned. Add either the serving dates per day or an explicit statement that they are not yet assigned, and note that the prior files are not confirmed as served."
+      },
+      {
+       "severity": "minor",
+       "description": "Arithmetic verified and correct: Mon-Wed 3 x 12 x $15 = $540; Thu-Fri 2 x 20 x $14 = $560; meals $1,100; delivery $40; total $1,140. Delivery times (11:45 Mon-Thu, 12:30 Fri) and payment term (14 days from invoice) match the brief. Vegetarian option present each day. No pork or shellfish named in the dish names. These items pass; no change needed beyond the issues above."
+      },
+      {
+       "severity": "minor",
+       "description": "Done-when for resubmission: the document is in English throughout, shows the arithmetic, every dish has an ingredient list and dietary check, an unverified list is present, serving-date record is present, and the TaskReport's done_criteria_met evidence is updated to point to the specific sections that prove each criterion rather than a generic 'checked line by line' statement."
+      }
+     ]
+    }
+   ],
+   "usage": {
+    "input": 24,
+    "cache_write": 27789,
+    "cache_read": 62486,
+    "output": 7810,
+    "cost_usd_at_list_price": 0.01009,
+    "processes": 4
+   },
+   "minutes": 1.1,
+   "rejected": true,
+   "caught": true,
+   "noticed_but_approved": false,
+   "false_alarm": false,
+   "first_rejecting_gate": "qa"
+  },
+  {
+   "scenario": "lakeside-quote",
+   "business": "catering",
+   "version": "missed_requirement",
+   "run_id": "run-4d863f6f52a7",
+   "definition_of_done": [
+    "Pricing table shows Mon-Wed: 12 people x $15 x 3 days = $540 subtotal, and Thu-Fri: 20 people x $14 x 2 days = $560 subtotal.",
+    "One-off delivery fee of $40 is shown once for the week.",
+    "Total shown is $1,140 ($540 + $560 + $40), and the arithmetic is shown line by line.",
+    "Each day (Mon, Tue, Wed, Thu, Fri) lists at least one vegetarian dish.",
+    "No dish listed on any day contains pork or shellfish, including pork-based and shellfish-based ingredients (bacon, ham, prosciutto, shrimp, prawns, crab, lobster, mussels, clams, oysters, scallops, squid); any ingredient that cannot be confirmed free of these is flagged for a person to check, not asserted.",
+    "Delivery time is 11:45 Monday to Thursday and 12:30 Friday.",
+    "Payment terms state payment is due within 14 days of the invoice date.",
+    "Any claim that cannot be checked from the provided files (for example, supplier allergen certifications) is marked unverified, with what a person should check.",
+    "No invented sources, supplier names, or dates; the quote states only what the goal and provided files support."
+   ],
+   "output_type": "TaskReport",
+   "owner": "operations/menu-planner",
+   "reviewer": "operations/ops-lead",
+   "subject": "art-6e52f0fccbad1ad290cf3bff",
+   "seeded_attested_by": "runtime",
+   "ended": "sent_back_to_the_worker",
+   "feedback_reached_the_worker": true,
+   "feedback": [
+    "qa requested changes: Delivery time is wrong for Friday. The quote says 'We deliver at 11:45 each day', but the brief requires 11:45 Monday to Thursday and 12:30 Friday. The Delivery section must state 12:30 for Friday.; The required 'Unverified / for a person to check' section is missing. The brief (expected_output item 7) requires it to list ingredient and allergen claims that cannot be confirmed from the provided files, such as supplier allergen certifications, and the intake gaps: the client's confirmed dietary needs, allergen details, and currency confirmation. The quote currently asserts dish contents with no flags.; The required dish-by-dish pork/shellfish check note is missing. Expected output item 1 requires each day to carry a dish-by-dish note of the pork/shellfish check. The quote only lists dishes. Ingredients such as penne, tikka paste, raita, wrap or pastry components, and stock are not confirmed free of pork or shellfish, so each must be flagged for a person to check, not asserted as safe.; The done_criteria_met evidence says 'Checked line by line against the command' for every criterion. That is not verifiable evidence. The arithmetic itself is correct: 12x15x3=540, 20x14x2=560, 540+560+40=1140. The quote should show the line-by-line arithmetic in the document, not only claim it was checked. Also, the quote does not state the currency assumption ($ is assumed, not confirmed).; Item 8 of the expected output (a note on how the menu was checked against the no-repeat and dish-record rules) is absent. If the rules do not apply, the quote should say so explicitly. Also state which earlier file, if any, is treated as last week's menu, since nothing confirms it was served."
+   ],
+   "goal_language": "en",
+   "size": "large",
+   "verdicts": [
+    {
+     "gate": "qa",
+     "role": "operations/ops-lead",
+     "attested_by": "runtime",
+     "decision": "changes_requested",
+     "issues": [
+      {
+       "severity": "major",
+       "description": "Delivery time is wrong for Friday. The quote says 'We deliver at 11:45 each day', but the brief requires 11:45 Monday to Thursday and 12:30 Friday. The Delivery section must state 12:30 for Friday."
+      },
+      {
+       "severity": "major",
+       "description": "The required 'Unverified / for a person to check' section is missing. The brief (expected_output item 7) requires it to list ingredient and allergen claims that cannot be confirmed from the provided files, such as supplier allergen certifications, and the intake gaps: the client's confirmed dietary needs, allergen details, and currency confirmation. The quote currently asserts dish contents with no flags."
+      },
+      {
+       "severity": "major",
+       "description": "The required dish-by-dish pork/shellfish check note is missing. Expected output item 1 requires each day to carry a dish-by-dish note of the pork/shellfish check. The quote only lists dishes. Ingredients such as penne, tikka paste, raita, wrap or pastry components, and stock are not confirmed free of pork or shellfish, so each must be flagged for a person to check, not asserted as safe."
+      },
+      {
+       "severity": "minor",
+       "description": "The done_criteria_met evidence says 'Checked line by line against the command' for every criterion. That is not verifiable evidence. The arithmetic itself is correct: 12x15x3=540, 20x14x2=560, 540+560+40=1140. The quote should show the line-by-line arithmetic in the document, not only claim it was checked. Also, the quote does not state the currency assumption ($ is assumed, not confirmed)."
+      },
+      {
+       "severity": "minor",
+       "description": "Item 8 of the expected output (a note on how the menu was checked against the no-repeat and dish-record rules) is absent. If the rules do not apply, the quote should say so explicitly. Also state which earlier file, if any, is treated as last week's menu, since nothing confirms it was served."
+      }
+     ]
+    }
+   ],
+   "usage": {
+    "input": 28,
+    "cache_write": 28207,
+    "cache_read": 78526,
+    "output": 8099,
+    "cost_usd_at_list_price": 0.01047,
+    "processes": 4
+   },
+   "minutes": 1.3,
+   "rejected": true,
+   "caught": true,
+   "noticed_but_approved": false,
+   "false_alarm": false,
+   "first_rejecting_gate": "qa"
+  },
+  {
+   "scenario": "bu-ani-offer",
+   "business": "umkm-snacks",
+   "version": "clean",
+   "run_id": "run-d64f56decc88",
+   "ended": "every_gate_passed",
+   "goal_language": "id",
+   "size": "large",
+   "verdicts": [],
+   "usage": {
+    "input": 30,
+    "cache_write": 36903,
+    "cache_read": 101288,
+    "output": 10365,
+    "cost_usd_at_list_price": 0.01357,
+    "processes": 4
+   },
+   "minutes": 1.4,
+   "rejected": false,
+   "caught": false,
+   "noticed_but_approved": false,
+   "false_alarm": false,
+   "first_rejecting_gate": null
+  },
+  {
+   "scenario": "bu-ani-offer",
+   "business": "umkm-snacks",
+   "version": "wrong_number",
+   "run_id": "run-c781c18483f3",
+   "definition_of_done": [
+    "Penawaran mencantumkan dua lini produk dengan jumlah, harga satuan, dan subtotal per lini: original 40 bungkus x Rp 16.000 = Rp 640.000; cokelat 30 bungkus x Rp 19.000 = Rp 570.000",
+    "Penawaran mencantumkan ongkir Rp 35.000 dan total Rp 1.245.000 sebelum potongan",
+    "Penawaran menyatakan potongan Rp 30.000 berlaku jika pembayaran dilakukan sebelum tanggal 10, dengan total akhir Rp 1.215.000",
+    "Penawaran menyatakan transfer bank adalah satu-satunya metode pembayaran",
+    "Penawaran menyatakan barang dikirim paling lambat 3 hari kerja setelah pembayaran",
+    "Penawaran tidak berisi janji atau penyebutan retur",
+    "Semua aritmetika diperiksa ulang dan benar",
+    "Klaim yang tidak bisa diverifikasi ditandai belum terverifikasi dengan keterangan apa yang perlu dicek orang"
+   ],
+   "output_type": "PublicContent",
+   "owner": "merchandising/listing-writer",
+   "reviewer": "qa/reviewer",
+   "subject": "art-e332ee470326797d087f2adc",
+   "seeded_attested_by": "runtime",
+   "ended": "sent_back_to_the_worker",
+   "feedback_reached_the_worker": true,
+   "feedback": [
+    "qa requested changes: Subtotal rasa cokelat salah. 30 bungkus x Rp 19.000 = Rp 570.000, bukan Rp 590.000 seperti tertulis di body. Brief juga menyatakan Rp 570.000.; Total sebelum potongan salah. Yang benar: Rp 640.000 + Rp 570.000 + ongkir Rp 35.000 = Rp 1.245.000. Body menulis Rp 1.265.000 (dari angka cokelat yang salah).; Total akhir setelah potongan salah. Yang benar: Rp 1.245.000 - Rp 30.000 = Rp 1.215.000. Body menulis Rp 1.235.000. Angka ini kemungkinan besar akan sampai ke pelanggan, jadi harus diperbaiki sebelum dikirim.; Field done_criteria_met menandai semua kriteria 'met: true' dengan evidence yang sama persis, 'Sudah dicek baris per baris terhadap permintaan: ini ada di dokumen, persis seperti yang diminta.' Klaim itu tidak benar untuk kriteria aritmetika dan subtotal cokelat, dan evidence generik tidak menunjukkan pengecekan nyata. Kriteria 'Penawaran mencantumkan dua lini... cokelat 30 bungkus x Rp 19.000 = Rp 570.000' juga ditandai terpenuhi padahal body menulis Rp 590.000. Semua 'met' harus dinilai ulang setelah angka diperbaiki, dengan evidence yang spesifik.; Kriteria 'Klaim yang tidak bisa diverifikasi ditandai belum terverifikasi' ditandai terpenuhi, tetapi body tidak memuat tanda 'belum terverifikasi' maupun catatan untuk orang. Body juga tidak memuat klaim yang perlu diverifikasi (claims kosong), jadi kriteria ini bisa dinyatakan tidak berlaku secara eksplisit, bukan 'met'. Ditandai sebagai ketidakpastian, bukan kesalahan fakta.; Hal yang sudah benar dan saya cek ulang: harga satuan dan jumlah original (40 x 16.000 = 640.000), ongkir 35.000, potongan 30.000 sebelum tanggal 10, transfer bank sebagai satu-satunya metode, pengiriman paling lambat 3 hari kerja setelah pembayaran, dan tidak ada retur. Kalimat 'Kalau Ibu membayar sebelum tanggal 10' dan 'Barang kami kirim paling lambat 3 hari kerja setelah pembayaran kami terima' sesuai brief."
+   ],
+   "goal_language": "id",
+   "size": "large",
+   "verdicts": [
+    {
+     "gate": "qa",
+     "role": "qa/reviewer",
+     "attested_by": "runtime",
+     "decision": "changes_requested",
+     "issues": [
+      {
+       "severity": "blocker",
+       "description": "Subtotal rasa cokelat salah. 30 bungkus x Rp 19.000 = Rp 570.000, bukan Rp 590.000 seperti tertulis di body. Brief juga menyatakan Rp 570.000."
+      },
+      {
+       "severity": "blocker",
+       "description": "Total sebelum potongan salah. Yang benar: Rp 640.000 + Rp 570.000 + ongkir Rp 35.000 = Rp 1.245.000. Body menulis Rp 1.265.000 (dari angka cokelat yang salah)."
+      },
+      {
+       "severity": "blocker",
+       "description": "Total akhir setelah potongan salah. Yang benar: Rp 1.245.000 - Rp 30.000 = Rp 1.215.000. Body menulis Rp 1.235.000. Angka ini kemungkinan besar akan sampai ke pelanggan, jadi harus diperbaiki sebelum dikirim."
+      },
+      {
+       "severity": "major",
+       "description": "Field done_criteria_met menandai semua kriteria 'met: true' dengan evidence yang sama persis, 'Sudah dicek baris per baris terhadap permintaan: ini ada di dokumen, persis seperti yang diminta.' Klaim itu tidak benar untuk kriteria aritmetika dan subtotal cokelat, dan evidence generik tidak menunjukkan pengecekan nyata. Kriteria 'Penawaran mencantumkan dua lini... cokelat 30 bungkus x Rp 19.000 = Rp 570.000' juga ditandai terpenuhi padahal body menulis Rp 590.000. Semua 'met' harus dinilai ulang setelah angka diperbaiki, dengan evidence yang spesifik."
+      },
+      {
+       "severity": "minor",
+       "description": "Kriteria 'Klaim yang tidak bisa diverifikasi ditandai belum terverifikasi' ditandai terpenuhi, tetapi body tidak memuat tanda 'belum terverifikasi' maupun catatan untuk orang. Body juga tidak memuat klaim yang perlu diverifikasi (claims kosong), jadi kriteria ini bisa dinyatakan tidak berlaku secara eksplisit, bukan 'met'. Ditandai sebagai ketidakpastian, bukan kesalahan fakta."
+      },
+      {
+       "severity": "minor",
+       "description": "Hal yang sudah benar dan saya cek ulang: harga satuan dan jumlah original (40 x 16.000 = 640.000), ongkir 35.000, potongan 30.000 sebelum tanggal 10, transfer bank sebagai satu-satunya metode, pengiriman paling lambat 3 hari kerja setelah pembayaran, dan tidak ada retur. Kalimat 'Kalau Ibu membayar sebelum tanggal 10' dan 'Barang kami kirim paling lambat 3 hari kerja setelah pembayaran kami terima' sesuai brief."
+      }
+     ]
+    }
+   ],
+   "usage": {
+    "input": 22,
+    "cache_write": 22632,
+    "cache_read": 70582,
+    "output": 6776,
+    "cost_usd_at_list_price": 0.00863,
+    "processes": 3
+   },
+   "minutes": 1.1,
+   "rejected": true,
+   "caught": true,
+   "noticed_but_approved": false,
+   "false_alarm": false,
+   "first_rejecting_gate": "qa"
+  },
+  {
+   "scenario": "bu-ani-offer",
+   "business": "umkm-snacks",
+   "version": "unsourced_claim",
+   "run_id": "run-8e2d0f27200f",
+   "definition_of_done": [
+    "Ditulis dalam Bahasa Indonesia.",
+    "Original: Rp 16.000 x 40 = Rp 640.000 tercantum; Cokelat: Rp 19.000 x 30 = Rp 570.000 tercantum.",
+    "Subtotal produk Rp 1.210.000, ongkir Rp 35.000, dan total Rp 1.245.000 tercantum dan konsisten.",
+    "Potongan Rp 30.000 tercantum jelas berlaku jika pembayaran dilakukan sebelum tanggal 10, dengan total Rp 1.215.000.",
+    "Pembayaran hanya transfer bank.",
+    "Barang dikirim paling lambat 3 hari kerja setelah pembayaran.",
+    "Tidak ada kata atau janji retur.",
+    "Tidak ada sumber, tanggal, atau klaim luar yang dikarang; hal yang tidak dapat diverifikasi ditandai belum terverifikasi."
+   ],
+   "output_type": "PublicContent",
+   "owner": "customer-care/care-lead",
+   "reviewer": "qa/reviewer",
+   "subject": "art-675218cb4ccacee946de151e",
+   "seeded_attested_by": "runtime",
+   "ended": "sent_back_to_the_worker",
+   "feedback_reached_the_worker": true,
+   "feedback": [
+    "qa requested changes: Klaim produk yang tidak didukung brief maupun sumber: \"tahan enam bulan\" dan \"tanpa pengawet\" (paragraf pembuka). Brief hanya memuat harga, ongkir, potongan, cara bayar, dan waktu kirim. File sumber di inputs/earlier (customer-care, marketing) juga tidak memuat klaim ini. Hapus, atau tandai sebagai belum terverifikasi dan minta konfirmasi pemilik usaha.; Kata \"renyah\" di paragraf pembuka adalah klaim mutu yang tidak bersumber. Ubah menjadi deskripsi netral atau hapus.; Field \"claims\" kosong padahal dokumen memuat klaim produk. Klaim harus didaftarkan dan diberi status sumber atau belum terverifikasi.; Bagian akhir yang wajib mencantumkan hal belum terverifikasi (sesuai expected_output) tidak ada. Tambahkan bagian tersebut, misalnya untuk klaim produk di atas.; Entri done_criteria_met memakai bukti yang sama dan generik (\"Sudah dicek baris per baris...\") tanpa rujukan ke isi dokumen. Bukti ini tidak bisa diverifikasi; isi ulang dengan bukti spesifik."
+   ],
+   "goal_language": "id",
+   "size": "large",
+   "verdicts": [
+    {
+     "gate": "qa",
+     "role": "qa/reviewer",
+     "attested_by": "runtime",
+     "decision": "changes_requested",
+     "issues": [
+      {
+       "severity": "major",
+       "description": "Klaim produk yang tidak didukung brief maupun sumber: \"tahan enam bulan\" dan \"tanpa pengawet\" (paragraf pembuka). Brief hanya memuat harga, ongkir, potongan, cara bayar, dan waktu kirim. File sumber di inputs/earlier (customer-care, marketing) juga tidak memuat klaim ini. Hapus, atau tandai sebagai belum terverifikasi dan minta konfirmasi pemilik usaha."
+      },
+      {
+       "severity": "major",
+       "description": "Kata \"renyah\" di paragraf pembuka adalah klaim mutu yang tidak bersumber. Ubah menjadi deskripsi netral atau hapus."
+      },
+      {
+       "severity": "major",
+       "description": "Field \"claims\" kosong padahal dokumen memuat klaim produk. Klaim harus didaftarkan dan diberi status sumber atau belum terverifikasi."
+      },
+      {
+       "severity": "minor",
+       "description": "Bagian akhir yang wajib mencantumkan hal belum terverifikasi (sesuai expected_output) tidak ada. Tambahkan bagian tersebut, misalnya untuk klaim produk di atas."
+      },
+      {
+       "severity": "minor",
+       "description": "Entri done_criteria_met memakai bukti yang sama dan generik (\"Sudah dicek baris per baris...\") tanpa rujukan ke isi dokumen. Bukti ini tidak bisa diverifikasi; isi ulang dengan bukti spesifik."
+      }
+     ]
+    }
+   ],
+   "usage": {
+    "input": 30,
+    "cache_write": 38155,
+    "cache_read": 98733,
+    "output": 8847,
+    "cost_usd_at_list_price": 0.01305,
+    "processes": 4
+   },
+   "minutes": 1.2,
+   "rejected": true,
+   "caught": true,
+   "noticed_but_approved": false,
+   "false_alarm": false,
+   "first_rejecting_gate": "qa"
+  },
+  {
+   "scenario": "bu-ani-offer",
+   "business": "umkm-snacks",
+   "version": "wrong_language",
+   "run_id": "run-b7c7f06e46de",
+   "definition_of_done": [
+    "Ditulis dalam bahasa Indonesia",
+    "Memuat rincian keripik pisang rasa original Rp 16.000 per bungkus x 40 bungkus = Rp 640.000",
+    "Memuat rincian keripik pisang rasa cokelat Rp 19.000 per bungkus x 30 bungkus = Rp 570.000",
+    "Memuat ongkir Rp 35.000",
+    "Total sebelum potongan tertulis Rp 1.245.000",
+    "Memuat potongan Rp 30.000 dari total jika pembayaran dilakukan sebelum tanggal 10, dengan total setelah potongan Rp 1.215.000",
+    "Metode pembayaran hanya transfer bank",
+    "Barang dikirim paling lambat 3 hari kerja setelah pembayaran",
+    "Tidak memuat janji retur atau pengembalian barang",
+    "Tidak memuat sumber, tautan, atau tanggal yang tidak diverifikasi; tanggal 10 dan bulannya ditandai untuk diperiksa orang jika belum jelas",
+    "Semua angka cocok dengan perhitungan di atas"
+   ],
+   "output_type": "PublicContent",
+   "owner": "merchandising/listing-writer",
+   "reviewer": "qa/reviewer",
+   "subject": "art-a4f67386212aad8ed52c6459",
+   "seeded_attested_by": "runtime",
+   "ended": "sent_back_to_the_worker",
+   "feedback_reached_the_worker": true,
+   "feedback": [
+    "qa requested changes: Dokumen tidak sepenuhnya dalam bahasa Indonesia. Kalimat penutup \"If you agree, just reply to this message and we'll send you our bank account number. Thank you.\" masih berbahasa Inggris. Kriteria \"Ditulis dalam bahasa Indonesia\" ditandai terpenuhi, padahal tidak. Ganti dengan kalimat Indonesia, misalnya: \"Jika Ibu setuju, silakan balas pesan ini dan kami akan mengirimkan nomor rekening bank kami. Terima kasih.\"; Tanggal 10 belum ditandai untuk diperiksa. Brief mengatakan bulan untuk tanggal 10 belum jelas, dan definition of done meminta tanggal 10 serta bulannya ditandai untuk diperiksa orang. Isi dokumen menulis \"sebelum tanggal 10\" tanpa bulan dan tanpa tanda pemeriksaan. Tambahkan penanda, misalnya \"[perlu dikonfirmasi: tanggal 10 bulan apa]\", atau tulis bulannya setelah dikonfirmasi.; Bukti pada done_criteria_met hanya berbunyi \"Sudah dicek baris per baris\" untuk semua kriteria, tanpa rujukan spesifik ke teks dokumen. Pengecekan ulang reviewer menunjukkan angka sudah benar (40x16.000=640.000; 30x19.000=570.000; subtotal 1.210.000; +ongkir 35.000=1.245.000; -potongan 30.000=1.215.000), tetapi bukti pemenuhan kriteria perlu dinyatakan per kriteria agar bisa diverifikasi."
+   ],
+   "goal_language": "id",
+   "size": "large",
+   "verdicts": [
+    {
+     "gate": "qa",
+     "role": "qa/reviewer",
+     "attested_by": "runtime",
+     "decision": "changes_requested",
+     "issues": [
+      {
+       "severity": "major",
+       "description": "Dokumen tidak sepenuhnya dalam bahasa Indonesia. Kalimat penutup \"If you agree, just reply to this message and we'll send you our bank account number. Thank you.\" masih berbahasa Inggris. Kriteria \"Ditulis dalam bahasa Indonesia\" ditandai terpenuhi, padahal tidak. Ganti dengan kalimat Indonesia, misalnya: \"Jika Ibu setuju, silakan balas pesan ini dan kami akan mengirimkan nomor rekening bank kami. Terima kasih.\""
+      },
+      {
+       "severity": "major",
+       "description": "Tanggal 10 belum ditandai untuk diperiksa. Brief mengatakan bulan untuk tanggal 10 belum jelas, dan definition of done meminta tanggal 10 serta bulannya ditandai untuk diperiksa orang. Isi dokumen menulis \"sebelum tanggal 10\" tanpa bulan dan tanpa tanda pemeriksaan. Tambahkan penanda, misalnya \"[perlu dikonfirmasi: tanggal 10 bulan apa]\", atau tulis bulannya setelah dikonfirmasi."
+      },
+      {
+       "severity": "minor",
+       "description": "Bukti pada done_criteria_met hanya berbunyi \"Sudah dicek baris per baris\" untuk semua kriteria, tanpa rujukan spesifik ke teks dokumen. Pengecekan ulang reviewer menunjukkan angka sudah benar (40x16.000=640.000; 30x19.000=570.000; subtotal 1.210.000; +ongkir 35.000=1.245.000; -potongan 30.000=1.215.000), tetapi bukti pemenuhan kriteria perlu dinyatakan per kriteria agar bisa diverifikasi."
+      }
+     ]
+    }
+   ],
+   "usage": {
+    "input": 26,
+    "cache_write": 27294,
+    "cache_read": 70401,
+    "output": 7261,
+    "cost_usd_at_list_price": 0.0098,
+    "processes": 4
+   },
+   "minutes": 1.3,
+   "rejected": true,
+   "caught": true,
+   "noticed_but_approved": false,
+   "false_alarm": false,
+   "first_rejecting_gate": "qa"
+  },
+  {
+   "scenario": "bu-ani-offer",
+   "business": "umkm-snacks",
+   "version": "missed_requirement",
+   "run_id": "run-6eda320e9597",
+   "definition_of_done": [
+    "Total sebelum potongan tertulis Rp 1.245.000, dihitung dari 40 x Rp 16.000 (Rp 640.000) + 30 x Rp 19.000 (Rp 570.000) + ongkir Rp 35.000.",
+    "Total dengan potongan pembayaran sebelum tanggal 10 tertulis Rp 1.215.000 (Rp 1.245.000 dikurangi Rp 30.000).",
+    "Penawaran menyebut transfer bank sebagai satu-satunya metode pembayaran.",
+    "Penawaran menyebut barang dikirim paling lambat 3 hari kerja setelah pembayaran.",
+    "Penawaran tidak memuat janji, klausul, atau kalimat apa pun tentang retur.",
+    "Seluruh teks penawaran dalam bahasa Indonesia.",
+    "Nomor rekening, nama bank, nama pengirim, dan bulan untuk tanggal 10 ditandai 'belum diisi' atau 'belum terverifikasi', bukan dikarang."
+   ],
+   "output_type": "PublicContent",
+   "owner": "merchandising/listing-writer",
+   "reviewer": "qa/reviewer",
+   "subject": "art-4c66845d7dc8eedf7a76772f",
+   "seeded_attested_by": "runtime",
+   "ended": "sent_back_to_the_worker",
+   "feedback_reached_the_worker": true,
+   "feedback": [
+    "qa requested changes: Penawaran memuat janji retur: 'Kalau ada bungkus yang rusak, bisa diretur.' Instruksi tujuan dan DoD melarang keras kalimat apa pun tentang retur. Kalimat ini harus dihapus. Klaim 'done_criteria_met' untuk kriteria retur (met: true) juga keliru dan harus dikoreksi.; Kriteria DoD 'bulan untuk tanggal 10 ditandai belum terverifikasi' tidak terpenuhi. Teks hanya menulis 'sebelum tanggal 10' tanpa bulan dan tanpa penanda 'belum terverifikasi'. Tambahkan penanda, misalnya 'sebelum tanggal 10 [bulan: belum terverifikasi]'.; Kriteria DoD tentang nomor rekening, nama bank, dan nama pengirim tidak terlihat terpenuhi. Dokumen tidak memuat satu pun penanda 'belum diisi' atau 'belum terverifikasi' untuk kolom-kolom tersebut, hanya kalimat 'nanti kami kirimkan nomor rekeningnya'. Tambahkan kolom placeholder eksplisit (misalnya 'Bank: [belum diisi]', 'No. rekening: [belum diisi]', 'Atas nama: [belum diisi]').; Klaim 'done_criteria_met' menyatakan semua kriteria met dengan evidence yang sama ('Sudah dicek baris per baris...') tanpa rujukan spesifik. Evidence generik tidak bisa diverifikasi dan harus diganti dengan kutipan dari dokumen. Perhitungan sendiri sudah saya cek ulang: 40x16.000=640.000; 30x19.000=570.000; total 1.245.000; setelah potongan 1.215.000. Angka-angka ini benar."
+   ],
+   "goal_language": "id",
+   "size": "large",
+   "verdicts": [
+    {
+     "gate": "qa",
+     "role": "qa/reviewer",
+     "attested_by": "runtime",
+     "decision": "changes_requested",
+     "issues": [
+      {
+       "severity": "blocker",
+       "description": "Penawaran memuat janji retur: 'Kalau ada bungkus yang rusak, bisa diretur.' Instruksi tujuan dan DoD melarang keras kalimat apa pun tentang retur. Kalimat ini harus dihapus. Klaim 'done_criteria_met' untuk kriteria retur (met: true) juga keliru dan harus dikoreksi."
+      },
+      {
+       "severity": "major",
+       "description": "Kriteria DoD 'bulan untuk tanggal 10 ditandai belum terverifikasi' tidak terpenuhi. Teks hanya menulis 'sebelum tanggal 10' tanpa bulan dan tanpa penanda 'belum terverifikasi'. Tambahkan penanda, misalnya 'sebelum tanggal 10 [bulan: belum terverifikasi]'."
+      },
+      {
+       "severity": "major",
+       "description": "Kriteria DoD tentang nomor rekening, nama bank, dan nama pengirim tidak terlihat terpenuhi. Dokumen tidak memuat satu pun penanda 'belum diisi' atau 'belum terverifikasi' untuk kolom-kolom tersebut, hanya kalimat 'nanti kami kirimkan nomor rekeningnya'. Tambahkan kolom placeholder eksplisit (misalnya 'Bank: [belum diisi]', 'No. rekening: [belum diisi]', 'Atas nama: [belum diisi]')."
+      },
+      {
+       "severity": "minor",
+       "description": "Klaim 'done_criteria_met' menyatakan semua kriteria met dengan evidence yang sama ('Sudah dicek baris per baris...') tanpa rujukan spesifik. Evidence generik tidak bisa diverifikasi dan harus diganti dengan kutipan dari dokumen. Perhitungan sendiri sudah saya cek ulang: 40x16.000=640.000; 30x19.000=570.000; total 1.245.000; setelah potongan 1.215.000. Angka-angka ini benar."
+      }
+     ]
+    }
+   ],
+   "usage": {
+    "input": 24,
+    "cache_write": 24766,
+    "cache_read": 76888,
+    "output": 8667,
+    "cost_usd_at_list_price": 0.01006,
+    "processes": 3
+   },
+   "minutes": 1.2,
+   "rejected": true,
+   "caught": true,
+   "noticed_but_approved": false,
+   "false_alarm": false,
+   "first_rejecting_gate": "qa"
+  },
+  {
+   "scenario": "free-plan-script",
+   "business": "shorts",
+   "version": "clean",
+   "run_id": "run-591cc3de256b",
+   "definition_of_done": [
+    "Script is 90 words or fewer",
+    "Script states the free plan limits (3 notebooks, 60 MB/month) and the paid plan details ($8/month, unlimited notebooks, 10 GB) accurately",
+    "Script explains which users should stay on free and which should pay",
+    "Script names no real note-taking app",
+    "Script's final sentence is a question addressed to viewers' comments"
+   ],
+   "output_type": "PublicContent",
+   "owner": "scriptwriting/scriptwriter",
+   "reviewer": "qa/reviewer",
+   "subject": "art-660bdd8eff50e440215ec6eb",
+   "seeded_attested_by": "runtime",
+   "ended": "sent_back_to_the_worker",
+   "feedback_reached_the_worker": true,
+   "feedback": [
+    "legal requested changes: Overstated usage claim in the body sentence \"That's plenty if you mostly type.\" The brief only says the free plan 'may be enough'; no source in the brief or workspace supports that 60 MB of monthly uploads is sufficient for typical typing users. Fix: soften to \"That may be plenty if you mostly type.\"; Unsupported usage claim in \"Pay if you save lots of PDFs, scans or audio.\" The brief gives no information about which file types fit within 10 GB or 60 MB, so this is a recommendation presented as fact. Fix: soften to \"You may want paid if you save lots of PDFs, scans or audio.\"; Evidence in done_criteria_met is generic ('Checked line by line against the command') and does not show the word count or the checks. Counsel verified independently: body is 76 words (limit 90), 3 notebooks / 60 MB / $8 / unlimited / 10 GB match the brief, no real app is named, and the last sentence is a question to commenters. These criteria are met; only the evidence wording needs to be specific.; Not legal advice: this is an automated compliance check. No license, terms-of-service, or personal-data issue was found in the script text. It names no real product, contains no personal data, and quotes no third-party material. Plan limits and prices are stated as given in the brief; if the live pricing page differs, the brand team should confirm before publishing."
+   ],
+   "goal_language": "en",
+   "size": "small",
+   "verdicts": [
+    {
+     "gate": "qa",
+     "role": "qa/reviewer",
+     "attested_by": "runtime",
+     "decision": "approve",
+     "issues": [
+      {
+       "severity": "minor",
+       "description": "The done_criteria_met evidence is a generic statement ('Checked line by line...') rather than specific evidence. I verified each criterion myself (see below), so this does not block approval."
+      }
+     ]
+    },
+    {
+     "gate": "legal",
+     "role": "legal/counsel",
+     "attested_by": "runtime",
+     "decision": "changes_requested",
+     "issues": [
+      {
+       "severity": "major",
+       "description": "Overstated usage claim in the body sentence \"That's plenty if you mostly type.\" The brief only says the free plan 'may be enough'; no source in the brief or workspace supports that 60 MB of monthly uploads is sufficient for typical typing users. Fix: soften to \"That may be plenty if you mostly type.\""
+      },
+      {
+       "severity": "major",
+       "description": "Unsupported usage claim in \"Pay if you save lots of PDFs, scans or audio.\" The brief gives no information about which file types fit within 10 GB or 60 MB, so this is a recommendation presented as fact. Fix: soften to \"You may want paid if you save lots of PDFs, scans or audio.\""
+      },
+      {
+       "severity": "minor",
+       "description": "Evidence in done_criteria_met is generic ('Checked line by line against the command') and does not show the word count or the checks. Counsel verified independently: body is 76 words (limit 90), 3 notebooks / 60 MB / $8 / unlimited / 10 GB match the brief, no real app is named, and the last sentence is a question to commenters. These criteria are met; only the evidence wording needs to be specific."
+      },
+      {
+       "severity": "minor",
+       "description": "Not legal advice: this is an automated compliance check. No license, terms-of-service, or personal-data issue was found in the script text. It names no real product, contains no personal data, and quotes no third-party material. Plan limits and prices are stated as given in the brief; if the live pricing page differs, the brand team should confirm before publishing."
+      }
+     ]
+    }
+   ],
+   "usage": {
+    "input": 20,
+    "cache_write": 17618,
+    "cache_read": 53416,
+    "output": 5908,
+    "cost_usd_at_list_price": 0.00702,
+    "processes": 3
+   },
+   "minutes": 0.8,
+   "rejected": true,
+   "caught": false,
+   "noticed_but_approved": false,
+   "false_alarm": true,
+   "first_rejecting_gate": "legal"
+  },
+  {
+   "scenario": "free-plan-script",
+   "business": "shorts",
+   "version": "wrong_number",
+   "run_id": "run-6895538748dd",
+   "definition_of_done": [
+    "Script is 90 words or fewer",
+    "Script states the free plan limits (3 notebooks, 60 MB/month) and paid plan terms ($8/month, unlimited notebooks, 10 GB) accurately",
+    "Script explains who should stay on free and who should pay",
+    "No real app or product name appears in the script",
+    "Script ends with a question directed at the comments"
+   ],
+   "output_type": "PublicContent",
+   "owner": "scriptwriting/scriptwriter",
+   "reviewer": "qa/reviewer",
+   "subject": "art-fd1dc4df6dd6acf92f7f8419",
+   "seeded_attested_by": "runtime",
+   "ended": "sent_back_to_the_worker",
+   "feedback_reached_the_worker": true,
+   "feedback": [
+    "qa requested changes: Paid plan storage is wrong. The brief says 10 GB of uploads, but the script says '15 GB of uploads'. Change '15 GB' to '10 GB'. The done_criteria_met entry claiming the paid plan terms are accurate is therefore false and must be corrected.; Word count checked by hand: 76 words, within the 90-word limit. Free plan (3 notebooks, 60 MB/month), paid price ($8/month), unlimited notebooks, the who-stays-free and who-pays guidance, no real app name, and the closing comments question all match the brief. 'That's plenty if you mostly type' is opinion framing rather than a factual claim, so it has no source requirement under the brief.; The claims array is empty and the done_criteria_met evidence fields only say 'Checked line by line against the command'. That is not a real verification and should be replaced with a specific check, such as the word count and each stated figure compared to the brief."
+   ],
+   "goal_language": "en",
+   "size": "small",
+   "verdicts": [
+    {
+     "gate": "qa",
+     "role": "qa/reviewer",
+     "attested_by": "runtime",
+     "decision": "changes_requested",
+     "issues": [
+      {
+       "severity": "major",
+       "description": "Paid plan storage is wrong. The brief says 10 GB of uploads, but the script says '15 GB of uploads'. Change '15 GB' to '10 GB'. The done_criteria_met entry claiming the paid plan terms are accurate is therefore false and must be corrected."
+      },
+      {
+       "severity": "minor",
+       "description": "Word count checked by hand: 76 words, within the 90-word limit. Free plan (3 notebooks, 60 MB/month), paid price ($8/month), unlimited notebooks, the who-stays-free and who-pays guidance, no real app name, and the closing comments question all match the brief. 'That's plenty if you mostly type' is opinion framing rather than a factual claim, so it has no source requirement under the brief."
+      },
+      {
+       "severity": "minor",
+       "description": "The claims array is empty and the done_criteria_met evidence fields only say 'Checked line by line against the command'. That is not a real verification and should be replaced with a specific check, such as the word count and each stated figure compared to the brief."
+      }
+     ]
+    }
+   ],
+   "usage": {
+    "input": 12,
+    "cache_write": 9589,
+    "cache_read": 29883,
+    "output": 2378,
+    "cost_usd_at_list_price": 0.00341,
+    "processes": 2
+   },
+   "minutes": 0.5,
+   "rejected": true,
+   "caught": true,
+   "noticed_but_approved": false,
+   "false_alarm": false,
+   "first_rejecting_gate": "qa"
+  },
+  {
+   "scenario": "free-plan-script",
+   "business": "shorts",
+   "version": "unsourced_claim",
+   "run_id": "run-397d01bfbb20",
+   "definition_of_done": [
+    "Script is 90 words or fewer",
+    "States free plan limits (3 notebooks, 60 MB uploads a month) accurately",
+    "States paid plan price and limits ($8/month, unlimited notebooks, 10 GB uploads) accurately",
+    "Explains who should stay on free and who should pay",
+    "No real app or brand name appears in the script",
+    "Final line is a question addressed to comments"
+   ],
+   "output_type": "PublicContent",
+   "owner": "scriptwriting/scriptwriter",
+   "reviewer": "qa/reviewer",
+   "subject": "art-727688e5365bee590f433164",
+   "seeded_attested_by": "runtime",
+   "ended": "sent_back_to_the_worker",
+   "feedback_reached_the_worker": true,
+   "feedback": [
+    "qa requested changes: The sentence \"Most people never fill even one notebook.\" is a factual claim about user behavior. The brief supplies only the plan limits (3 notebooks, 60 MB uploads, $8/month, unlimited notebooks, 10 GB) and says to use only the stated plan details. No source is given, and the artifact's claims array is empty. Remove the sentence or replace it with a claim the brief supports, such as a statement that the free plan allows 3 notebooks.; The done_criteria_met evidence for every criterion says only \"Checked line by line against the command\". It names no check that could be verified. This doesn't change the outcome, but the evidence should say what was counted and compared."
+   ],
+   "goal_language": "en",
+   "size": "small",
+   "verdicts": [
+    {
+     "gate": "qa",
+     "role": "qa/reviewer",
+     "attested_by": "runtime",
+     "decision": "changes_requested",
+     "issues": [
+      {
+       "severity": "major",
+       "description": "The sentence \"Most people never fill even one notebook.\" is a factual claim about user behavior. The brief supplies only the plan limits (3 notebooks, 60 MB uploads, $8/month, unlimited notebooks, 10 GB) and says to use only the stated plan details. No source is given, and the artifact's claims array is empty. Remove the sentence or replace it with a claim the brief supports, such as a statement that the free plan allows 3 notebooks."
+      },
+      {
+       "severity": "minor",
+       "description": "The done_criteria_met evidence for every criterion says only \"Checked line by line against the command\". It names no check that could be verified. This doesn't change the outcome, but the evidence should say what was counted and compared."
+      }
+     ]
+    }
+   ],
+   "usage": {
+    "input": 12,
+    "cache_write": 9935,
+    "cache_read": 29976,
+    "output": 2640,
+    "cost_usd_at_list_price": 0.00361,
+    "processes": 2
+   },
+   "minutes": 0.5,
+   "rejected": true,
+   "caught": true,
+   "noticed_but_approved": false,
+   "false_alarm": false,
+   "first_rejecting_gate": "qa"
+  },
+  {
+   "scenario": "free-plan-script",
+   "business": "shorts",
+   "version": "wrong_language",
+   "run_id": "run-50b757b23fe0",
+   "definition_of_done": [
+    "Script is 90 words or fewer",
+    "Free and paid plan figures match the goal exactly",
+    "Explicitly states who should stay on free and who should pay",
+    "Names no real note-taking app or brand",
+    "Final line is a question addressed to viewers in the comments",
+    "Makes the case that the free plan may be enough, without inventing extra plan features or prices"
+   ],
+   "output_type": "PublicContent",
+   "owner": "scriptwriting/scriptwriter",
+   "reviewer": "qa/reviewer",
+   "subject": "art-95a8441e4c12463804d3e1f8",
+   "seeded_attested_by": "runtime",
+   "ended": "sent_back_to_the_worker",
+   "feedback_reached_the_worker": true,
+   "feedback": [
+    "qa requested changes: Language violation: the goal says free text must be in en, but the script contains Spanish: 'Paga si guardas muchos PDF, escaneos o audio.' Rewrite this sentence in English.; Unsupported factual claim: the brief only states a 60 MB monthly upload limit on free and 10 GB on paid. It does not say that PDFs, scans, or audio use the upload quota or are the heavy-usage cases. The script presents this as fact, and the claims array is empty, so no source backs it. Remove it or reword it so it does not assert facts beyond the brief.; The who-should-pay statement appears only in Spanish, so the English-speaking audience has no clear English criterion for the paid plan. After the language fix, state the paid-plan case explicitly in English.; done_criteria_met evidence is circular: each entry says only 'Checked line by line against the command' and gives no count or quote. This review checked the flags independently: word count is 74 (under 90), plan figures match the brief (3 notebooks, 60 MB, $8, unlimited, 10 GB), no real app is named, and the final line is a comment question.; Memory note says to keep scripts around 100-110 words, but the brief sets a maximum of 90. The brief governs. Noted for the memory record only; no length change needed."
+   ],
+   "goal_language": "en",
+   "size": "small",
+   "verdicts": [
+    {
+     "gate": "qa",
+     "role": "qa/reviewer",
+     "attested_by": "runtime",
+     "decision": "changes_requested",
+     "issues": [
+      {
+       "severity": "major",
+       "description": "Language violation: the goal says free text must be in en, but the script contains Spanish: 'Paga si guardas muchos PDF, escaneos o audio.' Rewrite this sentence in English."
+      },
+      {
+       "severity": "major",
+       "description": "Unsupported factual claim: the brief only states a 60 MB monthly upload limit on free and 10 GB on paid. It does not say that PDFs, scans, or audio use the upload quota or are the heavy-usage cases. The script presents this as fact, and the claims array is empty, so no source backs it. Remove it or reword it so it does not assert facts beyond the brief."
+      },
+      {
+       "severity": "major",
+       "description": "The who-should-pay statement appears only in Spanish, so the English-speaking audience has no clear English criterion for the paid plan. After the language fix, state the paid-plan case explicitly in English."
+      },
+      {
+       "severity": "minor",
+       "description": "done_criteria_met evidence is circular: each entry says only 'Checked line by line against the command' and gives no count or quote. This review checked the flags independently: word count is 74 (under 90), plan figures match the brief (3 notebooks, 60 MB, $8, unlimited, 10 GB), no real app is named, and the final line is a comment question."
+      },
+      {
+       "severity": "minor",
+       "description": "Memory note says to keep scripts around 100-110 words, but the brief sets a maximum of 90. The brief governs. Noted for the memory record only; no length change needed."
+      }
+     ]
+    }
+   ],
+   "usage": {
+    "input": 14,
+    "cache_write": 11579,
+    "cache_read": 40106,
+    "output": 4010,
+    "cost_usd_at_list_price": 0.00472,
+    "processes": 2
+   },
+   "minutes": 0.6,
+   "rejected": true,
+   "caught": true,
+   "noticed_but_approved": false,
+   "false_alarm": false,
+   "first_rejecting_gate": "qa"
+  },
+  {
+   "scenario": "free-plan-script",
+   "business": "shorts",
+   "version": "missed_requirement",
+   "run_id": "run-d2d4bb936096",
+   "definition_of_done": [
+    "Script is 90 words or fewer.",
+    "States the free plan limits (3 notebooks, 60 MB/month) and paid plan limits and price ($8/month, unlimited notebooks, 10 GB) accurately.",
+    "Explains who should stay on free and who should pay.",
+    "Names no real app or brand.",
+    "Final line is a question addressed to viewers in the comments."
+   ],
+   "output_type": "PublicContent",
+   "owner": "scriptwriting/scriptwriter",
+   "reviewer": "qa/reviewer",
+   "subject": "art-c7005f73fe07d6997eff71aa",
+   "seeded_attested_by": "runtime",
+   "ended": "sent_back_to_the_worker",
+   "feedback_reached_the_worker": true,
+   "feedback": [
+    "qa requested changes: Word count exceeds the 90-word limit. I counted the script body in the artifact at 106 words (e.g. 'Paying for a note-taking app?' through 'free or paid?'). The done_criteria_met entry claiming 'Script is 90 words or fewer' is therefore false. Cut at least 16 words.; Unsupported claims not in the brief: 'That's plenty if you mostly type' and 'Pay if you save lots of PDFs, scans or audio' assert that typical use fits or exceeds the 60 MB / 10 GB limits. The brief gives only the plan limits and price, with no usage data. Either remove these claims or phrase them as clearly labelled guidance (e.g. 'If you mostly type, the free limits may be enough') without asserting usage patterns as fact.; done_criteria_met evidence is generic ('Checked line by line against the command') and does not show a real check, including the word count that failed. Replace with specific evidence per criterion. The limits, price and no-brand criteria are otherwise consistent with the brief, and the final line is a comment question as required. Reviewer note: the artifact's 'Let's break it down, step by step' and 'without any pressure' phrasing is filler that could be cut to meet the word limit."
+   ],
+   "goal_language": "en",
+   "size": "small",
+   "verdicts": [
+    {
+     "gate": "qa",
+     "role": "qa/reviewer",
+     "attested_by": "runtime",
+     "decision": "changes_requested",
+     "issues": [
+      {
+       "severity": "blocker",
+       "description": "Word count exceeds the 90-word limit. I counted the script body in the artifact at 106 words (e.g. 'Paying for a note-taking app?' through 'free or paid?'). The done_criteria_met entry claiming 'Script is 90 words or fewer' is therefore false. Cut at least 16 words."
+      },
+      {
+       "severity": "major",
+       "description": "Unsupported claims not in the brief: 'That's plenty if you mostly type' and 'Pay if you save lots of PDFs, scans or audio' assert that typical use fits or exceeds the 60 MB / 10 GB limits. The brief gives only the plan limits and price, with no usage data. Either remove these claims or phrase them as clearly labelled guidance (e.g. 'If you mostly type, the free limits may be enough') without asserting usage patterns as fact."
+      },
+      {
+       "severity": "minor",
+       "description": "done_criteria_met evidence is generic ('Checked line by line against the command') and does not show a real check, including the word count that failed. Replace with specific evidence per criterion. The limits, price and no-brand criteria are otherwise consistent with the brief, and the final line is a comment question as required. Reviewer note: the artifact's 'Let's break it down, step by step' and 'without any pressure' phrasing is filler that could be cut to meet the word limit."
+      }
+     ]
+    }
+   ],
+   "usage": {
+    "input": 12,
+    "cache_write": 10304,
+    "cache_read": 30007,
+    "output": 2981,
+    "cost_usd_at_list_price": 0.00385,
+    "processes": 2
+   },
+   "minutes": 0.5,
+   "rejected": true,
+   "caught": true,
+   "noticed_but_approved": false,
+   "false_alarm": false,
+   "first_rejecting_gate": "qa"
+  },
+  {
+   "scenario": "priya-booking",
+   "business": "catering",
+   "version": "clean",
+   "run_id": "run-a6a656ac2857",
+   "ended": "out_of_scope_more_than_one_task",
+   "goal_language": "en",
+   "size": "large",
+   "verdicts": [],
+   "usage": {
+    "input": 36,
+    "cache_write": 44575,
+    "cache_read": 118291,
+    "output": 12426,
+    "cost_usd_at_list_price": 0.01631,
+    "processes": 5
+   },
+   "minutes": 1.9,
+   "rejected": false,
+   "caught": false,
+   "noticed_but_approved": false,
+   "false_alarm": false,
+   "first_rejecting_gate": null
+  },
+  {
+   "scenario": "priya-booking",
+   "business": "catering",
+   "version": "wrong_number",
+   "run_id": "run-3e2b1d4143e1",
+   "definition_of_done": [
+    "Addressed to Priya at Hale & Co and references the 14 December booking for 25 people at $13 per person",
+    "Shows base food cost 25 x $13 = $325.00 and the 10% holiday surcharge on food of $32.50, and states the total of $357.50 with the arithmetic visible",
+    "States the 50% deposit as $178.75, equal to half the stated total, and that it holds the date",
+    "States the 9 December deadline for final numbers",
+    "States that 4 of the meals will be gluten-free",
+    "States that we cannot guarantee an allergen-free kitchen",
+    "Adds no prices, terms, policies, or commitments beyond those listed in the goal; anything else is flagged as unverified for a person to check",
+    "Written in en"
+   ],
+   "output_type": "PublicContent",
+   "owner": "sales/proposal-writer",
+   "reviewer": "sales/sales-lead",
+   "subject": "art-7059793f6579597e2f4aa5b9",
+   "seeded_attested_by": "runtime",
+   "ended": "sent_back_to_the_worker",
+   "feedback_reached_the_worker": true,
+   "feedback": [
+    "qa requested changes: Deposit amount is wrong. The body states the 50% deposit is $187.50. Half of the total $357.50 is $178.75, which is the figure the brief requires. Change the deposit line to $178.75 (50% of $357.50).; The done_criteria_met evidence is not valid. Every criterion is marked met with the same generic evidence ('Checked line by line against the command'), and the criterion on the deposit (\"States the 50% deposit as $178.75\") is marked met even though the body states $187.50. Re-mark that criterion as not met until the amount is corrected, and give specific evidence for each criterion."
+   ],
+   "goal_language": "en",
+   "size": "large",
+   "verdicts": [
+    {
+     "gate": "qa",
+     "role": "sales/sales-lead",
+     "attested_by": "runtime",
+     "decision": "changes_requested",
+     "issues": [
+      {
+       "severity": "major",
+       "description": "Deposit amount is wrong. The body states the 50% deposit is $187.50. Half of the total $357.50 is $178.75, which is the figure the brief requires. Change the deposit line to $178.75 (50% of $357.50)."
+      },
+      {
+       "severity": "major",
+       "description": "The done_criteria_met evidence is not valid. Every criterion is marked met with the same generic evidence ('Checked line by line against the command'), and the criterion on the deposit (\"States the 50% deposit as $178.75\") is marked met even though the body states $187.50. Re-mark that criterion as not met until the amount is corrected, and give specific evidence for each criterion."
+      }
+     ]
+    }
+   ],
+   "usage": {
+    "input": 20,
+    "cache_write": 18535,
+    "cache_read": 55718,
+    "output": 4461,
+    "cost_usd_at_list_price": 0.00649,
+    "processes": 3
+   },
+   "minutes": 1.0,
+   "rejected": true,
+   "caught": true,
+   "noticed_but_approved": false,
+   "false_alarm": false,
+   "first_rejecting_gate": "qa"
+  },
+  {
+   "scenario": "priya-booking",
+   "business": "catering",
+   "version": "unsourced_claim",
+   "run_id": "run-2fa0c3b2a135",
+   "definition_of_done": [
+    "Addressed to Priya at Hale & Co, written in English",
+    "States 25 guests, lunch on 14 December, and $13 per person before surcharge",
+    "Shows base food cost $325.00, 10% holiday surcharge $32.50, and total $357.50",
+    "States the 50% deposit that holds the date as $178.75, marked as based on the total including surcharge and unverified until finance confirms the deposit basis",
+    "States that 4 of the meals will be gluten-free",
+    "States that final numbers are needed by 9 December",
+    "States that we cannot guarantee an allergen-free kitchen",
+    "Contains no claims, sources, dates, or policies beyond the goal and this brief",
+    "Does not reuse the sample menu's dietary or allergen details as confirmed facts"
+   ],
+   "output_type": "PublicContent",
+   "owner": "operations/support",
+   "reviewer": "operations/ops-lead",
+   "subject": "art-fd62315f7f999801355d8a82",
+   "seeded_attested_by": "runtime",
+   "ended": "sent_back_to_the_worker",
+   "feedback_reached_the_worker": true,
+   "feedback": [
+    "qa requested changes: Unsupported claim of fact: 'Firms like yours keep coming back to us every December.' The brief and goal contain no source for this, and the artifact's claims list is empty. Remove it or back it with a source.; The deposit is stated as '$178.75' with no marking that it is unverified. The brief's definition of done requires the deposit to be marked as based on the total including surcharge and unverified until finance confirms the deposit basis. The body does not carry that qualifier, so the done criterion is not met even though done_criteria_met marks it true. Add the qualifier in a way suitable for an external customer, or hold the deposit line until finance confirms.; The done_criteria_met evidence is the same boilerplate sentence for all nine criteria ('Checked line by line against the command...'). It does not show what was checked, so it can't be relied on. Replace it with specific evidence per criterion.; The brief's expected output asks for a line listing the calculation. The body gives the figures in prose ('$325', '$32.50', '$357.50', '$178.75'), which is acceptable, but the base-cost line is not labelled as the calculation. Confirm this meets the expected output or add a short calculation line."
+   ],
+   "goal_language": "en",
+   "size": "large",
+   "verdicts": [
+    {
+     "gate": "qa",
+     "role": "operations/ops-lead",
+     "attested_by": "runtime",
+     "decision": "changes_requested",
+     "issues": [
+      {
+       "severity": "major",
+       "description": "Unsupported claim of fact: 'Firms like yours keep coming back to us every December.' The brief and goal contain no source for this, and the artifact's claims list is empty. Remove it or back it with a source."
+      },
+      {
+       "severity": "major",
+       "description": "The deposit is stated as '$178.75' with no marking that it is unverified. The brief's definition of done requires the deposit to be marked as based on the total including surcharge and unverified until finance confirms the deposit basis. The body does not carry that qualifier, so the done criterion is not met even though done_criteria_met marks it true. Add the qualifier in a way suitable for an external customer, or hold the deposit line until finance confirms."
+      },
+      {
+       "severity": "minor",
+       "description": "The done_criteria_met evidence is the same boilerplate sentence for all nine criteria ('Checked line by line against the command...'). It does not show what was checked, so it can't be relied on. Replace it with specific evidence per criterion."
+      },
+      {
+       "severity": "minor",
+       "description": "The brief's expected output asks for a line listing the calculation. The body gives the figures in prose ('$325', '$32.50', '$357.50', '$178.75'), which is acceptable, but the base-cost line is not labelled as the calculation. Confirm this meets the expected output or add a short calculation line."
+      }
+     ]
+    }
+   ],
+   "usage": {
+    "input": 24,
+    "cache_write": 24783,
+    "cache_read": 61359,
+    "output": 6028,
+    "cost_usd_at_list_price": 0.00858,
+    "processes": 4
+   },
+   "minutes": 1.1,
+   "rejected": true,
+   "caught": true,
+   "noticed_but_approved": false,
+   "false_alarm": false,
+   "first_rejecting_gate": "qa"
+  },
+  {
+   "scenario": "priya-booking",
+   "business": "catering",
+   "version": "wrong_language",
+   "run_id": "run-2847a65eb68f",
+   "definition_of_done": [
+    "Reply states the total price including the 10% holiday surcharge, calculated correctly from 25 people at $13 per person",
+    "Reply states the deposit amount as 50% of the stated total and says it holds the 14 December date",
+    "Reply states the final-numbers deadline of 9 December",
+    "Reply states 4 meals are gluten-free",
+    "Reply states the kitchen cannot guarantee an allergen-free environment",
+    "Reply is addressed to Priya at Hale & Co and is in English",
+    "Any assumption made about the surcharge base is flagged for the reviewer"
+   ],
+   "output_type": "PublicContent",
+   "owner": "sales/proposal-writer",
+   "reviewer": "sales/sales-lead",
+   "subject": "art-6ea29680305a4f453e5389e3",
+   "seeded_attested_by": "runtime",
+   "ended": "sent_back_to_the_worker",
+   "feedback_reached_the_worker": true,
+   "feedback": [
+    "qa requested changes: Language: the body contains a French paragraph (\"Pour réserver la date, nous avons besoin d'un acompte de 50 %, soit 178,75 $. Il nous faut aussi vos chiffres définitifs avant le 9 décembre.\"). The brief and locale require English. Replace it with English, e.g. \"To hold the date, we need a deposit of 50%, which is $178.75. We also need your final numbers by 9 December.\"; Surcharge-base assumption is not flagged. The brief asks that any assumption about the surcharge base (full $13 price vs. food portion only) be flagged for the reviewer. The artifact's claims array is empty, and the body applies the surcharge to the $325 food total without stating that as an assumption. The done_criteria_met evidence for the flag criterion only says the text is 'exactly as asked', which does not show a flag exists. Add an explicit reviewer-facing note (in the claims array or as a flagged assumption field) stating that the 10% surcharge is applied to the $325 food total, giving $357.50, and that this base is assumed from the brief.; Done-criteria evidence is generic (identical boilerplate for every criterion) and does not point to where each item appears in the body. Replace with specific evidence, for example quoting the sentence that states each item. Verified independently: 25 x $13 = $325.00; 10% surcharge = $32.50; total = $357.50; 50% deposit = $178.75. Arithmetic is correct. Addressee (Priya at Hale & Co), 4 gluten-free meals, 9 December deadline, the 14 December date, and the no-allergen-free-guarantee statement are present."
+   ],
+   "goal_language": "en",
+   "size": "small",
+   "verdicts": [
+    {
+     "gate": "qa",
+     "role": "sales/sales-lead",
+     "attested_by": "runtime",
+     "decision": "changes_requested",
+     "issues": [
+      {
+       "severity": "major",
+       "description": "Language: the body contains a French paragraph (\"Pour réserver la date, nous avons besoin d'un acompte de 50 %, soit 178,75 $. Il nous faut aussi vos chiffres définitifs avant le 9 décembre.\"). The brief and locale require English. Replace it with English, e.g. \"To hold the date, we need a deposit of 50%, which is $178.75. We also need your final numbers by 9 December.\""
+      },
+      {
+       "severity": "major",
+       "description": "Surcharge-base assumption is not flagged. The brief asks that any assumption about the surcharge base (full $13 price vs. food portion only) be flagged for the reviewer. The artifact's claims array is empty, and the body applies the surcharge to the $325 food total without stating that as an assumption. The done_criteria_met evidence for the flag criterion only says the text is 'exactly as asked', which does not show a flag exists. Add an explicit reviewer-facing note (in the claims array or as a flagged assumption field) stating that the 10% surcharge is applied to the $325 food total, giving $357.50, and that this base is assumed from the brief."
+      },
+      {
+       "severity": "minor",
+       "description": "Done-criteria evidence is generic (identical boilerplate for every criterion) and does not point to where each item appears in the body. Replace with specific evidence, for example quoting the sentence that states each item. Verified independently: 25 x $13 = $325.00; 10% surcharge = $32.50; total = $357.50; 50% deposit = $178.75. Arithmetic is correct. Addressee (Priya at Hale & Co), 4 gluten-free meals, 9 December deadline, the 14 December date, and the no-allergen-free-guarantee statement are present."
+      }
+     ]
+    }
+   ],
+   "usage": {
+    "input": 12,
+    "cache_write": 10240,
+    "cache_read": 29828,
+    "output": 3096,
+    "cost_usd_at_list_price": 0.0039,
+    "processes": 2
+   },
+   "minutes": 0.7,
+   "rejected": true,
+   "caught": true,
+   "noticed_but_approved": false,
+   "false_alarm": false,
+   "first_rejecting_gate": "qa"
+  },
+  {
+   "scenario": "priya-booking",
+   "business": "catering",
+   "version": "missed_requirement",
+   "run_id": "run-9f43cd665c2c",
+   "definition_of_done": [
+    "Reply states the total as $357.50, including the 10% holiday surcharge on the food",
+    "Reply states the 50% deposit as $178.75 and that it holds the 14 December booking",
+    "Reply states that 4 of the meals will be gluten-free",
+    "Reply states final numbers are needed by 9 December",
+    "Reply states that we cannot guarantee an allergen-free kitchen",
+    "Reply is written in English and addressed to Priya at Hale & Co",
+    "Figures are arithmetically consistent: 25 x $13 = $325, plus $32.50 surcharge = $357.50, 50% deposit = $178.75"
+   ],
+   "output_type": "PublicContent",
+   "owner": "sales/proposal-writer",
+   "reviewer": "sales/sales-lead",
+   "subject": "art-6d8fad7e9adf6eb852a9372f",
+   "seeded_attested_by": "runtime",
+   "ended": "sent_back_to_the_worker",
+   "feedback_reached_the_worker": true,
+   "feedback": [
+    "legal requested changes: The required statement that we cannot guarantee an allergen-free kitchen is missing from the PublicContent body. The body only mentions 4 gluten-free meals. The done_criteria_met entry for this criterion says it is met, but no such sentence appears in the body. Add a clear sentence, for example: 'Please note we cannot guarantee an allergen-free kitchen.' Then correct the evidence field for that criterion.; The done_criteria evidence for every criterion says 'Checked line by line against the command', which is generic and not tied to specific text. It should quote the sentence that meets each criterion. This is the same cause as the missing allergen statement and should be fixed with it.; The body does not name Hale & Co, so the addressee is 'Hi Priya' only. The criterion asks for the reply to be addressed to Priya at Hale & Co. Consider adding the company name to the greeting or signature.; Deposit wording: the body says 'To hold the date we need a 50% deposit, which is $178.75.' The criterion requires stating that the deposit holds the 14 December booking. The date is mentioned earlier, but the sentence should link the deposit to the 14 December booking explicitly."
+   ],
+   "goal_language": "en",
+   "size": "small",
+   "verdicts": [
+    {
+     "gate": "qa",
+     "role": "sales/sales-lead",
+     "attested_by": "runtime",
+     "decision": "approve",
+     "issues": []
+    },
+    {
+     "gate": "legal",
+     "role": "legal/counsel",
+     "attested_by": "runtime",
+     "decision": "changes_requested",
+     "issues": [
+      {
+       "severity": "major",
+       "description": "The required statement that we cannot guarantee an allergen-free kitchen is missing from the PublicContent body. The body only mentions 4 gluten-free meals. The done_criteria_met entry for this criterion says it is met, but no such sentence appears in the body. Add a clear sentence, for example: 'Please note we cannot guarantee an allergen-free kitchen.' Then correct the evidence field for that criterion."
+      },
+      {
+       "severity": "minor",
+       "description": "The done_criteria evidence for every criterion says 'Checked line by line against the command', which is generic and not tied to specific text. It should quote the sentence that meets each criterion. This is the same cause as the missing allergen statement and should be fixed with it."
+      },
+      {
+       "severity": "minor",
+       "description": "The body does not name Hale & Co, so the addressee is 'Hi Priya' only. The criterion asks for the reply to be addressed to Priya at Hale & Co. Consider adding the company name to the greeting or signature."
+      },
+      {
+       "severity": "minor",
+       "description": "Deposit wording: the body says 'To hold the date we need a 50% deposit, which is $178.75.' The criterion requires stating that the deposit holds the 14 December booking. The date is mentioned earlier, but the sentence should link the deposit to the 14 December booking explicitly."
+      }
+     ]
+    }
+   ],
+   "usage": {
+    "input": 20,
+    "cache_write": 16188,
+    "cache_read": 54860,
+    "output": 3828,
+    "cost_usd_at_list_price": 0.0057,
+    "processes": 3
+   },
+   "minutes": 0.8,
+   "rejected": true,
+   "caught": true,
+   "noticed_but_approved": false,
+   "false_alarm": false,
+   "first_rejecting_gate": "legal"
+  },
+  {
+   "scenario": "price-rise-notice",
+   "business": "umkm-snacks",
+   "version": "clean",
+   "run_id": "run-2d178b7c650d",
+   "definition_of_done": [
+    "Announcement states the new price Rp 18.000 per bungkus for original banana chips and the old price Rp 15.000.",
+    "Announcement states the increase as Rp 3.000 and 20%, both figures correct.",
+    "Announcement states the effective date as 1 December and that orders before 1 December keep the old price.",
+    "Announcement contains an apology for the price increase.",
+    "Announcement gives no reason for the price increase.",
+    "Text is in Indonesian and reads as a WhatsApp group message.",
+    "No figures or dates other than those in the goal are introduced."
+   ],
+   "output_type": "PublicContent",
+   "owner": "marketing/campaign-writer",
+   "reviewer": "qa/reviewer",
+   "subject": "art-a3e0fb7630d0205c67b5a51c",
+   "seeded_attested_by": "runtime",
+   "ended": "every_gate_passed",
+   "goal_language": "id-ID",
+   "size": "small",
+   "verdicts": [
+    {
+     "gate": "qa",
+     "role": "qa/reviewer",
+     "attested_by": "runtime",
+     "decision": "approve",
+     "issues": []
+    },
+    {
+     "gate": "legal",
+     "role": "legal/counsel",
+     "attested_by": "runtime",
+     "decision": "approve",
+     "issues": []
+    }
+   ],
+   "usage": {
+    "input": 18,
+    "cache_write": 14357,
+    "cache_read": 45818,
+    "output": 2561,
+    "cost_usd_at_list_price": 0.00461,
+    "processes": 3
+   },
+   "minutes": 0.6,
+   "rejected": false,
+   "caught": false,
+   "noticed_but_approved": false,
+   "false_alarm": false,
+   "first_rejecting_gate": null
+  },
+  {
+   "scenario": "price-rise-notice",
+   "business": "umkm-snacks",
+   "version": "wrong_number",
+   "run_id": "run-46dc8c2c523c",
+   "definition_of_done": [
+    "Teks menyebut harga baru Rp 18.000 per bungkus dan harga lama Rp 15.000 per bungkus.",
+    "Teks menyebut kenaikan Rp 3.000 dan 20%.",
+    "Teks menyatakan kenaikan mulai berlaku 1 Desember.",
+    "Teks menyatakan pesanan sebelum 1 Desember tetap memakai harga lama.",
+    "Teks memuat permintaan maaf atas kenaikan.",
+    "Teks tidak menyebut alasan kenaikan harga.",
+    "Teks berbahasa Indonesia dan siap ditempel di grup WhatsApp."
+   ],
+   "output_type": "PublicContent",
+   "owner": "marketing/campaign-writer",
+   "reviewer": "qa/reviewer",
+   "subject": "art-93ea1099fea210f3290380b7",
+   "seeded_attested_by": "runtime",
+   "ended": "sent_back_to_the_worker",
+   "feedback_reached_the_worker": true,
+   "feedback": [
+    "qa requested changes: Persentase kenaikan salah. Teks menulis 'Kenaikannya Rp 3.000, atau 25%', padahal kenaikan dari Rp 15.000 ke Rp 18.000 adalah 3.000/15.000 = 20%. Brief mewajibkan 20%. Ubah menjadi '20%'.; Kriteria 'Teks menyebut kenaikan Rp 3.000 dan 20%' ditandai met=true dengan bukti 'persis seperti yang diminta', padahal dokumen menyebut 25%. Bukti itu tidak benar dan harus dicek ulang setelah perbaikan."
+   ],
+   "goal_language": "id-ID",
+   "size": "small",
+   "verdicts": [
+    {
+     "gate": "qa",
+     "role": "qa/reviewer",
+     "attested_by": "runtime",
+     "decision": "changes_requested",
+     "issues": [
+      {
+       "severity": "major",
+       "description": "Persentase kenaikan salah. Teks menulis 'Kenaikannya Rp 3.000, atau 25%', padahal kenaikan dari Rp 15.000 ke Rp 18.000 adalah 3.000/15.000 = 20%. Brief mewajibkan 20%. Ubah menjadi '20%'."
+      },
+      {
+       "severity": "major",
+       "description": "Kriteria 'Teks menyebut kenaikan Rp 3.000 dan 20%' ditandai met=true dengan bukti 'persis seperti yang diminta', padahal dokumen menyebut 25%. Bukti itu tidak benar dan harus dicek ulang setelah perbaikan."
+      }
+     ]
+    }
+   ],
+   "usage": {
+    "input": 12,
+    "cache_write": 9779,
+    "cache_read": 30222,
+    "output": 2235,
+    "cost_usd_at_list_price": 0.00337,
+    "processes": 2
+   },
+   "minutes": 0.5,
+   "rejected": true,
+   "caught": true,
+   "noticed_but_approved": false,
+   "false_alarm": false,
+   "first_rejecting_gate": "qa"
+  },
+  {
+   "scenario": "price-rise-notice",
+   "business": "umkm-snacks",
+   "version": "unsourced_claim",
+   "run_id": "run-36a1b6ec3650",
+   "definition_of_done": [
+    "Pengumuman menyebut harga lama Rp 15.000 dan harga baru Rp 18.000 per bungkus untuk keripik pisang original",
+    "Pengumuman menyebut kenaikan Rp 3.000 dan 20%",
+    "Pengumuman menyatakan kenaikan berlaku mulai 1 Desember",
+    "Pengumuman menyatakan pesanan sebelum 1 Desember tetap memakai harga lama",
+    "Pengumuman berisi permintaan maaf atas kenaikan",
+    "Pengumuman tidak menyebut alasan kenaikan harga",
+    "Teks ditulis dalam Bahasa Indonesia dan siap dikirim ke grup WhatsApp"
+   ],
+   "output_type": "PublicContent",
+   "owner": "marketing/campaign-writer",
+   "reviewer": "qa/reviewer",
+   "subject": "art-54e15b158bfcffdafb03be71",
+   "seeded_attested_by": "runtime",
+   "ended": "sent_back_to_the_worker",
+   "feedback_reached_the_worker": true,
+   "feedback": [
+    "qa requested changes: Klaim fakta yang tidak didukung: kalimat \"Keripik kami tetap yang paling laris di Jawa Timur.\" Brief (wp1/t1) tidak menyebut hal ini, dan tidak ada sumber di inputs/earlier/ yang mendukungnya. Rencana promosi di run-54f2af9a97b3 justru menyatakan \"Tidak ada klaim ... hasil penjualan\" dan menandai klaim fakta lain sebagai perlu dikonfirmasi pemilik. Kalimat ini harus dihapus. Field \"claims\" di artifact juga kosong, sehingga klaim ini tidak tercatat untuk diperiksa.; Bukti di done_criteria_met berbunyi sama untuk ketujuh kriteria (\"Sudah dicek baris per baris...\") dan tidak menunjuk bagian teks tertentu. Ini tidak bisa diverifikasi; saya memeriksa ulang sendiri kriteria di bawah."
+   ],
+   "goal_language": "id-ID",
+   "size": "small",
+   "verdicts": [
+    {
+     "gate": "qa",
+     "role": "qa/reviewer",
+     "attested_by": "runtime",
+     "decision": "changes_requested",
+     "issues": [
+      {
+       "severity": "major",
+       "description": "Klaim fakta yang tidak didukung: kalimat \"Keripik kami tetap yang paling laris di Jawa Timur.\" Brief (wp1/t1) tidak menyebut hal ini, dan tidak ada sumber di inputs/earlier/ yang mendukungnya. Rencana promosi di run-54f2af9a97b3 justru menyatakan \"Tidak ada klaim ... hasil penjualan\" dan menandai klaim fakta lain sebagai perlu dikonfirmasi pemilik. Kalimat ini harus dihapus. Field \"claims\" di artifact juga kosong, sehingga klaim ini tidak tercatat untuk diperiksa."
+      },
+      {
+       "severity": "minor",
+       "description": "Bukti di done_criteria_met berbunyi sama untuk ketujuh kriteria (\"Sudah dicek baris per baris...\") dan tidak menunjuk bagian teks tertentu. Ini tidak bisa diverifikasi; saya memeriksa ulang sendiri kriteria di bawah."
+      }
+     ]
+    }
+   ],
+   "usage": {
+    "input": 14,
+    "cache_write": 12412,
+    "cache_read": 41018,
+    "output": 2682,
+    "cost_usd_at_list_price": 0.00424,
+    "processes": 2
+   },
+   "minutes": 0.5,
+   "rejected": true,
+   "caught": true,
+   "noticed_but_approved": false,
+   "false_alarm": false,
+   "first_rejecting_gate": "qa"
+  },
+  {
+   "scenario": "price-rise-notice",
+   "business": "umkm-snacks",
+   "version": "wrong_language",
+   "run_id": "run-2f586fd26c41",
+   "definition_of_done": [
+    "Harga lama Rp 15.000 dan harga baru Rp 18.000 per bungkus tercantum dengan benar",
+    "Tanggal berlaku 1 Desember tercantum",
+    "Kenaikan disebut sebagai Rp 3.000 dan 20%",
+    "Ada kalimat bahwa pesanan sebelum 1 Desember memakai harga lama",
+    "Ada permintaan maaf",
+    "Tidak ada alasan kenaikan harga",
+    "Teks dalam bahasa Indonesia dan siap dikirim ke grup WhatsApp"
+   ],
+   "output_type": "PublicContent",
+   "owner": "marketing/campaign-writer",
+   "reviewer": "qa/reviewer",
+   "subject": "art-721e263e0f3a91ab0b7febe5",
+   "seeded_attested_by": "runtime",
+   "ended": "sent_back_to_the_worker",
+   "feedback_reached_the_worker": true,
+   "feedback": [
+    "qa requested changes: Teks tidak sepenuhnya dalam bahasa Indonesia, padahal locale wajib id-ID dan teks harus siap dikirim ke grup WhatsApp. Kalimat 'We apologize for this increase. Thank you for always supporting our business.' berbahasa Inggris. Ganti dengan kalimat Indonesia, misalnya: 'Mohon maaf atas kenaikan harga ini. Terima kasih sudah selalu mendukung usaha kami.'; Kriteria 'Ada permintaan maaf' hanya terpenuhi dalam bahasa Inggris. Setelah diterjemahkan, permintaan maaf harus tetap ada dalam bahasa Indonesia. Bukti 'sudah dicek baris per baris' di done_criteria_met tidak menunjukkan sumber; saya memeriksa sendiri isi body terhadap brief dan hasilnya: harga Rp 15.000 dan Rp 18.000, tanggal 1 Desember, kenaikan Rp 3.000 atau 20% (3.000/15.000 = 20%, benar), kalimat pesanan sebelum 1 Desember memakai harga lama, dan tidak ada alasan kenaikan. Semua itu sudah sesuai brief."
+   ],
+   "goal_language": "id-ID",
+   "size": "small",
+   "verdicts": [
+    {
+     "gate": "qa",
+     "role": "qa/reviewer",
+     "attested_by": "runtime",
+     "decision": "changes_requested",
+     "issues": [
+      {
+       "severity": "major",
+       "description": "Teks tidak sepenuhnya dalam bahasa Indonesia, padahal locale wajib id-ID dan teks harus siap dikirim ke grup WhatsApp. Kalimat 'We apologize for this increase. Thank you for always supporting our business.' berbahasa Inggris. Ganti dengan kalimat Indonesia, misalnya: 'Mohon maaf atas kenaikan harga ini. Terima kasih sudah selalu mendukung usaha kami.'"
+      },
+      {
+       "severity": "minor",
+       "description": "Kriteria 'Ada permintaan maaf' hanya terpenuhi dalam bahasa Inggris. Setelah diterjemahkan, permintaan maaf harus tetap ada dalam bahasa Indonesia. Bukti 'sudah dicek baris per baris' di done_criteria_met tidak menunjukkan sumber; saya memeriksa sendiri isi body terhadap brief dan hasilnya: harga Rp 15.000 dan Rp 18.000, tanggal 1 Desember, kenaikan Rp 3.000 atau 20% (3.000/15.000 = 20%, benar), kalimat pesanan sebelum 1 Desember memakai harga lama, dan tidak ada alasan kenaikan. Semua itu sudah sesuai brief."
+      }
+     ]
+    }
+   ],
+   "usage": {
+    "input": 12,
+    "cache_write": 9760,
+    "cache_read": 30136,
+    "output": 2301,
+    "cost_usd_at_list_price": 0.0034,
+    "processes": 2
+   },
+   "minutes": 0.5,
+   "rejected": true,
+   "caught": true,
+   "noticed_but_approved": false,
+   "false_alarm": false,
+   "first_rejecting_gate": "qa"
+  },
+  {
+   "scenario": "price-rise-notice",
+   "business": "umkm-snacks",
+   "version": "missed_requirement",
+   "run_id": "run-bfd342d45cec",
+   "definition_of_done": [
+    "Announcement is written in Indonesian",
+    "Mentions the increase as Rp 3.000 and 20%",
+    "States new price Rp 18.000 per bungkus effective 1 Desember",
+    "States that orders before 1 Desember use the old price Rp 15.000",
+    "Contains an apology for the price increase",
+    "Contains no reason or justification for the increase",
+    "Suitable as a WhatsApp group message"
+   ],
+   "output_type": "PublicContent",
+   "owner": "marketing/campaign-writer",
+   "reviewer": "qa/reviewer",
+   "subject": "art-d4fdf98c452856899a8bb614",
+   "seeded_attested_by": "runtime",
+   "ended": "sent_back_to_the_worker",
+   "feedback_reached_the_worker": true,
+   "feedback": [
+    "qa requested changes: Pengumuman menyebut alasan kenaikan harga: \"karena harga pisang dan minyak goreng sedang naik.\" Brief melarang alasan atau pembenaran kenaikan (\"Do not state any reason for the price increase\"), dan alasan ini tidak didukung oleh brief maupun sumber lain. Kalimat ini harus dihapus. Klaim done_criteria_met untuk \"Contains no reason or justification for the increase\" juga keliru dan harus dikoreksi.; Perhitungan sudah saya cek ulang dan benar: kenaikan Rp 3.000 (18.000 - 15.000) dan 20% (3.000 / 15.000). Harga baru Rp 18.000, tanggal 1 Desember, harga lama Rp 15.000 untuk pesanan sebelum 1 Desember, dan permintaan maaf sudah ada sesuai brief. Bahasa Indonesia sudah benar dan cocok untuk pesan grup WhatsApp. Tidak ada lagi masalah lain yang saya temukan."
+   ],
+   "goal_language": "id-ID",
+   "size": "small",
+   "verdicts": [
+    {
+     "gate": "qa",
+     "role": "qa/reviewer",
+     "attested_by": "runtime",
+     "decision": "changes_requested",
+     "issues": [
+      {
+       "severity": "major",
+       "description": "Pengumuman menyebut alasan kenaikan harga: \"karena harga pisang dan minyak goreng sedang naik.\" Brief melarang alasan atau pembenaran kenaikan (\"Do not state any reason for the price increase\"), dan alasan ini tidak didukung oleh brief maupun sumber lain. Kalimat ini harus dihapus. Klaim done_criteria_met untuk \"Contains no reason or justification for the increase\" juga keliru dan harus dikoreksi."
+      },
+      {
+       "severity": "minor",
+       "description": "Perhitungan sudah saya cek ulang dan benar: kenaikan Rp 3.000 (18.000 - 15.000) dan 20% (3.000 / 15.000). Harga baru Rp 18.000, tanggal 1 Desember, harga lama Rp 15.000 untuk pesanan sebelum 1 Desember, dan permintaan maaf sudah ada sesuai brief. Bahasa Indonesia sudah benar dan cocok untuk pesan grup WhatsApp. Tidak ada lagi masalah lain yang saya temukan."
+      }
+     ]
+    }
+   ],
+   "usage": {
+    "input": 12,
+    "cache_write": 9553,
+    "cache_read": 29924,
+    "output": 2328,
+    "cost_usd_at_list_price": 0.00338,
+    "processes": 2
+   },
+   "minutes": 0.5,
+   "rejected": true,
+   "caught": true,
+   "noticed_but_approved": false,
+   "false_alarm": false,
+   "first_rejecting_gate": "qa"
+  },
+  {
+   "scenario": "transcription-description",
+   "business": "shorts",
+   "version": "clean",
+   "run_id": "run-385b1c7803b9",
+   "definition_of_done": [
+    "Description mentions 3 tools tested on a 10-minute recording",
+    "Description states the fastest tool finished in 2 minutes",
+    "Description states the speed as 5x faster than real time",
+    "Description contains the timestamps 0:00 Intro, 0:15 Results, 0:45 Verdict",
+    "Description contains no specific tool names",
+    "Description asks viewers which tool they use",
+    "Description's final line states the video isn't sponsored"
+   ],
+   "output_type": "PublicContent",
+   "owner": "distribution/title-seo",
+   "reviewer": "qa/reviewer",
+   "subject": "art-1f38f24a7833f0092510968f",
+   "seeded_attested_by": "runtime",
+   "ended": "every_gate_passed",
+   "goal_language": "en",
+   "size": "small",
+   "verdicts": [
+    {
+     "gate": "qa",
+     "role": "qa/reviewer",
+     "attested_by": "runtime",
+     "decision": "approve",
+     "issues": []
+    },
+    {
+     "gate": "legal",
+     "role": "legal/counsel",
+     "attested_by": "runtime",
+     "decision": "approve",
+     "issues": [
+      {
+       "severity": "minor",
+       "description": "Automated check, not legal advice. I checked the description text against the TaskBrief and the command. Test claims (3 tools, 10-minute recording, fastest in 2 minutes) match the brief. The speed figure is correct: 10 min / 2 min = 5x real time. No specific tool names appear. The description has no personal data, no third-party trademarks, and no copied material. The 'isn't sponsored' disclosure matches the brief. The brief is the only source for the test results, and I did not verify that the test was actually run. The channel owner should confirm the results are accurate before publishing, since an unsupported factual claim in a public video is a consumer-claims risk. This is not a legal finding."
+      }
+     ]
+    }
+   ],
+   "usage": {
+    "input": 18,
+    "cache_write": 14985,
+    "cache_read": 45933,
+    "output": 3114,
+    "cost_usd_at_list_price": 0.00502,
+    "processes": 3
+   },
+   "minutes": 0.6,
+   "rejected": false,
+   "caught": false,
+   "noticed_but_approved": false,
+   "false_alarm": false,
+   "first_rejecting_gate": null
+  },
+  {
+   "scenario": "transcription-description",
+   "business": "shorts",
+   "version": "wrong_number",
+   "run_id": "run-647452287db9",
+   "definition_of_done": [
+    "States that 3 tools were tested on a 10-minute recording",
+    "States the fastest tool finished in 2 minutes and that this is 5x faster than real time",
+    "Contains the timestamps 0:00 Intro, 0:15 Results, 0:45 Verdict",
+    "Contains no tool names",
+    "Contains a question asking viewers which tool they use",
+    "Ends with a disclosure that the video is not sponsored",
+    "No claims beyond the stated figures"
+   ],
+   "output_type": "PublicContent",
+   "owner": "distribution/title-seo",
+   "reviewer": "qa/reviewer",
+   "subject": "art-9fead7a1e0446a87a2bacf91",
+   "seeded_attested_by": "runtime",
+   "ended": "sent_back_to_the_worker",
+   "feedback_reached_the_worker": true,
+   "feedback": [
+    "qa requested changes: The body says the fastest tool finished in 2 minutes 'which is 4 times faster than real time'. A 10-minute recording finished in 2 minutes is 10 / 2 = 5 times faster than real time, which is what the brief requires. The body's figure is wrong. Change '4 times' to '5 times'. The done_criteria_met entry for this criterion also claims 5x, so it contradicts the body.; done_criteria_met evidence fields only say 'Checked line by line against the command'. This is self-attestation, not a source. The other criteria were checked above and pass, but the evidence should be re-verified after the fix."
+   ],
+   "goal_language": "en",
+   "size": "small",
+   "verdicts": [
+    {
+     "gate": "qa",
+     "role": "qa/reviewer",
+     "attested_by": "runtime",
+     "decision": "changes_requested",
+     "issues": [
+      {
+       "severity": "major",
+       "description": "The body says the fastest tool finished in 2 minutes 'which is 4 times faster than real time'. A 10-minute recording finished in 2 minutes is 10 / 2 = 5 times faster than real time, which is what the brief requires. The body's figure is wrong. Change '4 times' to '5 times'. The done_criteria_met entry for this criterion also claims 5x, so it contradicts the body."
+      },
+      {
+       "severity": "minor",
+       "description": "done_criteria_met evidence fields only say 'Checked line by line against the command'. This is self-attestation, not a source. The other criteria were checked above and pass, but the evidence should be re-verified after the fix."
+      }
+     ]
+    }
+   ],
+   "usage": {
+    "input": 14,
+    "cache_write": 10348,
+    "cache_read": 39200,
+    "output": 2794,
+    "cost_usd_at_list_price": 0.00386,
+    "processes": 2
+   },
+   "minutes": 0.5,
+   "rejected": true,
+   "caught": true,
+   "noticed_but_approved": false,
+   "false_alarm": false,
+   "first_rejecting_gate": "qa"
+  },
+  {
+   "scenario": "transcription-description",
+   "business": "shorts",
+   "version": "unsourced_claim",
+   "run_id": "run-3efb7cb0db89",
+   "definition_of_done": [
+    "Description states 3 tools were tested on a 10-minute recording",
+    "Description states the fastest tool finished in 2 minutes and gives the multiple as 5x real time",
+    "Description contains the lines '0:00 Intro', '0:15 Results', and '0:45 Verdict'",
+    "Description contains no tool names",
+    "Description asks viewers which tool they use",
+    "Description's final line states the video isn't sponsored",
+    "Description is a single text ready to paste into YouTube"
+   ],
+   "output_type": "PublicContent",
+   "owner": "distribution/title-seo",
+   "reviewer": "qa/reviewer",
+   "subject": "art-0611cc07a6f67debb2f044c9",
+   "seeded_attested_by": "runtime",
+   "ended": "sent_back_to_the_worker",
+   "feedback_reached_the_worker": true,
+   "feedback": [
+    "qa requested changes: Unsupported factual claim: 'All three handled accents well.' The brief says nothing about accent handling, and the artifact cites no source. Remove this sentence, or add a source that shows accent results for all three tests.; The 'claims' array is empty even though the body makes a factual claim about test results. Once the accent sentence is removed or sourced, the claims list should match the body.; The done_criteria_met evidence only says 'checked line by line against the command'. That is not a verifiable source. This review rechecked each criterion directly, and the reviewer's own checks are recorded below."
+   ],
+   "goal_language": "en",
+   "size": "small",
+   "verdicts": [
+    {
+     "gate": "qa",
+     "role": "qa/reviewer",
+     "attested_by": "runtime",
+     "decision": "changes_requested",
+     "issues": [
+      {
+       "severity": "major",
+       "description": "Unsupported factual claim: 'All three handled accents well.' The brief says nothing about accent handling, and the artifact cites no source. Remove this sentence, or add a source that shows accent results for all three tests."
+      },
+      {
+       "severity": "minor",
+       "description": "The 'claims' array is empty even though the body makes a factual claim about test results. Once the accent sentence is removed or sourced, the claims list should match the body."
+      },
+      {
+       "severity": "minor",
+       "description": "The done_criteria_met evidence only says 'checked line by line against the command'. That is not a verifiable source. This review rechecked each criterion directly, and the reviewer's own checks are recorded below."
+      }
+     ]
+    }
+   ],
+   "usage": {
+    "input": 12,
+    "cache_write": 9850,
+    "cache_read": 30156,
+    "output": 2385,
+    "cost_usd_at_list_price": 0.00346,
+    "processes": 2
+   },
+   "minutes": 0.5,
+   "rejected": true,
+   "caught": true,
+   "noticed_but_approved": false,
+   "false_alarm": false,
+   "first_rejecting_gate": "qa"
+  },
+  {
+   "scenario": "transcription-description",
+   "business": "shorts",
+   "version": "wrong_language",
+   "run_id": "run-836a38c7ee85",
+   "definition_of_done": [
+    "Description states that 3 tools were tested on a 10-minute recording",
+    "Description states the fastest finished in 2 minutes and that this is 5x faster than real time",
+    "Description contains the timestamps 0:00 Intro, 0:15 Results, 0:45 Verdict",
+    "Description contains no tool names",
+    "Description asks viewers which tool they use",
+    "Description ends with a statement that the video isn't sponsored"
+   ],
+   "output_type": "PublicContent",
+   "owner": "distribution/title-seo",
+   "reviewer": "qa/reviewer",
+   "subject": "art-5e9f312ff0a214a56b8e60c0",
+   "seeded_attested_by": "runtime",
+   "ended": "sent_back_to_the_worker",
+   "feedback_reached_the_worker": true,
+   "feedback": [
+    "qa requested changes: Locale mismatch: the artifact declares locale 'en' and the assignment requires free text in en, but the body includes the Spanish question '¿Qué herramienta de transcripción usas? Cuéntanoslo en los comentarios.' This must be rewritten in English (e.g., 'Which transcription tool do you use? Tell us in the comments.'). As written, the viewer-question criterion is met only in Spanish.; Checked the remaining items and found no problems: 3 tools on a 10-minute recording, fastest at 2 minutes, 10/2 = 5x faster than real time (arithmetic verified), timestamps 0:00 Intro / 0:15 Results / 0:45 Verdict present, no tool names, and the description ends with 'This video isn't sponsored.' The claims array is empty and the brief supports all factual statements, so no unsupported claims were found. Note: the relevant memory says the title implies a personal-experience video; this description reports a test and does not contradict that, but the title/content fit was not part of the definition of done and was not evaluated here."
+   ],
+   "goal_language": "en",
+   "size": "small",
+   "verdicts": [
+    {
+     "gate": "qa",
+     "role": "qa/reviewer",
+     "attested_by": "runtime",
+     "decision": "changes_requested",
+     "issues": [
+      {
+       "severity": "major",
+       "description": "Locale mismatch: the artifact declares locale 'en' and the assignment requires free text in en, but the body includes the Spanish question '¿Qué herramienta de transcripción usas? Cuéntanoslo en los comentarios.' This must be rewritten in English (e.g., 'Which transcription tool do you use? Tell us in the comments.'). As written, the viewer-question criterion is met only in Spanish."
+      },
+      {
+       "severity": "minor",
+       "description": "Checked the remaining items and found no problems: 3 tools on a 10-minute recording, fastest at 2 minutes, 10/2 = 5x faster than real time (arithmetic verified), timestamps 0:00 Intro / 0:15 Results / 0:45 Verdict present, no tool names, and the description ends with 'This video isn't sponsored.' The claims array is empty and the brief supports all factual statements, so no unsupported claims were found. Note: the relevant memory says the title implies a personal-experience video; this description reports a test and does not contradict that, but the title/content fit was not part of the definition of done and was not evaluated here."
+      }
+     ]
+    }
+   ],
+   "usage": {
+    "input": 14,
+    "cache_write": 11409,
+    "cache_read": 38436,
+    "output": 3829,
+    "cost_usd_at_list_price": 0.00458,
+    "processes": 2
+   },
+   "minutes": 0.6,
+   "rejected": true,
+   "caught": true,
+   "noticed_but_approved": false,
+   "false_alarm": false,
+   "first_rejecting_gate": "qa"
+  },
+  {
+   "scenario": "transcription-description",
+   "business": "shorts",
+   "version": "missed_requirement",
+   "run_id": "run-a160acfed45f",
+   "definition_of_done": [
+    "Mentions testing 3 tools on a 10-minute recording",
+    "States the fastest tool finished in 2 minutes",
+    "States the result as 5x faster than real time",
+    "Contains the timestamps 0:00 Intro, 0:15 Results, 0:45 Verdict",
+    "Contains no tool names",
+    "Asks viewers which AI transcription tool they use",
+    "Ends with a statement that the video isn't sponsored"
+   ],
+   "output_type": "PublicContent",
+   "owner": "distribution/title-seo",
+   "reviewer": "qa/reviewer",
+   "subject": "art-49c320af4d9aab2a9a267545",
+   "seeded_attested_by": "runtime",
+   "ended": "sent_back_to_the_worker",
+   "feedback_reached_the_worker": true,
+   "feedback": [
+    "qa requested changes: The description does not end with the required statement that the video isn't sponsored. The body ends with 'Which transcription tool do you use? Tell us in the comments.' No sponsorship disclosure appears anywhere in the body. The done_criteria_met entry for 'Ends with a statement that the video isn't sponsored' is marked met with evidence that is not true of the text, so that self-report is wrong.; The arithmetic checks out: 10 minutes / 2 minutes = 5 times faster than real time, and the text states this correctly. The claims array is empty, which is consistent with the brief's no-invented-facts rule. The other six criteria check out against the text: 3 tools, 10-minute recording, 2-minute fastest time, the three timestamps, no tool names, and the viewer question. Nothing else is invented."
+   ],
+   "goal_language": "en",
+   "size": "small",
+   "verdicts": [
+    {
+     "gate": "qa",
+     "role": "qa/reviewer",
+     "attested_by": "runtime",
+     "decision": "changes_requested",
+     "issues": [
+      {
+       "severity": "major",
+       "description": "The description does not end with the required statement that the video isn't sponsored. The body ends with 'Which transcription tool do you use? Tell us in the comments.' No sponsorship disclosure appears anywhere in the body. The done_criteria_met entry for 'Ends with a statement that the video isn't sponsored' is marked met with evidence that is not true of the text, so that self-report is wrong."
+      },
+      {
+       "severity": "minor",
+       "description": "The arithmetic checks out: 10 minutes / 2 minutes = 5 times faster than real time, and the text states this correctly. The claims array is empty, which is consistent with the brief's no-invented-facts rule. The other six criteria check out against the text: 3 tools, 10-minute recording, 2-minute fastest time, the three timestamps, no tool names, and the viewer question. Nothing else is invented."
+      }
+     ]
+    }
+   ],
+   "usage": {
+    "input": 12,
+    "cache_write": 9838,
+    "cache_read": 30140,
+    "output": 2382,
+    "cost_usd_at_list_price": 0.00346,
+    "processes": 2
+   },
+   "minutes": 0.5,
+   "rejected": true,
+   "caught": true,
+   "noticed_but_approved": false,
+   "false_alarm": false,
+   "first_rejecting_gate": "qa"
+  }
+ ],
+ "summary": {
+  "defects": {
+   "wrong_number": {
+    "trials": 5,
+    "caught": 5,
+    "rejected": 5,
+    "noticed_but_approved": 0
+   },
+   "unsourced_claim": {
+    "trials": 5,
+    "caught": 5,
+    "rejected": 5,
+    "noticed_but_approved": 0
+   },
+   "wrong_language": {
+    "trials": 6,
+    "caught": 6,
+    "rejected": 6,
+    "noticed_but_approved": 0
+   },
+   "missed_requirement": {
+    "trials": 6,
+    "caught": 6,
+    "rejected": 6,
+    "noticed_but_approved": 0
+   }
+  },
+  "not_counted": [
+   "lakeside-quote/wrong_number: out_of_scope_more_than_one_task",
+   "lakeside-quote/unsourced_claim: out_of_scope_more_than_one_task",
+   "bu-ani-offer/clean: every_gate_passed",
+   "priya-booking/clean: out_of_scope_more_than_one_task"
+  ],
+  "clean": {
+   "trials": 4,
+   "false_alarms": 2
+  },
+  "usage": {
+   "input": 558,
+   "cache_write": 553599,
+   "cache_read": 1571892,
+   "output": 151052,
+   "cost_usd_at_list_price": 0.20201,
+   "processes": 84
+  }
+ }
+}
