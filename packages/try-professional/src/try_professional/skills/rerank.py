@@ -228,8 +228,12 @@ class RerankCache:
 
     @staticmethod
     def key(role: Role, record: SkillRecord, model: str, business: str = "") -> str:
+        return RerankCache.key_for(role, record.skill_id, record.content_sha256, model, business)
+
+    @staticmethod
+    def key_for(role: Role, skill_id: str, content_sha256: str, model: str, business: str = "") -> str:
         profile = role_profile(role)
-        identity = "\0".join((PROMPT_VERSION, model, profile, business, record.skill_id, record.content_sha256))
+        identity = "\0".join((PROMPT_VERSION, model, profile, business, skill_id, content_sha256))
         return hashlib.sha256(identity.encode("utf-8")).hexdigest()
 
     def get(self, key: str) -> Verdict | None:
@@ -262,17 +266,29 @@ def judge_prompt(role: Role, candidates: list[Candidate], business: str = "") ->
     )
 
 
-def _read_decisions(answer: list[Any], candidates: list[Candidate], allowed: set[str]) -> dict[str, Verdict]:
+def record_judgment(
+    role: Role, candidates: list[dict[str, str]], answer: list[Any], model: str, business: str, cache: RerankCache
+) -> int:
+    """Save a judgment a client's model made, by the same rules as one made here. Returns how many were decided."""
+    skill_ids = [candidate["skill_id"] for candidate in candidates]
+    fingerprints = {candidate["skill_id"]: candidate["content_sha256"] for candidate in candidates}
+    verdicts = _read_decisions(answer, skill_ids, set(role.allowed_skill_categories))
+    for skill_id, verdict in verdicts.items():
+        cache.put(RerankCache.key_for(role, skill_id, fingerprints[skill_id], model, business), verdict)
+    return len(verdicts)
+
+
+def _read_decisions(answer: list[Any], skill_ids: list[str], allowed: set[str]) -> dict[str, Verdict]:
     """Only a clear true or false, about a number it was shown, counts as a decision."""
     verdicts: dict[str, Verdict] = {}
     for item in answer:
         if not isinstance(item, dict) or not isinstance(item.get("fit"), bool):
             continue
         number = item.get("number")
-        if type(number) is not int or not 1 <= number <= len(candidates):
+        if type(number) is not int or not 1 <= number <= len(skill_ids):
             continue
         category = clean_line(item.get("category", ""), 40)
-        verdicts[candidates[number - 1].record.skill_id] = (
+        verdicts[skill_ids[number - 1]] = (
             Verdict(True, clean_line(item.get("reason", "")), category if category in allowed else "")
             if item["fit"]
             else Verdict(False, NOT_A_FIT)
@@ -310,6 +326,14 @@ def _judge_role(
                     max_tokens=MAX_OUTPUT_TOKENS,
                     # Identical calls gave different answers, so results couldn't be repeated.
                     temperature=0.0,
+                    # Only for a client that hands this work to someone else. No provider sees it.
+                    metadata={
+                        "role": role.ref,
+                        "candidates": [
+                            {"skill_id": c.record.skill_id, "content_sha256": c.record.content_sha256}
+                            for c in candidates
+                        ],
+                    },
                 )
             )
         except ClientError as error:
@@ -332,7 +356,8 @@ def _judge_role(
         call = next((c for c in response.tool_calls if c.name == SUBMIT_FIT and not c.parse_error), None)
         # A cut-off or misshapen answer can't be read as "no".
         answer = call.arguments.get("decisions") if call is not None else None
-        decided = _read_decisions(answer, candidates, allowed) if isinstance(answer, list) else {}
+        skill_ids = [c.record.skill_id for c in candidates]
+        decided = _read_decisions(answer, skill_ids, allowed) if isinstance(answer, list) else {}
         if call is None or response.stop_reason == "max_tokens" or not decided:
             messages.append(response.assistant_message)
             if call is not None:

@@ -19,7 +19,8 @@ from . import __version__
 from .adapters.api_runner.clients import ClientError
 from .adapters.api_runner.runner import ApiRunner, ModelRoutes, RunResult
 from .adapters.api_runner.scripted import ScriptedClient
-from .adapters.mcp import McpService
+from .adapters.mcp import McpService, ToolError
+from .adapters.mcp.claude_code import write_claude_code_files
 from .check_model import NOT_RECOMMENDED, ModelUnreachable, ScriptedModel, check_model, render_check
 from .config import (
     CONFIG_NAME,
@@ -47,6 +48,7 @@ from .generator import (
     create_proposal,
     load_proposal,
     load_template,
+    pull,
     rank_templates,
     regenerate,
     render,
@@ -623,21 +625,78 @@ def cmd_mcp(args: argparse.Namespace) -> int:
     except ImportError:
         print("The MCP server needs: pip install 'try-professional[mcp]'", file=sys.stderr)
         return 2
-    config = load_config(Path(args.dir) if args.dir else Path.cwd())
-    org = load_org(config.org_dir)
-    orchestrator = Orchestrator(
-        org,
-        config.home,
-        memory=_memory(config, org),
-        skills=_skills(config, org),
-        proposals=ProposalWriter(config.root / "skills" / "proposed"),
-        inputs_dir=config.root / "inputs",
-        deliverables_dir=config.root / "deliverables",
-    )
-    if isinstance(orchestrator.skills, LockedSkills):
-        orchestrator.feedback = orchestrator.skills
+    root = Path(args.dir).resolve() if args.dir else Path.cwd()
+
+    def company() -> McpService | None:
+        try:
+            config = load_config(root)
+        except FileNotFoundError:
+            return None
+        org = load_org(config.org_dir)
+        orchestrator = Orchestrator(
+            org,
+            config.home,
+            memory=_memory(config, org),
+            skills=_skills(config, org),
+            proposals=ProposalWriter(config.root / "skills" / "proposed"),
+            inputs_dir=config.root / "inputs",
+            deliverables_dir=config.root / "deliverables",
+            # An operator's client has its own tools and files, which this can't see.
+            check_claimed_files=bool(args.role),
+        )
+        if isinstance(orchestrator.skills, LockedSkills):
+            orchestrator.feedback = orchestrator.skills
+        return McpService(orchestrator, bound_role=args.role)
+
+    # A role can't design the company it works in.
+    design = None if args.role else _Design(root)
     # stdout belongs to the protocol from here on, so nothing else may print to it.
-    build_server(McpService(orchestrator, bound_role=args.role)).run("stdio")
+    build_server(company, design).run("stdio")
+    return 0
+
+
+class _Design:
+    """Designing a company over MCP. The embedding model loads only if this is used."""
+
+    def __init__(self, root: Path) -> None:
+        self.root = root
+        self._embedder: Any = None
+
+    @property
+    def embedder(self) -> Any:
+        if self._embedder is None:
+            self._embedder = FastEmbedEmbedder()
+        return self._embedder
+
+    def _refused_as_tool_errors(self, call: Any, *args: Any, **kwargs: Any) -> dict[str, Any]:
+        load_env_file(self.root)
+        try:
+            result: dict[str, Any] = call(self.root, *args, **kwargs)
+        except pull.PullError as error:
+            raise ToolError(str(error)) from error
+        return result
+
+    def propose(self, description: str, company: str | None) -> dict[str, Any]:
+        return self._refused_as_tool_errors(pull.begin_design, self.embedder, description, company=company)
+
+    def get(self, proposal_id: str) -> dict[str, Any]:
+        return self._refused_as_tool_errors(pull.proposal_status, proposal_id)
+
+    def submit(self, proposal_id: str, payload: dict[str, Any]) -> dict[str, Any]:
+        return self._refused_as_tool_errors(pull.submit_design, self.embedder, proposal_id, payload)
+
+    def judge(self, proposal_id: str, role: str, decisions: list[Any]) -> dict[str, Any]:
+        return self._refused_as_tool_errors(pull.submit_judgment, self.embedder, proposal_id, role, decisions)
+
+
+def cmd_agents(args: argparse.Namespace) -> int:
+    config = load_config(Path.cwd())
+    org = load_org(config.org_dir)
+    written = write_claude_code_files(config.root, org)
+    _print(f"Wrote {len(org.roles)} role agents to .claude/agents, the /company command, and .mcp.json.")
+    _print("Start Claude Code in this folder (restart it if it's open, so it loads them), and run:")
+    _print('  /company "<what you want done>"')
+    _print(f"That's {len(written)} files. Run this again whenever the company changes.")
     return 0
 
 
@@ -1149,6 +1208,10 @@ def build_parser() -> argparse.ArgumentParser:
     mcp.set_defaults(func=cmd_mcp)
 
     sub.add_parser("doctor", help="Check this project's setup").set_defaults(func=cmd_doctor)
+
+    agents = sub.add_parser("agents", help="Set up an agent runtime to run this company")
+    agents.add_argument("runtime", choices=["claude-code"])
+    agents.set_defaults(func=cmd_agents)
 
     check = sub.add_parser("check-model", help="Test whether a model suits running a company. A few thousand tokens")
     check.add_argument("--model", help="The model to test. Default: the standard tier, or TRYPRO_LLM_MODEL")

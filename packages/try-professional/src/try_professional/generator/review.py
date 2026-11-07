@@ -62,7 +62,10 @@ def render(bundle: Proposal) -> str:
     if architect or rerank:
         lines.append(f"Spent so far: {architect:,} tokens designing, {rerank:,} matching skills.")
     else:
-        lines.append("Spent so far: nothing. No model was called, so the template is unchanged.")
+        if meta.get("model") == "the client's model":
+            lines.append("Designed by your client's model, which reported no token count to this server.")
+        else:
+            lines.append("Spent so far: nothing. No model was called, so the template is unchanged.")
     lines.append(_estimate_line(bundle))
     unfilled, total_needs = _coverage(bundle)
     matched = any(bundle.provisioned.matches.values()) or unfilled
