@@ -231,6 +231,7 @@ trypro check-model --dry-run
 In a rough order, which [your feedback can change](https://github.com/goranai/try-professional/blob/main/docs/roadmap-v0.2.md):
 
 - **A three-way benchmark** against a flat swarm and a single agent.
+- **Mixed models per role,** such as Haiku for reviewers and Sonnet for the work, measured against all Sonnet and all Haiku.
 - **Quality on cheap models,** through self-refinement.
 - **A Claude Code plugin,** if it can keep roles separate, to make setup shorter.
 - **More runtimes.** Hermes and others. There's no Hermes adapter yet, and `skill-customs`' guide for it hasn't been tried on a real install. ["Add support for <runtime>" issues](https://github.com/goranai/try-professional/issues?q=is%3Aissue+is%3Aopen+label%3Aadapter) are open to anyone.

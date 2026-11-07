@@ -2,7 +2,7 @@
 
 Each version of `try-professional`. `skill-customs` is listed only when it changes.
 
-## 0.1.1 (not published yet)
+## 0.1.1 (2026-11-08)
 
 Fixes for what someone is likely to hit in their first ten minutes. No new features.
 
