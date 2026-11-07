@@ -1,53 +1,114 @@
 name: CI
 
+# What runs, and why. A private repository pays per minute, and Windows and macOS cost 2 and 10 times as much as Linux.
+#
+#   Docs only                      nothing. The local hooks still run.
+#   A branch or a pull request     Linux only, Python 3.10 and 3.13
+#   main, when code changed        that, and Windows and macOS on Python 3.13
+#   A v* tag, or a manual run      everything: 3 systems and 5 Pythons. Run it before a release.
 on:
   push:
-    branches: [main]
+    branches: ["**"]
+    tags: ["v*"]
+    paths: &code
+      - "**"
+      - "!docs/**"
+      - "docs/**/*.py"
+      - "!**.md"
+      - "!LICENSE"
+      - "!.github/ISSUE_TEMPLATE/**"
+      - "!.github/seed-issues.yaml"
+      # Markdown that code reads, or that a test checks.
+      - "packages/*/src/**"
+      - "packages/*/tests/**"
+      - "playbooks/**"
+      - "templates/**"
+      - "spec/**"
+      - "docs/spec/**"
+      - "examples/**"
+      - "THIRD_PARTY_SKILLS.md"
   pull_request:
+    paths: *code
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+# A newer push replaces a run still going. A branch's push and its pull request share a group, so only one of them runs.
+concurrency:
+  group: ci-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
 jobs:
   lint:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
+          cache: pip
+          cache-dependency-path: packages/*/pyproject.toml
       - run: python -m pip install -e packages/skill-customs -e "packages/try-professional[anthropic,mcp]" ruff mypy types-PyYAML types-jsonschema
       - run: ruff check .
       - run: ruff format --check .
       - run: mypy
 
-  test:
-    name: test (${{ matrix.os }}, ${{ matrix.python }})
-    runs-on: ${{ matrix.os }}
+  test-linux:
+    name: test (ubuntu-latest, ${{ matrix.python }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
     # 3.14 stays non-blocking until Mnemosyne officially supports it.
     continue-on-error: ${{ matrix.python == '3.14' }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        python: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        python: ${{ fromJSON((github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')) && '["3.10","3.11","3.12","3.13","3.14"]' || '["3.10","3.13"]') }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
           allow-prereleases: true
+          cache: pip
+          cache-dependency-path: packages/*/pyproject.toml
+      - run: python -m pip install -e packages/skill-customs -e "packages/try-professional[anthropic,mcp]" pytest pytest-timeout
+      - run: python -m pytest -m "not model"
+
+  test-other-systems:
+    name: test (${{ matrix.os }}, ${{ matrix.python }})
+    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    continue-on-error: ${{ matrix.python == '3.14' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+        python: ${{ fromJSON((github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')) && '["3.10","3.11","3.12","3.13","3.14"]' || '["3.13"]') }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          allow-prereleases: true
+          cache: pip
+          cache-dependency-path: packages/*/pyproject.toml
       - run: python -m pip install -e packages/skill-customs -e "packages/try-professional[anthropic,mcp]" pytest pytest-timeout
       - run: python -m pytest -m "not model"
 
   cross-lingual:
     # Runs the real embedding model, so it's one job with a cache rather than the whole matrix.
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
+          cache: pip
+          cache-dependency-path: packages/*/pyproject.toml
       - uses: actions/cache@v4
         with:
           path: ~/.cache/try-professional
@@ -58,15 +119,18 @@ jobs:
   skill-customs-alone:
     # Other frameworks must be able to use it, so it's tested with nothing else installed.
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: ${{ fromJSON((github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')) && '["ubuntu-latest","windows-latest","macos-latest"]' || '["ubuntu-latest"]') }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.10"
+          cache: pip
+          cache-dependency-path: packages/skill-customs/pyproject.toml
       - run: python -m pip install -e packages/skill-customs pytest pytest-timeout
       - run: python -c "import importlib.util as u, sys; sys.exit(u.find_spec('try_professional') is not None)"
       - run: python -m pytest packages/skill-customs/tests -c /dev/null --rootdir=packages/skill-customs
@@ -77,17 +141,21 @@ jobs:
   skill-vetting:
     # Every pull request: installed skills must match the lockfile, and credits must be current.
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
+          cache: pip
+          cache-dependency-path: packages/skill-customs/pyproject.toml
       - run: python -m pip install -e packages/skill-customs
       - run: skill-customs verify
       - run: skill-customs attribution --check THIRD_PARTY_SKILLS.md
 
   secrets:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
@@ -102,10 +170,13 @@ jobs:
 
   audit:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
+          cache: pip
+          cache-dependency-path: packages/*/pyproject.toml
       - run: python -m pip install -e packages/skill-customs -e "packages/try-professional[anthropic,mcp]" pip-audit
       - run: pip-audit --skip-editable

@@ -3,7 +3,8 @@
 usage: python run_acceptance.py <output_dir>
 
 One prompt to a company, one command to a result, and a second related command later. It uses what `trypro agents
-claude-code` generates: one Claude Code session as the operator, the /company command, and a real subagent for each role.
+claude-code` generates: one Claude Code session that only coordinates, the /company command, and a real subagent for
+each role.
 
 This reads every tool call in the session's stream, and reports any role subagent that called anything but its own
 bound server, and fails if any work was recorded as claimed, because only a bound server can record it as attested.
@@ -45,15 +46,14 @@ _DESIGN_PROMPT = (
 
 
 ROLE_PREFIX = f"mcp__{ROLE_SERVER}__"
+COORDINATING = ("Agent", "Task", "mcp__trypro__run_start", "mcp__trypro__run_next_action", "mcp__trypro__run_status")
 
 
-def session(prompt: str, cwd: Path, config: Path, tools: str, allowed: str) -> dict[str, Any]:
-    """One Claude Code session, as a user would run it. It waits out a usage limit."""
+def session(prompt: str, cwd: Path, flags: list[str], allowed: str) -> dict[str, Any]:
+    """One Claude Code session. It waits out a usage limit."""
     command = [
         _claude(), "-p", prompt,
-        "--mcp-config", str(config),
-        "--strict-mcp-config",
-        "--tools", tools,
+        *flags,
         "--allowedTools", allowed,
         "--model", OPERATOR_MODEL,
         "--output-format", "stream-json",
@@ -126,6 +126,7 @@ def read_stream(stdout: str) -> dict[str, Any]:
         "operator_called": operator_tools,
         "role_agents_called": calls_by_agent,
         "role_agents_outside_their_server": outside,
+        "session_did_more_than_coordinate": [n for n in operator_tools if n not in COORDINATING],
         "usage": {
             "input": usage.get("input_tokens", 0),
             "cache_write": usage.get("cache_creation_input_tokens", 0),
@@ -172,7 +173,9 @@ def main(output: Path) -> None:
     config.write_text(json.dumps({"mcpServers": {"trypro": server_config(root)}}), encoding="utf-8")
     if "design" not in progress:
         print("Designing the company from one prompt", flush=True)
-        progress["design"] = session(_DESIGN_PROMPT, root, config, "", "mcp__trypro__*")
+        # No company files exist yet, so this one has only the server it's given.
+        flags = ["--mcp-config", str(config), "--strict-mcp-config", "--tools", ""]
+        progress["design"] = session(_DESIGN_PROMPT, root, flags, "mcp__trypro__*")
         save()
     if "activated" not in progress:
         proposal_id = re.search(r"prop-[0-9a-f]+", str(progress["design"]["result"]))
@@ -193,7 +196,9 @@ def main(output: Path) -> None:
         print(f"[{label}] {goal}", flush=True)
         started = time.monotonic()
         allowed = f"Agent,mcp__trypro__*,{ROLE_PREFIX}*"
-        progress[label] = session(f"/company {goal}", root, root / ".mcp.json", "Agent", allowed)
+        # Only what a user has: the folder's own .mcp.json and agents, and every built-in tool. --strict-mcp-config
+        # would stop each subagent's own server from connecting, and it isn't what a user runs.
+        progress[label] = session(f"/company {goal}", root, [], allowed)
         progress[label]["minutes"] = round((time.monotonic() - started) / 60, 1)
         save()
         print(f"[{label}] {str(progress[label]['result'])[:600]}", flush=True)
@@ -201,10 +206,20 @@ def main(output: Path) -> None:
     progress["attestation"] = attestation(root)
     save()
     print(json.dumps(progress["attestation"], ensure_ascii=False, indent=1)[:3000], flush=True)
-    problems = [run for run, row in progress["attestation"].items() if row["claimed"] or not row["attested"]]
-    problems += [f"{label} left its server" for label in ("first", "second") if progress[label].get("role_agents_outside_their_server")]
+    problems = []
+    for run, row in progress["attestation"].items():
+        if row["phase"] != "done":
+            problems.append(f"{run} stopped at {row['phase']}")
+        if row["claimed"]:
+            problems.append(f"{run} has {row['claimed']} artifacts recorded as claimed, so its hierarchy wasn't real")
+    for label in ("first", "second"):
+        if progress[label].get("role_agents_outside_their_server"):
+            problems.append(f"a role in {label} left its server")
+        if progress[label].get("session_did_more_than_coordinate"):
+            problems.append(f"the session in {label} used {progress[label]['session_did_more_than_coordinate']}")
     if problems:
-        raise SystemExit(f"The hierarchy wasn't real in: {problems}")
+        raise SystemExit(f"Acceptance failed: {problems}")
+    print("Acceptance passed.", flush=True)
 
 
 if __name__ == "__main__":

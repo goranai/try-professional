@@ -8,7 +8,7 @@ Thanks for helping. The issues labelled `good first issue` are scoped so you can
 git clone https://github.com/goranai/try-professional
 cd try-professional
 python -m venv .venv && . .venv/bin/activate    # On Windows: .venv\Scripts\activate
-pip install -e packages/skill-customs -e "packages/try-professional[anthropic,mcp]" pytest pytest-timeout ruff mypy types-PyYAML types-jsonschema
+pip install -e packages/skill-customs -e "packages/try-professional[anthropic,mcp]" pytest pytest-timeout pytest-xdist ruff mypy types-PyYAML types-jsonschema
 python scripts/install_hooks.py
 ```
 
@@ -19,7 +19,11 @@ ruff check . && ruff format --check . && mypy
 pytest -m "not model"
 ```
 
-These spend nothing, and CI runs the same ones on Linux, macOS, and Windows. If you change a schema, a template, or a playbook, run `python scripts/generate_schemas.py`, so the packaged copies match.
+These spend nothing. `install_hooks.py` sets up two hooks: before each commit, lint, types, and the fast tests run, in about a minute. Before each push, a secret scan runs. Run the whole suite yourself before a pull request.
+
+CI runs Linux only on a branch or a pull request, and adds Windows and macOS on `main`. A `v*` tag or a manual run covers every system and Python version. Changes to docs alone don't run CI.
+
+If you change a schema, a template, or a playbook, run `python scripts/generate_schemas.py`, so the packaged copies match.
 
 ## The rules this project keeps
 

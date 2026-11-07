@@ -1,4 +1,4 @@
-"""Install the pre-push secret scan into this clone's .git/hooks."""
+"""Install the pre-commit checks and the pre-push secret scan into this clone's .git/hooks."""
 
 from __future__ import annotations
 
@@ -22,10 +22,11 @@ def main() -> None:
     if not hooks.is_absolute():
         hooks = ROOT / hooks
     hooks.mkdir(parents=True, exist_ok=True)
-    target = hooks / "pre-push"
-    shutil.copyfile(ROOT / "scripts" / "hooks" / "pre-push", target)
-    target.chmod(target.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
-    print(f"Installed {target}")
+    for name in ("pre-commit", "pre-push"):
+        target = hooks / name
+        shutil.copyfile(ROOT / "scripts" / "hooks" / name, target)
+        target.chmod(target.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+        print(f"Installed {target}")
 
 
 if __name__ == "__main__":

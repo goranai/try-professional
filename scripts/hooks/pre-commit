@@ -1,0 +1,11 @@
+#!/bin/sh
+# Blocks a commit if lint, types, or the fast tests fail, or if they can't run.
+# Install with: python scripts/install_hooks.py
+root="$(git rev-parse --show-toplevel)"
+for python in "$root/.venv/Scripts/python.exe" "$root/.venv/bin/python" python3 python; do
+  if command -v "$python" >/dev/null 2>&1 || [ -x "$python" ]; then
+    exec "$python" "$root/scripts/precommit_checks.py"
+  fi
+done
+echo "pre-commit: no Python found, so the checks could not run. Commit blocked." >&2
+exit 2
