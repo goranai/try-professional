@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "try-professional"
 dynamic = ["version"]
-description = "Turn any LLM agent runtime into a structured AI company: hierarchy, typed handoffs, review gates, and full auditability."
+description = "Turn an agent into a permanent company: hierarchy, memory per role, review gates enforced by code, and a verifiable audit log. Preview."
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"

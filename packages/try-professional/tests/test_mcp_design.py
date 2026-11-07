@@ -17,6 +17,7 @@ from try_professional.adapters.mcp.claude_code import (
     server_config,
     write_claude_code_files,
 )
+from try_professional.cli import main
 from try_professional.generator import activate, load_proposal
 from try_professional.generator.pull import PullError, begin_design, proposal_status, submit_design, submit_judgment
 from try_professional.generator.templates import load_template
@@ -103,6 +104,27 @@ class TestDesign:
             proposal_status(tmp_path, "prop-nope")
         with pytest.raises(PullError, match="no proposal"):
             submit_judgment(tmp_path, embedder, "prop-nope", "a/b", [])
+
+
+class TestTheWholeWayAUserGoes:
+    def test_from_a_clients_design_to_a_person_approving_to_role_agents(
+        self, tmp_path: Path, embedder: Any, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """The README's steps. A folder with only a proposal in it has no trypro.yaml until a person approves."""
+        monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+        monkeypatch.setattr("try_professional.cli.FastEmbedEmbedder", FakeEmbedder)
+        monkeypatch.setattr("try_professional.cli._person_at_terminal", lambda: True)
+        action = begin_design(tmp_path, embedder, "A small bakery")
+        submit_design(tmp_path, embedder, action["proposal_id"], _design(action["template"]))
+        assert not (tmp_path / "trypro.yaml").exists()
+        answers = iter(["a", "approve"])
+        monkeypatch.setattr("builtins.input", lambda prompt="": next(answers))
+        code = main(["init", "--review", action["proposal_id"], "--dir", str(tmp_path), "--by", "a person"])
+        assert code == 0
+        assert (tmp_path / "trypro.yaml").is_file() and load_org(tmp_path / "org").company_name == "Test Co"
+        monkeypatch.chdir(tmp_path)
+        assert main(["agents", "claude-code"]) == 0
+        assert list((tmp_path / ".claude" / "agents").glob("trypro-*.md"))
 
 
 class TestJudgments:
