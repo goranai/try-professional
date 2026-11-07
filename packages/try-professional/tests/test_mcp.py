@@ -315,3 +315,73 @@ class TestRealProtocol:
 
         names, org = asyncio.run(asyncio.wait_for(scenario(), 90))
         assert "run_start" in names and org["root_role"] == "executive/ceo"
+
+
+class TestWhatAPersonGetsBack:
+    """Each of these came from reading a real acceptance run's report."""
+
+    def _finished(self, orchestrator: Orchestrator) -> tuple[McpService, str, dict[str, Any]]:
+        service = McpService(orchestrator)
+        started = service.run_start("Add a health check endpoint")
+        return service, started["run_id"], _drive(service, started["run_id"], started)
+
+    def test_it_says_where_the_deliverables_are(self, org: Org, tmp_path: Path) -> None:
+        orchestrator = Orchestrator(org, tmp_path / "home", deliverables_dir=tmp_path / "out")
+        _, run_id, done = self._finished(orchestrator)
+        assert done["status"] == "done"
+        assert done["deliverables"].endswith(f"out/{run_id}/index.md")
+        assert Path(done["deliverables"]).is_file()
+
+    def test_a_role_isnt_told_where_they_are(self, org: Org, tmp_path: Path) -> None:
+        orchestrator = Orchestrator(org, tmp_path / "home", deliverables_dir=tmp_path / "out")
+        _, run_id, _ = self._finished(orchestrator)
+        assert McpService(orchestrator, bound_role=org.root_role).run_next_action(run_id)["deliverables"] is None
+
+    def test_the_token_count_says_it_is_an_estimate(self, org: Org, tmp_path: Path) -> None:
+        """A real run's index said 15,435 tokens, when the client's own count was over 30 times that."""
+        orchestrator = Orchestrator(org, tmp_path / "home", deliverables_dir=tmp_path / "out")
+        _, _, done = self._finished(orchestrator)
+        index = Path(done["deliverables"]).read_text(encoding="utf-8")
+        assert "counted by the server" in index
+        assert "model calls" not in index
+
+    def test_a_final_review_is_given_the_work_it_signs_off(self, org: Org, tmp_path: Path) -> None:
+        """A real legal review said it could read only the CEO's summary, and approved on that."""
+        service = McpService(Orchestrator(org, tmp_path / "home", deliverables_dir=tmp_path / "out"))
+        run_id = (current := service.run_start("Add a health check endpoint"))["run_id"]
+        seen: list[str] = []
+        for _ in range(100):
+            if current["status"] != "working":
+                break
+            action = current["actions"][0]
+            if action["task_id"] == "__final__" and action["purpose"] == "review":
+                seen.append(action["assignment"])
+            payload = _payload(service, run_id, action)
+            if action["submit_with"] == "artifact_submit" and action["purpose"] == "execute":
+                current = service.artifact_submit(
+                    run_id, action["invocation_id"], payload, flags={"public_facing": True}
+                )
+            else:
+                current = getattr(service, action["submit_with"])(run_id, action["invocation_id"], payload)
+        assert current["status"] == "done"
+        assert seen, "no final review happened"
+        state = service.orchestrator.state(run_id)
+        for task in state.tasks.values():
+            if task.task_id != "__final__":
+                assert f"{task.result_artifact_id} from {task.owner_role}" in seen[0]
+
+    def test_a_person_sees_what_approving_reviewers_flagged(self, org: Org, tmp_path: Path) -> None:
+        """Legal once approved and noted a missing privacy notice, and nothing passed that on."""
+        service = McpService(Orchestrator(org, tmp_path / "home", deliverables_dir=tmp_path / "out"))
+        run_id = (current := service.run_start("Add a health check endpoint"))["run_id"]
+        for _ in range(100):
+            if current["status"] != "working":
+                break
+            action = current["actions"][0]
+            payload = _payload(service, run_id, action)
+            if action["purpose"] == "review":
+                payload["issues"] = [{"severity": "minor", "description": "Add a privacy notice before launch."}]
+            current = getattr(service, action["submit_with"])(run_id, action["invocation_id"], payload)
+        index = Path(current["deliverables"]).read_text(encoding="utf-8")
+        assert "## What reviewers noted" in index
+        assert "Add a privacy notice before launch." in index

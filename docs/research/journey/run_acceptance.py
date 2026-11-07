@@ -46,7 +46,15 @@ _DESIGN_PROMPT = (
 
 
 ROLE_PREFIX = f"mcp__{ROLE_SERVER}__"
-COORDINATING = ("Agent", "Task", "mcp__trypro__run_start", "mcp__trypro__run_next_action", "mcp__trypro__run_status")
+# ToolSearch is how Claude Code loads a tool's definition. It reads nothing of the company's, and can't do work.
+COORDINATING = (
+    "Agent",
+    "Task",
+    "ToolSearch",
+    "mcp__trypro__run_start",
+    "mcp__trypro__run_next_action",
+    "mcp__trypro__run_status",
+)
 
 
 def session(prompt: str, cwd: Path, flags: list[str], allowed: str) -> dict[str, Any]:
@@ -113,7 +121,8 @@ def read_stream(stdout: str) -> dict[str, Any]:
             else:
                 calls = calls_by_agent.setdefault(agents.get(str(parent), str(parent)), {})
                 calls[name] = calls.get(name, 0) + 1
-    usage = result.get("usage") or {}
+    # A result's "usage" is the session alone. Its subagents, which do the work, are only in modelUsage.
+    by_model = result.get("modelUsage") or {}
     outside = {
         agent: [name for name in calls if not name.startswith(ROLE_PREFIX)]
         for agent, calls in calls_by_agent.items()
@@ -128,11 +137,15 @@ def read_stream(stdout: str) -> dict[str, Any]:
         "role_agents_outside_their_server": outside,
         "session_did_more_than_coordinate": [n for n in operator_tools if n not in COORDINATING],
         "usage": {
-            "input": usage.get("input_tokens", 0),
-            "cache_write": usage.get("cache_creation_input_tokens", 0),
-            "cache_read": usage.get("cache_read_input_tokens", 0),
-            "output": usage.get("output_tokens", 0),
+            "input": sum(m.get("inputTokens", 0) for m in by_model.values()),
+            "cache_write": sum(m.get("cacheCreationInputTokens", 0) for m in by_model.values()),
+            "cache_read": sum(m.get("cacheReadInputTokens", 0) for m in by_model.values()),
+            "output": sum(m.get("outputTokens", 0) for m in by_model.values()),
             "cost_usd_at_list_price": result.get("total_cost_usd"),
+        },
+        "usage_by_model": {
+            name: {k: m.get(k, 0) for k in ("inputTokens", "cacheCreationInputTokens", "cacheReadInputTokens", "outputTokens")}
+            for name, m in by_model.items()
         },
         "subagents": result.get("subagent_stats"),
         "turns": result.get("num_turns"),

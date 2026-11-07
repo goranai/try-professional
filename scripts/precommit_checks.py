@@ -21,7 +21,6 @@ SLOW_TESTS = (
     "test_clients.py",
     "test_generator.py",
     "test_generator_quality.py",
-    "test_loadouts.py",
     "test_mcp_design.py",
     "test_resources.py",
 )

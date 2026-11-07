@@ -30,6 +30,7 @@ from ..artifacts import (
 )
 from ..gates import deterministic_flags, triggered_gates
 from .state import (
+    ESTIMATED_BY_SERVER,
     FINAL_TASK_ID,
     MAX_ASSIGNMENTS,
     Action,
@@ -446,10 +447,20 @@ class _Step:
                 task_id=task.task_id,
                 gate=gate,
                 subject_artifact_id=result_id,
-                context_refs=[result_id, *([task.brief_artifact_id] if task.brief_artifact_id else [])],
+                context_refs=[
+                    result_id,
+                    *([task.brief_artifact_id] if task.brief_artifact_id else []),
+                    *self.work_behind(task),
+                ],
             )
             return
         self.approve(task)
+
+    def work_behind(self, task: TaskState) -> list[str]:
+        """A final report summarizes other work. A reviewer given only the summary can't check it, and said so."""
+        if task.task_id != FINAL_TASK_ID:
+            return []
+        return [t.result_artifact_id for t in self.state.tasks.values() if t.result_artifact_id and t is not task]
 
     def waive(self, task: TaskState, gate: str, note: str, by: str) -> None:
         task.pending_gates.remove(gate)
@@ -1180,6 +1191,7 @@ def _token_limit(state: RunState, org: Org) -> int:
 
 def _on_usage(step: _Step, event: UsageRecorded) -> None:
     state = step.state
+    state.usage.estimated = state.usage.estimated or event.model == ESTIMATED_BY_SERVER
     buckets = [state.usage]
     if event.role:
         buckets.append(state.usage_by_role.setdefault(event.role, Usage()))

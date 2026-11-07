@@ -49,8 +49,8 @@ you what a role was asked. Use them like this:
 trypro-marketing-seo). Give it only the run_id. Run them one at a time. Never add what another role did.
 3. Call run_next_action, and repeat until its status isn't "working".
 4. If its status is "blocked", show me the questions under needs_a_person, with their commands. Only I can answer them.
-5. If its status is "done", tell me what came back, including everything under known_limits, and where the \
-deliverables are.
+5. If its status is "done", tell me what came back, including everything under known_limits, and give me the path \
+under deliverables.
 """
 
 

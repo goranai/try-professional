@@ -22,9 +22,10 @@ def test_every_test_it_leaves_out_exists() -> None:
 
 
 def test_it_keeps_the_tests_that_commits_have_broken() -> None:
-    """Twice a commit went in over the prompt budget, which test_company and test_token_budget check."""
+    """Commits have gone in over the prompt budget. test_token_budget, test_loadouts and test_company check it."""
     for name in (
         "test_company.py",
+        "test_loadouts.py",
         "test_token_budget.py",
         "test_pipeline.py",
         "test_misbehaving_model.py",

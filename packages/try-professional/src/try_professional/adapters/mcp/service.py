@@ -37,6 +37,7 @@ from ...core.pipeline import (
     Submission,
     UsageRecorded,
 )
+from ...core.pipeline.state import ESTIMATED_BY_SERVER
 from ...org import Org
 from ..api_runner.prompts import system_prompt, untrusted, user_prompt
 from ..api_runner.runner import TOOLS_BY_PURPOSE
@@ -67,7 +68,6 @@ COORDINATOR_TOOLS = ("org_get", "run_start", "run_status", "run_next_action", "a
 DEFAULT_AUDIT_TAIL = 20
 MAX_AUDIT_TAIL = 200
 CHARS_PER_TOKEN = 3.5
-ESTIMATED_BY_SERVER = "estimated by server"
 
 
 class ToolError(Exception):
@@ -181,6 +181,7 @@ class McpService:
                 "reason": finish.reason,
                 "actions": [],
                 "final": None if self.bound_role else self.run_status(run_id)["final"],
+                "deliverables": None if self.bound_role else self._index_of(run_id, finish.status),
             }
         questions = [a for a in actions if isinstance(a, AskHuman)]
         if questions:
@@ -200,6 +201,11 @@ class McpService:
         if self.bound_role:
             work = [a for a in work if a.role == self.bound_role]
         return {"status": "working", "actions": [self._describe(run_id, action) for action in work]}
+
+    def _index_of(self, run_id: str, status: str) -> str | None:
+        """Where a person finds the result, so whoever is coordinating can tell them."""
+        folder = self.orchestrator.deliverables_path(run_id)
+        return str(folder / "index.md").replace("\\", "/") if folder and status == "done" else None
 
     def _charge(self, run_id: str, invocation_id: str, role: str, sent: str = "", received: str = "") -> None:
         """Budgets can't rest on what a client says it spent, so this counts what passed through here."""

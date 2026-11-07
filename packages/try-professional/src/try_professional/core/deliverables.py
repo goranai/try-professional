@@ -68,6 +68,17 @@ def _render(artifact_type: str, payload: dict[str, Any], retrieved: dict[str, st
     return lines
 
 
+def _review_notes(state: RunState) -> list[str]:
+    """What approving reviewers still flagged. Without this, it never reached the person it was written for."""
+    results = {t.result_artifact_id for t in state.tasks.values() if t.result_artifact_id}
+    lines = []
+    for artifact in state.artifacts.values():
+        if artifact.type == "ReviewVerdict" and artifact.payload.get("subject_artifact_id") in results:
+            who = f"{artifact.produced_by}, {artifact.payload['gate']}"
+            lines += [f"- {issue['description']} ({who})" for issue in artifact.payload.get("issues", [])]
+    return lines
+
+
 def export_deliverables(state: RunState, workspace: Path, target: Path, retrieved: dict[str, str]) -> Path:
     """Write target/index.md, one file per task's result, and whatever roles wrote to the workspace."""
     if target.exists():
@@ -117,9 +128,19 @@ def export_deliverables(state: RunState, workspace: Path, target: Path, retrieve
         lines += ["## Other files roles wrote", ""]
         lines += [f"- [files/{name}](files/{name})" for name in copied]
         lines.append("")
+    notes = _review_notes(state)
+    if notes:
+        lines += ["## What reviewers noted", "", *notes, ""]
     lines += ["## What this run retrieved", ""]
     lines += [f"- {source}{f' ({day})' if day else ''}" for source, day in sorted(retrieved.items())] or ["- Nothing."]
-    lines += ["", f"Tokens: {state.usage.total} total, in {state.usage.calls} model calls."]
+    if state.usage.estimated:
+        lines += [
+            "",
+            f"Tokens: about {state.usage.total}, counted by the server from what passed through it. "
+            "Your client's own count is higher, often by several times, and it's the one that's billed.",
+        ]
+    else:
+        lines += ["", f"Tokens: {state.usage.total} total, in {state.usage.calls} model calls."]
     index = target / "index.md"
     index.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
     return index

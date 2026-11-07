@@ -139,6 +139,7 @@ class Usage(_Model):
     output_tokens: int = 0
     cached_input_tokens: int = 0
     calls: int = 0
+    estimated: bool = False
 
     @property
     def total(self) -> int:
@@ -237,6 +238,9 @@ class ContextResolved(_Model):
     query: str
     memory_context: list[str] = []
     skill_candidates: list[dict[str, Any]] = []
+
+
+ESTIMATED_BY_SERVER = "estimated by server"
 
 
 class UsageRecorded(_Model):
