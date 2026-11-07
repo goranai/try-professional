@@ -255,6 +255,7 @@ class McpService:
         payload: dict[str, Any],
         flags: dict[str, bool] | None = None,
         language: str | None = None,
+        notes: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         role = self._role_for(run_id, invocation_id)
         state = self.orchestrator.state(run_id)
@@ -275,6 +276,7 @@ class McpService:
             flags=parsed_flags,
             language=language,
             created_at=self.orchestrator.clock(),
+            notes=notes,
         )
         return self._send(run_id, event, invocation_id)
 

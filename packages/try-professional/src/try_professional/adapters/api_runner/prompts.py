@@ -82,12 +82,20 @@ def _routes(org: Org) -> dict[str, list[str]]:
     }
 
 
+_EARLIER_WORK = "inputs/earlier/ holds this company's finished work from earlier commands."
+
+
+def _has_earlier(files: list[str]) -> bool:
+    return any(name.startswith("inputs/earlier/") for name in files)
+
+
 def _reach(org: Org, files: list[str], search: bool) -> str:
     """What planners must know, or they ask for work that nobody here can do."""
     web = search and any("web_search" in role.allowed_tools for role in org.roles.values())
     provided = ", ".join(files) if files else "none"
+    earlier = f" {_EARLIER_WORK}" if _has_earlier(files) else ""
     return (
-        f"Files provided: {provided}. Also company memory, each role's skills, and what a role already knows"
+        f"Files provided: {provided}.{earlier} Also company memory, each role's skills, and what a role already knows"
         f"{', and web_search for roles that have it' if web else ''}. "
         f"{'Nothing else is online' if web else 'Nothing here can go online'}, and nothing can run a program, publish, "
         "send, or buy.\n"
@@ -181,7 +189,8 @@ def user_prompt(
             _section(
                 "Files in this run's workspace",
                 f"{listing}\nYou can reach nothing else: no repository or shell"
-                f"{', and no network beyond web_search' if web else ', or network'}.",
+                f"{', and no network beyond web_search' if web else ', or network'}."
+                f"{f' {_EARLIER_WORK}' if _has_earlier(workspace_files) else ''}",
             )
         )
     if loadout:

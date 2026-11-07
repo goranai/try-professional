@@ -103,9 +103,10 @@ def build_server(company: McpService | Callable[[], McpService | None], design: 
         payload: dict[str, Any],
         flags: dict[str, bool] | None = None,
         language: str | None = None,
+        notes: dict[str, Any] | None = None,
     ) -> Any:
-        """Submit the finished artifact for an action. A rejection says what to fix."""
-        return _guard(company_tool("artifact_submit"), run_id, invocation_id, payload, flags, language)
+        """Submit the finished artifact for an action. A rejection says what to fix. notes become your own memory."""
+        return _guard(company_tool("artifact_submit"), run_id, invocation_id, payload, flags, language, notes)
 
     @server.tool()
     def review_submit(run_id: str, invocation_id: str, payload: dict[str, Any]) -> Any:

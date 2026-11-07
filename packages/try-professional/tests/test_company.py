@@ -89,6 +89,50 @@ def _small(extra: dict[str, Any] | None = None) -> Callable[..., Any]:
     return override
 
 
+class TestItKnowsWhatItAlreadyDid:
+    @pytest.fixture
+    def with_deliverables(self, org: Org, tmp_path: Path) -> Iterator[Orchestrator]:
+        orchestrator = Orchestrator(org, tmp_path / "work", deliverables_dir=tmp_path / "deliverables")
+        yield orchestrator
+        orchestrator.close()
+
+    def test_the_next_command_gets_the_finished_work_of_the_last(self, with_deliverables: Orchestrator) -> None:
+        """A real company couldn't find last week's menu, so it couldn't honestly say it hadn't repeated a dish."""
+        first, _ = _run(with_deliverables, "Write this week's menu")
+        second, _ = _run(with_deliverables, "Write next week's menu")
+        folder = with_deliverables.workspace(second.run_id) / "inputs" / "earlier" / first.run_id
+        assert "Write this week's menu" in (folder / "index.md").read_text(encoding="utf-8")
+
+    def test_it_comes_whichever_model_runs_and_whatever_it_wrote_down(self, with_deliverables: Orchestrator) -> None:
+        first, _ = _run(with_deliverables, "First", override=_small())
+        run_id, _ = with_deliverables.start("Second")
+        assert (with_deliverables.workspace(run_id) / "inputs" / "earlier" / first.run_id).is_dir()
+
+    def test_only_finished_work_comes(self, with_deliverables: Orchestrator) -> None:
+        unfinished, _ = with_deliverables.start("Never finished")
+        run_id, _ = with_deliverables.start("Next")
+        assert not (with_deliverables.workspace(run_id) / "inputs" / "earlier" / unfinished).exists()
+
+    def test_it_doesnt_pile_up_inside_later_deliverables(self, with_deliverables: Orchestrator, tmp_path: Path) -> None:
+        for number in range(3):
+            result, _ = _run(with_deliverables, f"Command {number}")
+        assert not list((tmp_path / "deliverables" / result.run_id).rglob("earlier"))
+
+    def test_a_limited_number_of_runs_come(self, with_deliverables: Orchestrator) -> None:
+        from try_professional.core.orchestrator import MAX_EARLIER_RUNS
+
+        for number in range(MAX_EARLIER_RUNS + 2):
+            _run(with_deliverables, f"Command {number}")
+        run_id, _ = with_deliverables.start("Next")
+        assert len(list((with_deliverables.workspace(run_id) / "inputs" / "earlier").iterdir())) == MAX_EARLIER_RUNS
+
+    def test_planners_are_told_about_it(self, with_deliverables: Orchestrator, org: Org) -> None:
+        from try_professional.adapters.api_runner.prompts import _reach
+
+        assert "finished work from earlier commands" in _reach(org, ["inputs/earlier/run-1/index.md"], False)
+        assert "finished work from earlier commands" not in _reach(org, [], False)
+
+
 class TestRightSizing:
     def test_a_small_command_skips_planning_dispatch_and_the_retrospective(self, company: Orchestrator) -> None:
         result, client = _run(company, override=_small())

@@ -45,6 +45,8 @@ from .ports import FeedbackPort, MemoryPort, NullMemory, NullSkills, ProposalPor
 
 Clock = Callable[[], str]
 MAX_INPUT_BYTES = 2_000_000
+MAX_EARLIER_RUNS = 5
+EARLIER_WORK = "earlier"
 PENDING_LESSONS_SHOWN = 3
 TEAM_SKILLS_SHOWN = 3
 
@@ -112,24 +114,37 @@ class Orchestrator:
         with self._lock, path.open("a", encoding="utf-8", newline="\n") as handle:
             handle.write(json.dumps({"source": source, "date": day}, ensure_ascii=False) + "\n")
 
+    def _earlier_runs(self, run_id: str) -> list[Path]:
+        """The newest finished work. Only a finished run has deliverables, so this has passed its gates."""
+        if self.deliverables_dir is None or not self.deliverables_dir.is_dir():
+            return []
+        runs = [p for p in self.deliverables_dir.iterdir() if p.is_dir() and p.name != run_id]
+        return sorted(runs, key=lambda p: p.stat().st_mtime, reverse=True)[:MAX_EARLIER_RUNS]
+
     def _copy_inputs(self, run_id: str) -> None:
-        """Give this run its own copy, so what a run read stays on record if the folder changes later."""
-        if self.inputs_dir is None or not self.inputs_dir.is_dir():
-            return
+        """Give this run its own copy, so what a run read stays on record if the folder changes later.
+
+        A permanent company has to know what it already did. So its finished work comes too, whatever a model
+        remembered to write down, and read-only, like everything else a person provided.
+        """
         target = self.workspace(run_id) / "inputs"
+        sources = [(run, Path(EARLIER_WORK) / run.name) for run in self._earlier_runs(run_id)]
+        if self.inputs_dir is not None and self.inputs_dir.is_dir():
+            sources.insert(0, (self.inputs_dir, Path()))
         copied = []
-        for path in sorted(self.inputs_dir.rglob("*")):
-            if not path.is_file() or path.is_symlink() or path.stat().st_size > MAX_INPUT_BYTES:
-                continue
-            relative = path.relative_to(self.inputs_dir)
-            if any(part.startswith(".") for part in relative.parts):
-                continue
-            destination = target / relative
-            destination.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(path, destination)
-            name = f"inputs/{relative.as_posix()}"
-            self.note_source(run_id, name)
-            copied.append({"path": name, "sha256": hashlib.sha256(path.read_bytes()).hexdigest()})
+        for folder, prefix in sources:
+            for path in sorted(folder.rglob("*")):
+                if not path.is_file() or path.is_symlink() or path.stat().st_size > MAX_INPUT_BYTES:
+                    continue
+                relative = path.relative_to(folder)
+                if any(part.startswith(".") for part in relative.parts):
+                    continue
+                destination = target / prefix / relative
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(path, destination)
+                name = f"inputs/{(prefix / relative).as_posix()}"
+                self.note_source(run_id, name)
+                copied.append({"path": name, "sha256": hashlib.sha256(path.read_bytes()).hexdigest()})
         if copied:
             self._log(run_id).append(self.clock(), "inputs_copied", {"files": copied})
 

@@ -1,0 +1,37 @@
+# Contributing
+
+Thanks for helping. The issues labelled `good first issue` are scoped so you can finish one without learning the whole project: templates, department packs, scanner rule packs, and language reviews need no knowledge of the pipeline.
+
+## Set up
+
+```bash
+git clone https://github.com/goranai/try-professional
+cd try-professional
+python -m venv .venv && . .venv/bin/activate    # On Windows: .venv\Scripts\activate
+pip install -e packages/skill-customs -e "packages/try-professional[anthropic,mcp]" pytest pytest-timeout ruff mypy types-PyYAML types-jsonschema
+python scripts/install_hooks.py
+```
+
+## Check your work
+
+```bash
+ruff check . && ruff format --check . && mypy
+pytest -m "not model"
+```
+
+These spend nothing, and CI runs the same ones on Linux, macOS, and Windows. If you change a schema, a template, or a playbook, run `python scripts/generate_schemas.py`, so the packaged copies match.
+
+## The rules this project keeps
+
+- **Code enforces what matters.** Hierarchy, gates, memory permissions, work state, budgets, and skill vetting must hold whichever model runs. A prompt can ask for good behaviour, and only code can hold it. If you add a rule, add a case to `test_misbehaving_model.py`.
+- **Nothing general depends on one business.** Industry specifics belong in templates and packs.
+- **Every claim must be verifiable.** No invented benchmarks, and no number in the docs that a reader can't reproduce.
+- **No telemetry, and few dependencies.** Keys come from environment variables and are never logged.
+- **Tests never spend money.** A test that needs a real model isn't part of `pytest -m "not model"`.
+- **Never improve a score by weakening QA, legal review, skill vetting, secret handling, or budget limits.**
+
+## Pull requests
+
+Keep them small, say what changed and why, and include the test that would have failed before. All code, docs, and commit messages are in English. Companies themselves work in any language.
+
+By contributing, you agree that your work is released under the MIT license.

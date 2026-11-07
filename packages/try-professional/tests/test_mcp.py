@@ -167,6 +167,22 @@ class TestMemoryAndSkills:
         service, run_id, invocation = self._at_execute(orchestrator)
         assert service.memory_recall(run_id, invocation, "x").startswith('<untrusted kind="memory">')
 
+    def test_a_roles_notes_reach_its_own_memory(self, orchestrator: Orchestrator) -> None:
+        """Over MCP these were once dropped, so a role remembered nothing of its own work."""
+        service, run_id, invocation = self._at_execute(orchestrator)
+        state = orchestrator.state(run_id)
+        payload = default_payload(state.invocations[invocation], state, orchestrator.org)
+        notes = {"did": "Wrote the menu", "lesson": "Clients want a vegetarian option every day"}
+        assert service.artifact_submit(run_id, invocation, payload, notes=notes)["accepted"] is True
+        task = next(t for t in orchestrator.state(run_id).tasks.values() if t.notes_artifact_id)
+        assert orchestrator.state(run_id).artifacts[task.notes_artifact_id].payload["did"] == "Wrote the menu"
+
+    def test_invalid_notes_are_rejected(self, orchestrator: Orchestrator) -> None:
+        service, run_id, invocation = self._at_execute(orchestrator)
+        state = orchestrator.state(run_id)
+        payload = default_payload(state.invocations[invocation], state, orchestrator.org)
+        assert service.artifact_submit(run_id, invocation, payload, notes={"made_up": 1})["accepted"] is False
+
     def test_no_client_can_change_company_memory(self, orchestrator: Orchestrator) -> None:
         """A person approves company memory. Over MCP, even the CEO could once skip that."""
         service, _, _ = self._at_execute(orchestrator)
