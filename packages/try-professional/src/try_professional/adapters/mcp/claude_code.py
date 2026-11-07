@@ -84,12 +84,12 @@ def server_config(root: Path, role: str | None = None) -> dict[str, Any]:
     return {"type": "stdio", "command": command, "args": args}
 
 
-def role_agent(root: Path, org: Org, role: Role) -> str:
+def role_agent(root: Path, org: Org, role: Role, model: str | None = None) -> str:
     front = {
         "name": agent_name(role.ref),
         "description": f"{role.display_name} at {org.company_name}. {role.mission}"[:300],
         "tools": f"mcp__{ROLE_SERVER}__*",
-        "model": _MODELS.get(role.model_tier, "sonnet"),
+        "model": model or _MODELS.get(role.model_tier, "sonnet"),
         "mcpServers": [{ROLE_SERVER: server_config(root, role.ref)}],
     }
     header = yaml.safe_dump(front, sort_keys=False, allow_unicode=True).strip()
@@ -97,7 +97,7 @@ def role_agent(root: Path, org: Org, role: Role) -> str:
     return f"---\n{header}\n---\n\n{body}\n"
 
 
-def write_claude_code_files(root: Path, org: Org) -> list[Path]:
+def write_claude_code_files(root: Path, org: Org, model: str | None = None) -> list[Path]:
     """Files only under .claude/ and .mcp.json. Run it again after the company changes."""
     agents = root / ".claude" / "agents"
     agents.mkdir(parents=True, exist_ok=True)
@@ -106,7 +106,7 @@ def write_claude_code_files(root: Path, org: Org) -> list[Path]:
         existing.unlink()
     for role in org.roles.values():
         path = agents / f"{agent_name(role.ref)}.md"
-        path.write_text(role_agent(root, org, role), encoding="utf-8", newline="\n")
+        path.write_text(role_agent(root, org, role, model), encoding="utf-8", newline="\n")
         written.append(path)
     commands = root / ".claude" / "commands"
     commands.mkdir(parents=True, exist_ok=True)

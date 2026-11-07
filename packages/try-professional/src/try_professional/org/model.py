@@ -79,8 +79,10 @@ class Gate:
     on_unavailable: str = "block"
 
 
-DEFAULT_MAX_TOKENS_PER_RUN = 150_000
-DEFAULT_MAX_TOKENS_PER_SMALL_COMMAND = 40_000
+# Raised in 0.1.1 from 150,000 and 40,000. Stricter reviews mean more rework: a small command with the 2 rework
+# rounds the pipeline allows used 37,762, and one that stopped needed 54,605 to finish. A large one used 134,289.
+DEFAULT_MAX_TOKENS_PER_RUN = 200_000
+DEFAULT_MAX_TOKENS_PER_SMALL_COMMAND = 60_000
 
 
 @dataclass(frozen=True)

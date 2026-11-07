@@ -244,7 +244,14 @@ class TestWhatARoleSees:
             assert set(payload["properties"]) == set(model.model_fields), name
 
     def test_new_companies_have_a_token_ceiling_by_default(self, org: Org) -> None:
-        assert org.pipeline.max_tokens_per_run == 150_000
+        assert org.pipeline.max_tokens_per_run == 200_000
+        assert org.pipeline.max_tokens_per_small_command == 60_000
+
+    def test_check_model_keeps_its_own_bar(self) -> None:
+        """A higher limit for real work must not make a model easier to call suitable."""
+        from try_professional.check_model import COMMAND_TOKEN_LIMIT
+
+        assert COMMAND_TOKEN_LIMIT == 40_000
 
 
 class TestToolPermissions:

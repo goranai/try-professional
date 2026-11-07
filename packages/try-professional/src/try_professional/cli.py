@@ -711,7 +711,7 @@ class _Design:
 def cmd_agents(args: argparse.Namespace) -> int:
     config = load_config(Path.cwd())
     org = load_org(config.org_dir)
-    written = write_claude_code_files(config.root, org)
+    written = write_claude_code_files(config.root, org, args.model)
     _print(f"Wrote {len(org.roles)} role agents to .claude/agents, the /company command, and .mcp.json.")
     _print("Start Claude Code in this folder (restart it if it's open, so it loads them), and run:")
     _print('  /company "<what you want done>"')
@@ -1202,6 +1202,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     agents = sub.add_parser("agents", help="Set up an agent runtime to run this company")
     agents.add_argument("runtime", choices=["claude-code"])
+    agents.add_argument(
+        "--model",
+        choices=["sonnet", "opus", "haiku", "inherit"],
+        help="One model for every role's subagent. By default, each role's tier chooses: haiku for fast, else sonnet",
+    )
     agents.set_defaults(func=cmd_agents)
 
     check = sub.add_parser("check-model", help="Test whether a model suits running a company. A few thousand tokens")

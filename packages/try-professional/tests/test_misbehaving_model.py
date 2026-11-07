@@ -521,17 +521,21 @@ class TestEndlessBehaviour:
         question = next(iter(state.human_requests.values())).question
         assert f"over its limit of {DEFAULT_MAX_TOKENS_PER_SMALL_COMMAND}" in question and "assignments" in question
 
-    def test_a_large_command_stops_before_it_can_spend_200000(self, company: Orchestrator) -> None:
+    def test_a_large_command_stops_at_the_first_call_over_its_limit(self, company: Orchestrator) -> None:
+        """It may cross the limit by one call's worth, and no more: the next call never happens."""
+        per_call = 40_000
+
         class Expensive(BadModel):
             def complete(self, request: ChatRequest) -> ChatResponse:
                 response = super().complete(request)
-                response.input_tokens = 40_000
+                response.input_tokens = per_call
                 return response
 
         result = ApiRunner(company, Expensive(lambda *_: None), ROUTES, max_turns=8).run("A big piece of work")
         state = company.state(result.run_id)
         assert result.status == "blocked"
-        assert state.size == "large" and state.usage.total < 200_000
+        assert state.size == "large"
+        assert DEFAULT_MAX_TOKENS_PER_RUN < state.usage.total <= DEFAULT_MAX_TOKENS_PER_RUN + per_call + 1_000
 
     def test_a_blocked_command_spends_nothing_more(self, company: Orchestrator) -> None:
         class Expensive(BadModel):

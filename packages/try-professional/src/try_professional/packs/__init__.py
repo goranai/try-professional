@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Any
 import yaml
 
 from ..org.loader import dump_org, read_documents
+from ..org.model import DEFAULT_MAX_TOKENS_PER_RUN, DEFAULT_MAX_TOKENS_PER_SMALL_COMMAND
 
 if TYPE_CHECKING:
     from importlib.abc import Traversable
@@ -31,7 +32,11 @@ DEFAULT_PIPELINE: dict[str, Any] = {
     "max_rework": 2,
     "max_invalid_outputs": 2,
     "working_language": "auto",
-    "budget": {"max_tokens_per_run": 150_000, "max_tokens_per_small_command": 40_000, "on_exceeded": "escalate"},
+    "budget": {
+        "max_tokens_per_run": DEFAULT_MAX_TOKENS_PER_RUN,
+        "max_tokens_per_small_command": DEFAULT_MAX_TOKENS_PER_SMALL_COMMAND,
+        "on_exceeded": "escalate",
+    },
 }
 
 

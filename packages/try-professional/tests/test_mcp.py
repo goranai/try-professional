@@ -388,6 +388,17 @@ class TestAStoppedCommand:
         assert "Bash(trypro decide *)" in settings["permissions"]["deny"]
         assert "PowerShell(trypro init --review *)" in settings["permissions"]["deny"]
 
+    @pytest.mark.parametrize(("chosen", "expected"), [(None, {"sonnet"}), ("haiku", {"haiku"})])
+    def test_one_model_can_be_chosen_for_every_role(
+        self, org: Org, tmp_path: Path, chosen: str | None, expected: set[str]
+    ) -> None:
+        claude_code.write_claude_code_files(tmp_path, org, chosen)
+        models = {
+            yaml.safe_load(path.read_text(encoding="utf-8").split("---")[1])["model"]
+            for path in (tmp_path / ".claude" / "agents").glob("trypro-*.md")
+        }
+        assert models == expected or (chosen is None and models <= {"sonnet", "haiku"})
+
     def test_company_tells_the_session_how_to_continue(self) -> None:
         text = claude_code._COMMAND
         assert "continue a run_id" in text

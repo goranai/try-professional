@@ -41,7 +41,7 @@ Two output rejections were the model adding fields that don't exist: `constraint
 
 ## What the fixes so far change
 
-A small command now stops at 40,000 tokens and a large one at 150,000, by default, and reports what happened. The two blocked runs above would have stopped at about 40,000 tokens, and the third was within it. The stop limits the damage, and it doesn't make the model finish.
+A small command now stops at 60,000 tokens and a large one at 200,000, by default (40,000 and 150,000 until 0.1.1), and reports what happened. The two blocked runs above would have stopped at about 40,000 tokens, and the third was within it. The stop limits the damage, and it doesn't make the model finish.
 
 ## For v0.2
 
