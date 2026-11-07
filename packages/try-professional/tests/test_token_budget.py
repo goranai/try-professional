@@ -20,7 +20,9 @@ sys.modules["measure_prompts"] = measure_prompts
 spec.loader.exec_module(measure_prompts)
 
 # Raised on 2026-11-07 from 28146 for wake-up briefs, playbooks and fuller task briefs: Phase 4c's cost.
-TOTAL_CHAR_BUDGET = 34000
+# Raised the same day from 34000 for what a company can reach. Without it, a real plan required web sources from a
+# company with no web, and a command spent over 50,000 tokens to end blocked. About 200 tokens per large run.
+TOTAL_CHAR_BUDGET = 34700
 
 
 def test_a_minimal_run_stays_within_its_prompt_budget() -> None:

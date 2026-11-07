@@ -88,12 +88,11 @@ def _reach(org: Org, files: list[str], search: bool) -> str:
     provided = ", ".join(files) if files else "none"
     return (
         f"Files provided: {provided}. Also company memory, each role's skills, and what a role already knows"
-        f"{', and web_search for the roles that have it' if web else ''}. "
-        f"{'Nothing else is online' if web else 'Nothing here can go online'}, and nothing here can run a program, "
-        "publish, send, or buy.\n"
-        "Ask only for work that can be finished with this. A criterion must not need a live source, link, or date "
-        "the company can't get. Ask instead that such claims be marked unverified, with what a person should check "
-        "before using them. Nobody may invent a source."
+        f"{', and web_search for roles that have it' if web else ''}. "
+        f"{'Nothing else is online' if web else 'Nothing here can go online'}, and nothing can run a program, publish, "
+        "send, or buy.\n"
+        "Ask only for what that can finish. For a source, link, or date it can't get, ask that the claim be marked "
+        "unverified, with what a person should check. Nobody may invent a source."
     )
 
 
@@ -182,9 +181,7 @@ def user_prompt(
             _section(
                 "Files in this run's workspace",
                 f"{listing}\nYou can reach nothing else: no repository or shell"
-                f"{', and no network beyond web_search' if web else ', or network'}. "
-                "If something is missing, do what you can with what's here, mark the rest unverified, and say what "
-                "a person must check. Call escalate only if nothing useful can be done.",
+                f"{', and no network beyond web_search' if web else ', or network'}.",
             )
         )
     if loadout:
