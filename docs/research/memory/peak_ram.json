@@ -1,0 +1,47 @@
+{
+ "results": {
+  "import the CLI, with no model": {
+   "peak_mb": 57,
+   "seconds": 8,
+   "exit_code": 0,
+   "free_mb_before": 8168
+  },
+  "load the model, one query": {
+   "peak_mb": 625,
+   "seconds": 18,
+   "exit_code": 0,
+   "free_mb_before": 8118
+  },
+  "embed 60 long skill descriptions": {
+   "peak_mb": 664,
+   "seconds": 4,
+   "exit_code": 0,
+   "free_mb_before": 8095
+  },
+  "our embedder plus company memory": {
+   "peak_mb": 648,
+   "seconds": 6,
+   "exit_code": 0,
+   "free_mb_before": 8081
+  },
+  "trypro init --template, no discovery": {
+   "peak_mb": 636,
+   "seconds": 4,
+   "exit_code": 3,
+   "free_mb_before": 8165
+  },
+  "trypro init --dry-run, real GitHub discovery": {
+   "peak_mb": 713,
+   "seconds": 289,
+   "exit_code": 3,
+   "free_mb_before": 8173
+  },
+  "trypro init, then trypro run --dry-run": {
+   "peak_mb": 60,
+   "seconds": 2,
+   "exit_code": 0,
+   "free_mb_before": 6374
+  }
+ },
+ "temp_folders_left": []
+}

@@ -412,19 +412,18 @@ class TestE5Option:
         seen: list[str] = []
 
         class Stub:
-            def embed(self, texts: list[str]) -> Any:
+            def embed(self, texts: list[str], batch_size: int = 256) -> Any:
                 seen.extend(texts)
                 return iter([np.ones(4, dtype=np.float32) for _ in texts])
 
+        monkeypatch.setattr("try_professional.memory.embedding.shared_model", lambda *args: Stub())
         embedder = FastEmbedEmbedder(self.E5)
-        monkeypatch.setattr(embedder, "_load", Stub)
         embedder.embed_documents(["a doc"])
         embedder.embed_query("a question")
         assert seen == ["passage: a doc", "query: a question"]
 
         seen.clear()
         plain = FastEmbedEmbedder()
-        monkeypatch.setattr(plain, "_load", Stub)
         plain.embed_documents(["a doc"])
         plain.embed_query("a question")
         assert seen == ["a doc", "a question"]

@@ -21,8 +21,9 @@ import yaml
 from skill_customs import Lockfile, render_attribution, skill_dir, verify
 
 from ..core.audit import AuditLog
-from ..memory.embedding import Embedder
+from ..memory.embedding import Embedder, model_is_loaded
 from ..org import Org, load_bundle, load_org
+from ..resources import GENERATION_AFTER_MODEL_LOADED_MB, GENERATION_PEAK_MB, wait_for_memory
 from ..skills import Decisions, LoadoutStore, SkillCatalog, match_all, sync_catalog
 from .architect import ArchitectFailed, ArchitectResult, check_proposal, run_architect
 from .compiler import CompiledOrg, ProposalError, compile_org
@@ -71,6 +72,11 @@ class Proposal:
     def audit(self, kind: str, data: dict[str, Any]) -> None:
         log_path = self.path / "audit.jsonl"
         AuditLog(log_path).append(_now(), kind, data)
+
+    def release_unpacked(self) -> None:
+        """Delete what this proposal unpacked. skills.lock still pins each skill to its commit."""
+        shutil.rmtree(self.path / "skills", ignore_errors=True)
+        (self.path / "catalog.sqlite").unlink(missing_ok=True)
 
     def save(self) -> None:
         if (self.path / "org").exists():
@@ -147,6 +153,11 @@ def _finish(
     return bundle
 
 
+def _wait_for_room(embedder: Embedder, say: Callable[[str], None]) -> None:
+    loaded = model_is_loaded(embedder.model_name)
+    wait_for_memory(GENERATION_AFTER_MODEL_LOADED_MB if loaded else GENERATION_PEAK_MB, say=say)
+
+
 def create_proposal(
     root: Path,
     embedder: Embedder,
@@ -166,6 +177,7 @@ def create_proposal(
 
     provisioning=False stops after the design, with no skills matched and no re-rank spending.
     """
+    _wait_for_room(embedder, say)
     if template_id:
         match = None
     else:
@@ -234,6 +246,7 @@ def regenerate(
     say: Callable[[str], None] = lambda text: None,
 ) -> Proposal:
     """Another paid design call, told what the person wants changed."""
+    _wait_for_room(embedder, say)
     raw = yaml.safe_load((bundle.path / "proposal.yaml").read_text(encoding="utf-8"))
     previous = OrgProposal.model_validate(raw)
     bundle.audit("regenerate", {"reason": reason})
@@ -339,6 +352,7 @@ def activate(bundle: Proposal, root: Path, embedder: Embedder, *, by: str) -> Or
     bundle.meta["approved_by"] = by
     bundle.meta["approved_at"] = _now()
     bundle.save()
+    bundle.release_unpacked()
     bundle.audit("approved", {"by": by, "skills": len(approved), "roles": len(org.roles)})
     return org
 

@@ -2,7 +2,7 @@
 
 Turn an agent into a permanent company, not a one-off project. It works only when you give it a command, and it persists between commands: every agent, from the CEO down, keeps its own memory and knows what it's working on.
 
-**Status: pre-release. Most of that isn't built yet.** Today's version gives you one accountable owner per task, typed handoffs, review gates, multilingual memory shared at company and department level, a vetted skill supply chain, and a full audit log. Generating a company from a description exists, but hasn't been proven on a real model. Personal memory, work state across commands, wake-up briefs, management playbooks, Hermes support, and benchmarks don't exist yet.
+**Status: pre-release, and unproven on a real model.** Today's version gives you one accountable owner per task, typed handoffs, review gates, multilingual memory shared at company and department level, a vetted skill supply chain, and a full audit log. Generating a company from a description, personal memory, work state across commands, wake-up briefs, and management playbooks are built, and have only run on a scripted model so far. Hermes support and benchmarks don't exist yet.
 
 ```bash
 pip install -e packages/try-professional
@@ -11,6 +11,8 @@ trypro run --dry-run "Build a health check endpoint"
 ```
 
 `--dry-run` uses a scripted model, so it needs no API key and spends nothing. `trypro init` downloads the local embedding model, about 0.22 GB.
+
+**Memory:** `trypro init` peaks at about 720 MB of RAM ([measured on Windows 11](https://github.com/goranai/try-professional/blob/main/docs/research/memory/README.md)). Before it starts, it waits until 1.8 GB is free, which includes a 1 GB safety margin, and it checks again every 3 minutes. Change the margin with `TRYPRO_MEMORY_MARGIN_MB`, or turn the check off with `TRYPRO_MEMORY_CHECK=off`. If memory runs low during a command, it stops at a safe point, and `trypro resume <run-id>` continues it.
 
 Once a company exists:
 

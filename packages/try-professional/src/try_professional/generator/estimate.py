@@ -111,7 +111,7 @@ class _Typical(ScriptedClient):
 
 def estimate_run(org: Org) -> Estimate:
     client = _Typical()
-    with tempfile.TemporaryDirectory(prefix="trypro-estimate-") as work:
+    with tempfile.TemporaryDirectory(prefix="trypro-estimate-", ignore_cleanup_errors=True) as work:
         orchestrator = Orchestrator(org, Path(work))
         try:
             runner = ApiRunner(orchestrator, client, ModelRoutes({"standard": "scripted"}))

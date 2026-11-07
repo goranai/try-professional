@@ -25,6 +25,7 @@ from ...core.pipeline import (
     UsageRecorded,
 )
 from ...org import Org, Role
+from ...resources import stop_if_memory_low
 from ..base import Capabilities, Delivery, Mode, ProvisionReport, VerifyReport
 from .clients import ChatClient, ChatRequest, ClientError, ToolResult
 from .prompts import system_prompt, user_prompt
@@ -275,6 +276,8 @@ class ApiRunner:
             # is delivered again if a human lets the run continue.
             if self.orchestrator.state(run_id).phase == RunPhase.BLOCKED:
                 return []
+            # Between model calls nothing is half done: the ledger has everything, and resume delivers it again.
+            stop_if_memory_low()
             try:
                 response = client.complete(
                     ChatRequest(system=system, messages=messages, tools=tools, model=model, metadata=metadata)

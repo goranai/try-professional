@@ -55,6 +55,9 @@ GAP_SIMILARITY = 0.35
 QA = "qa"
 MAX_QUERIES = 20
 MAX_SKILLS = 60
+# A killed run can't clean up after itself, and nothing here lives this long.
+STALE_TEMP_SECONDS = 24 * 60 * 60
+_TEMP_PREFIXES = ("trypro-skills-", "trypro-estimate-", "skill-customs-")
 # GitHub allows about 10 code searches a minute.
 SECONDS_BETWEEN_SEARCHES = 6.5
 TIME_LIMIT_SECONDS = 180
@@ -184,6 +187,18 @@ def needs_in_search_order(org: Org, needs: list[str]) -> list[str]:
     return ordered
 
 
+def remove_stale_temp_folders(temp: Path | None = None, *, now: float | None = None) -> None:
+    """Remove folders that an earlier run was killed before deleting. Never touches anything else."""
+    folder = temp or Path(tempfile.gettempdir())
+    cutoff = (now if now is not None else time.time()) - STALE_TEMP_SECONDS
+    try:
+        for path in folder.iterdir():
+            if path.name.startswith(_TEMP_PREFIXES) and path.is_dir() and path.stat().st_mtime < cutoff:
+                shutil.rmtree(path, ignore_errors=True)
+    except OSError:
+        return
+
+
 def discover_skills(
     needs: list[str],
     lock: Lockfile,
@@ -198,6 +213,7 @@ def discover_skills(
     """Pin what GitHub has for these needs. A slow or failed search leaves gaps, and never fails init."""
     if client is None and not os.environ.get("GITHUB_TOKEN"):
         return ["Skipped skill discovery: GITHUB_TOKEN isn't set. Set it to search GitHub for skills."]
+    remove_stale_temp_folders()
     report: list[str] = []
     queries = list(dict.fromkeys(q for q in (search_terms(need) for need in needs) if q))[:MAX_QUERIES]
     say(f"Searching GitHub with {len(queries)} skill phrases. The business description isn't sent.")
@@ -205,7 +221,7 @@ def discover_skills(
     repos: set[str] = set()
     commits: dict[str, str] = {}
     counts = {"pinned": 0, "license": 0, "other": 0}
-    with tempfile.TemporaryDirectory(prefix="trypro-skills-") as work:
+    with tempfile.TemporaryDirectory(prefix="trypro-skills-", ignore_cleanup_errors=True) as work:
         github = client or _SharedTarballs(Path(work))
         try:
             for number, query in enumerate(queries):

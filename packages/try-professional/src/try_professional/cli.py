@@ -57,6 +57,7 @@ from .org import Org, OrgValidationError, load_org, validate_bundle
 from .org.loader import read_documents
 from .org.policy import check_policy
 from .packs import add_pack, available_packs, install_org, remove_pack
+from .resources import COMMAND_PEAK_MB, LowMemory, wait_for_memory
 from .skills import (
     DEFAULT_UNUSED_RUNS,
     UNCATEGORIZED,
@@ -117,12 +118,29 @@ def _seed_company_memory(bundle: Proposal, root: Path, by: str) -> None:
         _print(f"Couldn't save the company's description to its memory ({type(error).__name__}). Nothing else changed.")
 
 
+def _person_at_terminal() -> bool:
+    if not sys.stdin.isatty():
+        return False
+    if sys.platform == "win32":
+        # isatty() is also true for an empty stdin here, and a prompt would then wait forever.
+        import ctypes
+        import msvcrt
+
+        try:
+            handle = msvcrt.get_osfhandle(sys.stdin.fileno())
+        except OSError:
+            return True  # Not a real file, so there's no console to ask. Its isatty() answer stands.
+        mode = ctypes.c_ulong()
+        return bool(ctypes.windll.kernel32.GetConsoleMode(handle, ctypes.byref(mode)))
+    return True
+
+
 def _review(bundle: Proposal, root: Path, embedder: Any, *, by: str, client: Any, model: str, discovery: bool) -> int:
     """The one review screen. Nothing activates unless a person types the confirmation here."""
     while True:
         _print(render(bundle))
         _print()
-        if not sys.stdin.isatty():
+        if not _person_at_terminal():
             _print(f"Approving needs a person at a terminal. Nothing was activated. Proposal: {bundle.path}")
             _print(f"To review it: trypro init --review {bundle.id}")
             return 3
@@ -632,6 +650,7 @@ def _finish_command(orchestrator: Orchestrator) -> None:
 
 
 def _run_goal(orchestrator: Orchestrator, runner: ApiRunner, goal: str) -> int:
+    wait_for_memory(COMMAND_PEAK_MB, say=_print)
     result = runner.run(goal)
     code = _print_result(result, orchestrator.deliverables_path(result.run_id))
     _finish_command(orchestrator)
@@ -680,6 +699,7 @@ def cmd_resume(args: argparse.Namespace) -> int:
             if not held:
                 _print("Another command is running. Nothing was resumed.")
                 return 1
+            wait_for_memory(COMMAND_PEAK_MB, say=_print)
             return _print_result(runner.resume(args.run_id), orchestrator.deliverables_path(args.run_id))
     finally:
         orchestrator.close()
@@ -1081,6 +1101,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         result: int = args.func(args)
         return result
+    except LowMemory as error:
+        _print(f"Stopped at a safe point. {error}")
+        _print("All work so far is saved. Free some memory, then continue with: trypro resume <run-id>")
+        _print("trypro status lists unfinished work.")
+        return 3
     except (
         FileNotFoundError,
         KeyError,

@@ -28,7 +28,13 @@ SCORE_FLOORS = {
     DEFAULT_MODEL: 0.28,
 }
 
+# Lowers peak memory while embedding, measured in docs/research/memory/. Padding stays small too.
+EMBED_BATCH_SIZE = 8
+
 Vectors = NDArray[np.float32]
+
+_models: dict[str, Any] = {}
+_models_lock = threading.Lock()
 
 
 def model_cache_dir() -> Path:
@@ -67,30 +73,47 @@ def normalize(vectors: NDArray[Any]) -> Vectors:
     return result
 
 
+def shared_model(model_name: str, cache_dir: Path | None = None) -> Any:
+    """The one copy in this process, whoever asks. It's about 600 MB, and every caller can use the same one."""
+    with _models_lock:
+        if model_name not in _models:
+            from fastembed import TextEmbedding
+
+            os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS_WARNING", "1")
+            directory = cache_dir or model_cache_dir()
+            directory.mkdir(parents=True, exist_ok=True)
+            _models[model_name] = TextEmbedding(model_name=model_name, cache_dir=str(directory))
+        return _models[model_name]
+
+
+def model_is_loaded(model_name: str) -> bool:
+    return model_name in _models
+
+
+class SharedModel:
+    """Stands in for a model in another library. It loads the shared copy on first use, and not before."""
+
+    def __init__(self, model_name: str, cache_dir: Path | None = None) -> None:
+        self.model_name = model_name
+        self.cache_dir = cache_dir
+
+    def embed(self, texts: Any, **options: Any) -> Any:
+        options.setdefault("batch_size", EMBED_BATCH_SIZE)
+        return shared_model(self.model_name, self.cache_dir).embed(texts, **options)
+
+
 class FastEmbedEmbedder:
     """Loads the model on first use, so importing this costs nothing."""
 
     def __init__(self, model_name: str = DEFAULT_MODEL, cache_dir: Path | None = None) -> None:
         self.model_name = model_name
         self.cache_dir = cache_dir or model_cache_dir()
-        self._model: Any = None
-        self._lock = threading.Lock()
-
-    def _load(self) -> Any:
-        with self._lock:
-            if self._model is None:
-                from fastembed import TextEmbedding
-
-                os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS_WARNING", "1")
-                self.cache_dir.mkdir(parents=True, exist_ok=True)
-                self._model = TextEmbedding(model_name=self.model_name, cache_dir=str(self.cache_dir))
-            return self._model
 
     def _embed(self, texts: list[str]) -> Vectors:
         if not texts:
             return np.zeros((0, MODEL_DIMENSIONS.get(self.model_name, 1)), dtype=np.float32)
-        model = self._load()
-        return normalize(np.array(list(model.embed(texts))))
+        model = shared_model(self.model_name, self.cache_dir)
+        return normalize(np.array(list(model.embed(texts, batch_size=EMBED_BATCH_SIZE))))
 
     def embed_documents(self, texts: list[str]) -> Vectors:
         prefix = model_prefixes(self.model_name)[1]

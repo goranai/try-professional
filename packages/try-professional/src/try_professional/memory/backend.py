@@ -8,7 +8,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Protocol
 
-from .settings import MemorySettings, apply_to_environment, check_model_unchanged, verify_mnemosyne_is_local
+from .settings import (
+    MemorySettings,
+    apply_to_environment,
+    check_model_unchanged,
+    share_the_model,
+    verify_mnemosyne_is_local,
+)
 
 SESSION = "trypro"
 
@@ -58,6 +64,7 @@ class MnemosyneBackend:
         apply_to_environment(settings)
         check_model_unchanged(settings)
         verify_mnemosyne_is_local(settings)
+        share_the_model(settings)
         self._local = threading.local()
 
     def _bank(self, bank: str) -> Any:

@@ -85,7 +85,7 @@ def pin(
     if not is_full_sha(commit):
         raise FetchError(f"'{commit}' isn't a full 40-character commit SHA. Use 'resolve' to get one.")
     github = client or GitHubClient()
-    with tempfile.TemporaryDirectory(prefix="skill-customs-") as work:
+    with tempfile.TemporaryDirectory(prefix="skill-customs-", ignore_cleanup_errors=True) as work:
         root = Path(work)
         archive = root / "archive.tar.gz"
         github.download_tarball(repo, commit, archive, active)

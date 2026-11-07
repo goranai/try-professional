@@ -11,7 +11,7 @@ from collections.abc import Mapping, MutableMapping
 from dataclasses import dataclass
 from pathlib import Path
 
-from .embedding import DEFAULT_MODEL, MODEL_DIMENSIONS, model_cache_dir, model_prefixes
+from .embedding import DEFAULT_MODEL, MODEL_DIMENSIONS, SharedModel, model_cache_dir, model_prefixes
 
 _TRUE = {"1", "true", "yes", "on"}
 # Long enough that nothing expires in practice. Organizational memory must not vanish
@@ -117,6 +117,14 @@ def verify_mnemosyne_is_local(settings: MemorySettings) -> None:
             "Mnemosyne has no embedding engine, so cross-language recall would silently stop working. "
             "Install it with: pip install 'mnemosyne-memory[embeddings]'"
         )
+
+
+def share_the_model(settings: MemorySettings) -> None:
+    """Mnemosyne loads its own copy unless it already has one, and a second copy costs about 560 MB."""
+    from mnemosyne.core import embeddings
+
+    if embeddings._embedding_model is None:
+        embeddings._embedding_model = SharedModel(settings.embedding_model, settings.cache_dir)
 
 
 def check_model_unchanged(settings: MemorySettings) -> None:

@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import os
 from collections.abc import Callable
 from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
 import pytest
+
+# A busy machine must not make the tests wait for memory. test_resources.py turns the check back on.
+os.environ["TRYPRO_MEMORY_CHECK"] = "off"
 
 from try_professional.adapters.api_runner.clients import ChatRequest, ChatResponse, ToolCall, ToolResult
 from try_professional.adapters.api_runner.runner import ApiRunner, ModelRoutes
