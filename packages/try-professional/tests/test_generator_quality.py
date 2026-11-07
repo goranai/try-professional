@@ -19,7 +19,7 @@ from try_professional.org import load_bundle
 from try_professional.packs import available_packs, pack_department, pack_role
 from try_professional.skills import Decisions, RerankCache, SkillCatalog, compute_loadouts, rerank, shortlist
 from try_professional.skills.catalog import SkillRecord
-from try_professional.skills.rerank import Candidate, judge_prompt
+from try_professional.skills.rerank import Candidate, judge_prompt, judge_system
 from try_professional.skills.trade import off_trade_reason, ties_of
 
 from .test_generator import Architect, Judge, _keep, _role, _template
@@ -243,6 +243,10 @@ class TestOtherTrades:
         prompt = judge_prompt(role, [Candidate(_record("a/x"), 0.5, "need")], "A physiotherapy clinic")
         assert "<untrusted" in prompt.split("A physiotherapy clinic")[0]
         assert "## This business" in prompt
+
+    def test_the_judge_only_rules_on_trade_when_it_knows_the_business(self) -> None:
+        assert "this business isn't in" in judge_system("A physiotherapy clinic")
+        assert "this business isn't in" not in judge_system("")
 
     def test_a_different_business_isnt_served_an_old_judgment(self, tmp_path: Path) -> None:
         role = _org().role("scriptwriting/scriptwriter")

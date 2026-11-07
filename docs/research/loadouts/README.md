@@ -44,6 +44,16 @@ Trust the top row. The tuning row shows how far a small set can flatter a prompt
 
 **What to keep in mind.** Recall rose 25 points over embeddings, at a cost of 8 points of precision, and needs no person's categories. Precision is lower than version 3's, so a person's review matters more. The most common wrong suggestion was generic code review offered to every engineer, because their categories invite it. Of the 12 misses, 11 were the judge's and 1 was the shortlist's. This is one score on one set, labelled by one person, and this set may be easier: the same embeddings found 48% here against 41% on the first. One 22-role pass cost 49,710 tokens, about 2,260 per role, which is less than version 3 despite the extra decisions, because numbers replaced long skill IDs. Everything in this test cost 243,198 tokens of its 250,000 cap.
 
+**Versions 5 and 6, measured on 2026-11-07.** Real companies were being offered Shopify skills for a physiotherapy clinic, so the judge now reads the business, and a rule rejects skills tied to a platform or industry it isn't in. These two runs reuse the second fresh set, so it's no longer unseen, and it has no business in it, so **neither run measures the new rule itself**. They only check that the change didn't hurt matching. A real rerun of 7 generations did show the rule working.
+
+| Version | Found | Precise | Input (of which cached) | Output |
+|---|---|---|---|---|
+| 4 | 32/44 (73%) | 32/50 (64%) | | 49,710 total |
+| 5: the rule applied even with no business | 31/44 (70%) | 31/49 (63%) | 43,235 (11,264) | 6,830 |
+| 6: the rule applies only with a business | 33/44 (75%) | 33/52 (63%) | 42,861 (26,624) | 6,872 |
+
+Version 5 lost one match, an ISO 13485 skill for the compliance reviewer. Rejections carry no reason, so the rule is the likely cause and not a proven one. Asking about "this business" with no business known was wrong in any case, so version 6 removes the rule there. That makes its prompt the same as version 4's on this set, and it still added one labelled match and one wrong one. So treat 31 to 33 of 44 as this model's run-to-run noise, even at temperature 0, and not as an improvement.
+
 A shortlist limits recall whatever the judge does. On the two sets combined (29 skills), a size of 12 kept 38 of 50 labelled matches, and 20 kept 48, so the size is 20. That choice looked at the held-out labels, so they can't give a clean result any more. The `fresh` split comes from a third repository, was labelled before anything scored it, and is scored once.
 
 ## Limits

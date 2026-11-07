@@ -32,7 +32,8 @@
 - title: "Review the Spanish, Chinese, or Arabic retrieval queries as a native speaker"
   labels: [good first issue, i18n]
   body: |
-    No native speaker has reviewed the queries in `bench/retrieval/queries/` yet.
+    No native speaker has reviewed the queries in
+    `packages/try-professional/src/try_professional/bench/retrieval/queries/` yet.
     Fix anything unnatural, set `review.status: reviewed`, and add your name.
 - title: "Add a language to the retrieval benchmark"
   labels: [good first issue, i18n]

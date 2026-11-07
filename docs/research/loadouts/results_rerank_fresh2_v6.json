@@ -1,0 +1,459 @@
+{
+ "split": "fresh2",
+ "model": "deepseek-v4.1-flash-1017",
+ "skills": 30,
+ "precision": 0.635,
+ "recall": 0.75,
+ "correct": 33,
+ "wrong": 19,
+ "missed": 11,
+ "tokens": 49733,
+ "input_tokens": 42861,
+ "output_tokens": 6872,
+ "cached_input_tokens": 26624,
+ "calls": 22,
+ "failed_roles": [],
+ "chose_none": [
+  "marketing/content-writer",
+  "marketing/seo",
+  "marketing/social",
+  "operations/support",
+  "product/ux-researcher"
+ ],
+ "rows": [
+  {
+   "role": "engineering/backend",
+   "skill": "code-reviewer",
+   "fit": true,
+   "labelled": false,
+   "reason": "General code review skill used in backend development workflow"
+  },
+  {
+   "role": "engineering/backend",
+   "skill": "prompt-governance",
+   "fit": false,
+   "labelled": true,
+   "reason": "Not chosen by the judge"
+  },
+  {
+   "role": "engineering/backend",
+   "skill": "api-design-reviewer",
+   "fit": true,
+   "labelled": true,
+   "reason": "Reviews and lints REST API designs, core to building APIs"
+  },
+  {
+   "role": "engineering/backend",
+   "skill": "pr-review-expert",
+   "fit": true,
+   "labelled": false,
+   "reason": "PR review for bugs and quality supports backend code review"
+  },
+  {
+   "role": "engineering/backend",
+   "skill": "spec-driven-workflow",
+   "fit": true,
+   "labelled": false,
+   "reason": "Spec-first workflow with acceptance criteria and tests from specs fits backend feature work"
+  },
+  {
+   "role": "engineering/devops",
+   "skill": "code-reviewer",
+   "fit": true,
+   "labelled": false,
+   "reason": "Code review of diffs and PRs"
+  },
+  {
+   "role": "engineering/devops",
+   "skill": "gcp-cloud-architect",
+   "fit": true,
+   "labelled": true,
+   "reason": "Cloud infrastructure design and deployment on GCP"
+  },
+  {
+   "role": "engineering/devops",
+   "skill": "prompt-governance",
+   "fit": false,
+   "labelled": true,
+   "reason": "Not chosen by the judge"
+  },
+  {
+   "role": "engineering/devops",
+   "skill": "pr-review-expert",
+   "fit": true,
+   "labelled": false,
+   "reason": "PR review for bugs and security before merge"
+  },
+  {
+   "role": "engineering/devops",
+   "skill": "atlassian-admin",
+   "fit": false,
+   "labelled": true,
+   "reason": "Not chosen by the judge"
+  },
+  {
+   "role": "engineering/frontend",
+   "skill": "pw",
+   "fit": true,
+   "labelled": true,
+   "reason": "Browser end-to-end testing of components matches testing need"
+  },
+  {
+   "role": "engineering/frontend",
+   "skill": "code-reviewer",
+   "fit": true,
+   "labelled": false,
+   "reason": "Code review is a listed role category"
+  },
+  {
+   "role": "engineering/frontend",
+   "skill": "senior-frontend",
+   "fit": true,
+   "labelled": true,
+   "reason": "Core React/TypeScript UI component building"
+  },
+  {
+   "role": "engineering/frontend",
+   "skill": "i18n-localization",
+   "fit": true,
+   "labelled": true,
+   "reason": "Localization is an explicit role responsibility"
+  },
+  {
+   "role": "engineering/frontend",
+   "skill": "pr-review-expert",
+   "fit": true,
+   "labelled": false,
+   "reason": "PR review fits the code-review category"
+  },
+  {
+   "role": "engineering/qa",
+   "skill": "pw",
+   "fit": true,
+   "labelled": true,
+   "reason": "End-to-end browser testing and test authoring"
+  },
+  {
+   "role": "engineering/qa",
+   "skill": "code-reviewer",
+   "fit": true,
+   "labelled": true,
+   "reason": "Reviews code changes for bugs across many languages"
+  },
+  {
+   "role": "engineering/qa",
+   "skill": "pr-review-expert",
+   "fit": true,
+   "labelled": true,
+   "reason": "PR review for bugs, security and quality with merge verdict"
+  },
+  {
+   "role": "engineering/qa",
+   "skill": "spec-driven-workflow",
+   "fit": true,
+   "labelled": false,
+   "reason": "Acceptance criteria and tests derived from specs"
+  },
+  {
+   "role": "engineering/tech-lead",
+   "skill": "vpe-advisor",
+   "fit": true,
+   "labelled": true,
+   "reason": "Team structure and delivery throughput guidance for a tech lead"
+  },
+  {
+   "role": "engineering/tech-lead",
+   "skill": "code-reviewer",
+   "fit": true,
+   "labelled": true,
+   "reason": "Core tech-lead duty: reviewing code for design problems"
+  },
+  {
+   "role": "engineering/tech-lead",
+   "skill": "gcp-cloud-architect",
+   "fit": true,
+   "labelled": true,
+   "reason": "Cloud architecture design decisions fall within tech-lead scope"
+  },
+  {
+   "role": "engineering/tech-lead",
+   "skill": "api-design-reviewer",
+   "fit": true,
+   "labelled": true,
+   "reason": "Reviews API specs/PRs for design issues before approval"
+  },
+  {
+   "role": "engineering/tech-lead",
+   "skill": "codebase-onboarding",
+   "fit": false,
+   "labelled": true,
+   "reason": "Not chosen by the judge"
+  },
+  {
+   "role": "engineering/tech-lead",
+   "skill": "pr-review-expert",
+   "fit": true,
+   "labelled": true,
+   "reason": "PR review with merge verdict fits code review responsibility"
+  },
+  {
+   "role": "engineering/tech-lead",
+   "skill": "spec-driven-workflow",
+   "fit": true,
+   "labelled": true,
+   "reason": "Spec-first workflow supports design docs and verifiable acceptance criteria"
+  },
+  {
+   "role": "executive/ceo",
+   "skill": "internal-comms",
+   "fit": true,
+   "labelled": false,
+   "reason": "Executive-level internal communications for announcements and leadership changes"
+  },
+  {
+   "role": "executive/ceo",
+   "skill": "context-engine",
+   "fit": true,
+   "labelled": false,
+   "reason": "Loads company context needed for executive planning and decisions"
+  },
+  {
+   "role": "executive/ceo",
+   "skill": "cs-onboard",
+   "fit": true,
+   "labelled": false,
+   "reason": "Sets up C-suite advisor context, supporting executive strategy work"
+  },
+  {
+   "role": "executive/chief-of-staff",
+   "skill": "internal-comms",
+   "fit": true,
+   "labelled": true,
+   "reason": "Internal announcement sequencing fits chief-of-staff communications duties"
+  },
+  {
+   "role": "executive/chief-of-staff",
+   "skill": "vpe-advisor",
+   "fit": true,
+   "labelled": false,
+   "reason": "Delivery throughput and team-structure diagnosis supports tracking progress and surfacing blockers"
+  },
+  {
+   "role": "finance/finance-lead",
+   "skill": "revenue-operations",
+   "fit": false,
+   "labelled": true,
+   "reason": "Not chosen by the judge"
+  },
+  {
+   "role": "finance/finance-lead",
+   "skill": "deal-desk",
+   "fit": false,
+   "labelled": true,
+   "reason": "Not chosen by the judge"
+  },
+  {
+   "role": "finance/finance-lead",
+   "skill": "finance-skills",
+   "fit": true,
+   "labelled": true,
+   "reason": "Routes finance asks to forecasts and financial analysis skills"
+  },
+  {
+   "role": "legal/compliance-reviewer",
+   "skill": "general-counsel-advisor",
+   "fit": true,
+   "labelled": false,
+   "reason": "Legal review of contracts and regulatory exposure (GDPR, HIPAA) matches compliance/privacy review."
+  },
+  {
+   "role": "legal/compliance-reviewer",
+   "skill": "iso13485-audit-prep",
+   "fit": true,
+   "labelled": true,
+   "reason": "ISO 13485 audit prep is compliance auditing against stated obligations."
+  },
+  {
+   "role": "legal/counsel",
+   "skill": "general-counsel-advisor",
+   "fit": true,
+   "labelled": true,
+   "reason": "Contract risk review, IP and privacy/regulatory exposure — core counsel work"
+  },
+  {
+   "role": "marketing/marketing-lead",
+   "skill": "cmo-advisor",
+   "fit": true,
+   "labelled": true,
+   "reason": "Marketing leadership on positioning, messaging and channel budget split"
+  },
+  {
+   "role": "marketing/marketing-lead",
+   "skill": "competitive-intel",
+   "fit": true,
+   "labelled": true,
+   "reason": "Competitive positioning work feeds brand positioning and messaging"
+  },
+  {
+   "role": "marketing/marketing-lead",
+   "skill": "campaign-analytics",
+   "fit": true,
+   "labelled": true,
+   "reason": "Campaign performance analysis informs channel and campaign planning"
+  },
+  {
+   "role": "marketing/marketing-lead",
+   "skill": "churn-prevention",
+   "fit": false,
+   "labelled": true,
+   "reason": "Not chosen by the judge"
+  },
+  {
+   "role": "operations/ops-lead",
+   "skill": "internal-comms",
+   "fit": true,
+   "labelled": true,
+   "reason": "Internal comms for policy/tool rollouts supports ops communications work"
+  },
+  {
+   "role": "operations/ops-lead",
+   "skill": "atlassian-admin",
+   "fit": true,
+   "labelled": true,
+   "reason": "Atlassian admin governs Jira/Confluence process tooling for ops workflows"
+  },
+  {
+   "role": "product/product-manager",
+   "skill": "competitive-intel",
+   "fit": true,
+   "labelled": false,
+   "reason": "Competitive intel feeds positioning and roadmap prioritization"
+  },
+  {
+   "role": "product/product-manager",
+   "skill": "spec-driven-workflow",
+   "fit": true,
+   "labelled": true,
+   "reason": "Spec-first workflow writes acceptance criteria and specs, core PM duty"
+  },
+  {
+   "role": "product/product-manager",
+   "skill": "churn-prevention",
+   "fit": false,
+   "labelled": true,
+   "reason": "Not chosen by the judge"
+  },
+  {
+   "role": "product/product-manager",
+   "skill": "experiment-designer",
+   "fit": true,
+   "labelled": true,
+   "reason": "Product experiments with hypotheses and prioritization support roadmap decisions"
+  },
+  {
+   "role": "product/product-manager",
+   "skill": "market-research",
+   "fit": true,
+   "labelled": false,
+   "reason": "Market sizing and segmentation inform product scope and priorities"
+  },
+  {
+   "role": "product/ux-researcher",
+   "skill": "experiment-designer",
+   "fit": false,
+   "labelled": true,
+   "reason": "Not chosen by the judge"
+  },
+  {
+   "role": "research/analyst",
+   "skill": "competitive-intel",
+   "fit": true,
+   "labelled": true,
+   "reason": "Competitor analysis and win/loss review match research duties"
+  },
+  {
+   "role": "research/analyst",
+   "skill": "data-quality-auditor",
+   "fit": true,
+   "labelled": true,
+   "reason": "Data profiling and outlier checks support analyzing data for trends"
+  },
+  {
+   "role": "research/analyst",
+   "skill": "market-research",
+   "fit": true,
+   "labelled": true,
+   "reason": "Market sizing and segmentation directly serve market research needs"
+  },
+  {
+   "role": "research/research-lead",
+   "skill": "competitive-intel",
+   "fit": true,
+   "labelled": false,
+   "reason": "Competitive intelligence research and win/loss analysis fit research lead work"
+  },
+  {
+   "role": "research/research-lead",
+   "skill": "data-quality-auditor",
+   "fit": true,
+   "labelled": false,
+   "reason": "Auditing data quality and profiling datasets underpins evidence quality review"
+  },
+  {
+   "role": "research/research-lead",
+   "skill": "experiment-designer",
+   "fit": true,
+   "labelled": false,
+   "reason": "Designing experiments with hypotheses and reading results supports research methods review"
+  },
+  {
+   "role": "research/research-lead",
+   "skill": "market-research",
+   "fit": true,
+   "labelled": true,
+   "reason": "Market sizing, survey sample sizes and segmentation are core research methods"
+  },
+  {
+   "role": "sales/proposal-writer",
+   "skill": "sales-engineer",
+   "fit": true,
+   "labelled": true,
+   "reason": "Pre-sales RFP response analysis directly supports proposal writing"
+  },
+  {
+   "role": "sales/proposal-writer",
+   "skill": "competitive-intel",
+   "fit": true,
+   "labelled": false,
+   "reason": "Competitive positioning and battlecards inform proposal content"
+  },
+  {
+   "role": "sales/sales-lead",
+   "skill": "revenue-operations",
+   "fit": true,
+   "labelled": true,
+   "reason": "Pipeline and forecast review is core to planning sales work"
+  },
+  {
+   "role": "sales/sales-lead",
+   "skill": "sales-engineer",
+   "fit": false,
+   "labelled": true,
+   "reason": "Not chosen by the judge"
+  },
+  {
+   "role": "sales/sales-lead",
+   "skill": "competitive-intel",
+   "fit": true,
+   "labelled": true,
+   "reason": "Battlecards and win/loss insight support qualifying leads and objection handling"
+  },
+  {
+   "role": "sales/sales-lead",
+   "skill": "deal-desk",
+   "fit": true,
+   "labelled": true,
+   "reason": "Deal desk supports sales lead's proposal review and deal approval decisions"
+  }
+ ]
+}
