@@ -1,10 +1,48 @@
 # Try Professional
 
-**Preview (v0.1.0), for Claude Code. It works, it has rough edges, and it has only been proven on Claude.**
+**Turn Claude Code into a permanent AI company: one prompt builds a hierarchy of agents with roles, memory and vetted skills. Multi-agent orchestration via MCP.**
 
-Turn an agent into a permanent company, not a one-off project. Describe a business, approve the company it designs, and give it commands. It works only when you give it a command, and it remembers between commands: every role, from the CEO down, keeps its own memory and knows what it's working on.
+*Preview (v0.1.0). It works, it has rough edges, and it has only been proven on Claude.*
 
-Each piece of work has one owner, gets reviewed, and leaves an audit log you can verify. The rules that matter are enforced by code, not by asking a model nicely.
+You describe a business, and Claude Code designs a company for it: departments, roles, and skills from GitHub that are checked before they're used. You approve it, and then you give it commands. It works only when you give it a command, and it remembers between commands: every role, from the CEO down, keeps its own memory and knows what it's working on.
+
+## Multi-agent orchestration for Claude Code
+
+Each piece of work has one owner, gets reviewed, and leaves an audit log you can verify. Each role runs as its own subagent, which sees only its own assignment, memory, and skills. The rules that matter are enforced by code, not by asking a model nicely.
+
+- **A company from one description**, adapted from five industry templates, in any language. It proposes, and a person approves.
+- **Skills from GitHub, vetted first.** `skill-customs` pins each one to a commit and checks its license and content, and a model judges which ones fit each role. It can also be used [on its own](packages/skill-customs/README.md).
+- **A permanent company.** Roles have their own memory, departments and the company have shared memory, and later commands get the finished work of earlier ones.
+- **Reviews that can't be skipped.** QA reviews everything. Legal review is triggered by what the work is, whatever a model declares.
+- **Rules held by code.** Work must report on every item of its brief. Reviews can't approve with blockers. Unmet criteria and unverified claims reach you even if a final report leaves them out. Every command stops at a token limit: 40,000 for a small one and 150,000 for a large one, by default. [Tests play a misbehaving model](packages/try-professional/tests/test_misbehaving_model.py) against these.
+- **Real separation over MCP.** Each role's server shows it only its own assignment, memory, and skills, and the session's server can't do a role's work.
+
+## How it works
+
+```text
+/company <your command>
+    |
+    v
+CEO: turns it into criteria someone can check
+    |
+    v
+Department: does the work  <-------- sent back, saying what's wrong
+    |                                    ^
+    v                                    |
+QA reviews it, and then Legal, if it's public or touches licenses or personal data
+    |
+    v
+CEO: the final report, in your language
+    |
+    v
+deliverables/<run-id>/index.md, and an audit log
+```
+
+1. **Design.** Claude Code calls the `trypro` tools to adapt one of five industry templates to your business, and to match skills to roles. [`skill-customs`](packages/skill-customs/README.md) pins each skill to a commit, and checks its license and content.
+2. **Approve.** You read the proposal and approve it in a terminal. No model can do this.
+3. **Roles.** `trypro agents claude-code` writes one subagent per role. Each has no shell and no file tools, only a server bound to that role.
+4. **Commands.** Your session only coordinates. It can see who's next, and it can't read an assignment or submit anything. A small command goes straight to one role, and a large one is planned by department heads.
+5. **Memory.** Roles keep their own memory, and later commands get the finished work of earlier ones.
 
 ## Quickstart
 
@@ -65,15 +103,6 @@ trypro decide <run-id> <request-id> resume    Answer a command that stopped to a
 /company continue <run-id>                    Then carry on with it
 trypro cancel <run-id>                        Stop it. Its records stay
 ```
-
-## What works
-
-- **A company from one description**, adapted from five industry templates, in any language. It proposes, and a person approves.
-- **Skills from GitHub, vetted first.** `skill-customs` pins each one to a commit and checks its license and content, and a model judges which ones fit each role. It can also be used [on its own](packages/skill-customs/README.md).
-- **A permanent company.** Roles have their own memory, departments and the company have shared memory, and later commands get the finished work of earlier ones.
-- **Reviews that can't be skipped.** QA reviews everything. Legal review is triggered by what the work is, whatever a model declares.
-- **Rules held by code.** Work must report on every item of its brief. Reviews can't approve with blockers. Unmet criteria and unverified claims reach you even if a final report leaves them out. Every command stops at a token limit: 40,000 for a small one and 150,000 for a large one, by default. [Tests play a misbehaving model](packages/try-professional/tests/test_misbehaving_model.py) against these.
-- **Real separation over MCP.** Each role's server shows it only its own assignment, memory, and skills, and the session's server can't do a role's work.
 
 ## What was tested, and how
 
@@ -144,12 +173,22 @@ On DeepSeek through the API runner, the one small command that finished took 25,
 - **It works with files only.** It doesn't publish, send, buy, render video, or browse the web unless you turn on search. Its output tells you what a person must check.
 - **It can't check facts without sources.** With no web access, it marks claims as unverified, and leaves placeholders such as `[Bakery name]` or `[ISI PROMO]` for you to fill in.
 - **Reviews aren't proof.** [The test above](docs/research/qa_gates/README.md) is small, and a weak reviewer can still approve weak work. They can also be too strict, and send back good work.
-- **A command can stop at its token limit.** Rework costs tokens. In one acceptance run a small command stopped at its 40,000 limit just short of finishing, and asked a person, and in the run that finished the same command used about 37,800. Until it finishes, its work isn't exported as files.
+- **A command can stop at its token limit.** Rework costs tokens. In one acceptance run a small command stopped at its 40,000 limit just short of finishing, and asked a person, and in the run that finished the same command used about 37,800. Until it finishes, its work isn't exported as files. Once you answer its question, `/company continue <run-id>` picks it up, and it did finish when we tried it.
 - **Over MCP, token limits run on an estimate** of what passes through the server, which undercounts by several times, so the 40,000 above is that estimate. Your client's own limits matter more there.
 - **Keep Claude Code's permission prompts on.** Your own session only coordinates through its server, but with every permission on it also has a shell. Approving a company and answering a run's questions refuse anything but a real terminal, and a session with a shell could still change your files, including the company's records. In testing, one with every permission on tried to answer a budget question for its person, which is why those checks exist.
 - **Operator mode over MCP** has one model play every role, so separation there is only procedural. `trypro agents claude-code` doesn't use it.
 - **Indonesian output hasn't been reviewed by a native speaker.** Other languages haven't been tried on full commands. Retrieval queries in other languages haven't been natively reviewed either.
 - **The journey ran on one Windows machine,** and on Claude Code 2.1.319. Linux and macOS have only run the test suite.
+
+## FAQ
+
+**How is this different from using one agent?** One agent is cheaper and faster, and for a small one-off job it's probably the better choice. Here, reviews alone took 39% to 46% of the output tokens on small commands. What that buys is a reviewer who didn't do the work, memory for each role across commands, and an audit log. No comparison of results has been measured yet.
+
+**How is it different from a flat swarm?** In a swarm, agents work side by side. Here work flows through a hierarchy, each piece has one owner, and a role can't see another role's memory or assignments, because its server won't show them. We haven't measured whether that gives better results. That benchmark is on the roadmap.
+
+**What does a command cost?** On a Claude plan, it comes out of your plan's usage. At API list prices, the small commands we measured came to about $0.13 to $0.66, and the largest to $1.67. Rework makes it cost more. See [the tables](#what-it-costs). A command stops and asks you at 40,000 tokens if small, or 150,000 if large.
+
+**Which models work?** It has been proven on `claude-sonnet-5-5` and `claude-haiku-5-5`, through Claude Code. On `deepseek-v4.1-flash-1017`, the same small command finished in one run of three. No other model has been tried. See [what was tested](#what-was-tested-and-how).
 
 ## Experimental
 

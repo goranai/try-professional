@@ -5,18 +5,23 @@ build-backend = "hatchling.build"
 [project]
 name = "try-professional"
 dynamic = ["version"]
-description = "Turn an agent into a permanent company: hierarchy, memory per role, review gates enforced by code, and a verifiable audit log. Preview."
+description = "Turn Claude Code into a permanent AI company: a hierarchy of agents with roles, memory and vetted skills, and review gates enforced by code. Multi-agent orchestration via MCP."
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
-keywords = ["agents", "llm", "orchestration", "multi-agent", "hierarchy"]
+keywords = ["ai-agents", "multi-agent", "agent-orchestration", "hierarchical-agents", "claude-code", "claude", "mcp", "model-context-protocol", "agent-skills", "agent-memory", "llm"]
 classifiers = [
   "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
   "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Software Development :: Libraries :: Application Frameworks",
 ]
 dependencies = [
   "httpx>=0.27,<1",
@@ -31,6 +36,12 @@ dependencies = [
 [project.optional-dependencies]
 anthropic = ["anthropic>=2,<3"]
 mcp = ["mcp>=2,<3"]
+
+[project.urls]
+Homepage = "https://github.com/goranai/try-professional"
+Repository = "https://github.com/goranai/try-professional"
+Documentation = "https://github.com/goranai/try-professional#quickstart"
+Issues = "https://github.com/goranai/try-professional/issues"
 
 [project.scripts]
 trypro = "try_professional.cli:main"
