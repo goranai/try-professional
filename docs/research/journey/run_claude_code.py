@@ -68,6 +68,8 @@ ROLE_TIMEOUT_SECONDS = 1200
 WAIT_FOR_LIMIT_SECONDS = 600
 MAX_LIMIT_WAITS = 200
 SAMPLE_SECONDS = 3
+UPDATE_WAITS = 20
+UPDATE_WAIT_SECONDS = 30
 _LIMIT = re.compile(r"usage limit|rate.?limit|limit reached|hit your limit|too many requests|overloaded", re.IGNORECASE)
 _ROLE_SYSTEM = """You are one role in a company, and you work on one assignment, then stop.
 
@@ -100,9 +102,13 @@ def _claude() -> str:
         raise SystemExit("Claude Code isn't on the PATH.")
     if found.lower().endswith(".cmd"):
         program = Path(found).parent / "node_modules" / "@anthropic-ai" / "claude-code" / "bin" / "claude.exe"
-        if not program.is_file():
-            raise SystemExit(f"Can't find the program behind {found}, and running through it isn't safe.")
-        return str(program)
+        # Claude Code can update itself while this runs, and its program is briefly missing.
+        for _ in range(UPDATE_WAITS):
+            if program.is_file():
+                return str(program)
+            print(f"Claude Code's program is missing, perhaps updating, so waiting {UPDATE_WAIT_SECONDS}s.", flush=True)
+            time.sleep(UPDATE_WAIT_SECONDS)
+        raise SystemExit(f"Can't find the program behind {found}, and running through it isn't safe.")
     return found
 
 
@@ -334,9 +340,11 @@ async def run_command(
         run_id = started["run_id"]
         progress.data["open"][label] = run_id
         progress.save()
-    usage = _empty_usage()
-    by_role: dict[str, Any] = {}
-    by_purpose: dict[str, Any] = {}
+    # Kept in the progress file, so a command that's resumed still reports everything it spent.
+    saved = progress.data.setdefault("open_usage", {}).setdefault(
+        label, {"usage": _empty_usage(), "by_role": {}, "by_purpose": {}}
+    )
+    usage, by_role, by_purpose = saved["usage"], saved["by_role"], saved["by_purpose"]
     tries: dict[str, int] = {}
     started_at = time.monotonic()
     print(f"[{label}] {goal}", flush=True)

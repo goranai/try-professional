@@ -1,7 +1,8 @@
 """Set a company up for Claude Code: one subagent per role, each held to one bound MCP server.
 
 A role's subagent gets no shell and no file tools, only the server started for it. So it can't read another role's
-memory, or the rest of the company, whatever it tries. The pipeline decides what each one sees.
+memory, or the rest of the company, whatever it tries. The pipeline decides what each one sees. The session itself gets
+a coordinator's server, which can't read an assignment or submit anything, so it can't do a role's work either.
 """
 
 from __future__ import annotations
@@ -17,6 +18,9 @@ import yaml
 from ...org import Org, Role
 
 SERVER = "trypro"
+# Not the session's name. Claude Code gave a subagent the session's server when the two names matched, so a "bound"
+# role was really acting through the operator, and one subagent did every role's work.
+ROLE_SERVER = "trypro_role"
 _MODELS = {"executive": "sonnet", "standard": "sonnet", "fast": "haiku"}
 _ROLE_PROMPT = """You are {title} at {company}. You work on one assignment, then stop.
 
@@ -37,12 +41,12 @@ argument-hint: <what you want done>
 
 Run this command through the company: $ARGUMENTS
 
-You're the operator, not a role in the company, so never do a role's work yourself, and don't summarize one role's \
-work for another. Use the {server} MCP tools:
+You coordinate, and you aren't a role in the company. Your {server} tools can't do a role's work, and they don't show \
+you what a role was asked. Use them like this:
 
 1. Call run_start with the command as written. It returns a run_id, and the first actions.
 2. For each action, start the subagent named trypro-<department>-<role> for its role (a role of marketing/seo is \
-trypro-marketing-seo). Give it only the run_id. Run them one at a time.
+trypro-marketing-seo). Give it only the run_id. Run them one at a time. Never add what another role did.
 3. Call run_next_action, and repeat until its status isn't "working".
 4. If its status is "blocked", show me the questions under needs_a_person, with their commands. Only I can answer them.
 5. If its status is "done", tell me what came back, including everything under known_limits, and where the \
@@ -64,10 +68,10 @@ def _command() -> tuple[str, list[str]]:
 
 
 def server_config(root: Path, role: str | None = None) -> dict[str, Any]:
+    """A role's server, or with no role, a coordinator's."""
     command, prefix = _command()
     args = [*prefix, "mcp", "--dir", str(root.resolve()).replace("\\", "/")]
-    if role:
-        args += ["--role", role]
+    args += ["--role", role] if role else ["--coordinator"]
     return {"type": "stdio", "command": command, "args": args}
 
 
@@ -75,9 +79,9 @@ def role_agent(root: Path, org: Org, role: Role) -> str:
     front = {
         "name": agent_name(role.ref),
         "description": f"{role.display_name} at {org.company_name}. {role.mission}"[:300],
-        "tools": f"mcp__{SERVER}__*",
+        "tools": f"mcp__{ROLE_SERVER}__*",
         "model": _MODELS.get(role.model_tier, "sonnet"),
-        "mcpServers": [{SERVER: server_config(root, role.ref)}],
+        "mcpServers": [{ROLE_SERVER: server_config(root, role.ref)}],
     }
     header = yaml.safe_dump(front, sort_keys=False, allow_unicode=True).strip()
     body = _ROLE_PROMPT.format(title=role.display_name, company=org.company_name)
@@ -105,4 +109,13 @@ def write_claude_code_files(root: Path, org: Org) -> list[Path]:
     existing_config.setdefault("mcpServers", {})[SERVER] = server_config(root)
     mcp.write_text(json.dumps(existing_config, indent=2) + "\n", encoding="utf-8", newline="\n")
     written.append(mcp)
+    # Without this, Claude Code asks a person to allow every tool call of every role.
+    settings = root / ".claude" / "settings.json"
+    existing_settings: dict[str, Any] = json.loads(settings.read_text(encoding="utf-8")) if settings.is_file() else {}
+    allow = existing_settings.setdefault("permissions", {}).setdefault("allow", [])
+    for rule in (f"mcp__{SERVER}__*", f"mcp__{ROLE_SERVER}__*"):
+        if rule not in allow:
+            allow.append(rule)
+    settings.write_text(json.dumps(existing_settings, indent=2) + "\n", encoding="utf-8", newline="\n")
+    written.append(settings)
     return written

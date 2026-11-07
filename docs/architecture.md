@@ -1004,7 +1004,11 @@ Recall@5 for the same labelled skills queried in English, Indonesian, Spanish, C
 
 Nothing is marked complete without passing tests. Each phase ends with what was built, what was tested and what is missing.
 
-**Status (2026-11-06):** Phases 1 to 4 pass their tests and are pushed. Loadouts (4a) pass their tests and aren't committed. Phases 2 and 3 have run end to end on a live provider, with memory on. Skills (Phases 4 and 4a) have only run with a scripted model, because `skills.lock` is empty, though matching was measured separately on real public skill files. Phase 5 has started: the MCP server and template adapter pass their tests, uncommitted, and Hermes is paused. **Phase 4b is approved and in progress.** Phase numbers 5 to 7 stay the same, so earlier references still hold.
+**Status (2026-11-07):** the release plan changed. v0.1.0 ships as a preview with the org generator, loadouts, `skill-customs`, the permanent company, playbooks, and the MCP adapter. **Moved to v0.2:** self-refinement and cheap-model parity (4d), the Hermes adapter, the three-way benchmark, and dreaming. The table below is the original plan, and those rows now belong to v0.2.
+
+The permanent-company journey (4c) ran on Claude through the MCP adapter, with each role as its own process, on three businesses. See `docs/research/journey/README.md`. **It proves the system and the MCP path, and it doesn't prove quality on a cheap model.**
+
+Rules that matter are now enforced by code, whichever model runs, and `test_misbehaving_model.py` plays a bad model against them. Every command has a token limit by default. Each company shares one embedding process. `trypro check-model` needs a model to finish one small real command before calling it suitable.
 
 | Phase | Builds | Exit criteria |
 |---|---|---|

@@ -9,7 +9,14 @@ from typing import Any
 import pytest
 import yaml
 
-from try_professional.adapters.mcp.claude_code import agent_name, role_agent, server_config, write_claude_code_files
+from try_professional.adapters.mcp.claude_code import (
+    ROLE_SERVER,
+    SERVER,
+    agent_name,
+    role_agent,
+    server_config,
+    write_claude_code_files,
+)
 from try_professional.generator import activate, load_proposal
 from try_professional.generator.pull import PullError, begin_design, proposal_status, submit_design, submit_judgment
 from try_professional.generator.templates import load_template
@@ -132,12 +139,17 @@ class TestClaudeCodeFiles:
     def test_a_role_gets_only_its_own_bound_server(self, tmp_path: Path, org: Any) -> None:
         front = self._front(role_agent(tmp_path, org, org.role("engineering/backend")))
         assert front["name"] == agent_name("engineering/backend") == "trypro-engineering-backend"
-        assert front["tools"] == "mcp__trypro__*", "no shell, no file tools"
-        args = front["mcpServers"][0]["trypro"]["args"]
+        assert front["tools"] == f"mcp__{ROLE_SERVER}__*", "no shell, no file tools"
+        args = front["mcpServers"][0][ROLE_SERVER]["args"]
         assert "--role" in args and "engineering/backend" in args
 
-    def test_the_operator_server_acts_as_no_role(self, tmp_path: Path) -> None:
-        assert "--role" not in server_config(tmp_path)["args"]
+    def test_a_roles_server_isnt_named_like_the_sessions(self) -> None:
+        """Claude Code used the session's server when they matched, so a role wasn't bound to anything."""
+        assert ROLE_SERVER != SERVER
+
+    def test_the_session_only_coordinates(self, tmp_path: Path) -> None:
+        args = server_config(tmp_path)["args"]
+        assert "--coordinator" in args and "--role" not in args
 
     def test_it_writes_one_agent_per_role_and_keeps_other_mcp_servers(self, tmp_path: Path, org: Any) -> None:
         (tmp_path / ".mcp.json").write_text('{"mcpServers": {"mine": {"command": "x"}}}', encoding="utf-8")
@@ -145,7 +157,14 @@ class TestClaudeCodeFiles:
         assert len(list((tmp_path / ".claude" / "agents").glob("trypro-*.md"))) == len(org.roles)
         assert (tmp_path / ".claude" / "commands" / "company.md").is_file()
         config = (tmp_path / ".mcp.json").read_text(encoding="utf-8")
-        assert '"mine"' in config and '"trypro"' in config
+        assert '"mine"' in config and '"trypro"' in config and "--coordinator" in config
+
+    def test_it_allows_only_its_own_tools_and_keeps_other_settings(self, tmp_path: Path, org: Any) -> None:
+        (tmp_path / ".claude").mkdir()
+        (tmp_path / ".claude" / "settings.json").write_text('{"permissions": {"allow": ["Read"]}}', encoding="utf-8")
+        write_claude_code_files(tmp_path, org)
+        settings = yaml.safe_load((tmp_path / ".claude" / "settings.json").read_text(encoding="utf-8"))
+        assert settings["permissions"]["allow"] == ["Read", f"mcp__{SERVER}__*", f"mcp__{ROLE_SERVER}__*"]
 
     def test_the_command_never_answers_for_the_person(self, tmp_path: Path, org: Any) -> None:
         write_claude_code_files(tmp_path, org)

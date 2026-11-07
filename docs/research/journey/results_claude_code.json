@@ -1,0 +1,1137 @@
+{
+ "catering": {
+  "template": "general-company",
+  "design_usage": {
+   "input": 6,
+   "cache_write": 7685,
+   "cache_read": 7614,
+   "output": 1343,
+   "cost_usd_at_list_price": 0.04494,
+   "processes": 1
+  },
+  "judge_usage": {
+   "input": 30,
+   "cache_write": 34978,
+   "cache_read": 239043,
+   "output": 6081,
+   "cost_usd_at_list_price": 0.01243,
+   "processes": 1
+  },
+  "role_processes_stuck": [],
+  "commands": [
+   {
+    "label": "large",
+    "goal": "Write a weekly lunch menu and a price list for a new office client with 30 people.",
+    "status": "done",
+    "minutes": 1.6,
+    "usage": {
+     "input": 36,
+     "cache_write": 26552,
+     "cache_read": 88837,
+     "output": 6360,
+     "cost_usd_at_list_price": 0.17878,
+     "processes": 6
+    },
+    "usage_note": null,
+    "tokens_estimated_by_server": 10816,
+    "counters": {
+     "invalid_outputs": 0,
+     "rework_loops": 0,
+     "failed_invocations": 0,
+     "escalations": 0,
+     "handoffs": 0,
+     "violations": 0,
+     "package_overruns": 0,
+     "assignments": 6,
+     "amendments": 0
+    },
+    "company_peak_ram_mb": null,
+    "lowest_free_ram_mb": null,
+    "final": {
+     "summary_in_user_language": "I wrote a Monday-to-Friday lunch menu and a price list for the 30-person office client. The menu is: Mon lemon-herb chicken with rice pilaf; Tue vegetable lasagna; Wed chickpea and spinach curry; Thu baked salmon with roast potatoes; Fri falafel wrap. Allergens and vegetarian, vegan, halal and gluten-free options are marked for each day. Prices are 11.50, 10.50, 10.00, 13.00 and 10.50 USD per person per day. That comes to 55.50 USD per person for the week, or 1,665.00 USD for all 30 people. An optional fruit cup costs 1.50 per person per day, which is 225.00 for the week for 30 people. The brief gave no currency, budget or dietary needs, so I assumed USD, five working days, and that all 30 people eat every day. Prices exclude tax and delivery. The prices are placeholders, not costed from ingredients. The allergen and halal notes are not verified. Please confirm the client's dietary needs and budget, and have someone check margins and ingredients before sending it.",
+     "artifact_refs": [],
+     "criteria_results": [
+      {
+       "criterion": "A weekly lunch menu exists covering each working day",
+       "met": true,
+       "evidence": "The Mon-Fri menu has one main and one side per day, with allergen and dietary marks."
+      },
+      {
+       "criterion": "A price list exists covering menu items, with per-person and/or total pricing for 30 people",
+       "met": true,
+       "evidence": "The price table gives per-person and 30-person totals for all 5 items. The week total is 55.50 per person and 1,665.00 USD for 30. The optional fruit add-on is 225.00 per week."
+      },
+      {
+       "criterion": "Assumptions (currency, dietary options, working days) are stated explicitly",
+       "met": true,
+       "evidence": "The ASSUMPTIONS section states USD, Mon-Fri, full attendance, a general-purpose dietary mix, and that tax, delivery and discounts are excluded."
+      }
+     ],
+     "known_limits": [
+      "Prices are placeholders. They are not costed against ingredient prices or a client budget, and margin has not been checked.",
+      "The client's dietary needs, currency and budget are unknown and need confirming.",
+      "Allergen notes are based on typical recipes and are not verified against actual ingredients or suppliers. Halal depends on certified sourcing.",
+      "No allowance for absences, delivery fees, tax or volume discount.",
+      "Open in 'Produce a weekly lunch menu and matching price list for a new office client of 30 people.': Prices are not costed against real ingredient costs or any client budget; the ops lead should check margin.",
+      "Open in 'Produce a weekly lunch menu and matching price list for a new office client of 30 people.': Client dietary needs, currency and budget are unknown and should be confirmed.",
+      "Open in 'Produce a weekly lunch menu and matching price list for a new office client of 30 people.': Allergen notes are unverified against actual recipes and suppliers; halal depends on certified sourcing."
+     ]
+    },
+    "by_purpose": {
+     "intake": {
+      "input": 6,
+      "cache_write": 3066,
+      "cache_read": 13803,
+      "output": 595,
+      "cost_usd_at_list_price": 0.01961,
+      "processes": 1
+     },
+     "execute": {
+      "input": 6,
+      "cache_write": 5464,
+      "cache_read": 14706,
+      "output": 2220,
+      "cost_usd_at_list_price": 0.04554,
+      "processes": 1
+     },
+     "review": {
+      "input": 18,
+      "cache_write": 13237,
+      "cache_read": 45238,
+      "output": 2491,
+      "cost_usd_at_list_price": 0.08243,
+      "processes": 3
+     },
+     "integrate": {
+      "input": 6,
+      "cache_write": 4785,
+      "cache_read": 15090,
+      "output": 1054,
+      "cost_usd_at_list_price": 0.0312,
+      "processes": 1
+     }
+    },
+    "size": "small",
+    "verdicts": {
+     "approve": 3,
+     "changes_requested": 0,
+     "block": 0
+    },
+    "gates_by_task": {
+     "wp1/t1": [
+      "qa",
+      "legal"
+     ],
+     "__final__": [
+      "legal"
+     ]
+    }
+   },
+   {
+    "label": "small",
+    "goal": "Write a two-sentence reply to a customer asking whether we cover vegetarian meals.",
+    "status": "done",
+    "minutes": 1.3,
+    "usage": {
+     "input": 40,
+     "cache_write": 24500,
+     "cache_read": 102816,
+     "output": 4254,
+     "cost_usd_at_list_price": 0.1509,
+     "processes": 6
+    },
+    "usage_note": null,
+    "tokens_estimated_by_server": 9187,
+    "counters": {
+     "invalid_outputs": 0,
+     "rework_loops": 0,
+     "failed_invocations": 0,
+     "escalations": 0,
+     "handoffs": 0,
+     "violations": 0,
+     "package_overruns": 0,
+     "assignments": 6,
+     "amendments": 0
+    },
+    "company_peak_ram_mb": null,
+    "lowest_free_ram_mb": null,
+    "final": {
+     "summary_in_user_language": "Here is the two-sentence reply to the customer: \"Thank you for asking. Yes, our office lunch menu includes vegetarian options, and we are happy to talk through your team's dietary needs so we can plan the right choices.\" It says yes to vegetarian meals. It doesn't name specific dishes, days, allergens or prices, because the sample menu rests on assumptions and its allergen details are unconfirmed.",
+     "artifact_refs": [
+      "art-1e554d2cb1ee01ffe284cc34",
+      "art-f8fb5ff787a75f68021718a2"
+     ],
+     "criteria_results": [
+      {
+       "criterion": "Reply is exactly two sentences",
+       "met": true,
+       "evidence": "The body has 'Thank you for asking.' and 'Yes, our office lunch menu includes ... right choices.' That makes two sentences."
+      },
+      {
+       "criterion": "Directly answers whether vegetarian meals are covered",
+       "met": true,
+       "evidence": "It says 'Yes, our office lunch menu includes vegetarian options'. The approved weekly menu supports this: Tue vegetable lasagna, Wed chickpea curry, Fri falafel wrap."
+      },
+      {
+       "criterion": "Tone is polite and customer-appropriate",
+       "met": true,
+       "evidence": "It thanks the customer and offers to help. It makes no promises on price, dates or refunds."
+      }
+     ],
+     "known_limits": [
+      "I read the menu source only through the claims in the approved content. I did not open the source file myself.",
+      "Allergen details and the sample menu's assumptions are unconfirmed. The reply makes no claims about them.",
+      "The reply says 'office lunch menu'. I could not check that this matches what the customer actually asked about.",
+      "Unverified, check before using: The sample menu was built on assumptions and allergen details are unconfirmed; the reply makes no claims on specific dishes, days, allergens or prices."
+     ]
+    },
+    "by_purpose": {
+     "intake": {
+      "input": 6,
+      "cache_write": 3071,
+      "cache_read": 13960,
+      "output": 459,
+      "cost_usd_at_list_price": 0.01828,
+      "processes": 1
+     },
+     "execute": {
+      "input": 8,
+      "cache_write": 5739,
+      "cache_read": 23035,
+      "output": 1314,
+      "cost_usd_at_list_price": 0.03842,
+      "processes": 1
+     },
+     "review": {
+      "input": 20,
+      "cache_write": 11984,
+      "cache_read": 51561,
+      "output": 1675,
+      "cost_usd_at_list_price": 0.06988,
+      "processes": 3
+     },
+     "integrate": {
+      "input": 6,
+      "cache_write": 3706,
+      "cache_read": 14260,
+      "output": 806,
+      "cost_usd_at_list_price": 0.02432,
+      "processes": 1
+     }
+    },
+    "size": "small",
+    "verdicts": {
+     "approve": 3,
+     "changes_requested": 0,
+     "block": 0
+    },
+    "gates_by_task": {
+     "wp1/t1": [
+      "qa",
+      "legal"
+     ],
+     "__final__": [
+      "legal"
+     ]
+    }
+   },
+   {
+    "label": "later",
+    "goal": "Write next week's menu for the same office client, without repeating last week's dishes.",
+    "status": "done",
+    "minutes": 1.2,
+    "usage": {
+     "input": 28,
+     "cache_write": 22852,
+     "cache_read": 78370,
+     "output": 5774,
+     "cost_usd_at_list_price": 0.15704,
+     "processes": 4
+    },
+    "usage_note": null,
+    "tokens_estimated_by_server": 9608,
+    "counters": {
+     "invalid_outputs": 0,
+     "rework_loops": 0,
+     "failed_invocations": 0,
+     "escalations": 0,
+     "handoffs": 0,
+     "violations": 0,
+     "package_overruns": 0,
+     "assignments": 4,
+     "amendments": 0
+    },
+    "company_peak_ram_mb": null,
+    "lowest_free_ram_mb": null,
+    "final": {
+     "summary_in_user_language": "Next week's Mon-Fri lunch menu for the 30-person office client is drafted. Mon: turkey and bean chili with brown rice. Tue: mushroom and spinach quiche with roasted vegetable salad. Wed: sweet potato and black bean burrito bowl. Thu: herb-crusted baked cod with quinoa and carrots. Fri: penne arrabbiata with roasted Mediterranean vegetables. Each day has allergen and dietary notes. The menu also has a placeholder price list: 53.50 USD per person, 1,605.00 USD for the week. None of the mains or sides match last week's menu (chicken pilaf, veg lasagna, chickpea curry, baked salmon, falafel wrap). I took 'last week' to be the approved menu from run-f515781ea9d5, the only earlier menu in the workspace. Please confirm that is what was actually served. Prices, allergen and halal notes, and the staff's dietary needs are unverified assumptions.",
+     "artifact_refs": [],
+     "criteria_results": [
+      {
+       "criterion": "A complete menu for next week is delivered",
+       "met": true,
+       "evidence": "The menu-planner's output has a Mon-Fri main and side for each day, with allergen and dietary marks and a price list. I did not check the menu against the source files myself."
+      },
+      {
+       "criterion": "No dish appears that was on last week's menu (checkable by comparison)",
+       "met": true,
+       "evidence": "The menu-planner compared the menu against the earlier approved menu, inputs/earlier/run-f515781ea9d5/operations-menu-planner-wp1-t1.md, and listed the comparison. No main or side matches. Caveat: that file is assumed to be last week's served menu, and nothing records what was actually served."
+      },
+      {
+       "criterion": "Menu is suitable for the same client's 30 people",
+       "met": true,
+       "evidence": "Portions are sized for 30 people over 5 days, with vegetarian, vegan, halal and gluten-free options. Suitability is not verified, because the staff's actual dietary needs are unknown."
+      }
+     ],
+     "known_limits": [
+      "Last week's menu is assumed to be the approved menu in run-f515781ea9d5. Nothing shows it was actually served, so please confirm.",
+      "Prices (USD) are placeholders and have not been costed against ingredients or a client budget. Someone should check margin.",
+      "Allergen and halal notes come from typical recipes and have not been checked against actual ingredients or suppliers.",
+      "The client's dietary needs, currency and budget are unconfirmed. Collect the staff's needs and add swap mains.",
+      "Open in 'Produce next week's lunch menu for the existing 30-person office client using only dishes not served last week.': Last week's menu was assumed to be the approved menu in run-f515781ea9d5. No record shows what was actually served. Please confirm.",
+      "Open in 'Produce next week's lunch menu for the existing 30-person office client using only dishes not served last week.': Prices are placeholders, not costed against ingredients or a client budget. The ops lead should check margin.",
+      "Open in 'Produce next week's lunch menu for the existing 30-person office client using only dishes not served last week.': Allergen and halal notes are based on typical recipes and are unverified against actual ingredients and suppliers.",
+      "Open in 'Produce next week's lunch menu for the existing 30-person office client using only dishes not served last week.': The client's dietary needs, currency and budget are unconfirmed."
+     ]
+    },
+    "by_purpose": {
+     "intake": {
+      "input": 6,
+      "cache_write": 3151,
+      "cache_read": 14027,
+      "output": 459,
+      "cost_usd_at_list_price": 0.01861,
+      "processes": 1
+     },
+     "execute": {
+      "input": 8,
+      "cache_write": 7939,
+      "cache_read": 23921,
+      "output": 2965,
+      "cost_usd_at_list_price": 0.06381,
+      "processes": 1
+     },
+     "review": {
+      "input": 8,
+      "cache_write": 6829,
+      "cache_read": 25239,
+      "output": 1228,
+      "cost_usd_at_list_price": 0.04214,
+      "processes": 1
+     },
+     "integrate": {
+      "input": 6,
+      "cache_write": 4933,
+      "cache_read": 15183,
+      "output": 1122,
+      "cost_usd_at_list_price": 0.03248,
+      "processes": 1
+     }
+    },
+    "size": "small",
+    "verdicts": {
+     "approve": 1,
+     "changes_requested": 0,
+     "block": 0
+    },
+    "gates_by_task": {
+     "wp1/t1": [
+      "qa"
+     ],
+     "__final__": []
+    }
+   }
+  ]
+ },
+ "shorts": {
+  "template": "youtube-shorts-studio",
+  "design_usage": {
+   "input": 8,
+   "cache_write": 10075,
+   "cache_read": 14179,
+   "output": 828,
+   "cost_usd_at_list_price": 0.05001,
+   "processes": 1
+  },
+  "judge_usage": {
+   "input": 38,
+   "cache_write": 52552,
+   "cache_read": 448039,
+   "output": 10270,
+   "cost_usd_at_list_price": 0.02013,
+   "processes": 1
+  },
+  "role_processes_stuck": [],
+  "commands": [
+   {
+    "label": "large",
+    "goal": "Make 5 Shorts about AI tools for this week.",
+    "status": "done",
+    "minutes": 9.8,
+    "usage": {
+     "input": 134,
+     "cache_write": 172426,
+     "cache_read": 454803,
+     "output": 55696,
+     "cost_usd_at_list_price": 1.29241,
+     "processes": 19
+    },
+    "usage_note": null,
+    "tokens_estimated_by_server": 80606,
+    "counters": {
+     "invalid_outputs": 3,
+     "rework_loops": 0,
+     "failed_invocations": 0,
+     "escalations": 0,
+     "handoffs": 0,
+     "violations": 0,
+     "package_overruns": 1,
+     "assignments": 20,
+     "amendments": 0
+    },
+    "company_peak_ram_mb": 829,
+    "lowest_free_ram_mb": 2475,
+    "final": {
+     "summary_in_user_language": "I did not make 5 finished Shorts. I made the planning material for them: five topics, five scripts, five edit briefs and five thumbnail briefs. The topics are Google vs Perplexity, NotebookLM turning a PDF into audio, building an app with Cursor, an ElevenLabs voiceover, and 3 prompts for Claude or ChatGPT. Each script has a hook, body and call to action, and is estimated at 40-50 seconds. The scripts leave the demo results as bracketed placeholders, so you have to run and record each demo yourself and film the real results. No video or thumbnail image exists yet. Nothing was checked online. The topics are not confirmed as current or trending, and the tools' features, pricing and terms are unverified. You need to check the vendors' terms for showing their logos and interfaces, and YouTube's AI-disclosure rules, before publishing. Script 5's title says 'Might Save You an Hour', but that is untested, so time it or soften it.",
+     "artifact_refs": [],
+     "criteria_results": [
+      {
+       "criterion": "5 distinct Shorts are delivered",
+       "met": false,
+       "evidence": "Five distinct scripts, edit briefs and thumbnail briefs exist, but no Short was produced or delivered."
+      },
+      {
+       "criterion": "Each Short covers an AI tool topic",
+       "met": true,
+       "evidence": "The scripts cover Perplexity, NotebookLM, Cursor, ElevenLabs, and Claude/ChatGPT prompting. This is true of the planned content only, since no video exists."
+      },
+      {
+       "criterion": "All are completed within this week",
+       "met": false,
+       "evidence": "Nothing is complete. The videos still need to be recorded and edited, so no Short is finished."
+      },
+      {
+       "criterion": "Each has a script and produced video",
+       "met": false,
+       "evidence": "All five have scripts. None has a produced video. The edit briefs and thumbnail briefs are instructions only, with no footage or images."
+      }
+     ],
+     "known_limits": [
+      "No videos or thumbnail images were produced. The creator must record the screen demos and voiceover, then edit.",
+      "Topic research is unverified: no sources, no current or trending data, and no internet access.",
+      "The tools' features, pricing, free-tier limits and terms are unchecked.",
+      "Vendor terms for on-screen use of logos and UIs, AI voice and audio output terms, and YouTube AI-disclosure rules are all unchecked.",
+      "Durations are estimated at 150 words per minute and were not timed aloud.",
+      "The Script 5 title claim 'save an hour' is unmeasured. The thumbnail avoids it, but the script title still includes it.",
+      "Thumbnail contrast and phone-size legibility are untested.",
+      "Unverified, check before using: 1. Perplexity (AI answer/search engine). Angle: 'Google vs Perplexity: same question, 60 seconds'. Rationale: well-known tool with an easy side-by-side demo. Nothing here is claimed as current or tren",
+      "Unverified, check before using: 2. NotebookLM (Google). Angle: 'Turn any PDF into a podcast in 60 seconds'. Rationale: visual, shareable demo for a general audience. Nothing here is claimed as current or trending; features and avail",
+      "Unverified, check before using: 3. Cursor (AI code editor). Angle: 'Build a small app by just describing it'. Rationale: appeals to the beginner-coder and 'vibe coding' audience. Nothing here is claimed as current or trending.",
+      "Unverified, check before using: 4. ElevenLabs (AI voice/text-to-speech). Angle: 'Make a realistic voiceover from text in one minute'. Rationale: directly useful to Shorts creators. Nothing here is claimed as current or trending; pri",
+      "Unverified, check before using: 5. Claude or ChatGPT prompting tricks (general assistants). Angle: '3 prompts that save an hour'. Rationale: evergreen, high-utility format. Nothing here is claimed as current or trending; the specifi",
+      "Unverified, check before using: WHAT A PERSON SHOULD CHECK (applies to all 5, all unverified): (a) latest release or feature news for each tool, from the vendor's blog or changelog, dated within the past 2 weeks; (b) trending status",
+      "Unverified, check before using: All five tools' capabilities are described only generally and cautiously (e.g. 'may write a summary', 'look for an option')",
+      "Open in 'Edit briefs for 5 Shorts (shot list, on-screen text, license notes)': All license, terms and disclosure points are unverified; a person must check them on the vendor and YouTube pages before publishing.",
+      "Open in 'Edit briefs for 5 Shorts (shot list, on-screen text, license notes)': Final timings depend on the creator's real recordings and were not timed aloud.",
+      "Open in 'Edit briefs for 5 Shorts (shot list, on-screen text, license notes)': Script 5's 'save an hour' title is unmeasured; time it or soften the title.",
+      "Open in 'Thumbnail briefs for 5 Shorts': Nobody has checked whether each vendor allows showing its name, logo or UI on screen. A person should check this on each vendor's terms and brand pages.",
+      "Open in 'Thumbnail briefs for 5 Shorts': Contrast ratios and phone-size legibility were specified but not tested on an image. Check these on a real phone once the thumbnails are made.",
+      "Open in 'Thumbnail briefs for 5 Shorts': Thumbnails must reflect what the creator actually records. If a demo fails or differs, update the focal element and headline.",
+      "Open in 'Thumbnail briefs for 5 Shorts': Brief 5 headline avoids the hour claim; the script title still says 'Might Save You an Hour', so the producer should align it unless the creator times it."
+     ]
+    },
+    "by_purpose": {
+     "intake": {
+      "input": 8,
+      "cache_write": 9462,
+      "cache_read": 19201,
+      "output": 1138,
+      "cost_usd_at_list_price": 0.05116,
+      "processes": 1
+     },
+     "dispatch": {
+      "input": 18,
+      "cache_write": 19501,
+      "cache_read": 50004,
+      "output": 3542,
+      "cost_usd_at_list_price": 0.11846,
+      "processes": 3
+     },
+     "execute": {
+      "input": 42,
+      "cache_write": 52067,
+      "cache_read": 186238,
+      "output": 42269,
+      "cost_usd_at_list_price": 0.64967,
+      "processes": 4
+     },
+     "review": {
+      "input": 54,
+      "cache_write": 74271,
+      "cache_read": 161237,
+      "output": 6973,
+      "cost_usd_at_list_price": 0.38305,
+      "processes": 9
+     },
+     "integrate": {
+      "input": 6,
+      "cache_write": 14923,
+      "cache_read": 25075,
+      "output": 1255,
+      "cost_usd_at_list_price": 0.07476,
+      "processes": 1
+     },
+     "retrospective": {
+      "input": 6,
+      "cache_write": 2202,
+      "cache_read": 13048,
+      "output": 519,
+      "cost_usd_at_list_price": 0.01531,
+      "processes": 1
+     }
+    },
+    "size": "large",
+    "verdicts": {
+     "approve": 9,
+     "changes_requested": 0,
+     "block": 0
+    },
+    "gates_by_task": {
+     "wp-1/t1": [
+      "qa",
+      "legal"
+     ],
+     "wp-2/t1": [
+      "qa",
+      "legal"
+     ],
+     "wp-3/t1": [
+      "qa",
+      "legal"
+     ],
+     "wp-3/t2": [
+      "qa",
+      "legal"
+     ],
+     "__final__": [
+      "legal"
+     ]
+    }
+   },
+   {
+    "label": "small",
+    "goal": "Write one title for a Short about AI note-taking apps.",
+    "status": "done",
+    "minutes": 1.4,
+    "usage": {
+     "input": 36,
+     "cache_write": 21510,
+     "cache_read": 86108,
+     "output": 3665,
+     "cost_usd_at_list_price": 0.13137,
+     "processes": 6
+    },
+    "usage_note": null,
+    "tokens_estimated_by_server": 7023,
+    "counters": {
+     "invalid_outputs": 0,
+     "rework_loops": 0,
+     "failed_invocations": 0,
+     "escalations": 0,
+     "handoffs": 0,
+     "violations": 0,
+     "package_overruns": 0,
+     "assignments": 6,
+     "amendments": 0
+    },
+    "company_peak_ram_mb": 828,
+    "lowest_free_ram_mb": 2860,
+    "final": {
+     "summary_in_user_language": "The title for your YouTube Short is: \"AI Note-Taking Apps Changed How I Work\". It is a single, short title about AI note-taking apps. It was picked without search-volume data, so it isn't backed by keyword research.",
+     "artifact_refs": [],
+     "criteria_results": [
+      {
+       "criterion": "Exactly one title is delivered",
+       "met": true,
+       "evidence": "The body holds one title: \"AI Note-Taking Apps Changed How I Work\"."
+      },
+      {
+       "criterion": "Title clearly references AI note-taking apps",
+       "met": true,
+       "evidence": "The title contains the phrase \"AI Note-Taking Apps\"."
+      },
+      {
+       "criterion": "Title is concise and suited to a Short",
+       "met": true,
+       "evidence": "I counted 38 characters and 7 words (6 if \"Note-Taking\" is split differently). The department report said 37 characters and 6 words, which is slightly off. The title is still short."
+      }
+     ],
+     "known_limits": [
+      "No search-volume or keyword data was used. The title is an assumption-based choice.",
+      "The title wasn't A/B tested, and its performance is unverified.",
+      "The title's wording makes a claim in the first person (\"Changed How I Work\"). Edit it if that doesn't fit the creator's voice.",
+      "Unverified, check before using: No search-volume data was used; the title is an assumption-based choice, not measured keyword research."
+     ]
+    },
+    "by_purpose": {
+     "intake": {
+      "input": 6,
+      "cache_write": 3209,
+      "cache_read": 14132,
+      "output": 420,
+      "cost_usd_at_list_price": 0.01846,
+      "processes": 1
+     },
+     "execute": {
+      "input": 6,
+      "cache_write": 4298,
+      "cache_read": 14963,
+      "output": 692,
+      "cost_usd_at_list_price": 0.02562,
+      "processes": 1
+     },
+     "review": {
+      "input": 18,
+      "cache_write": 10545,
+      "cache_read": 43049,
+      "output": 1699,
+      "cost_usd_at_list_price": 0.06351,
+      "processes": 3
+     },
+     "integrate": {
+      "input": 6,
+      "cache_write": 3458,
+      "cache_read": 13964,
+      "output": 854,
+      "cost_usd_at_list_price": 0.02378,
+      "processes": 1
+     }
+    },
+    "size": "small",
+    "verdicts": {
+     "approve": 3,
+     "changes_requested": 0,
+     "block": 0
+    },
+    "gates_by_task": {
+     "wp1/t1": [
+      "qa",
+      "legal"
+     ],
+     "__final__": [
+      "legal"
+     ]
+    }
+   },
+   {
+    "label": "later",
+    "goal": "Make 3 more Shorts about AI tools, and build on what worked in last week's batch.",
+    "status": "done",
+    "minutes": 9.3,
+    "usage": {
+     "input": 140,
+     "cache_write": 251760,
+     "cache_read": 573295,
+     "output": 60220,
+     "cost_usd_at_list_price": 1.66686,
+     "processes": 19
+    },
+    "usage_note": null,
+    "tokens_estimated_by_server": 134289,
+    "counters": {
+     "invalid_outputs": 3,
+     "rework_loops": 0,
+     "failed_invocations": 0,
+     "escalations": 0,
+     "handoffs": 0,
+     "violations": 0,
+     "package_overruns": 4,
+     "assignments": 24,
+     "amendments": 0
+    },
+    "company_peak_ram_mb": 829,
+    "lowest_free_ram_mb": 3048,
+    "final": {
+     "summary_in_user_language": "I produced planning material for 3 AI-tool Shorts. No videos exist yet. The topics are: (1) Google vs Perplexity, same question side by side; (2) Cursor building a tiny app from one sentence, errors included; (3) a timed test of an AI note-taking app. For each Short there is a script, an edit brief, a thumbnail brief and a title. Last week's batch has no performance data. It was planning material only, and nothing is shown as published. So 'what worked' covers process only: honest demos, a consistent hook/body/CTA structure, question-style hooks and thumbnails, and no unmeasured claims. Every performance claim is marked unverified. Before filming, a person must do these things: (a) choose and check the note-taking app for Short 3; (b) check YouTube Studio for last week's results; (c) check trend status; (d) check vendor terms and logo/UI permissions; (e) check YouTube AI-disclosure rules; (f) test phone legibility of the thumbnails. All bracketed results in the scripts are placeholders until a real recording exists. I have no QA or legal review artifacts for this run, so that criterion is not met.",
+     "artifact_refs": [],
+     "criteria_results": [
+      {
+       "criterion": "3 Shorts are delivered (topic, script, production brief, title) about AI tools",
+       "met": true,
+       "evidence": "Scripts (art-57db1a7b), edit briefs (art-48af3af4), thumbnail briefs (art-57514e35) and titles (art-f453dbde) each cover the same 3 topics in order. These are briefs and scripts only. No videos or thumbnail images were produced, and script 3's app is not chosen."
+      },
+      {
+       "criterion": "Each Short explicitly applies at least one identified learning from last week's batch",
+       "met": true,
+       "evidence": "Each script has an APPLIED LEARNING line. Script 1 uses honest demo and consistent structure. Script 2 uses honest demo and question-style hooks. Script 3 uses no unmeasured claims. The title rationales name learnings too."
+      },
+      {
+       "criterion": "Analysis of what worked last week is documented",
+       "met": true,
+       "evidence": "The research report (art-751ad1b4) has 5 findings, each citing input files. It states that no performance data exists, so every effect on views, retention or CTR is unverified. The analysis covers process only, not results."
+      },
+      {
+       "criterion": "Passes QA and legal review",
+       "met": false,
+       "evidence": "No QA or legal review artifact was in my inputs, so I cannot confirm a pass. Vendor terms, logo/UI use, AI disclosure and trademark status are all listed as unverified and need a person to check them."
+      }
+     ],
+     "known_limits": [
+      "No performance data for last week; whether anything was published is unknown.",
+      "No trend, keyword or search data. Titles and topics are assumptions.",
+      "Durations (about 34-38s) are estimated from word counts at 150 wpm, not timed aloud.",
+      "The note-taking app for Short 3 is not chosen; a person must choose and check it.",
+      "Vendor features, pricing and terms, logo/UI permissions and YouTube AI-disclosure rules are unverified.",
+      "Phone legibility of thumbnails is untested.",
+      "The script title 'Might Save You an Hour' from last week should not be reused. The new Short 3 title avoids it.",
+      "QA and legal review sign-off is not evidenced.",
+      "Unverified, check before using: WHAT WORKED (1/5): No performance data exists. Last week's run produced planning material only (5 topics, scripts, edit briefs, thumbnail briefs), no finished videos or thumbnails. So no view, retenti",
+      "Unverified, check before using: WHAT WORKED (2/5), a learning called 'honest demo': every script is built on a real creator-recorded demo with bracketed results, and errors and failures are shown rather than hidden. This was approve",
+      "Unverified, check before using: WHAT WORKED (3/5), a learning called 'consistent structure': a hook of about 4s, a body, and a CTA that asks for a comment or follow, all under 60s (estimated 40-50s at 150 wpm, not timed aloud). The",
+      "Unverified, check before using: WHAT WORKED (4/5), a learning called 'question-style thumbnails and hooks': thumbnail headlines are 5 words or fewer and match the hook (e.g. 'PDF TO PODCAST?'), with no NEW, TRENDING or price badges.",
+      "Unverified, check before using: WHAT WORKED (5/5), a learning called 'no unmeasured claims': the 'save an hour' title claim was flagged as untested, and the thumbnail avoided it. The script title still says 'Might Save You an Hour',",
+      "Unverified, check before using: TOPIC 1: Google vs Perplexity, same question side by side. Builds on 'honest demo' (show the real results, assume no winner) and 'consistent structure' (the comment CTA 'comment a question to test nex",
+      "Unverified, check before using: TOPIC 2: Cursor, build a tiny app from one sentence, shown with errors included. Builds on 'honest demo' (show the full attempt and the fixes) and 'question-style thumbnails and hooks' (e.g. 'APP FROM",
+      "Unverified, check before using: TOPIC 3: AI note-taking apps, a timed test of one real note-to-summary task. Builds on 'no unmeasured claims' (time it and report the measured result, replacing the unmeasured 'Changed How I Work' / '",
+      "Unverified, check before using: UNVERIFIED / TO CHECK, with a person responsible for each: (a) Last week's views, retention and CTR: check YouTube Studio. Nothing was published according to the files, so confirm whether any Short we",
+      "Unverified, check before using: Estimated durations of about 34-38s at 150 wpm, not timed aloud",
+      "Open in 'Edit briefs for 3 AI-tool Shorts': A person must choose and check the note-taking app before filming Script 3.",
+      "Open in 'Edit briefs for 3 AI-tool Shorts': All vendor terms, logo/UI permissions and YouTube AI-disclosure rules are unverified; a person must check them.",
+      "Open in 'Edit briefs for 3 AI-tool Shorts': Durations are estimates from word counts, not timed aloud; re-time after recording.",
+      "Open in 'Edit briefs for 3 AI-tool Shorts': No footage exists; every bracket stays until a real recording is made.",
+      "Open in 'Edit briefs for 3 AI-tool Shorts': Check YouTube Studio for whether last week's Shorts were ever published and how they performed.",
+      "Open in 'Thumbnail briefs for 3 AI-tool Shorts': Phone legibility of all 3 thumbnails is untested; a person must check.",
+      "Open in 'Thumbnail briefs for 3 AI-tool Shorts': CTR is unverified; no performance data exists.",
+      "Open in 'Thumbnail briefs for 3 AI-tool Shorts': Script 3 app is not chosen; update Brief 3 after the choice.",
+      "Open in 'Thumbnail briefs for 3 AI-tool Shorts': All third-party asset, trademark and license statuses are unverified.",
+      "Open in 'Thumbnail briefs for 3 AI-tool Shorts': Thumbnails are briefs only; no images were produced.",
+      "Unverified, check before using: All 3 titles are ASSUMED: no keyword or search data supports them"
+     ]
+    },
+    "by_purpose": {
+     "intake": {
+      "input": 8,
+      "cache_write": 6802,
+      "cache_read": 23634,
+      "output": 1294,
+      "cost_usd_at_list_price": 0.04253,
+      "processes": 1
+     },
+     "dispatch": {
+      "input": 24,
+      "cache_write": 36224,
+      "cache_read": 76219,
+      "output": 5409,
+      "cost_usd_at_list_price": 0.20666,
+      "processes": 4
+     },
+     "execute": {
+      "input": 50,
+      "cache_write": 88933,
+      "cache_read": 265245,
+      "output": 44099,
+      "cost_usd_at_list_price": 0.82335,
+      "processes": 5
+     },
+     "review": {
+      "input": 46,
+      "cache_write": 100275,
+      "cache_read": 167950,
+      "output": 7423,
+      "cost_usd_at_list_price": 0.49222,
+      "processes": 7
+     },
+     "integrate": {
+      "input": 6,
+      "cache_write": 17223,
+      "cache_read": 27191,
+      "output": 1399,
+      "cost_usd_at_list_price": 0.08561,
+      "processes": 1
+     },
+     "retrospective": {
+      "input": 6,
+      "cache_write": 2303,
+      "cache_read": 13056,
+      "output": 596,
+      "cost_usd_at_list_price": 0.01649,
+      "processes": 1
+     }
+    },
+    "size": "large",
+    "verdicts": {
+     "approve": 11,
+     "changes_requested": 0,
+     "block": 0
+    },
+    "gates_by_task": {
+     "wp-1/wp-1-t1": [
+      "qa",
+      "legal"
+     ],
+     "wp-2/wp-2-t1": [
+      "qa",
+      "legal"
+     ],
+     "wp-3/wp-3-t1": [
+      "qa",
+      "legal"
+     ],
+     "wp-3/wp-3-t2": [
+      "qa",
+      "legal"
+     ],
+     "wp-4/wp4-t1": [
+      "qa",
+      "legal"
+     ],
+     "__final__": [
+      "legal"
+     ]
+    }
+   }
+  ]
+ },
+ "umkm-snacks": {
+  "template": "ecommerce-store",
+  "design_usage": {
+   "input": 8,
+   "cache_write": 9373,
+   "cache_read": 14647,
+   "output": 960,
+   "cost_usd_at_list_price": 0.04857,
+   "processes": 1
+  },
+  "judge_usage": {
+   "input": 30,
+   "cache_write": 42971,
+   "cache_read": 296366,
+   "output": 7709,
+   "cost_usd_at_list_price": 0.01542,
+   "processes": 1
+  },
+  "role_processes_stuck": [],
+  "commands": [
+   {
+    "label": "large",
+    "goal": "Buat rencana promosi Instagram selama dua minggu untuk keripik pisang kami.",
+    "status": "done",
+    "minutes": 2.3,
+    "usage": {
+     "input": 40,
+     "cache_write": 34659,
+     "cache_read": 109538,
+     "output": 11300,
+     "cost_usd_at_list_price": 0.26268,
+     "processes": 6
+    },
+    "usage_note": null,
+    "tokens_estimated_by_server": 12648,
+    "counters": {
+     "invalid_outputs": 0,
+     "rework_loops": 0,
+     "failed_invocations": 0,
+     "escalations": 0,
+     "handoffs": 0,
+     "violations": 0,
+     "package_overruns": 0,
+     "assignments": 6,
+     "amendments": 0
+    },
+    "company_peak_ram_mb": 825,
+    "lowest_free_ram_mb": 4103,
+    "final": {
+     "summary_in_user_language": "Rencana promosi Instagram 14 hari untuk keripik pisang sudah selesai. Isinya jadwal harian (Hari 1-14) dengan format Feed, Reels, atau Stories, ide caption, kadens posting (Feed 3x/minggu, Reels 2x/minggu, Stories setiap hari), daftar hashtag, CTA umum dan CTA per hari, serta evaluasi di akhir hari ke-14. Minggu 1 untuk perkenalan dan membangun minat. Minggu 2 untuk kedekatan dan ajakan membeli. Sebelum dipakai, isi [NAMA MEREK], [LINK/WA], dan [ISI PROMO]. Pastikan juga info varian rasa, asal pisang, dan proses pembuatan sesuai kenyataan. Jam posting 18.00-20.00 hanyalah asumsi, jadi uji dengan Insights akun Anda. Rencana ini tidak memuat klaim kesehatan atau hasil penjualan.",
+     "artifact_refs": [],
+     "criteria_results": [
+      {
+       "criterion": "Plan covers 14 days with a day-by-day or weekly content schedule",
+       "met": true,
+       "evidence": "Hari 1-14 tertulis per hari, dibagi Minggu 1 dan Minggu 2."
+      },
+      {
+       "criterion": "Each entry specifies post format (feed/Reels/Stories) and a caption or content idea",
+       "met": true,
+       "evidence": "Setiap hari mencantumkan format (Feed/Reels/Stories) dan caption atau ide konten."
+      },
+      {
+       "criterion": "Includes posting cadence, hashtags and a call to action",
+       "met": true,
+       "evidence": "Ada bagian Kadens Posting, Hashtag, CTA umum, dan CTA per hari."
+      },
+      {
+       "criterion": "Written in Indonesian and focused on banana chips",
+       "met": true,
+       "evidence": "Seluruh isi berbahasa Indonesia dan membahas keripik pisang."
+      },
+      {
+       "criterion": "No unverified claims (e.g. health or sales results) stated as fact",
+       "met": true,
+       "evidence": "Tidak ada klaim kesehatan atau penjualan. Dua hal yang belum terverifikasi (jam posting ramai, kebenaran info produk) ditandai di daftar claims. Saya hanya memeriksa ini dari teks yang diserahkan, bukan dari sumber lain."
+      }
+     ],
+     "known_limits": [
+      "Placeholder [NAMA MEREK], [LINK/WA], dan [ISI PROMO] harus diisi pemilik.",
+      "Jam posting 18.00-20.00 adalah asumsi umum yang belum diverifikasi.",
+      "Detail varian rasa, asal pisang, dan proses pembuatan perlu dikonfirmasi pemilik usaha.",
+      "Tidak ada materi visual (desain atau foto) yang dibuat, hanya rencana teks.",
+      "Tidak ada hasil kinerja yang diprediksi atau dijanjikan.",
+      "Unverified, check before using: Jam posting 18.00-20.00 cenderung ramai",
+      "Unverified, check before using: Varian rasa, asal pisang, dan proses pembuatan sesuai kenyataan produk"
+     ]
+    },
+    "by_purpose": {
+     "intake": {
+      "input": 6,
+      "cache_write": 3129,
+      "cache_read": 13879,
+      "output": 591,
+      "cost_usd_at_list_price": 0.01983,
+      "processes": 1
+     },
+     "execute": {
+      "input": 8,
+      "cache_write": 8095,
+      "cache_read": 23513,
+      "output": 6412,
+      "cost_usd_at_list_price": 0.09887,
+      "processes": 1
+     },
+     "review": {
+      "input": 20,
+      "cache_write": 17046,
+      "cache_read": 55664,
+      "output": 3050,
+      "cost_usd_at_list_price": 0.10429,
+      "processes": 3
+     },
+     "integrate": {
+      "input": 6,
+      "cache_write": 6389,
+      "cache_read": 16482,
+      "output": 1247,
+      "cost_usd_at_list_price": 0.03969,
+      "processes": 1
+     }
+    },
+    "size": "small",
+    "verdicts": {
+     "approve": 3,
+     "changes_requested": 0,
+     "block": 0
+    },
+    "gates_by_task": {
+     "wp1/t1": [
+      "qa",
+      "legal"
+     ],
+     "__final__": [
+      "legal"
+     ]
+    }
+   },
+   {
+    "label": "small",
+    "goal": "Tulis satu balasan singkat untuk pelanggan yang bertanya ongkos kirim ke Surabaya.",
+    "status": "done",
+    "minutes": 1.5,
+    "usage": {
+     "input": 36,
+     "cache_write": 22775,
+     "cache_read": 86890,
+     "output": 4230,
+     "cost_usd_at_list_price": 0.14216,
+     "processes": 6
+    },
+    "usage_note": null,
+    "tokens_estimated_by_server": 7858,
+    "counters": {
+     "invalid_outputs": 0,
+     "rework_loops": 0,
+     "failed_invocations": 0,
+     "escalations": 0,
+     "handoffs": 0,
+     "violations": 0,
+     "package_overruns": 0,
+     "assignments": 6,
+     "amendments": 0
+    },
+    "company_peak_ram_mb": 824,
+    "lowest_free_ram_mb": 3765,
+    "final": {
+     "summary_in_user_language": "Balasan singkat berbahasa Indonesia sudah dibuat untuk pelanggan yang bertanya ongkir ke Surabaya. Isinya: \"Halo Kak, terima kasih sudah menghubungi kami! 😊 Kami kirim ke Surabaya. Besar ongkir tergantung berat pesanan dan kurir yang dipilih. Boleh info jumlah/varian keripik pisang yang ingin dipesan dan kurir yang Kakak inginkan? Nanti kami hitungkan dan konfirmasi ongkir pastinya ya. Terima kasih!\" Balasan ini tidak menyebut angka tarif, karena data tarif tidak tersedia. Sebelum dikirim, mohon pastikan pengiriman ke Surabaya memang tersedia dan kurir yang dipakai sudah benar.",
+     "artifact_refs": [],
+     "criteria_results": [
+      {
+       "criterion": "Exactly one short reply is delivered",
+       "met": true,
+       "evidence": "Ada satu balasan singkat di hasil Customer Care."
+      },
+      {
+       "criterion": "Reply is in Indonesian and addresses shipping cost to Surabaya",
+       "met": true,
+       "evidence": "Balasan berbahasa Indonesia dan membahas ongkir ke Surabaya."
+      },
+      {
+       "criterion": "Reply states no unverified price as fact (asks for details or says to be confirmed if rates unknown)",
+       "met": true,
+       "evidence": "Tidak ada angka harga. Balasan meminta detail pesanan dan menyatakan ongkir akan dikonfirmasi."
+      }
+     ],
+     "known_limits": [
+      "Ketersediaan pengiriman ke Surabaya tidak diverifikasi dari data yang ada. Orang perlu memastikan sebelum balasan dikirim.",
+      "Nama kurir tidak disebut. Orang perlu menyebut kurir yang benar-benar dipakai.",
+      "Balasan menyebut produk keripik pisang. Ini berasal dari hasil Customer Care dan tidak diverifikasi.",
+      "Open in 'Write one short reply to a customer asking about shipping cost to Surabaya.': Balasan menyatakan pengiriman ke Surabaya tersedia; ini tidak diverifikasi dari data yang ada. Orang perlu memastikan sebelum dikirim, dan menyebut kurir yang benar-benar dipakai."
+     ]
+    },
+    "by_purpose": {
+     "intake": {
+      "input": 6,
+      "cache_write": 3180,
+      "cache_read": 14044,
+      "output": 453,
+      "cost_usd_at_list_price": 0.01867,
+      "processes": 1
+     },
+     "execute": {
+      "input": 6,
+      "cache_write": 4443,
+      "cache_read": 14781,
+      "output": 1118,
+      "cost_usd_at_list_price": 0.03044,
+      "processes": 1
+     },
+     "review": {
+      "input": 18,
+      "cache_write": 11238,
+      "cache_read": 43737,
+      "output": 1701,
+      "cost_usd_at_list_price": 0.06637,
+      "processes": 3
+     },
+     "integrate": {
+      "input": 6,
+      "cache_write": 3914,
+      "cache_read": 14328,
+      "output": 958,
+      "cost_usd_at_list_price": 0.02668,
+      "processes": 1
+     }
+    },
+    "size": "small",
+    "verdicts": {
+     "approve": 3,
+     "changes_requested": 0,
+     "block": 0
+    },
+    "gates_by_task": {
+     "wp1/t1": [
+      "qa",
+      "legal"
+     ],
+     "__final__": [
+      "legal"
+     ]
+    }
+   },
+   {
+    "label": "later",
+    "goal": "Buat rencana promosi dua minggu berikutnya, dan lanjutkan dari rencana sebelumnya.",
+    "status": "done",
+    "minutes": 0.6,
+    "usage": {
+     "input": 44,
+     "cache_write": 39627,
+     "cache_read": 138566,
+     "output": 13481,
+     "cost_usd_at_list_price": 0.30725,
+     "processes": 6
+    },
+    "usage_note": "Includes what was spent before a resume. Its minutes cover only the resumed part.",
+    "tokens_estimated_by_server": 14952,
+    "counters": {
+     "invalid_outputs": 0,
+     "rework_loops": 0,
+     "failed_invocations": 0,
+     "escalations": 0,
+     "handoffs": 0,
+     "violations": 0,
+     "package_overruns": 0,
+     "assignments": 6,
+     "amendments": 0
+    },
+    "company_peak_ram_mb": 187,
+    "lowest_free_ram_mb": 4938,
+    "final": {
+     "summary_in_user_language": "Rencana promosi Instagram untuk keripik pisang selama dua minggu berikutnya (Hari 15-28) sudah disusun. Rencana ini melanjutkan rencana 14 hari sebelumnya dan dibagi per minggu dan per hari. Minggu 3 fokus pada kebiasaan dan konten pelanggan: hasil polling, lanjutan 'ngemil bareng', repost konten pelanggan dengan izin, '3 Cara Menikmati' seri 2, dan unboxing seri 2. Minggu 4 fokus pada ajakan beli dan terima kasih: cerita usaha, sorotan varian, ulasan pelanggan, info promo akhir pekan, dan rekap 4 minggu. Di akhir ada evaluasi yang membandingkan Hari 15-28 dengan Hari 1-14. Promo, kurir, dan fakta usaha masih berupa placeholder ([ISI PROMO], [NAMA MEREK], [LINK/WA]). Pemilik harus mengisi dan menyetujuinya sebelum tayang. Tidak ada diskon atau batas waktu yang dikarang. Hasil polling dan Insights Hari 1-14 belum tersedia.",
+     "artifact_refs": [],
+     "criteria_results": [
+      {
+       "criterion": "Plan covers the two weeks immediately following the previous plan",
+       "met": true,
+       "evidence": "Rencana mencakup Hari 15-28 (Minggu 3-4), tepat setelah Hari 1-14."
+      },
+      {
+       "criterion": "Plan visibly builds on or references the previous plan's themes and content",
+       "met": true,
+       "evidence": "Rencana merujuk polling Hari 7/14, 'ngemil bareng' Hari 13, UGC Hari 10, unboxing Hari 6, promo Hari 11-12, dan cara menikmati Hari 5."
+      },
+      {
+       "criterion": "Plan is written in Indonesian and is organized by day or week",
+       "met": true,
+       "evidence": "Ditulis dalam bahasa Indonesia dan disusun per minggu dan per hari."
+      },
+      {
+       "criterion": "Any assumptions about the previous plan are stated explicitly",
+       "met": true,
+       "evidence": "Bagian ASUMSI di awal rencana memuat kadens, hari mulai, tema, dan placeholder."
+      }
+     ],
+     "known_limits": [
+      "Hasil polling dan Insights Hari 1-14 tidak tersedia. Diasumsikan rencana lama dijalankan seperti ditulis.",
+      "Promo, kurir, serta fakta asal pisang dan proses produksi harus dikonfirmasi pemilik sebelum tayang.",
+      "Jam posting 18.00-20.00 adalah asumsi yang belum diverifikasi.",
+      "Saya tidak membaca ulang file rencana sebelumnya. Isi rencana bergantung pada laporan Marketing.",
+      "Open in 'Create the next two-week promotion plan, continuing from the previous plan (the two-week Instagram plan for banana chips': Hasil polling dan Insights Hari 1-14 tidak tersedia; diasumsikan rencana lama dijalankan seperti ditulis.",
+      "Open in 'Create the next two-week promotion plan, continuing from the previous plan (the two-week Instagram plan for banana chips': Promo, kurir, dan fakta asal pisang/proses harus dikonfirmasi pemilik sebelum tayang; tidak ada diskon atau batas waktu yang dikarang.",
+      "Open in 'Create the next two-week promotion plan, continuing from the previous plan (the two-week Instagram plan for banana chips': Jam posting 18.00-20.00 adalah asumsi belum terverifikasi."
+     ]
+    },
+    "by_purpose": {
+     "integrate": {
+      "input": 6,
+      "cache_write": 5882,
+      "cache_read": 16017,
+      "output": 1253,
+      "cost_usd_at_list_price": 0.03767,
+      "processes": 1
+     },
+     "review": {
+      "input": 6,
+      "cache_write": 4511,
+      "cache_read": 14948,
+      "output": 932,
+      "cost_usd_at_list_price": 0.02887,
+      "processes": 1
+     }
+    },
+    "size": "small",
+    "verdicts": {
+     "approve": 3,
+     "changes_requested": 0,
+     "block": 0
+    },
+    "gates_by_task": {
+     "wp1/t1": [
+      "qa",
+      "legal"
+     ],
+     "__final__": [
+      "legal"
+     ]
+    }
+   }
+  ]
+ }
+}

@@ -6,7 +6,8 @@ One prompt to a company, one command to a result, and a second related command l
 claude-code` generates: one Claude Code session as the operator, the /company command, and a real subagent for each role.
 
 This reads every tool call in the session's stream, and reports any role subagent that called anything but its own
-bound server. It also checks that each submission was recorded as attested, which only a bound server can do.
+bound server, and fails if any work was recorded as claimed, because only a bound server can record it as attested.
+An earlier version of the generated files let one subagent do every role's work. This is the check that caught it.
 """
 
 from __future__ import annotations
@@ -23,7 +24,7 @@ from typing import Any
 
 from run_claude_code import WAIT_FOR_LIMIT_SECONDS, _claude
 
-from try_professional.adapters.mcp.claude_code import server_config, write_claude_code_files
+from try_professional.adapters.mcp.claude_code import ROLE_SERVER, server_config, write_claude_code_files
 from try_professional.cli import _seed_company_memory, _write_project_files
 from try_professional.generator import activate, load_proposal
 from try_professional.memory import FastEmbedEmbedder
@@ -41,6 +42,9 @@ _DESIGN_PROMPT = (
     "answer asks: submit the design with org_proposal_submit, and then judge each role's skills with "
     "org_skill_judgment_submit. When the status is ready_for_a_person, reply with only the proposal id."
 )
+
+
+ROLE_PREFIX = f"mcp__{ROLE_SERVER}__"
 
 
 def session(prompt: str, cwd: Path, config: Path, tools: str, allowed: str) -> dict[str, Any]:
@@ -111,9 +115,9 @@ def read_stream(stdout: str) -> dict[str, Any]:
                 calls[name] = calls.get(name, 0) + 1
     usage = result.get("usage") or {}
     outside = {
-        agent: [name for name in calls if not name.startswith("mcp__trypro__")]
+        agent: [name for name in calls if not name.startswith(ROLE_PREFIX)]
         for agent, calls in calls_by_agent.items()
-        if any(not name.startswith("mcp__trypro__") for name in calls)
+        if any(not name.startswith(ROLE_PREFIX) for name in calls)
     }
     return {
         "result": result.get("result"),
@@ -188,7 +192,8 @@ def main(output: Path) -> None:
             continue
         print(f"[{label}] {goal}", flush=True)
         started = time.monotonic()
-        progress[label] = session(f"/company {goal}", root, root / ".mcp.json", "Agent", "Agent,mcp__trypro__*")
+        allowed = f"Agent,mcp__trypro__*,{ROLE_PREFIX}*"
+        progress[label] = session(f"/company {goal}", root, root / ".mcp.json", "Agent", allowed)
         progress[label]["minutes"] = round((time.monotonic() - started) / 60, 1)
         save()
         print(f"[{label}] {str(progress[label]['result'])[:600]}", flush=True)
@@ -196,6 +201,10 @@ def main(output: Path) -> None:
     progress["attestation"] = attestation(root)
     save()
     print(json.dumps(progress["attestation"], ensure_ascii=False, indent=1)[:3000], flush=True)
+    problems = [run for run, row in progress["attestation"].items() if row["claimed"] or not row["attested"]]
+    problems += [f"{label} left its server" for label in ("first", "second") if progress[label].get("role_agents_outside_their_server")]
+    if problems:
+        raise SystemExit(f"The hierarchy wasn't real in: {problems}")
 
 
 if __name__ == "__main__":

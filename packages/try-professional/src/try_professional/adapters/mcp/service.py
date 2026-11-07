@@ -11,6 +11,9 @@ A role is never a tool argument. It comes from how the server started, or from t
 invocation. Nothing here lets a client approve a skill, admit one, change company memory, or
 answer for a person.
 
+Three identity modes, really: a coordinator is a client that starts work and hands it to bound roles. It can't read an
+assignment or submit anything, so it can't quietly do a role's work, however it's asked to or tries to.
+
 A client's own token count can't be trusted for a limit, so the server estimates what it sent and
 received, and budgets run on that. What a client reports is kept beside it, marked as self-reported.
 """
@@ -59,6 +62,8 @@ MCP_TOOLS = (
     "usage_report",
     "audit_tail",
 )
+# All a coordinator may do. Anything else is a role's work.
+COORDINATOR_TOOLS = ("org_get", "run_start", "run_status", "run_next_action", "audit_tail")
 DEFAULT_AUDIT_TAIL = 20
 MAX_AUDIT_TAIL = 200
 CHARS_PER_TOKEN = 3.5
@@ -70,9 +75,12 @@ class ToolError(Exception):
 
 
 class McpService:
-    def __init__(self, orchestrator: Orchestrator, *, bound_role: str | None = None) -> None:
+    def __init__(self, orchestrator: Orchestrator, *, bound_role: str | None = None, coordinator: bool = False) -> None:
         if bound_role is not None and not orchestrator.org.has_role(bound_role):
             raise ValueError(f"'{bound_role}' isn't a role in this company")
+        if bound_role is not None and coordinator:
+            raise ValueError("A server is bound to a role, or coordinates. It can't be both.")
+        self.coordinator = coordinator
         self.orchestrator = orchestrator
         self.org: Org = orchestrator.org
         self.bound_role = bound_role
@@ -86,6 +94,9 @@ class McpService:
     def _role_for(self, run_id: str, invocation_id: str) -> str:
         """The acting role: fixed at launch when bound, and otherwise the role this work was assigned to."""
         invocation = self._invocation(run_id, invocation_id)
+        if self.coordinator:
+            self._violation(run_id, "COORDINATOR_ACTED", f"The coordinator tried to act as {invocation.role}")
+            raise ToolError(f"A coordinator can't do this. Start the subagent for {invocation.role}, and let it.")
         if self.bound_role and invocation.role != self.bound_role:
             self._violation(run_id, "WRONG_ACTOR", f"{self.bound_role} can't act on work assigned to {invocation.role}")
             raise ToolError(f"This server acts as {self.bound_role}. {invocation_id} is assigned to {invocation.role}.")
@@ -111,7 +122,7 @@ class McpService:
         return {
             "company": self.org.company_name,
             "root_role": self.org.root_role,
-            "identity": self.bound_role or "operator",
+            "identity": self.bound_role or ("coordinator" if self.coordinator else "operator"),
             "departments": [
                 {"id": d.id, "head": d.head_ref, "activation": d.activation, "roles": [f"{d.id}/{r}" for r in d.roles]}
                 for d in self.org.departments.values()
@@ -218,6 +229,14 @@ class McpService:
         return sorted(str(p.relative_to(root)).replace("\\", "/") for p in root.rglob("*") if p.is_file())
 
     def _describe(self, run_id: str, action: InvokeRole) -> dict[str, Any]:
+        if self.coordinator:
+            # Who's next, and nothing of what it was asked. It reaches the role through that role's own server.
+            return {
+                "invocation_id": action.invocation_id,
+                "role": action.role,
+                "purpose": action.purpose.value,
+                "task_id": action.task_id,
+            }
         state = self.orchestrator.state(run_id)
         invocation = state.invocations[action.invocation_id]
         role = self.org.role(action.role)

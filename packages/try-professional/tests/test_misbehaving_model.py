@@ -560,6 +560,66 @@ class TestEndlessBehaviour:
         assert len(client.calls) == 1
 
 
+class TestACoordinatorCantDoARolesWork:
+    """A real session once did every role's work itself, with one subagent, through an all-powerful server."""
+
+    def _started(self, company: Orchestrator) -> tuple[McpService, str, str]:
+        service = McpService(company, coordinator=True)
+        started = service.run_start("Goal")
+        return service, started["run_id"], started["actions"][0]["invocation_id"]
+
+    def test_it_can_start_and_follow_work(self, company: Orchestrator) -> None:
+        service, run_id, _ = self._started(company)
+        assert service.run_status(run_id)["goal"] == "Goal"
+        assert service.org_get()["identity"] == "coordinator"
+
+    def test_it_only_sees_who_is_next(self, company: Orchestrator) -> None:
+        service, run_id, _ = self._started(company)
+        action = service.run_next_action(run_id)["actions"][0]
+        assert action["role"] == company.org.root_role
+        assert not {"assignment", "instructions", "output_schema"} & set(action)
+
+    @pytest.mark.parametrize(
+        ("tool", "arguments"),
+        [
+            ("artifact_submit", ({},)),
+            ("review_submit", ({},)),
+            ("handoff_request", ({},)),
+            ("escalate", ("reason",)),
+            ("usage_report", (1, 1)),
+            ("memory_recall", ("query",)),
+            ("memory_write", ("text",)),
+            ("skill_search", ("query",)),
+            ("skill_get", ("id",)),
+            ("workspace_list", ()),
+            ("workspace_read", ("a.md",)),
+            ("workspace_write", ("a.md", "text")),
+        ],
+    )
+    def test_everything_a_role_does_is_refused(self, company: Orchestrator, tool: str, arguments: tuple) -> None:
+        service, run_id, invocation = self._started(company)
+        before = company.state(run_id).counters.assignments
+        with pytest.raises(ToolError):
+            getattr(service, tool)(run_id, invocation, *arguments)
+        state = company.state(run_id)
+        assert state.counters.violations >= 1 or tool == "review_submit"
+        assert state.counters.assignments == before and invocation in state.invocations
+
+    def test_its_server_doesnt_even_list_them(self, company: Orchestrator) -> None:
+        pytest.importorskip("mcp")
+        import asyncio
+
+        from try_professional.adapters.mcp import COORDINATOR_TOOLS
+        from try_professional.adapters.mcp.server import build_server
+
+        server = build_server(McpService(company, coordinator=True), coordinator=True)
+        assert {tool.name for tool in asyncio.run(server.list_tools())} == set(COORDINATOR_TOOLS)
+
+    def test_a_server_cant_be_both(self, company: Orchestrator) -> None:
+        with pytest.raises(ValueError, match="both"):
+            McpService(company, bound_role=company.org.root_role, coordinator=True)
+
+
 class TestOverMcp:
     """A client can claim anything, so these hold on the server's side."""
 

@@ -1,0 +1,34 @@
+# Edit briefs for 3 AI-tool Shorts
+
+By production/editor. Status: approved.
+
+Three edit briefs (vertical 9:16 YouTube Shorts, under 60s) in script order: 1 Google vs Perplexity, 2 Cursor one-sentence app, 3 AI note-app timed test. Each has hook ~4s, body, CTA/end card, shot list from the script VISUALS, on-screen text, pacing, audio and kept bracket placeholders. License/terms section follows. Durations are estimates from script word counts at 150 wpm, not timed aloud; nothing has been recorded or edited.
+
+## Outputs
+- GLOBAL RULES (all 3): 9:16, keep captions inside the safe zone (away from the bottom UI and right-side buttons). Burn-in captions for all speech. Default to NO music (earlier decision); room tone only. Any sped-up or cut footage gets an on-screen label (e.g. 'SPED UP 4x', 'CUT: waiting'). Never trim or hide errors. Every [bracket] stays as a bracket in the brief; at edit time it is replaced only with what the real recording shows. No feature, price, trend, ranking or time-saving claim in text or captions. Hard cuts, no flashy transitions.
+- BRIEF 1 - GOOGLE VS PERPLEXITY. Estimated runtime ~38s (script ~95 words / 150 wpm; bracket fill-ins add a few seconds; NOT timed aloud). Pacing: hook fast, body steady, hold each result long enough to read.
+0:00-0:04 HOOK: split screen, left Google search box, right Perplexity search box, both empty. Caption 'SAME QUESTION' (large). VO: 'Same question, Google and Perplexity. Which answer helps more?' Caption the VO.
+BODY ~0:04-0:32: Shot 2: question typed into both boxes, caption [question]. Shot 3: unedited screen recording of each result, left Google, right Perplexity; VO 'Google gave me [what it showed]. Perplexity gave me [what it showed].' If waiting is cut, label it. Shot 4: criteria as 2-3 words on screen: [criterion 1] / [criterion 2] / [criterion 3] (decided BEFORE recording). VO 'What I saw: [honest observation, including anything wrong or unclear].' Closing line on screen: 'ONE QUESTION. PROVES NOTHING ALONE.'
+CTA/END CARD ~0:32-0:38: card 'COMMENT A QUESTION'. VO: 'Comment a question you want me to test next, and follow for the next side by side.' Hold ~2s after VO.
+Audio: no music; clean VO; keep original screen sounds off.
+AI disclosure: the demo shows AI-generated output; a person decides the YouTube disclosure setting.
+- BRIEF 2 - CURSOR ONE-SENTENCE APP. Estimated runtime ~34s (script ~85 words / 150 wpm; NOT timed aloud; a real run may need labelled cuts). Pacing: hook punchy, body quicker during waits (labelled), slow down on errors.
+0:00-0:04 HOOK: headline 'APP FROM ONE SENTENCE?' over the empty editor. VO 'Can Cursor build an app from one sentence?'
+BODY ~0:04-0:30: Shot 2: prompt typed in full view, caption [exact prompt]; VO 'I typed one sentence: [exact prompt]. No edits.' Shot 3: screen recording of the first run and the real error message, unhidden; hold the error on screen at least 2s; VO '[Show what happened, including the first error.]' Shot 4: fix attempts with try counter 'TRY 1', 'TRY 2'... [number]; any speed-up labelled. Shot 5: final state of the app exactly as it ended: caption [working / partly working / not working]. Caption 'TIME ON SCREEN: [measured]'. Closing line on screen: 'ONE PROMPT. ONE ATTEMPT. NOT A VERDICT.'
+CTA/END CARD ~0:30-0:34: card 'COMMENT A PROMPT'. VO 'Want a different prompt tested? Comment one, and follow for more.'
+Audio: no music. Keep original typing/click sounds low if used.
+Note: do not state what Cursor can or costs; show only what the recording shows. Show any generated code/output only after a person checks terms.
+- BRIEF 3 - AI NOTE-APP TIMED TEST. PERSON MUST FIRST CHOOSE AND CHECK THE NOTE-TAKING APP BEFORE FILMING; no app has been chosen, and [app name] stays a placeholder until then. Estimated runtime ~34s (script ~85 words / 150 wpm; NOT timed aloud). Pacing: brisk, with the stopwatch as the visual anchor. Use no title or caption wording that claims the app saves time; only measured numbers appear.
+0:00-0:04 HOOK: visible stopwatch at 00:00 on screen. VO 'How long does an AI note app take to summarize my notes?'
+BODY ~0:04-0:30: Shot 1: stopwatch starts, caption 'ONE TASK. ONE STOPWATCH.' Shot 2: notes pasted/uploaded, shown in full; caption '[number] words of notes from [meeting or lecture type]'; VO 'I'm giving [app name] about [number] words of messy notes.' Shot 3: summary appearing with stopwatch still running; narrate [what I did, step by step]. Shot 4: stopwatch frozen at the measured time, caption '[measured time]'. Shot 5: split screen, summary vs original notes, misses highlighted; captions 'CAUGHT: [what it caught]' and 'MISSED: [what it missed]'. Closing line on screen: 'ONE RUN. ONE APP. NOT A RANKING.'
+CTA/END CARD ~0:30-0:34: card 'WHICH APP NEXT?' VO 'Which app should I time next? Comment it, and follow.'
+Audio: no music. If the stopwatch is real screen footage, do not cut inside the timed section; if any part is cut or sped up, label it and show the stopwatch continuing.
+No ranking, no time-saving wording in title, captions or description.
+- LICENSE / TERMS SECTION (all items UNVERIFIED; I checked no vendor terms). 1) Google search UI/logo (Brief 1): status unverified; person checks Google brand/permissions guidelines for showing the UI or logo on screen. 2) Perplexity UI/logo/output (Brief 1): unverified; check Perplexity terms and brand guidelines, including use of its output in video. 3) Cursor UI/logo and generated code/output (Brief 2): unverified; check Cursor terms and brand guidelines. 4) Chosen note app UI/logo, and the user's notes content (Brief 3): app not chosen, unverified; check that app's terms; make sure the notes contain no private or third-party content (personal data risk). 5) Footage: only creator-recorded screen recordings are planned; no stock footage, none named. 6) Music: none by default, so none to license; if a person adds any, it needs a documented license before use, and none is named here. 7) AI voice: none specified; the plan is the creator's own VO. If an AI voice is used, check its vendor terms and YouTube's disclosure rules. 8) YouTube altered/synthetic content disclosure: person checks current YouTube rules for whether AI-generated output in the demos needs disclosure. 9) Stopwatch/fonts/overlay graphics: use only assets the editor owns or that carry a verified license; none named here.
+
+## Open issues
+- A person must choose and check the note-taking app before filming Script 3.
+- All vendor terms, logo/UI permissions and YouTube AI-disclosure rules are unverified; a person must check them.
+- Durations are estimates from word counts, not timed aloud; re-time after recording.
+- No footage exists; every bracket stays until a real recording is made.
+- Check YouTube Studio for whether last week's Shorts were ever published and how they performed.

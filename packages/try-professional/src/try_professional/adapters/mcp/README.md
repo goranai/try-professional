@@ -16,7 +16,7 @@ trypro mcp --help                 # Check it's installed
 Add the server to Claude Code, and ask it to design your company:
 
 ```bash
-claude mcp add trypro -- trypro mcp --dir "$PWD"
+claude mcp add trypro -- trypro mcp --coordinator --dir "$PWD"
 claude "Use the trypro tools to design a company for a catering business that delivers office lunches."
 ```
 
@@ -33,13 +33,14 @@ That writes one subagent per role and a `/company` command. Restart Claude Code 
 /company Write a weekly lunch menu and a price list for a new office client with 30 people
 ```
 
-Each role's subagent has no shell and no file tools. Its only tools come from a server started for that role, so it can't read another role's memory or see the rest of the company, whatever it tries. Claude Code's own limits apply to its usage: Try Professional can't see them.
+Your session only coordinates. Its server can start work and see who's next, and it can't read an assignment or submit anything, so it can't do a role's work. Each role's subagent has no shell and no file tools. Its only tools come from a server started for that role, so it can't read another role's memory or see the rest of the company, whatever it tries. Claude Code's own limits apply to its usage: Try Professional can't see them.
 
 ## In any other client
 
 ```bash
-trypro mcp                              # Operator mode
+trypro mcp                              # Operator mode: one client plays every role
 trypro mcp --role engineering/backend   # Bound to one role
+trypro mcp --coordinator                # Starts and follows work, and can't do any of it
 ```
 
 ```json
@@ -74,7 +75,9 @@ Designing a company is the same loop: `org_propose`, then `org_proposal_get` say
 | Separation between roles | One server per role | **Procedural only**: one model plays every role |
 | Files a role claims to have written | Checked against the run's workspace | Not checked, because the client has its own files |
 
-**A reviewer in operator mode isn't independent.** It's the same model that did the work. The audit log says so, by recording `attested_by: claimed`. Use bound servers, as `trypro agents claude-code` does, if that matters.
+**A coordinator** starts and follows work, and sees who's next. It can't read an assignment, submit anything, or reach memory, skills, or workspace files. Pair it with one bound server per role, which is what `trypro agents claude-code` sets up.
+
+**A reviewer in operator mode isn't independent.** It's the same model that did the work. The audit log says so, by recording `attested_by: claimed`. Use bound servers, as `trypro agents claude-code` does, if that matters. Check it afterwards: `attested_by: runtime` in the audit log is what shows a role's own server did the work.
 
 **Tool limits only cover this server's tools.** A role's `allowed_tools` apply to memory, skill, and workspace tools here. A client's own tools, such as a shell or file editor, are outside this server's control. `trypro agents claude-code` turns them off for each role. Another client has to do the same, or use the API runner.
 

@@ -649,12 +649,15 @@ def cmd_mcp(args: argparse.Namespace) -> int:
         )
         if isinstance(orchestrator.skills, LockedSkills):
             orchestrator.feedback = orchestrator.skills
-        return McpService(orchestrator, bound_role=args.role)
+        return McpService(orchestrator, bound_role=args.role, coordinator=args.coordinator)
 
+    if args.role and args.coordinator:
+        print("A server is bound to a role, or coordinates. It can't be both.", file=sys.stderr)
+        return 2
     # A role can't design the company it works in.
     design = None if args.role else _Design(root)
     # stdout belongs to the protocol from here on, so nothing else may print to it.
-    build_server(company, design).run("stdio")
+    build_server(company, design, coordinator=args.coordinator).run("stdio")
     return 0
 
 
@@ -1208,6 +1211,11 @@ def build_parser() -> argparse.ArgumentParser:
     mcp = sub.add_parser("mcp", help="Serve this company to an MCP client over stdio")
     mcp.add_argument("--role", help="Act as one role, with its identity fixed. Default: operator mode")
     mcp.add_argument("--dir", help="The company's folder. Default: the current folder")
+    mcp.add_argument(
+        "--coordinator",
+        action="store_true",
+        help="Only start and follow work, and hand it to servers bound to each role. It can't do a role's work",
+    )
     mcp.set_defaults(func=cmd_mcp)
 
     sub.add_parser("doctor", help="Check this project's setup").set_defaults(func=cmd_doctor)
