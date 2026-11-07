@@ -260,6 +260,10 @@ def proposal_status(root: Path, proposal_id: str) -> dict[str, Any]:
     if meta["status"] == "designing":
         return _design_action(path, meta)
     if meta["status"] == "judging":
+        if not (path / _PENDING).is_file():
+            # Stopped while it was searching for skills. Nothing was activated, and the design can be redone.
+            reason = "This proposal was interrupted while finding skills. Call org_propose to start again."
+            return {"proposal_id": proposal_id, "status": "failed", "reason": reason}
         return _judgment_action(path, json.loads((path / _PENDING).read_text(encoding="utf-8")))
     if meta["status"] == "failed":
         return {"proposal_id": proposal_id, "status": "failed"}

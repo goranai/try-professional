@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import Any
 
@@ -80,6 +81,15 @@ class TestDesign:
         submit_design(tmp_path, embedder, action["proposal_id"], _design(action["template"]))
         activate(load_proposal(tmp_path, action["proposal_id"]), tmp_path, embedder, by="a person")
         assert load_org(tmp_path / "org").company_name == "Test Co"
+
+    def test_one_interrupted_while_finding_skills_says_so(self, tmp_path: Path, embedder: Any) -> None:
+        """A process stopped at this point once left a proposal that crashed whoever asked about it."""
+        action = begin_design(tmp_path, embedder, "A small bakery")
+        path = tmp_path / ".trypro" / "proposals" / action["proposal_id"] / "meta.json"
+        meta = json.loads(path.read_text(encoding="utf-8"))
+        path.write_text(json.dumps({**meta, "status": "judging"}), encoding="utf-8")
+        answer = proposal_status(tmp_path, action["proposal_id"])
+        assert answer["status"] == "failed" and "org_propose" in answer["reason"]
 
     def test_an_unknown_proposal_is_refused(self, tmp_path: Path, embedder: Any) -> None:
         with pytest.raises(PullError, match="no proposal"):

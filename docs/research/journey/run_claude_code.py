@@ -37,6 +37,7 @@ from try_professional.generator import activate, load_proposal
 from try_professional.memory import FastEmbedEmbedder
 from try_professional.memory.embedding import use_embedding_service
 from try_professional.org import load_org
+from try_professional.resources import COMMAND_PEAK_MB, wait_for_memory
 
 BUSINESSES: dict[str, dict[str, str]] = {
     "shorts": {
@@ -197,6 +198,8 @@ def run_claude(
     prompt: str, system: str, server: dict[str, Any], model: str, allowed: str, refused: str = ""
 ) -> dict[str, Any]:
     """One isolated process. It waits out a usage limit, and never falls back to an API key."""
+    # This machine may be doing other work, so wait for room rather than push it low.
+    wait_for_memory(COMMAND_PEAK_MB, say=lambda text: print(text, flush=True))
     with tempfile.TemporaryDirectory(prefix="trypro-role-", ignore_cleanup_errors=True) as work:
         config = Path(work) / "mcp.json"
         config.write_text(json.dumps({"mcpServers": {"trypro": server}}), encoding="utf-8")
