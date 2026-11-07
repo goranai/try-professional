@@ -194,7 +194,7 @@ class TestRightSizing:
         result, client = _run(company, override=_small())
         assert result.status == "done"
         steps = [c["purpose"] for c in client.calls]
-        assert steps == ["intake", "execute", "review", "integrate"]
+        assert steps == ["intake", "execute", "review"]
         state = company.state(result.run_id)
         assert state.size == "small"
         assert result.size == "small"
@@ -211,6 +211,64 @@ class TestRightSizing:
         assert result.status == "done"
         assert [c["purpose"] for c in client.calls] == ["intake", "dispatch", "execute", "review", "integrate"]
         assert client.calls[1]["role"] == "engineering/tech-lead"
+
+    def test_one_role_s_work_becomes_the_final_report_without_another_model_call(self, company: Orchestrator) -> None:
+        """A real two-sentence reply took six model calls. The last two summarized, and re-reviewed, work already approved."""
+        result, client = _run(company, override=_small())
+        state = company.state(result.run_id)
+        final = state.artifacts[state.final_artifact_id or ""]
+        work = next(t for t in state.tasks.values() if t.work_package_id)
+        assert final.produced_by == "orchestrator"
+        assert final.payload["artifact_refs"] == [work.result_artifact_id]
+        charter = state.artifacts[state.charter_artifact_id or ""]
+        assert [c["criterion"] for c in final.payload["criteria_results"]] == charter.payload["success_criteria"]
+        assert result.final == final.payload
+        assert "integrate" not in [c["purpose"] for c in client.calls]
+
+    def test_what_a_person_must_be_told_still_reaches_them(self, company: Orchestrator) -> None:
+        """With no CEO writing the report, code still adds what was left open."""
+
+        def override(invocation: Any, state: Any, org_: Org) -> dict[str, Any] | None:
+            if invocation.purpose == Purpose.INTAKE:
+                return {**default_payload(invocation, state, org_), **SMALL}
+            if invocation.purpose == Purpose.EXECUTE:
+                payload = default_payload(invocation, state, org_)
+                payload["done_criteria_met"][0]["met"] = False
+                return payload
+            if invocation.purpose == Purpose.REVIEW:
+                # A reviewer that lets it through, so what reaches the person is down to code.
+                verdict = default_payload(invocation, state, org_)
+                return {**verdict, "decision": "approve", "issues": []}
+            return None
+
+        result, _ = _run(company, override=override)
+        assert result.status == "done"
+        assert result.final["criteria_results"][0]["met"] is False
+        assert any(limit.startswith("Not met") for limit in result.final["known_limits"])
+
+    def test_legal_still_reviews_the_work_when_its_triggers_apply(self, company: Orchestrator) -> None:
+        """Only the second legal review, of a summary of the same work, goes."""
+
+        def override(invocation: Any, state: Any, org_: Org) -> dict[str, Any] | None:
+            if invocation.purpose == Purpose.INTAKE:
+                return {**default_payload(invocation, state, org_), **SMALL}
+            if invocation.purpose == Purpose.EXECUTE:
+                return {"payload": default_payload(invocation, state, org_), "flags": {"public_facing": True}}
+            return None
+
+        result, client = _run(company, override=override)
+        assert result.status == "done"
+        reviews = [(c["role"], c["purpose"]) for c in client.calls if c["purpose"] == "review"]
+        assert len(reviews) == 2
+        state = company.state(result.run_id)
+        work = next(t for t in state.tasks.values() if t.work_package_id)
+        assert work.passed_gates == ["qa", "legal"]
+
+    def test_a_large_command_still_gets_the_ceo_s_report(self, company: Orchestrator) -> None:
+        result, client = _run(company)
+        assert "integrate" in [c["purpose"] for c in client.calls]
+        state = company.state(result.run_id)
+        assert state.artifacts[state.final_artifact_id or ""].produced_by != "orchestrator"
 
     def test_a_small_command_still_goes_through_qa(self, company: Orchestrator) -> None:
         result, _ = _run(company, override=_small())
@@ -266,7 +324,7 @@ class TestRightSizing:
         """A real model did this three times running, and the command was blocked over it."""
         result, client = _run(company, override=_small({"route_role": "backend"}))
         assert result.status == "done"
-        assert [c["purpose"] for c in client.calls] == ["intake", "execute", "review", "integrate"]
+        assert [c["purpose"] for c in client.calls] == ["intake", "execute", "review"]
         assert client.calls[1]["role"] == "engineering/backend"
 
     def test_a_bad_route_lists_the_roles_that_exist(self, company: Orchestrator, org: Org) -> None:

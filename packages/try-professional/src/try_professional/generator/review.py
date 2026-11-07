@@ -7,6 +7,8 @@ from .provision import RoleMatch
 from .templates import load_template
 
 SKILL_REQUEST_URL = "https://github.com/goranai/try-professional/issues/new?template=skill_request.yml"
+# The line below which a role need counts as a gap is 0.35. A match a little above it is worth a second look.
+LOW_CONFIDENCE_SCORE = 0.40
 THIN_COVERAGE_PERCENT = 50
 _SOURCES = {
     "declared": "declared by its author",
@@ -15,10 +17,16 @@ _SOURCES = {
 }
 
 
+def low_confidence(match: RoleMatch) -> bool:
+    """A display rule, not a measured one: no model judged it, or it's barely above the line for a gap."""
+    return match.judged_by != "model" or match.score < LOW_CONFIDENCE_SCORE
+
+
 def _match_line(match: RoleMatch) -> list[str]:
     source = _SOURCES.get(match.category_source, match.category_source)
+    flag = "  LOW CONFIDENCE: check it fits, or reject it" if low_confidence(match) else ""
     return [
-        f"{match.skill_id}  ({match.score:.2f})",
+        f"{match.skill_id}  ({match.score:.2f}){flag}",
         f"  {match.reason}. Category {match.category}: {source}.",
     ]
 
@@ -99,7 +107,7 @@ def render(bundle: Proposal) -> str:
             total_skills += len(matches)
             for match_item in matches:
                 first, second = _match_line(match_item)
-                lines.append(f"    + {first}")
+                lines.append(f"    {'?' if low_confidence(match_item) else '+'} {first}")
                 lines.append(f"      {second.strip()}")
             gaps = bundle.provisioned.gaps.get(ref, [])
             if gaps:
@@ -135,6 +143,12 @@ def render(bundle: Proposal) -> str:
         "Each role starts with its role card, its skills, and an empty personal memory.",
         "This company produces files. It can't render, upload, publish, or spend.",
     ]
+    doubtful = sum(1 for items in bundle.provisioned.matches.values() for m in items if low_confidence(m))
+    if doubtful:
+        lines.append(
+            f"{doubtful} of the matches above are marked ? for low confidence. To drop one, choose [e]dit and remove "
+            "it, or after approving: trypro skills reject <skill> --role <role> --by <your name>"
+        )
     if unfilled:
         lines.append(f"{unfilled} role needs have no skill. Approving saves them, and trypro skills gaps lists them.")
     return "\n".join(lines)

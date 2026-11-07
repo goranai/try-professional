@@ -73,6 +73,7 @@ from .org.loader import read_documents
 from .org.policy import check_policy
 from .packs import add_pack, available_packs, install_org, remove_pack
 from .resources import COMMAND_PEAK_MB, LowMemory, wait_for_memory
+from .setup import CLAUDE_CODE, runtime_of, setup_claude_code
 from .skills import (
     DEFAULT_UNUSED_RUNS,
     UNCATEGORIZED,
@@ -174,7 +175,14 @@ def _review(bundle: Proposal, root: Path, embedder: Any, *, by: str, client: Any
                 return 1
             _seed_company_memory(bundle, root, by)
             _print("Approved. Files go to deliverables/. Put anything roles should read in inputs/.")
-            _print('Next: trypro run "<your goal>"')
+            if runtime_of(root) == CLAUDE_CODE:
+                # trypro setup claude-code was run here, so the roles are written now, not as a separate step.
+                written = write_claude_code_files(root, load_org(root / "org"))
+                _print(f"Wrote {len(written)} files for Claude Code: a subagent per role, and the /company command.")
+                _print("Next: start Claude Code here again, and run: /company <a command>")
+            else:
+                _print("Next, in Claude Code: trypro agents claude-code, then /company <a command>")
+                _print('Or, with the experimental API runner: trypro run "<your goal>"')
             return 0
         if choice.startswith("e"):
             subprocess.run([*_editor(), str(bundle.path / "proposal.yaml")], check=False)
@@ -1062,6 +1070,10 @@ def cmd_audit(args: argparse.Namespace) -> int:
         orchestrator.close()
 
 
+def cmd_setup(args: argparse.Namespace) -> int:
+    return setup_claude_code(Path(args.dir).resolve() if args.dir else Path.cwd(), _print)
+
+
 def cmd_doctor(args: argparse.Namespace) -> int:
     checks = run_checks(Path.cwd())
     if args.report:
@@ -1193,6 +1205,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Only start and follow work, and hand it to servers bound to each role. It can't do a role's work",
     )
     mcp.set_defaults(func=cmd_mcp)
+
+    setup = sub.add_parser("setup", help="Get ready to design a company in a runtime: checks, then adds trypro to it")
+    setup.add_argument("runtime", choices=["claude-code"])
+    setup.add_argument("--dir", help="The company's folder. Default: here")
+    setup.set_defaults(func=cmd_setup)
 
     doctor = sub.add_parser("doctor", help="Check this project's setup")
     doctor.add_argument(

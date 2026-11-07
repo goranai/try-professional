@@ -372,6 +372,8 @@ class _Step:
         if state.invocations or state.suspended:
             return
         if all(p.status == PackageStatus.APPROVED for p in state.packages.values()):
+            if self.assemble_one_role_final():
+                return
             root = self.org.root_role
             refs = [state.charter_artifact_id or ""]
             refs += [t.result_artifact_id for t in state.tasks.values() if t.result_artifact_id]
@@ -386,6 +388,68 @@ class _Step:
             )
             state.tasks[FINAL_TASK_ID] = final
             self.invoke(root, Purpose.INTEGRATE, "FinalDeliverable", task_id=FINAL_TASK_ID, context_refs=refs)
+
+    def assemble_one_role_final(self) -> bool:
+        """A small command one role did needs no final report from the CEO, and its summary no second legal review.
+
+        Its brief is the command's success criteria, word for word, and its work already passed QA, and Legal if
+        Legal's triggers applied. A model writing a summary of it, and a reviewer reading that summary, added two
+        model calls and nothing a person needs. So code assembles the report from the approved work, and adds what
+        a person must be told, as it does for every report. Any other command still gets the CEO's report.
+        """
+        state = self.state
+        tasks = [t for t in state.tasks.values() if t.task_id != FINAL_TASK_ID]
+        if state.size != "small" or len(tasks) != 1:
+            return False
+        task = tasks[0]
+        charter = state.artifacts.get(state.charter_artifact_id or "")
+        result = state.artifacts.get(task.result_artifact_id or "")
+        if charter is None or result is None or task.status != TaskStatus.APPROVED:
+            return False
+        criteria = charter.payload["success_criteria"]
+        if [_same_words(c) for c in task.definition_of_done] != [_same_words(c) for c in criteria]:
+            return False
+        reported = {_same_words(item["criterion"]): item for item in result.payload.get("done_criteria_met") or []}
+        payload = {
+            "summary_in_user_language": result.payload.get("summary") or result.payload.get("body") or task.title,
+            "artifact_refs": [result.artifact_id],
+            "criteria_results": [
+                {
+                    "criterion": criterion,
+                    "met": bool(reported.get(_same_words(criterion), {}).get("met")),
+                    "evidence": str(reported.get(_same_words(criterion), {}).get("evidence") or ""),
+                }
+                for criterion in criteria
+            ],
+            "known_limits": _not_done(state),
+        }
+        final = TaskState(
+            task_id=FINAL_TASK_ID,
+            work_package_id=None,
+            title="Assemble the final deliverable",
+            owner_role=self.org.root_role,
+            reviewer_role=self.org.root_role,
+            output_type="FinalDeliverable",
+            status=TaskStatus.APPROVED,
+            flags=task.flags,
+        )
+        stored = self.store(
+            make_artifact(
+                "FinalDeliverable",
+                payload,
+                run_id=state.run_id,
+                produced_by="orchestrator",
+                task_id=FINAL_TASK_ID,
+                language=state.user_language,
+                parents=[charter.artifact_id, result.artifact_id],
+                flags=task.flags,
+            )
+        )
+        final.result_artifact_id = stored.artifact_id
+        state.tasks[FINAL_TASK_ID] = final
+        state.final_artifact_id = stored.artifact_id
+        self.finish_done()
+        return True
 
     def update_phase(self) -> None:
         state = self.state
