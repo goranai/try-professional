@@ -167,11 +167,11 @@ class TestMemoryAndSkills:
         service, run_id, invocation = self._at_execute(orchestrator)
         assert service.memory_recall(run_id, invocation, "x").startswith('<untrusted kind="memory">')
 
-    def test_a_non_executive_cannot_promote(self, orchestrator: Orchestrator) -> None:
-        service, run_id, invocation = self._at_execute(orchestrator)
-        with pytest.raises(ToolError, match="company memory"):
-            service.memory_promote(run_id, invocation, "text", "art-1")
-        assert orchestrator.state(run_id).counters.violations == 1
+    def test_no_client_can_change_company_memory(self, orchestrator: Orchestrator) -> None:
+        """A person approves company memory. Over MCP, even the CEO could once skip that."""
+        service, _, _ = self._at_execute(orchestrator)
+        assert not hasattr(service, "memory_promote")
+        assert "memory_promote" not in MCP_TOOLS
 
     def test_a_role_without_the_tool_is_refused(self, org: Org, tmp_path: Path) -> None:
         orchestrator = Orchestrator(org, tmp_path, memory=RecordingMemory())

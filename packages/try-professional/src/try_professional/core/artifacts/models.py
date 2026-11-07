@@ -23,7 +23,8 @@ WORK_OUTPUT_TYPES = ("CodeChange", "PublicContent", "ResearchReport", "TaskRepor
 
 
 class _Strict(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    # Spaces alone can't pass as a summary or a body.
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
 
 class Flags(_Strict):
@@ -168,6 +169,13 @@ class CodeChange(_Strict):
 class Claim(_Strict):
     claim: str = NonEmpty
     source: str = ""
+    unverified: bool = Field(False, description="True if this claim has no source a person could check")
+
+    @model_validator(mode="after")
+    def _says_where_it_came_from(self) -> Claim:
+        if not self.source and not self.unverified:
+            raise ValueError("A claim needs a source. If it has none, set unverified to true.")
+        return self
 
 
 class PublicContent(_Strict):

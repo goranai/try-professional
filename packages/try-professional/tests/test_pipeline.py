@@ -393,7 +393,11 @@ class TestReview:
         execute = next(a for a in actions if a.kind == "invoke_role")
         state, actions = advance(
             state,
-            Submission(invocation_id=execute.invocation_id, actor=execute.role, payload={"summary": "done"}),
+            Submission(
+                invocation_id=execute.invocation_id,
+                actor=execute.role,
+                payload={"summary": "done", "done_criteria_met": [{"criterion": "d", "met": True}]},
+            ),
             org,
         )
         task = state.tasks["wp1/t1"]

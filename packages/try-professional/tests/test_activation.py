@@ -66,7 +66,10 @@ def test_audit_log_shows_marketing_and_sales_were_never_involved(org: Org, harne
 def test_personal_data_wakes_legal_though_the_plan_left_it_out(org: Org, harness: Callable[..., Any]) -> None:
     def override(invocation: Any, state: Any, org_: Org) -> dict[str, Any] | None:
         if invocation.purpose == Purpose.EXECUTE:
-            return {"summary": "Stores each customer's email and phone number", "files": [{"path": "users.py"}]}
+            return {
+                "summary": "Stores each customer's email and phone number",
+                "done_criteria_met": [{"criterion": "Done as described", "met": True}],
+            }
         return _plan("engineering")(invocation, state, org_)
 
     run = harness(org, override)
@@ -101,7 +104,13 @@ def test_model_declaring_no_flags_cannot_avoid_the_gate(org: Org, harness: Calla
     def override(invocation: Any, state: Any, org_: Org) -> dict[str, Any] | None:
         if invocation.purpose == Purpose.EXECUTE:
             return {
-                "payload": {"audience": "public", "channel": "web", "locale": "en", "body": "Hello"},
+                "payload": {
+                    "audience": "public",
+                    "channel": "web",
+                    "locale": "en",
+                    "body": "Hello",
+                    "done_criteria_met": [{"criterion": "Done as described", "met": True}],
+                },
                 "flags": {"public_facing": False},
             }
         return _plan("marketing")(invocation, state, org_)

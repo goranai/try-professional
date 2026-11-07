@@ -67,7 +67,7 @@ def default_payload(invocation: Invocation, state: RunState, org: Org) -> dict[s
             ],
         }
     if purpose == Purpose.EXECUTE:
-        return _execute_payload(invocation)
+        return _execute_payload(invocation, state)
     if purpose == Purpose.REVIEW:
         return {
             "gate": invocation.gate,
@@ -95,10 +95,11 @@ def _work_output(outputs: tuple[str, ...]) -> str:
     return next((o for o in outputs if o in _WORK_OUTPUTS), "TaskReport")
 
 
-def _execute_payload(invocation: Invocation) -> dict[str, Any]:
-    done = [{"criterion": "Done as described", "met": True, "evidence": LABEL}]
+def _execute_payload(invocation: Invocation, state: RunState) -> dict[str, Any]:
+    wanted = state.tasks[invocation.task_id or ""].definition_of_done
+    done = [{"criterion": criterion, "met": True, "evidence": LABEL} for criterion in wanted]
     if invocation.output_type == "CodeChange":
-        return {"summary": f"{LABEL} code", "files": [{"path": "src/app.py"}], "done_criteria_met": done}
+        return {"summary": f"{LABEL} code", "files": [], "done_criteria_met": done}
     if invocation.output_type == "PublicContent":
         return {
             "audience": "readers",

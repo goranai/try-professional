@@ -8,8 +8,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import shutil
-import threading
 import uuid
 from collections.abc import Callable
 from datetime import datetime, timedelta, timezone
@@ -23,6 +23,7 @@ from .brief import Briefing, build_brief
 from .company import CompanyStore
 from .deliverables import export_deliverables, read_sources
 from .ledger import Ledger
+from .lock import StateLock
 from .pipeline import (
     Action,
     ContextResolved,
@@ -48,6 +49,9 @@ PENDING_LESSONS_SHOWN = 3
 TEAM_SKILLS_SHOWN = 3
 
 
+_LOOKS_LIKE_A_FILE = re.compile(r"[\w./ -]+\.[A-Za-z0-9]{1,8}")
+
+
 def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="milliseconds")
 
@@ -66,7 +70,9 @@ class Orchestrator:
         inputs_dir: Path | None = None,
         deliverables_dir: Path | None = None,
         clock: Clock = utc_now,
+        check_claimed_files: bool = True,
     ) -> None:
+        self.check_claimed_files = check_claimed_files
         self.org = org
         self.home = home
         self.memory: MemoryPort = memory or NullMemory()
@@ -79,7 +85,8 @@ class Orchestrator:
         self.clock = clock
         self.ledger = Ledger(home / "ledger.sqlite")
         self.company = CompanyStore(home / "company.sqlite")
-        self._lock = threading.RLock()
+        # Several MCP servers can serve one company, one per role, so this also holds across processes.
+        self._lock = StateLock(home)
         self._logs: dict[str, AuditLog] = {}
 
     def audit_path(self, run_id: str) -> Path:
@@ -141,9 +148,10 @@ class Orchestrator:
             log.append(self.clock(), "deliverables_error", {"error": type(error).__name__})
 
     def _log(self, run_id: str) -> AuditLog:
-        if run_id not in self._logs:
-            self._logs[run_id] = AuditLog(self.audit_path(run_id))
-        return self._logs[run_id]
+        log = self._logs.get(run_id)
+        if log is None or log.changed_elsewhere():
+            log = self._logs[run_id] = AuditLog(self.audit_path(run_id))
+        return log
 
     def start(self, goal: str, run_id: str | None = None) -> tuple[str, list[Action]]:
         with self._lock:
@@ -159,7 +167,30 @@ class Orchestrator:
         """Apply an event from an adapter and return what must happen next."""
         with self._lock:
             state = self.ledger.load(run_id)
+            if isinstance(event, Submission) and self.check_claimed_files:
+                event = event.model_copy(update={"missing_files": self._claimed_but_missing(state, event)})
             return self._apply(state, event)
+
+    def _claimed_but_missing(self, state: RunState, event: Submission) -> list[str]:
+        """Files a role says it produced, and didn't. A model can claim anything, and the workspace can't."""
+        invocation = state.invocations.get(event.invocation_id)
+        if invocation is None or invocation.purpose != Purpose.EXECUTE:
+            return []
+        claimed: list[str] = []
+        if invocation.output_type == "CodeChange":
+            files = event.payload.get("files")
+            claimed = [str(f.get("path", "")) for f in files if isinstance(f, dict)] if isinstance(files, list) else []
+        elif invocation.output_type == "TaskReport":
+            outputs = event.payload.get("outputs")
+            named = [str(item) for item in outputs] if isinstance(outputs, list) else []
+            claimed = [item for item in named if _LOOKS_LIKE_A_FILE.fullmatch(item)]
+        workspace = self.workspace(state.run_id).resolve()
+        missing = []
+        for name in claimed:
+            target = (workspace / name).resolve()
+            if not target.is_relative_to(workspace) or not target.is_file():
+                missing.append(name)
+        return missing
 
     def _apply(self, state: RunState, event: Any) -> list[Action]:
         pending_events: list[Any] = [event]

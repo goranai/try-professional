@@ -116,6 +116,10 @@ class PackageState(_Model):
     token_budget: int = 0
 
 
+# However a model behaves, a run can't keep handing out work forever. A person decides whether it goes on.
+MAX_ASSIGNMENTS = 200
+
+
 class Counters(_Model):
     """Failed or redone steps, counted the same way for every run."""
 
@@ -126,6 +130,8 @@ class Counters(_Model):
     handoffs: int = 0
     violations: int = 0
     package_overruns: int = 0
+    assignments: int = 0
+    amendments: int = 0
 
 
 class Usage(_Model):
@@ -143,7 +149,7 @@ class HumanRequest(_Model):
     id: str
     question: str
     options: list[str]
-    kind: Literal["escalation", "gate_unavailable", "budget", "stalled"]
+    kind: Literal["escalation", "gate_unavailable", "budget", "stalled", "runaway"]
     task_id: str | None = None
     gate: str | None = None
     invocation_id: str | None = None
@@ -173,6 +179,7 @@ class RunState(_Model):
     usage_by_purpose: dict[str, Usage] = {}
     package_usage: dict[str, int] = {}
     budget_override: int | None = None
+    assignment_limit: int = MAX_ASSIGNMENTS
     failure_reason: str | None = None
     size: Literal["small", "large"] = "large"
     cancelled: bool = False
@@ -197,6 +204,8 @@ class Submission(_Model):
     language: str | None = None
     created_at: str | None = None
     notes: dict[str, Any] | None = None
+    # Set by the orchestrator, which can see the workspace. The pipeline itself touches no files.
+    missing_files: list[str] = []
 
 
 class EscalationRaised(_Model):

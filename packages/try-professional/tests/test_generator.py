@@ -1238,6 +1238,7 @@ class TestCurrentClaims:
                 return {
                     "question": "q",
                     "findings": [{"statement": "AI is trending", "confidence": "low", "unverified": unverified}],
+                    "done_criteria_met": [{"criterion": "d", "met": True}],
                 }
             return None
 

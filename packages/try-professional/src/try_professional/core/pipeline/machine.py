@@ -31,6 +31,7 @@ from ..artifacts import (
 from ..gates import deterministic_flags, triggered_gates
 from .state import (
     FINAL_TASK_ID,
+    MAX_ASSIGNMENTS,
     Action,
     AskHuman,
     ContextResolved,
@@ -59,6 +60,9 @@ from .state import (
 )
 
 TERMINAL_PHASES = {RunPhase.DONE, RunPhase.FAILED}
+MAX_WORK_PACKAGES = 12
+MAX_TASKS_PER_PACKAGE = 12
+MAX_AMENDMENTS = 5
 QA_GATE = "qa"
 
 
@@ -121,6 +125,7 @@ class _Step:
             context_refs=context_refs or [],
         )
         self.state.invocations[invocation.id] = invocation
+        self.state.counters.assignments += 1
         self.emit(invocation)
         return invocation
 
@@ -477,6 +482,8 @@ def _validate_plan(plan: Plan, org: Org, limit: int | None = None) -> str | None
     ids = [p.id for p in plan.work_packages]
     if len(ids) != len(set(ids)):
         return "work package IDs must be unique"
+    if len(ids) > MAX_WORK_PACKAGES:
+        return f"a plan can have at most {MAX_WORK_PACKAGES} work packages, not {len(ids)}"
     allocated = sum(p.token_budget for p in plan.work_packages)
     if limit is not None and allocated > limit:
         return f"package budgets add up to {allocated} tokens, over this run's limit of {limit}"
@@ -523,6 +530,8 @@ def _validate_task_plan(plan: TaskPlan, package: PackageState, org: Org) -> str 
     ids = [t.id for t in plan.tasks]
     if len(ids) != len(set(ids)):
         return "task IDs must be unique"
+    if len(ids) > MAX_TASKS_PER_PACKAGE:
+        return f"a work package can have at most {MAX_TASKS_PER_PACKAGE} tasks, not {len(ids)}"
     department = org.departments[package.owner_department]
     for task in plan.tasks:
         if not org.has_role(task.owner_role) or task.owner_role.split("/", 1)[0] != department.id:
@@ -672,6 +681,52 @@ def _check_actor(state: RunState, invocation_id: str, actor: str) -> Invocation:
     return invocation
 
 
+def _same_words(text: str) -> str:
+    return " ".join(text.split()).casefold()
+
+
+def _unreported(wanted: list[str], reported: Any) -> list[str]:
+    """Which criteria an output doesn't report on, so a brief can't simply be ignored."""
+    said = {_same_words(item["criterion"]) for item in reported or []}
+    return [criterion for criterion in wanted if _same_words(criterion) not in said]
+
+
+def _verdict_problem(parsed: ReviewVerdict) -> str | None:
+    if parsed.decision == "approve":
+        serious = [i.description for i in parsed.issues if i.severity != "minor"]
+        if serious:
+            return f"An approval can't list major or blocker issues: {'; '.join(serious)}. Request changes instead."
+    elif not parsed.issues:
+        return f"A decision of '{parsed.decision}' must list at least one issue, saying what's wrong."
+    return None
+
+
+def _not_done(state: RunState) -> list[str]:
+    """What a person must be told, whatever the final report chose to say."""
+    lines: list[str] = []
+    for task in state.tasks.values():
+        if task.task_id == FINAL_TASK_ID:
+            continue
+        if task.status == TaskStatus.FAILED:
+            lines.append(f"Not done: {task.title}")
+            continue
+        result = state.artifacts.get(task.result_artifact_id or "")
+        if result is None:
+            continue
+        for item in result.payload.get("done_criteria_met") or []:
+            if not item.get("met"):
+                lines.append(f"Not met in '{task.title}': {item.get('criterion')}")
+        for item in result.payload.get("open_issues") or []:
+            lines.append(f"Open in '{task.title}': {item}")
+        for item in result.payload.get("findings") or []:
+            if item.get("unverified"):
+                lines.append(f"Unverified, check before using: {str(item.get('statement'))[:200]}")
+        for item in result.payload.get("claims") or []:
+            if item.get("unverified"):
+                lines.append(f"Unverified, check before using: {str(item.get('claim'))[:200]}")
+    return lines
+
+
 def _on_submission(step: _Step, event: Submission) -> None:
     state, org = step.state, step.org
     invocation = _check_actor(state, event.invocation_id, event.actor)
@@ -679,6 +734,9 @@ def _on_submission(step: _Step, event: Submission) -> None:
         parsed = parse_payload(invocation.output_type, event.payload)
     except ArtifactError as error:
         step.reject(invocation, str(error))
+        return
+    if event.missing_files:
+        step.reject(invocation, f"These files aren't in the workspace: {', '.join(event.missing_files)}")
         return
 
     task = state.tasks.get(invocation.task_id) if invocation.task_id else None
@@ -752,6 +810,14 @@ def _on_submission(step: _Step, event: Submission) -> None:
 
     elif invocation.purpose == Purpose.EXECUTE:
         assert task is not None
+        missing = _unreported(task.definition_of_done, payload.get("done_criteria_met"))
+        if missing:
+            step.reject(
+                invocation,
+                "done_criteria_met must report on every item in the definition of done, word for word. "
+                f"Missing: {'; '.join(missing)}",
+            )
+            return
         notes = None
         if event.notes is not None:
             try:
@@ -786,6 +852,10 @@ def _on_submission(step: _Step, event: Submission) -> None:
             return
         if parsed.gate != invocation.gate:
             step.reject(invocation, f"gate must be '{invocation.gate}'")
+            return
+        problem = _verdict_problem(parsed)
+        if problem:
+            step.reject(invocation, problem)
             return
         artifact()
         close()
@@ -827,6 +897,9 @@ def _on_submission(step: _Step, event: Submission) -> None:
         for task_state in state.tasks.values():
             flags = flags.union(task_state.flags)
         flags = flags.union(deterministic_flags("GoalCharter", charter.payload))
+        # Code adds these, so a final report can't leave them out.
+        stated = list(payload.get("known_limits") or [])
+        payload["known_limits"] = stated + [line for line in _not_done(state) if line not in stated]
         stored = step.store(
             make_artifact(
                 "FinalDeliverable",
@@ -886,15 +959,22 @@ def _on_resolution(
         if not parsed.added_work_packages:
             step.reject(invocation, "amend_plan needs at least one added work package")
             return
+        if state.counters.amendments >= MAX_AMENDMENTS:
+            step.reject(invocation, f"This run has amended its plan {MAX_AMENDMENTS} times. Use escalate_further.")
+            return
+        if len(parsed.added_work_packages) > MAX_WORK_PACKAGES:
+            step.reject(invocation, f"An amendment can add at most {MAX_WORK_PACKAGES} work packages.")
+            return
         known = set(org.departments)
+        departments = f"Installed: {', '.join(sorted(known))}. To ask a person, use escalate_further."
         activating = {a.id for a in parsed.activate_departments}
         for activation in parsed.activate_departments:
             if activation.id not in known:
-                step.reject(invocation, f"department '{activation.id}' is not installed")
+                step.reject(invocation, f"department '{activation.id}' is not installed. {departments}")
                 return
         for package in parsed.added_work_packages:
             if package.owner_department not in known:
-                step.reject(invocation, f"department '{package.owner_department}' is not installed")
+                step.reject(invocation, f"department '{package.owner_department}' is not installed. {departments}")
                 return
             if package.owner_department not in state.activated and package.owner_department not in activating:
                 step.reject(invocation, f"amendment must activate '{package.owner_department}'")
@@ -914,6 +994,7 @@ def _on_resolution(
             return
         artifact()
         close()
+        state.counters.amendments += 1
         for activation in parsed.activate_departments:
             step.activate(activation.id, activation.reason)
         for package in parsed.added_work_packages:
@@ -1117,6 +1198,8 @@ def _on_human(step: _Step, event: HumanDecided) -> None:
         step.next_gate(task)
     elif request.kind == "budget" and event.new_token_budget:
         state.budget_override = event.new_token_budget
+    elif request.kind == "runaway":
+        state.assignment_limit = state.counters.assignments + MAX_ASSIGNMENTS
 
 
 def _on_cancel(step: _Step, event: RunCancelled) -> None:
@@ -1162,8 +1245,23 @@ def advance(state: RunState, event: Any, org: Org) -> tuple[RunState, list[Actio
         raise IllegalEvent("UNKNOWN_EVENT", type(event).__name__)
 
     step.schedule()
+    _check_runaway(step)
     _check_stall(step)
     return step.state, step.actions
+
+
+def _check_runaway(step: _Step) -> None:
+    """However a model behaves, a run stops handing out work at some point, and a person decides."""
+    state = step.state
+    if state.phase in TERMINAL_PHASES or state.phase == RunPhase.BLOCKED:
+        return
+    if state.counters.assignments >= state.assignment_limit:
+        step.ask_human(
+            f"This run has handed out {state.counters.assignments} assignments without finishing. "
+            "Continue, or abandon?",
+            ["resume", "abandon"],
+            "runaway",
+        )
 
 
 def _check_stall(step: _Step) -> None:

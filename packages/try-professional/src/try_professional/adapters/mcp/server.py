@@ -76,7 +76,7 @@ def build_server(service: McpService) -> MCPServer:
 
     @server.tool()
     def usage_report(run_id: str, invocation_id: str, input_tokens: int, output_tokens: int) -> Any:
-        """Report tokens you used on an action. This server can't see them. Marked as self-reported."""
+        """Report tokens you used on an action. Marked as self-reported. Limits run on the server's own estimate."""
         return _guard(service.usage_report, run_id, invocation_id, input_tokens, output_tokens)
 
     @server.tool()
@@ -90,9 +90,19 @@ def build_server(service: McpService) -> MCPServer:
         return _guard(service.memory_write, run_id, invocation_id, text)
 
     @server.tool()
-    def memory_promote(run_id: str, invocation_id: str, text: str, source: str) -> Any:
-        """Save to company memory, with a source. Only the executive department can."""
-        return _guard(service.memory_promote, run_id, invocation_id, text, source)
+    def workspace_list(run_id: str, invocation_id: str) -> Any:
+        """List the files in this run's shared workspace, including inputs/ from the person."""
+        return _guard(service.workspace_list, run_id, invocation_id)
+
+    @server.tool()
+    def workspace_read(run_id: str, invocation_id: str, path: str) -> Any:
+        """Read a file in this run's workspace."""
+        return _guard(service.workspace_read, run_id, invocation_id, path)
+
+    @server.tool()
+    def workspace_write(run_id: str, invocation_id: str, path: str, content: str) -> Any:
+        """Write a file in this run's workspace. It can't change inputs/."""
+        return _guard(service.workspace_write, run_id, invocation_id, path, content)
 
     @server.tool()
     def skill_search(run_id: str, invocation_id: str, query: str) -> Any:

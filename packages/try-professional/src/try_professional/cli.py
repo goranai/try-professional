@@ -612,7 +612,7 @@ def cmd_mcp(args: argparse.Namespace) -> int:
     except ImportError:
         print("The MCP server needs: pip install 'try-professional[mcp]'", file=sys.stderr)
         return 2
-    config = load_config(Path.cwd())
+    config = load_config(Path(args.dir) if args.dir else Path.cwd())
     org = load_org(config.org_dir)
     orchestrator = Orchestrator(
         org,
@@ -1101,6 +1101,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     mcp = sub.add_parser("mcp", help="Serve this company to an MCP client over stdio")
     mcp.add_argument("--role", help="Act as one role, with its identity fixed. Default: operator mode")
+    mcp.add_argument("--dir", help="The company's folder. Default: the current folder")
     mcp.set_defaults(func=cmd_mcp)
 
     sub.add_parser("doctor", help="Check this project's setup").set_defaults(func=cmd_doctor)

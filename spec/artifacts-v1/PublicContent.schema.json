@@ -12,6 +12,12 @@
           "default": "",
           "title": "Source",
           "type": "string"
+        },
+        "unverified": {
+          "default": false,
+          "description": "True if this claim has no source a person could check",
+          "title": "Unverified",
+          "type": "boolean"
         }
       },
       "required": [

@@ -26,3 +26,7 @@ fastembed-cache/
 Thumbs.db
 .idea/
 .vscode/
+
+# Claude Code settings and generated role agents
+.claude/
+.mcp.json

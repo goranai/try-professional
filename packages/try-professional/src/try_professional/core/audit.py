@@ -65,6 +65,11 @@ class AuditLog:
                 raise ValueError(f"audit log {path} is corrupt: {result.problem}")
             self._seq = result.records
             self._head = result.head
+        self._size = path.stat().st_size if path.exists() else 0
+
+    def changed_elsewhere(self) -> bool:
+        """Another process added to this log, so what this object knows about its chain is out of date."""
+        return (self.path.stat().st_size if self.path.exists() else 0) != self._size
 
     @property
     def head(self) -> str:
@@ -77,6 +82,7 @@ class AuditLog:
         with self.path.open("a", encoding="utf-8", newline="\n") as handle:
             handle.write(json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n")
         self._head = str(record["hash"])
+        self._size = self.path.stat().st_size
         return self._head
 
 
