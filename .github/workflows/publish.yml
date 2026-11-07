@@ -1,12 +1,24 @@
 name: Publish to PyPI
 
 # Trusted Publishing: PyPI trusts this workflow, in this repository and this environment, so no token exists to leak.
-# It only runs when someone starts it by hand, from main, on a commit whose full CI run passed.
+# It only runs when someone starts it by hand, from main, on a commit whose full CI run passed. It publishes one package
+# at a time. try-professional depends on skill-customs, so skill-customs must be on PyPI first.
 on:
   workflow_dispatch:
+    inputs:
+      package:
+        description: The one package to publish
+        required: true
+        type: choice
+        options:
+          - skill-customs
+          - try-professional
 
 permissions:
   contents: read
+
+env:
+  PACKAGE: ${{ inputs.package }}
 
 jobs:
   build:
@@ -27,6 +39,13 @@ jobs:
             echo "No passing manual CI run on $GITHUB_SHA. Run the CI workflow by hand first."
             exit 1
           fi
+      - name: Require skill-customs on PyPI before try-professional
+        if: inputs.package == 'try-professional'
+        run: |
+          if ! curl --silent --fail --output /dev/null https://pypi.org/pypi/skill-customs/0.1.0/json; then
+            echo "try-professional depends on skill-customs, which isn't on PyPI yet. Publish that first."
+            exit 1
+          fi
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
@@ -34,50 +53,26 @@ jobs:
         with:
           python-version: "3.13"
       - run: python -m pip install build twine
-      - run: python -m build packages/skill-customs --outdir dist/skill-customs
-      - run: python -m build packages/try-professional --outdir dist/try-professional
-      - run: python -m twine check --strict dist/*/*
+      - run: python -m build "packages/$PACKAGE" --outdir dist
+      - run: python -m twine check --strict dist/*
       - uses: actions/upload-artifact@v4
         with:
-          name: skill-customs
-          path: dist/skill-customs
-      - uses: actions/upload-artifact@v4
-        with:
-          name: try-professional
-          path: dist/try-professional
+          name: dist
+          path: dist
 
-  # try-professional depends on skill-customs, so skill-customs goes first.
-  publish-skill-customs:
+  publish:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment:
       name: pypi
-      url: https://pypi.org/project/skill-customs/
+      url: https://pypi.org/project/${{ inputs.package }}/
     permissions:
       id-token: write
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: skill-customs
-          path: dist
-      - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
-        with:
-          packages-dir: dist
-
-  publish-try-professional:
-    needs: publish-skill-customs
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    environment:
-      name: pypi
-      url: https://pypi.org/project/try-professional/
-    permissions:
-      id-token: write
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: try-professional
+          name: dist
           path: dist
       - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
         with:
