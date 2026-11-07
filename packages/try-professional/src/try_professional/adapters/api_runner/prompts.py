@@ -150,7 +150,7 @@ def user_prompt(
     if invocation.purpose == Purpose.INTEGRATE:
         # From the pipeline's own record. A real CEO once reported no reviews, because it couldn't see them.
         reviews = {t.task_id: t.passed_gates for t in state.tasks.values() if t.task_id != invocation.task_id}
-        parts.append(_section("Reviews passed", reviews))
+        parts.append(_section("Reviews", reviews))
     if invocation.purpose == Purpose.PLAN:
         installed = {
             d.id: org.role(d.head_ref).mission for d in org.departments.values() if d.id != org.root_role.split("/")[0]

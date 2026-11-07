@@ -115,7 +115,7 @@ class TestWhatARoleSees:
 
     def test_the_ceo_sees_which_reviews_each_task_passed(self, org: Org, harness: Callable[..., Any]) -> None:
         prompt = self._prompts(org, harness)["integrate"]
-        assert "Reviews passed" in prompt and ':["qa"' in prompt
+        assert "## Reviews" in prompt and ':["qa"' in prompt
 
     def test_planners_know_what_the_company_can_reach(self, org: Org, harness: Callable[..., Any]) -> None:
         """A plan once required dated web sources from a company with no web, and the command was blocked."""
