@@ -27,6 +27,7 @@ from ..artifacts import (
     WorkPackage,
     make_artifact,
     parse_payload,
+    settle_notes,
 )
 from ..gates import deterministic_flags, triggered_gates
 from .state import (
@@ -767,8 +768,11 @@ def _not_done(state: RunState) -> list[str]:
 def _on_submission(step: _Step, event: Submission) -> None:
     state, org = step.state, step.org
     invocation = _check_actor(state, event.invocation_id, event.actor)
+    submitted, submitted_notes = event.payload, event.notes
+    if invocation.purpose == Purpose.EXECUTE:
+        submitted, submitted_notes = settle_notes(submitted, submitted_notes)
     try:
-        parsed = parse_payload(invocation.output_type, event.payload)
+        parsed = parse_payload(invocation.output_type, submitted)
     except ArtifactError as error:
         step.reject(invocation, str(error))
         return
@@ -856,9 +860,9 @@ def _on_submission(step: _Step, event: Submission) -> None:
             )
             return
         notes = None
-        if event.notes is not None:
+        if submitted_notes is not None:
             try:
-                notes = parse_payload("WorkNotes", event.notes)
+                notes = parse_payload("WorkNotes", submitted_notes)
             except ArtifactError as error:
                 step.reject(invocation, str(error))
                 return

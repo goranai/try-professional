@@ -288,14 +288,40 @@ class FinalDeliverable(_Strict):
     known_limits: list[str] = []
 
 
+_NOTE_TEXT_LIMITS = {"did": 300, "lesson": 500, "team_lesson": 500}
+_NOTE_LIST_LIMIT = 5
+
+
 class WorkNotes(_Strict):
     """What a role records about its own task. It becomes that role's work log and personal memory."""
 
-    did: str = Field("", max_length=300)
-    decided: list[str] = Field([], max_length=5)
-    promised: list[str] = Field([], max_length=5)
-    lesson: str = Field("", max_length=500)
-    team_lesson: str = Field("", max_length=500)
+    did: str = Field("", max_length=_NOTE_TEXT_LIMITS["did"])
+    decided: list[str] = Field([], max_length=_NOTE_LIST_LIMIT)
+    promised: list[str] = Field([], max_length=_NOTE_LIST_LIMIT)
+    lesson: str = Field("", max_length=_NOTE_TEXT_LIMITS["lesson"])
+    team_lesson: str = Field("", max_length=_NOTE_TEXT_LIMITS["team_lesson"])
+
+
+def settle_notes(payload: Any, notes: Any) -> tuple[Any, Any]:
+    """A role's notes are bookkeeping, so a slip in them can't cost it the work it did.
+
+    In a real run, notes in the wrong place or 40 characters too long threw away a finished deliverable and charged for
+    it again, until the command hit its token limit. Notes in the payload move to where they belong, and long ones are
+    cut, so what reaches memory stays just as small. Anything else wrong with them is still refused.
+    """
+    if notes is None and isinstance(payload, dict) and "notes" in payload:
+        notes = payload["notes"]
+        payload = {key: value for key, value in payload.items() if key != "notes"}
+    if not isinstance(notes, dict):
+        return payload, notes
+    fitted = dict(notes)
+    for name, limit in _NOTE_TEXT_LIMITS.items():
+        if isinstance(fitted.get(name), str):
+            fitted[name] = fitted[name][:limit]
+    for name in ("decided", "promised"):
+        if isinstance(fitted.get(name), list):
+            fitted[name] = fitted[name][:_NOTE_LIST_LIMIT]
+    return payload, fitted
 
 
 class Retrospective(_Strict):

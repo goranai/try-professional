@@ -405,10 +405,49 @@ class TestWorkState:
         schema = submit_spec("TaskReport", declares_flags=True).input_schema["properties"]["notes"]
         assert set(schema["properties"]) == set(WorkNotes.model_fields)
 
-    def test_bad_notes_are_refused(self, company: Orchestrator) -> None:
-        _, client = _run(company, override=self._notes({"did": "x" * 400}))
-        assert company.state(next(iter(r[0] for r in company.ledger.list_runs()))).counters.invalid_outputs >= 1
+    def _state(self, company: Orchestrator) -> Any:
+        return company.state(next(iter(r[0] for r in company.ledger.list_runs())))
+
+    def _stored_notes(self, company: Orchestrator) -> dict[str, Any]:
+        return next(a.payload for a in self._state(company).artifacts.values() if a.type == "WorkNotes")
+
+    @pytest.mark.parametrize("bad", [{"did": 5}, {"invented": "x"}, "just text"])
+    def test_bad_notes_are_refused(self, company: Orchestrator, bad: Any) -> None:
+        _, client = _run(company, override=self._notes(bad))
+        assert self._state(company).counters.invalid_outputs >= 1
         assert client.calls
+
+    def test_long_notes_are_cut_and_dont_cost_the_work(self, company: Orchestrator) -> None:
+        """A real writer's note ran over the limit, and it threw away a finished deliverable, more than once."""
+        notes = {"did": "x" * 400, "lesson": "y" * 900, "team_lesson": "z" * 900, "decided": ["a"] * 9}
+        _run(company, override=self._notes(notes))
+        assert self._state(company).counters.invalid_outputs == 0
+        stored = self._stored_notes(company)
+        assert len(stored["did"]) == 300
+        assert len(stored["lesson"]) == 500
+        assert len(stored["team_lesson"]) == 500
+        assert len(stored["decided"]) == 5
+
+    def test_notes_in_the_payload_move_to_where_they_belong(self, company: Orchestrator) -> None:
+        """Real writers did this in both of a command's rework rounds."""
+
+        def override(invocation: Any, state: Any, org_: Any) -> Any:
+            if invocation.purpose == Purpose.EXECUTE:
+                return {"payload": {**default_payload(invocation, state, org_), "notes": {"did": "Wrote it"}}}
+            return None
+
+        _run(company, override=override)
+        assert self._state(company).counters.invalid_outputs == 0
+        assert self._stored_notes(company)["did"] == "Wrote it"
+
+    def test_nothing_else_extra_in_a_payload_gets_through(self, company: Orchestrator) -> None:
+        def override(invocation: Any, state: Any, org_: Any) -> Any:
+            if invocation.purpose == Purpose.EXECUTE:
+                return {"payload": {**default_payload(invocation, state, org_), "invented": "x"}}
+            return None
+
+        _run(company, override=override)
+        assert self._state(company).counters.invalid_outputs >= 1
 
 
 class TestBrief:

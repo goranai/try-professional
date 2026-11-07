@@ -29,6 +29,7 @@ from .models import (
     artifact_schemas,
     make_artifact,
     parse_payload,
+    settle_notes,
 )
 
 __all__ = [
@@ -60,4 +61,5 @@ __all__ = [
     "artifact_schemas",
     "make_artifact",
     "parse_payload",
+    "settle_notes",
 ]
