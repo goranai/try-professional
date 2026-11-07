@@ -35,6 +35,7 @@ Vectors = NDArray[np.float32]
 
 _models: dict[str, Any] = {}
 _models_lock = threading.Lock()
+_service_home: Path | None = None
 
 
 def model_cache_dir() -> Path:
@@ -73,9 +74,24 @@ def normalize(vectors: NDArray[Any]) -> Vectors:
     return result
 
 
+def use_embedding_service(home: Path) -> None:
+    """Use the company's one embedding process from here on, instead of a copy in this process."""
+    global _service_home
+    from .embed_service import service_is_off
+
+    _service_home = None if service_is_off() else home
+
+
 def shared_model(model_name: str, cache_dir: Path | None = None) -> Any:
     """The one copy in this process, whoever asks. It's about 600 MB, and every caller can use the same one."""
     with _models_lock:
+        if _service_home is not None:
+            from .embed_service import ServiceModel
+
+            key = f"service:{model_name}"
+            if key not in _models:
+                _models[key] = ServiceModel(_service_home, model_name, cache_dir)
+            return _models[key]
         if model_name not in _models:
             from fastembed import TextEmbedding
 

@@ -10,7 +10,17 @@ from typing import Any
 import jsonschema
 import yaml
 
-from .model import BusinessContext, Department, Gate, Issue, Org, PipelineConfig, Role
+from .model import (
+    DEFAULT_MAX_TOKENS_PER_RUN,
+    DEFAULT_MAX_TOKENS_PER_SMALL_COMMAND,
+    BusinessContext,
+    Department,
+    Gate,
+    Issue,
+    Org,
+    PipelineConfig,
+    Role,
+)
 
 SCHEMA_CODE = "SCHEMA"
 
@@ -204,6 +214,7 @@ def load_bundle(org: dict[str, Any], roles: dict[str, dict[str, Any]]) -> Org:
 
     pipeline = org.get("pipeline", {})
     business = org["company"].get("business") or {}
+    budget = pipeline.get("budget") or {}
     return Org(
         company_name=org["company"]["name"],
         business=BusinessContext(
@@ -221,7 +232,9 @@ def load_bundle(org: dict[str, Any], roles: dict[str, dict[str, Any]]) -> Org:
             max_rework=pipeline.get("max_rework", 2),
             max_invalid_outputs=pipeline.get("max_invalid_outputs", 2),
             working_language=pipeline.get("working_language", "auto"),
-            max_tokens_per_run=pipeline.get("budget", {}).get("max_tokens_per_run"),
+            max_tokens_per_run=budget.get("max_tokens_per_run") or DEFAULT_MAX_TOKENS_PER_RUN,
+            max_tokens_per_small_command=budget.get("max_tokens_per_small_command")
+            or DEFAULT_MAX_TOKENS_PER_SMALL_COMMAND,
         ),
         raw=org,
         raw_roles=roles,

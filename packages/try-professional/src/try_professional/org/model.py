@@ -79,13 +79,19 @@ class Gate:
     on_unavailable: str = "block"
 
 
+DEFAULT_MAX_TOKENS_PER_RUN = 150_000
+DEFAULT_MAX_TOKENS_PER_SMALL_COMMAND = 40_000
+
+
 @dataclass(frozen=True)
 class PipelineConfig:
     max_parallel_tasks: int = 4
     max_rework: int = 2
     max_invalid_outputs: int = 2
     working_language: str = "auto"
-    max_tokens_per_run: int | None = None
+    # A hard stop for every command, so a stuck one can't keep spending. A person decides whether it goes on.
+    max_tokens_per_run: int = DEFAULT_MAX_TOKENS_PER_RUN
+    max_tokens_per_small_command: int = DEFAULT_MAX_TOKENS_PER_SMALL_COMMAND
 
 
 @dataclass(frozen=True)

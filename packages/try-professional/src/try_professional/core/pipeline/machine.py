@@ -810,7 +810,7 @@ def _on_submission(step: _Step, event: Submission) -> None:
 
     elif invocation.purpose == Purpose.PLAN:
         assert isinstance(parsed, Plan)
-        problem = _validate_plan(parsed, org, state.budget_override or org.pipeline.max_tokens_per_run)
+        problem = _validate_plan(parsed, org, _token_limit(state, org))
         if problem:
             step.reject(invocation, problem)
             return
@@ -1170,6 +1170,14 @@ def _note_package_usage(step: _Step, event: UsageRecorded) -> None:
         state.counters.package_overruns += 1
 
 
+def _token_limit(state: RunState, org: Org) -> int:
+    """A person's own decision wins. Otherwise every command has a limit, and a small one has a smaller one."""
+    if state.budget_override:
+        return state.budget_override
+    pipeline = org.pipeline
+    return pipeline.max_tokens_per_small_command if state.size == "small" else pipeline.max_tokens_per_run
+
+
 def _on_usage(step: _Step, event: UsageRecorded) -> None:
     state = step.state
     buckets = [state.usage]
@@ -1184,13 +1192,16 @@ def _on_usage(step: _Step, event: UsageRecorded) -> None:
         bucket.cached_input_tokens += event.cached_input_tokens
         bucket.calls += 1
     _note_package_usage(step, event)
-    limit = state.budget_override or step.org.pipeline.max_tokens_per_run
-    if limit is None or state.usage.total <= limit or state.phase in TERMINAL_PHASES:
+    limit = _token_limit(state, step.org)
+    if state.usage.total <= limit or state.phase in TERMINAL_PHASES:
         return
     if state.phase == RunPhase.BLOCKED:
         return
+    counters = state.counters
     step.ask_human(
-        f"This run used {state.usage.total} tokens, over the limit of {limit}. "
+        f"This command stopped at {state.usage.total} tokens, over its limit of {limit}. Nothing more is spent until "
+        f"you decide. So far: {counters.assignments} assignments, {counters.invalid_outputs} rejected outputs, "
+        f"{counters.rework_loops} rounds of rework, {counters.escalations} escalations. "
         "Continue with a higher limit, or abandon?",
         ["resume", "abandon"],
         "budget",

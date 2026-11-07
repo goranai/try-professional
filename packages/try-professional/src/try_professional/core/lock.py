@@ -46,8 +46,8 @@ class StateLock:
     Reading a run, changing it, and saving it must happen as one step, or two servers overwrite each other.
     """
 
-    def __init__(self, home: Path) -> None:
-        self._path = home / "state.lock"
+    def __init__(self, home: Path, name: str = "state.lock") -> None:
+        self._path = home / name
         self._thread = threading.RLock()
         self._depth = 0
         self._descriptor = -1

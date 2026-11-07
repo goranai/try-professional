@@ -66,6 +66,7 @@ from .memory import (
     score_floor,
     tier_sizes,
 )
+from .memory.embedding import use_embedding_service
 from .org import Org, OrgValidationError, load_org, validate_bundle
 from .org.loader import read_documents
 from .org.policy import check_policy
@@ -626,6 +627,8 @@ def cmd_mcp(args: argparse.Namespace) -> int:
         print("The MCP server needs: pip install 'try-professional[mcp]'", file=sys.stderr)
         return 2
     root = Path(args.dir).resolve() if args.dir else Path.cwd()
+    # One server per role, so they share one copy of the model. Roles stay apart in the gateway and each tool list.
+    use_embedding_service(root / ".trypro")
 
     def company() -> McpService | None:
         try:

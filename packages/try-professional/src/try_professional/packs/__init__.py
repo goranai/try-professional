@@ -31,7 +31,7 @@ DEFAULT_PIPELINE: dict[str, Any] = {
     "max_rework": 2,
     "max_invalid_outputs": 2,
     "working_language": "auto",
-    "budget": {"max_tokens_per_run": 200_000, "on_exceeded": "escalate"},
+    "budget": {"max_tokens_per_run": 150_000, "max_tokens_per_small_command": 40_000, "on_exceeded": "escalate"},
 }
 
 
