@@ -25,6 +25,7 @@ import yaml
 from ..memory.embedding import Embedder
 from ..org import Org, Role
 from .catalog import UNCATEGORIZED, SkillRecord
+from .trade import off_trade_reason
 
 # Chosen on real skills and the fixture's development half, then scored on separate data.
 # A higher value tuned on the fixture alone suggested nothing on real skills. See docs/research/loadouts/.
@@ -452,6 +453,10 @@ def compute_loadouts(
             status = decisions.status(ref, record)
             if status == "rejected":
                 loadout.excluded[record.skill_id] = "rejected by a person"
+                continue
+            off_trade = off_trade_reason(record, org) if status != "approved" else None
+            if off_trade:
+                loadout.excluded[record.skill_id] = off_trade
                 continue
             similarities = (matrix @ vector) * weights
             best = int(np.argmax(similarities))

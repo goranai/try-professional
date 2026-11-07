@@ -71,6 +71,7 @@ pipeline:
 | Field | Required | Meaning |
 |---|---|---|
 | `company.name` | Yes | Display name |
+| `company.business` | No | `industry`, `products`, and `channels`. With `company.description`, this tells skill matching which trade the company is in |
 | `root_role` | Yes | The single role that owns the goal |
 | `departments[].id`, `.head`, `.roles` | Yes | Department identity, its head, and all its roles |
 | `departments[].activation` | No | `always`, or `on_demand` (default). See [Activation](#activation) |
@@ -79,7 +80,7 @@ pipeline:
 | `pipeline.max_parallel_tasks` | No | Upper bound on tasks running at once. Default 4 |
 | `pipeline.max_rework` | No | Change requests allowed per task before escalating. Default 2 |
 | `pipeline.max_invalid_outputs` | No | Retries of an invalid output before escalating. Default 2 |
-| `pipeline.working_language` | No | BCP 47 tag, or `auto` to follow the goal. Default `auto` |
+| `pipeline.working_language` | No | `auto`, the default, makes each command's work follow that command's language. Otherwise one BCP 47 code, which fixes the language. Generated companies get a code only when the business explicitly asks for one language |
 | `pipeline.budget.max_tokens_per_run` | No | Token ceiling for a run, or `null` for none |
 | `llm_overrides` | No | Per-department or per-role model settings. See [Model overrides](#model-overrides) |
 

@@ -21,13 +21,14 @@ import os
 import shutil
 import sys
 import tempfile
+import time
 from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
 import yaml
-from skill_customs import LicenseRejected, Lockfile, pin
 
+from skill_customs import LicenseRejected, Lockfile, pin
 from try_professional.adapters.api_runner.clients import ChatRequest, ChatResponse, ClientError
 from try_professional.config import ModelConfig, build_client, load_env_file
 from try_professional.generator.provision import _SharedTarballs
@@ -43,7 +44,6 @@ from try_professional.skills import (
     rerank,
     shortlist,
 )
-
 from try_professional.skills.rerank import judge_prompt
 
 HERE = Path(__file__).parent
@@ -51,6 +51,8 @@ SIZES = (5, 8, 10, 12, 15, 20)
 CHARS_PER_TOKEN = 3.5
 SYSTEM_AND_TOOL_TOKENS = 330
 OUTPUT_TOKENS_PER_ROLE = 135
+OUTAGE_WAIT_SECONDS = 180
+OUTAGE_RETRIES = 20
 
 
 class Ceiling:
@@ -67,9 +69,20 @@ class Ceiling:
     def complete(self, request: ChatRequest) -> ChatResponse:
         if self.spent >= self._limit:
             raise ClientError(f"token ceiling of {self._limit} reached")
-        response: ChatResponse = self._client.complete(request)
-        self.spent += response.input_tokens + response.output_tokens
-        return response
+        for attempt in range(OUTAGE_RETRIES):
+            try:
+                response: ChatResponse = self._client.complete(request)
+            except ClientError as error:
+                # An outage costs nothing, and mustn't count against recall as a failed role.
+                outage = "HTTP 5" in str(error) or "request failed" in str(error)
+                if not outage or attempt == OUTAGE_RETRIES - 1:
+                    raise
+                print(f"The provider is down, so waiting {OUTAGE_WAIT_SECONDS}s.", flush=True)
+                time.sleep(OUTAGE_WAIT_SECONDS)
+            else:
+                self.spent += response.input_tokens + response.output_tokens
+                return response
+        raise ClientError("The provider stayed down.")
 
 
 def prepare(split: str) -> tuple:

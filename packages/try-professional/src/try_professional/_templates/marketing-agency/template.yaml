@@ -82,6 +82,7 @@ departments:
         instructions: You write briefs and don't produce images. Flag any image that needs a license.
   - id: channels
     name: Channels
+    aliases: [media, media-planning, channel-planning]
     roles:
       - id: channels-lead
         name: Head of Channels
@@ -111,6 +112,7 @@ departments:
         instructions: Never recommend deceptive tactics, and say when a figure is an assumption.
   - id: client-services
     name: Client Services
+    aliases: [accounts, account-management, client-accounts]
     roles:
       - id: account-manager
         name: Account Manager

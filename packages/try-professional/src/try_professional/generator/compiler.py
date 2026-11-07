@@ -7,6 +7,7 @@ from fixed definitions, and a proposal naming those departments has that part ig
 from __future__ import annotations
 
 import copy
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -33,6 +34,12 @@ _TOOLS = {
     "worker": [*_READ, "workspace_write", "memory_write"],
     "reviewer": _READ,
 }
+# Seniority a title states. Only used when a proposal doesn't say who heads a department.
+_SENIORITY = (
+    (3, frozenset({"chief", "ceo", "cto", "cfo", "coo", "cmo", "cpo", "cso", "president", "vp", "founder"})),
+    (2, frozenset({"head", "director", "principal", "partner"})),
+    (1, frozenset({"lead", "manager", "senior", "supervisor"})),
+)
 _RESEARCH_RULE = (
     " Name a source and date for anything you call current or trending. "
     "Your training data isn't a source: without both, label the claim unverified."
@@ -134,6 +141,60 @@ def role_document(department: str, role: ProposedRole, head: str | None = None) 
     }
 
 
+def seniority(title: str) -> int:
+    words = set(re.findall(r"[a-z]+", title.lower()))
+    return next((rank for rank, names in _SENIORITY if words & names), 0)
+
+
+def _settle_head(department: str, heads: list[str], members: dict[str, tuple[str, str]]) -> tuple[str, str | None]:
+    """The head, and a note if the compiler chose. members maps role IDs to their title and kind.
+
+    A proposal that names one head keeps it. Otherwise the role whose title is clearly most senior heads the
+    department. Only a tie, or titles that say nothing, are ambiguous enough to send back.
+    """
+    if len(heads) == 1:
+        return heads[0], None
+    pool = heads or [name for name, (_, kind) in members.items() if kind != "reviewer"] or list(members)
+    ranks = {name: seniority(members[name][0]) for name in pool}
+    best = max(ranks.values(), default=0)
+    winners = [name for name, rank in ranks.items() if rank == best]
+    if len(winners) != 1 or (best == 0 and len(pool) > 1):
+        named = ", ".join(pool) if heads else "none of its roles"
+        raise ProposalError(
+            f"department '{department}' needs exactly one head, and has {len(heads)} ({named}). "
+            "Their titles don't settle it, so set kind to head on one role."
+        )
+    head = winners[0]
+    title = members[head][0]
+    if heads:
+        return head, f"'{department}' named {len(heads)} heads, so {title}, the most senior title, heads it."
+    return head, f"'{department}' named no head, so {title} heads it."
+
+
+def _as_head(document: dict[str, Any]) -> dict[str, Any]:
+    """A kept role promoted to head gets what a head gets, which the compiler decides and not the model."""
+    tools = [tool for tool in _TOOLS["head"] if tool not in document["allowed_tools"]]
+    outputs = [item for item in document["outputs"] if item not in ("TaskPlan", "ReviewVerdict")]
+    return {
+        **document,
+        "inputs": ["WorkPackage", "TaskBrief"],
+        "outputs": ["TaskPlan", *outputs, "ReviewVerdict"],
+        "allowed_tools": [*document["allowed_tools"], *tools],
+        "required_tools": ["workspace_write"],
+        "forbidden_tools": [],
+    }
+
+
+def _as_worker(document: dict[str, Any]) -> dict[str, Any]:
+    outputs = [item for item in document["outputs"] if item not in ("TaskPlan", "ReviewVerdict")]
+    return {
+        **document,
+        "inputs": ["TaskBrief"],
+        "outputs": outputs or ["TaskReport"],
+        "allowed_tools": [tool for tool in document["allowed_tools"] if tool != "skill_propose"],
+    }
+
+
 def _locked_pack(name: str) -> tuple[dict[str, Any], dict[str, dict[str, Any]]]:
     department = copy.deepcopy(pack_department(name))
     roles = {f"{name}/{role_id}": copy.deepcopy(pack_role(name, role_id)) for role_id in department["roles"]}
@@ -191,13 +252,19 @@ def compile_org(template: Template, proposal: OrgProposal) -> CompiledOrg:
         new_heads = [role.id for role in item.roles if role.kind == "head"]
         kept_head = source.head if source is not None and source.head in kept else None
         heads = [*new_heads, *([kept_head] if kept_head else [])]
-        if len(heads) != 1:
-            raise ProposalError(f"department '{item.id}' needs exactly one head, and has {len(heads)}")
-        head = heads[0]
+        members = {name: (str(document.get("title") or name), "kept") for name, document in kept.items()}
+        members.update({role.id: (role.name, role.kind) for role in item.roles})
+        head, settled = _settle_head(item.id, heads, members)
+        if settled:
+            notes.append(settled)
 
         ordered = [head]
         for name, document in kept.items():
             is_head = name == head
+            if is_head and name != kept_head:
+                document = _as_head(document)
+            elif not is_head and name == kept_head:
+                document = _as_worker(document)
             document["department"] = item.id
             document["escalation"] = ROOT_ROLE if is_head else f"{item.id}/{head}"
             document["reviewer"] = HEAD_REVIEWER if is_head else f"{item.id}/{head}"
@@ -209,6 +276,8 @@ def compile_org(template: Template, proposal: OrgProposal) -> CompiledOrg:
                 raise ProposalError(f"role '{role.id}' is both kept and new in '{item.id}'")
             if f"{item.id}/{role.id}" in roles:
                 raise ProposalError(f"role '{role.id}' is listed twice in '{item.id}'")
+            if (role.id == head) != (role.kind == "head"):
+                role = role.model_copy(update={"kind": "head" if role.id == head else "worker"})
             roles[f"{item.id}/{role.id}"] = role_document(item.id, role, head)
             if role.id != head:
                 ordered.append(role.id)
@@ -244,9 +313,13 @@ def compile_org(template: Template, proposal: OrgProposal) -> CompiledOrg:
 
     pipeline = copy.deepcopy(DEFAULT_PIPELINE)
     pipeline["working_language"] = proposal.working_language
+    company: dict[str, Any] = {"name": proposal.company_name}
+    business = proposal.business.model_dump(exclude_defaults=True)
+    if business:
+        company["business"] = business
     org = {
         "spec": "org/v1",
-        "company": {"name": proposal.company_name},
+        "company": company,
         "root_role": ROOT_ROLE,
         "departments": departments,
         "gates": copy.deepcopy(DEFAULT_GATES),

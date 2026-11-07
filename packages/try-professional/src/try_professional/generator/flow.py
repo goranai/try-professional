@@ -28,7 +28,7 @@ from ..skills import Decisions, LoadoutStore, SkillCatalog, match_all, sync_cata
 from .architect import ArchitectFailed, ArchitectResult, check_proposal, run_architect
 from .compiler import CompiledOrg, ProposalError, compile_org
 from .estimate import Estimate, estimate_run
-from .proposal import OrgProposal
+from .proposal import OrgProposal, settle_language
 from .provision import ProvisionResult, provision
 from .templates import Template, load_template, rank_templates
 
@@ -108,6 +108,16 @@ def _add_architect(meta: dict[str, Any], result: ArchitectResult) -> None:
     tokens["calls"] += result.calls
 
 
+def _describe(compiled: CompiledOrg, meta: dict[str, Any]) -> None:
+    """The description goes in org.yaml, so later skill matching still knows the company's trade."""
+    if meta.get("description"):
+        compiled.org["company"]["description"] = meta["description"]
+
+
+def _notes(compiled: CompiledOrg, meta: dict[str, Any]) -> list[str]:
+    return [*meta.get("design_notes", []), *compiled.notes]
+
+
 def _finish(
     path: Path,
     meta: dict[str, Any],
@@ -128,10 +138,11 @@ def _finish(
         encoding="utf-8",
         newline="\n",
     )
+    _describe(compiled, meta)
     org = load_bundle(compiled.org, compiled.roles)
     if not provisioning:
         provisioned = ProvisionResult(discovery=["Skills weren't matched for this proposal."])
-        bundle = Proposal(path, meta, compiled, provisioned, estimate_run(org), compiled.notes)
+        bundle = Proposal(path, meta, compiled, provisioned, estimate_run(org), _notes(compiled, meta))
         bundle.save()
         return bundle
     provisioned = provision(
@@ -148,7 +159,7 @@ def _finish(
     )
     meta["tokens"]["rerank"]["total"] += provisioned.rerank.get("tokens", 0)
     meta["tokens"]["rerank"]["calls"] += provisioned.rerank.get("calls", 0)
-    bundle = Proposal(path, meta, compiled, provisioned, estimate_run(org), compiled.notes)
+    bundle = Proposal(path, meta, compiled, provisioned, estimate_run(org), _notes(compiled, meta))
     bundle.save()
     return bundle
 
@@ -206,12 +217,15 @@ def create_proposal(
         say(f"Designing the company with {model}, starting from the {template.name} template.")
         result = run_architect(description, template, client, model, note=note)
         _add_architect(meta, result)
+        meta["design_notes"] = result.notes
         proposal, compiled = result.proposal, result.compiled
         if company:
             proposal = proposal.model_copy(update={"company_name": company})
             compiled = compile_org(template, proposal)
     else:
         proposal = template.keep_all(name)
+        if description:
+            proposal = proposal.model_copy(update={"working_language": settle_language("auto", description)})
         compiled = compile_org(template, proposal)
     return _finish(
         path, meta, proposal, compiled, root, embedder,
@@ -230,7 +244,8 @@ def load_proposal(root: Path, proposal_id: str) -> Proposal:
     compiled = compile_org(template, proposal)
     provisioned = ProvisionResult.from_dict(json.loads((path / "provisioned.json").read_text(encoding="utf-8")))
     estimate = Estimate(**json.loads((path / "estimate.json").read_text(encoding="utf-8")))
-    return Proposal(path, meta, compiled, provisioned, estimate, compiled.notes)
+    _describe(compiled, meta)
+    return Proposal(path, meta, compiled, provisioned, estimate, _notes(compiled, meta))
 
 
 def regenerate(
@@ -344,6 +359,10 @@ def activate(bundle: Proposal, root: Path, embedder: Embedder, *, by: str) -> Or
     try:
         sync_catalog(catalog, Lockfile.load(root / "skills.lock"), root / "skills", decisions)
         match_all(org, catalog, store, decisions)
+        # Needs with no skill stay on record, where trypro skills gaps can find them later.
+        for role, needs in bundle.provisioned.gaps.items():
+            for need in needs:
+                store.record_gap(role, need, 0.0, run_id="init", task_id=bundle.id)
     finally:
         catalog.close()
         store.close()

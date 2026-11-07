@@ -1,5 +1,6 @@
 spec: role/v1
 id: proposal-writer
+title: Proposal Writer
 department: sales
 mission: Write proposals tailored to the client's needs.
 responsibilities:

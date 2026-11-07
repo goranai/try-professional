@@ -33,6 +33,27 @@
         },
         "description": {
           "type": "string"
+        },
+        "business": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "industry": {
+              "type": "string"
+            },
+            "products": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "channels": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
         }
       }
     },

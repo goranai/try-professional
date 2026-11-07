@@ -1,5 +1,6 @@
 spec: role/v1
 id: content-writer
+title: Content Writer
 department: marketing
 mission: Write clear content for the intended audience.
 responsibilities:

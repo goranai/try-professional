@@ -50,6 +50,7 @@ from ..skills import (
 )
 from ..skills.catalog import SkillRecord
 from ..skills.loadouts import DUPLICATE_SIMILARITY, SHORT_DESCRIPTION
+from ..skills.trade import off_trade_reason
 
 GAP_SIMILARITY = 0.35
 QA = "qa"
@@ -110,6 +111,7 @@ class ProvisionResult:
     gaps: dict[str, list[str]] = field(default_factory=dict)
     quarantined: list[dict[str, str]] = field(default_factory=list)
     cannot_run: list[dict[str, str]] = field(default_factory=list)
+    off_trade: list[dict[str, str]] = field(default_factory=list)
     discovery: list[str] = field(default_factory=list)
     rerank: dict[str, Any] = field(default_factory=dict)
 
@@ -158,8 +160,11 @@ def _all_records(project_lock: Lockfile, project: Path, lock: Lockfile, dest: Pa
 
 
 def needs_without_a_skill(org: Org, catalog: SkillCatalog, embedder: Embedder) -> list[str]:
-    """skill_needs nothing in the catalog comes close to. These are what discovery looks for."""
-    vectors = [vector for _, vector in catalog.eligible()]
+    """skill_needs nothing in the catalog comes close to. These are what discovery looks for.
+
+    A skill for another trade doesn't count: a Shopify skill doesn't fill a clinic's need for marketing.
+    """
+    vectors = [vector for record, vector in catalog.eligible() if not off_trade_reason(record, org)]
     missing: list[str] = []
     for role in org.roles.values():
         for need in role.skill_needs:
@@ -314,6 +319,10 @@ def _flagged(org: Org, lock: Lockfile, records: list[SkillRecord], result: Provi
             result.quarantined.append({"skill_id": skill_id, "reason": clean_line(why)})
     for record in records:
         if record.trust == "quarantined":
+            continue
+        off_trade = off_trade_reason(record, org)
+        if off_trade:
+            result.off_trade.append({"skill_id": record.skill_id, "reason": clean_line(off_trade)})
             continue
         reasons = [exclusion_reason(role, record, allow_uncategorized=True) for role in org.roles.values()]
         if all(reasons):

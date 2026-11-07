@@ -1,5 +1,6 @@
 spec: role/v1
 id: backend
+title: Backend Engineer
 department: engineering
 mission: Build and maintain server-side features to spec.
 responsibilities:

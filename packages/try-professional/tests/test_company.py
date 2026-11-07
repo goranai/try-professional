@@ -779,8 +779,8 @@ class TestExecutiveTitles:
         assert lead.display_name == "CTO"
         assert org.is_head(lead.ref)
 
-    def test_a_role_with_no_title_uses_its_id(self, org: Org) -> None:
-        assert org.role("engineering/backend").display_name == "backend"
+    def test_a_staff_role_has_a_proper_title_too(self, org: Org) -> None:
+        assert org.role("engineering/backend").display_name == "Backend Engineer"
 
     def test_generated_heads_keep_their_title(self) -> None:
         from try_professional.generator import compile_org, load_template

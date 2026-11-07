@@ -33,6 +33,7 @@ class TemplateDepartment:
     head: str
     roles: dict[str, dict[str, Any]]
     qa_reviewer: str | None = None
+    aliases: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -112,7 +113,8 @@ def load_template(template_id: str) -> Template:
     else:
         departments = {}
         for item in data["departments"]:
-            parsed = ProposedDepartment.model_validate(item)
+            aliases = tuple(item.get("aliases", ()))
+            parsed = ProposedDepartment.model_validate({k: v for k, v in item.items() if k != "aliases"})
             heads = [r for r in parsed.roles if r.kind == "head"]
             if len(heads) != 1:
                 raise ProposalError(f"template department '{parsed.id}' needs exactly one head")
@@ -121,6 +123,7 @@ def load_template(template_id: str) -> Template:
                 name=parsed.name,
                 head=heads[0].id,
                 roles={role.id: role_document(parsed.id, role) for role in parsed.roles},
+                aliases=aliases,
             )
     return Template(
         id=data["id"],

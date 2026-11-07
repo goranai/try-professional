@@ -19,6 +19,11 @@ class Issue:
         return f"{self.code}: {self.message}"
 
 
+_ACRONYMS = frozenset(
+    {"ai", "api", "ceo", "cfo", "cmo", "coo", "cpo", "cso", "cto", "hr", "it", "pr", "qa", "seo", "ui", "ux"}
+)
+
+
 @dataclass(frozen=True)
 class Role:
     id: str
@@ -45,7 +50,11 @@ class Role:
 
     @property
     def display_name(self) -> str:
-        return self.title or self.id
+        """A role with no title still reads as a name, and never as a raw ID."""
+        if self.title:
+            return self.title
+        words = self.id.replace("_", "-").split("-")
+        return " ".join(word.upper() if word in _ACRONYMS else word.capitalize() for word in words)
 
 
 @dataclass(frozen=True)
@@ -80,6 +89,20 @@ class PipelineConfig:
 
 
 @dataclass(frozen=True)
+class BusinessContext:
+    """What the company does, for telling which skills belong to its trade. Empty means unknown."""
+
+    description: str = ""
+    industry: str = ""
+    products: tuple[str, ...] = ()
+    channels: tuple[str, ...] = ()
+
+    @property
+    def text(self) -> str:
+        return " ".join(part for part in (self.description, self.industry, *self.products, *self.channels) if part)
+
+
+@dataclass(frozen=True)
 class Org:
     company_name: str
     root_role: str
@@ -90,6 +113,7 @@ class Org:
     raw: dict[str, Any] = field(default_factory=dict, compare=False)
     raw_roles: dict[str, dict[str, Any]] = field(default_factory=dict, compare=False)
     llm_overrides: dict[str, dict[str, Any]] = field(default_factory=dict, compare=False)
+    business: BusinessContext = field(default_factory=BusinessContext)
 
     def llm_override_for(self, ref: str) -> dict[str, Any]:
         """Merge overrides, field by field: the role's wins over its department's."""

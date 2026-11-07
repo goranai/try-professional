@@ -1,5 +1,6 @@
 spec: role/v1
 id: devops
+title: DevOps Engineer
 department: engineering
 mission: Keep builds, deployments, and infrastructure reliable.
 responsibilities:

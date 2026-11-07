@@ -1,5 +1,6 @@
 spec: role/v1
 id: frontend
+title: Frontend Engineer
 department: engineering
 mission: Build interfaces that work for real users.
 responsibilities:

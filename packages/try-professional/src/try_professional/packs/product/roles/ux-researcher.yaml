@@ -1,5 +1,6 @@
 spec: role/v1
 id: ux-researcher
+title: UX Researcher
 department: product
 mission: Find out what users need and where they struggle.
 responsibilities:

@@ -1,5 +1,6 @@
 spec: role/v1
 id: compliance-reviewer
+title: Compliance Reviewer
 department: legal
 mission: Check work against the stated policies and obligations.
 responsibilities:

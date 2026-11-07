@@ -840,6 +840,16 @@ def _status_memory(orchestrator: Orchestrator, config: ProjectConfig, org: Org) 
     _print(f"  Waiting for a decision: {company} company changes (yours), {team} team lessons (their heads').")
 
 
+def _status_skill_gaps(config: ProjectConfig) -> None:
+    if not (config.home / "skills" / "loadouts.sqlite").is_file():
+        return
+    store = _store(config)
+    gaps = store.gaps()
+    store.close()
+    if gaps:
+        _print(f"Skill gaps: {len(gaps)} needs with no skill. See them with: trypro skills gaps")
+
+
 def _status_tokens(orchestrator: Orchestrator) -> None:
     _print("Tokens by month:")
     months = orchestrator.company.tokens_by_month()
@@ -883,6 +893,7 @@ def cmd_status(args: argparse.Namespace) -> int:
                 _status_handoffs(orchestrator)
             if not chosen or args.memory:
                 _status_memory(orchestrator, config, org)
+                _status_skill_gaps(config)
             if not chosen or args.tokens:
                 _status_tokens(orchestrator)
             return 0

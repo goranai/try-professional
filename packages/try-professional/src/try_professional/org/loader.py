@@ -10,7 +10,7 @@ from typing import Any
 import jsonschema
 import yaml
 
-from .model import Department, Gate, Issue, Org, PipelineConfig, Role
+from .model import BusinessContext, Department, Gate, Issue, Org, PipelineConfig, Role
 
 SCHEMA_CODE = "SCHEMA"
 
@@ -203,8 +203,15 @@ def load_bundle(org: dict[str, Any], roles: dict[str, dict[str, Any]]) -> Org:
     }
 
     pipeline = org.get("pipeline", {})
+    business = org["company"].get("business") or {}
     return Org(
         company_name=org["company"]["name"],
+        business=BusinessContext(
+            description=org["company"].get("description", ""),
+            industry=business.get("industry", ""),
+            products=tuple(business.get("products", ())),
+            channels=tuple(business.get("channels", ())),
+        ),
         root_role=org["root_role"],
         departments=departments,
         roles=typed_roles,

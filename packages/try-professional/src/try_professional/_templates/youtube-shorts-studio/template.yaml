@@ -157,6 +157,7 @@ departments:
         instructions: Without channel data, say that timing is an assumption to test.
   - id: analytics
     name: Analytics
+    aliases: [performance, performance-review, channel-analytics]
     roles:
       - id: analyst
         name: Analytics Lead
