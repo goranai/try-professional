@@ -291,7 +291,13 @@ class _Step:
             if package.status == PackageStatus.PENDING and self.package_deps_met(package):
                 package.status = PackageStatus.PLANNING
                 head = self.org.departments[package.owner_department].head_ref
-                self.invoke(head, Purpose.DISPATCH, "TaskPlan", work_package_id=package.id)
+                self.invoke(
+                    head,
+                    Purpose.DISPATCH,
+                    "TaskPlan",
+                    work_package_id=package.id,
+                    context_refs=self.upstream_results(package.id),
+                )
 
         for task in state.tasks.values():
             if task.status == TaskStatus.PENDING and self.task_deps_met(task):
@@ -319,11 +325,31 @@ class _Step:
     def task_deps_met(self, task: TaskState) -> bool:
         return all(self.state.tasks[dep].status == TaskStatus.APPROVED for dep in task.depends_on)
 
+    def upstream_results(self, package_id: str | None) -> list[str]:
+        """The approved work of every package this one depends on.
+
+        A plan says one package builds on another, so that work has to arrive. It can't be left to a model to pass on:
+        a real scriptwriter was once told to use an approved list that nobody could give it.
+        """
+        seen: set[str] = set()
+        waiting = list(self.state.packages[package_id].depends_on) if package_id in self.state.packages else []
+        while waiting:
+            current = waiting.pop()
+            if current not in seen:
+                seen.add(current)
+                waiting += self.state.packages[current].depends_on
+        return [
+            t.result_artifact_id
+            for t in self.state.tasks.values()
+            if t.work_package_id in seen and t.status == TaskStatus.APPROVED and t.result_artifact_id
+        ]
+
     def start_task(self, task: TaskState) -> None:
         task.status = TaskStatus.RUNNING
         refs = [task.brief_artifact_id] if task.brief_artifact_id else []
         if task.skill_artifact_id:
             refs.append(task.skill_artifact_id)
+        refs += self.upstream_results(task.work_package_id)
         for dep in task.depends_on:
             result = self.state.tasks[dep].result_artifact_id
             if result:

@@ -20,6 +20,7 @@ from try_professional.adapters.api_runner.clients import ChatRequest, ChatRespon
 from try_professional.adapters.api_runner.runner import ApiRunner, ModelRoutes
 from try_professional.check_model import ModelUnreachable, check_model
 from try_professional.config import ModelConfig, build_client, load_env_file
+from try_professional.core.audit import read_records
 from try_professional.core.orchestrator import Orchestrator
 from try_professional.org import load_org
 from try_professional.packs import available_packs, install_org
@@ -102,6 +103,18 @@ def main(output: Path) -> None:
             "counters": state.counters.model_dump(),
             "questions": [r.question[:300] for r in state.human_requests.values()],
             "audit_ok": company.verify_audit(run_id).ok,
+            # Why work was sent back, which is what shows whether a model suits this.
+            "rejections": [
+                str(record["data"].get("reason"))[:300]
+                for record in read_records(company.audit_path(run_id))
+                if record["kind"] in ("invalid_output", "rejected")
+            ],
+            "review_issues": [
+                issue["description"][:300]
+                for artifact in state.artifacts.values()
+                if artifact.type == "ReviewVerdict"
+                for issue in artifact.payload.get("issues", [])
+            ],
         }
         company.close()
     result["tokens"] = {"input": client.input, "cached_input": client.cached, "output": client.output}

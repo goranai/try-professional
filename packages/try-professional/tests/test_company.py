@@ -89,6 +89,62 @@ def _small(extra: dict[str, Any] | None = None) -> Callable[..., Any]:
     return override
 
 
+class TestApprovedWorkFlowsDownstream:
+    """A plan says one package builds on another, so that work has to arrive, whatever a model passes on."""
+
+    def _plan(self, invocation: Any, state: Any, org_: Org) -> dict[str, Any] | None:
+        if invocation.purpose != Purpose.PLAN:
+            return None
+        package = {"title": "t", "acceptance": ["a"]}
+        return {
+            "activated_departments": [{"id": d, "reason": "r"} for d in ("research", "marketing", "operations")],
+            "work_packages": [
+                {**package, "id": "first", "owner_department": "research"},
+                {**package, "id": "second", "owner_department": "marketing", "depends_on": ["first"]},
+                {**package, "id": "third", "owner_department": "operations", "depends_on": ["second"]},
+                {**package, "id": "apart", "owner_department": "research"},
+            ],
+        }
+
+    def _results(self, state: Any, package: str) -> set[str]:
+        return {
+            t.result_artifact_id for t in state.tasks.values() if t.work_package_id == package and t.result_artifact_id
+        }
+
+    def test_each_step_gets_what_it_depends_on(self, company: Orchestrator) -> None:
+        seen: dict[str, list[str]] = {}
+
+        def override(invocation: Any, state: Any, org_: Org) -> dict[str, Any] | None:
+            if invocation.purpose in (Purpose.DISPATCH, Purpose.EXECUTE):
+                task = state.tasks.get(invocation.task_id or "")
+                package = invocation.work_package_id or (task.work_package_id if task else "")
+                seen[f"{invocation.purpose.value}-{package}"] = list(invocation.context_refs)
+            return self._plan(invocation, state, org_)
+
+        result, _ = _run(company, override=override)
+        assert result.status == "done"
+        state = company.state(result.run_id)
+        first, second = self._results(state, "first"), self._results(state, "second")
+        assert first and first <= set(seen["dispatch-second"]), "its head can brief with it"
+        assert first <= set(seen["execute-second"]), "the role doing the work gets it"
+        assert first <= set(seen["execute-third"]) and second <= set(seen["execute-third"]), (
+            "and further down the chain"
+        )
+
+    def test_work_it_doesnt_depend_on_stays_out(self, company: Orchestrator) -> None:
+        seen: dict[str, list[str]] = {}
+
+        def override(invocation: Any, state: Any, org_: Org) -> dict[str, Any] | None:
+            if invocation.purpose == Purpose.EXECUTE:
+                seen[state.tasks[invocation.task_id].work_package_id] = list(invocation.context_refs)
+            return self._plan(invocation, state, org_)
+
+        result, _ = _run(company, override=override)
+        state = company.state(result.run_id)
+        assert not self._results(state, "apart") & set(seen["third"])
+        assert not self._results(state, "first") & set(seen["apart"])
+
+
 class TestItKnowsWhatItAlreadyDid:
     @pytest.fixture
     def with_deliverables(self, org: Org, tmp_path: Path) -> Iterator[Orchestrator]:
