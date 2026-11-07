@@ -895,6 +895,10 @@ def _orchestrator() -> Orchestrator:
 
 
 def cmd_decide(args: argparse.Namespace) -> int:
+    # A real session with a shell once answered a budget question this way, for the person it was working for.
+    if not _person_at_terminal():
+        _print("Answering a run's question needs a person at a terminal. Nothing was recorded.")
+        return 3
     orchestrator = _orchestrator()
     try:
         orchestrator.handle(
@@ -911,7 +915,8 @@ def cmd_decide(args: argparse.Namespace) -> int:
         return 1
     finally:
         orchestrator.close()
-    _print(f"Recorded. Continue with: trypro resume {args.run_id}")
+    _print(f"Recorded. To continue, in Claude Code: /company continue {args.run_id}")
+    _print(f"With the API runner: trypro resume {args.run_id}")
     return 0
 
 

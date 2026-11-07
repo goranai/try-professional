@@ -54,6 +54,8 @@ Each of these is fixed, with a test that would have failed before:
 | A small command blocked at 212,016 tokens | Every command has a limit by default |
 | On Windows, a `.cmd` wrapper cut arguments at a newline, and dropped the flags that isolate a role | The driver runs the program itself, and checks each process's tools |
 | A note in the wrong place, or a little too long, threw away a finished deliverable and charged for it again, until a command hit its limit | Notes in the payload move to where they belong, and long ones are cut. What reaches memory stays just as small |
+| A session with every permission on used its shell to answer a budget question for its person | `trypro decide` now refuses anything but a real terminal, like approving a company, and the generated settings deny it |
+| A command stopped at its limit couldn't be continued from Claude Code, and resuming with no amount would stop it again at the next token | `/company continue <run-id>`, and resuming adds half a limit |
 | A final review was given only the CEO's summary, and said so, and approved | It now gets the work behind the summary |
 | What approving reviewers flagged, such as a missing privacy notice, never reached a person | `index.md` lists it |
 | **The first acceptance run was a fake hierarchy.** The files `trypro agents claude-code` generates gave each subagent a server named like the session's, and Claude Code used the session's. One CEO subagent did the copywriter's, QA's and legal's work, and all 14 artifacts were recorded as `claimed` | The session now gets a coordinator's server, which can't do a role's work. The acceptance script fails if any work is claimed. `results_acceptance_first_attempt_failed.json` is the record |
@@ -87,6 +89,8 @@ The session's only calls were starting the run, asking what's next, starting eac
 | 3 | The script's own mistake: `--strict-mcp-config` kept each role's server from connecting. No work ran. |
 | 4 | Both commands finished, on the code before the stricter reviews. It showed a final review could only read a summary, and that a person wasn't told where the results were, or what approving reviewers had flagged. All are fixed. Its token split was wrong and isn't reported, because it left out the subagents. |
 | 5 | The first command finished. **The second stopped at its 40,000 token limit, and asked a person,** just short of finishing, with its work approved by both reviewers. About a quarter of its tokens went on a writer's slips in its notes, which threw away finished work. `results_acceptance_stopped_at_limit.json` |
+
+**This ran with the builder's own Claude Code settings:** every permission on, and this project's notes visible to the session. The session still used only the coordinating tools above. The owner has since run the quickstart by hand in a normal terminal.
 
 **The margin is thin.** With that fixed, and the limit unchanged, run 6's second command used about 37,762 of its 40,000 estimated tokens. A few more rounds of rework would stop it. It's a limit working as designed, and you'd be asked what to do, but expect it on commands that get sent back.
 

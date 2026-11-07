@@ -16,6 +16,6 @@ Try Professional runs third-party skill text and model output, so these are the 
 ## What it doesn't protect against
 
 - **A model doing poor work.** Code holds the rules, but a review by a weak model can still approve weak work.
-- **A client's own tools.** Over MCP, a client's shell or file editor is outside this server's control, unless the client turns them off. `trypro agents claude-code` does that for each role.
+- **A client's own tools.** Over MCP, a client's shell or file editor is outside this server's control, unless the client turns them off. `trypro agents claude-code` does that for each role, but not for your own session. Approving and answering a run's questions refuse anything but a real terminal, and a session with an open shell could still change your files, including the company's records. Keep Claude Code's permission prompts on.
 - **Operator mode over MCP.** One model plays every role, so separation between roles is only procedural.
 - **Scanners catching everything.** A scan lowers risk. It doesn't prove a skill is safe. Read what you approve.

@@ -39,19 +39,28 @@ description: Give the company a command, and run it to a result.
 argument-hint: <what you want done>
 ---
 
-Run this command through the company: $ARGUMENTS
+Run this through the company: $ARGUMENTS
 
 You coordinate, and you aren't a role in the company. Your {server} tools can't do a role's work, and they don't show \
 you what a role was asked. Use them like this:
 
-1. Call run_start with the command as written. It returns a run_id, and the first actions.
+1. Call run_start with the command as written. It returns a run_id, and the first actions. But if it says to \
+continue a run_id, don't start anything: call run_next_action with that run_id.
 2. For each action, start the subagent named trypro-<department>-<role> for its role (a role of marketing/seo is \
 trypro-marketing-seo). Give it only the run_id. Run them one at a time. Never add what another role did.
 3. Call run_next_action, and repeat until its status isn't "working".
-4. If its status is "blocked", show me the questions under needs_a_person, with their commands. Only I can answer them.
-5. If its status is "done", tell me what came back, including everything under known_limits, and give me the path \
+4. If its status is "blocked", show me the questions under needs_a_person, with their commands, and say that after \
+answering I can run /company continue <run_id>. Only I can answer them.
+5. If a role's subagent won't start, stop, and tell me that this folder may need to be trusted in Claude Code. Never \
+do a role's work yourself.
+6. If its status is "done", tell me what came back, including everything under known_limits, and give me the path \
 under deliverables.
 """
+
+
+_FOR_A_PERSON = tuple(
+    f"{tool}(trypro {command} *)" for tool in ("Bash", "PowerShell") for command in ("decide", "init --review")
+)
 
 
 def agent_name(role_ref: str) -> str:
@@ -116,6 +125,11 @@ def write_claude_code_files(root: Path, org: Org) -> list[Path]:
     for rule in (f"mcp__{SERVER}__*", f"mcp__{ROLE_SERVER}__*"):
         if rule not in allow:
             allow.append(rule)
+    # Deny rules hold even with every permission on. `trypro` also refuses without a real terminal.
+    deny = existing_settings["permissions"].setdefault("deny", [])
+    for rule in _FOR_A_PERSON:
+        if rule not in deny:
+            deny.append(rule)
     settings.write_text(json.dumps(existing_settings, indent=2) + "\n", encoding="utf-8", newline="\n")
     written.append(settings)
     return written

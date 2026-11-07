@@ -1218,7 +1218,7 @@ def _on_usage(step: _Step, event: UsageRecorded) -> None:
         f"This command stopped at {state.usage.total} tokens, over its limit of {limit}. Nothing more is spent until "
         f"you decide. So far: {counters.assignments} assignments, {counters.invalid_outputs} rejected outputs, "
         f"{counters.rework_loops} rounds of rework, {counters.escalations} escalations. "
-        "Continue with a higher limit, or abandon?",
+        "Continue with a higher limit, or abandon? Resuming adds half a limit, unless you name an amount.",
         ["resume", "abandon"],
         "budget",
     )
@@ -1249,8 +1249,9 @@ def _on_human(step: _Step, event: HumanDecided) -> None:
         task = state.tasks[request.task_id]
         step.waive(task, request.gate, event.note or "waived by human", event.decided_by)
         step.next_gate(task)
-    elif request.kind == "budget" and event.new_token_budget:
-        state.budget_override = event.new_token_budget
+    elif request.kind == "budget":
+        # With no amount, half a limit more. Otherwise the very next token would stop it again. It can stop again after.
+        state.budget_override = event.new_token_budget or state.usage.total + _token_limit(state, step.org) // 2
     elif request.kind == "runaway":
         state.assignment_limit = state.counters.assignments + MAX_ASSIGNMENTS
 

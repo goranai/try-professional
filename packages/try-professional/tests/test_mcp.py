@@ -6,16 +6,18 @@ import asyncio
 import json
 import os
 import sys
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
 import pytest
+import yaml
 
 from try_professional.adapters.api_runner.scripted import default_payload
 from try_professional.adapters.base import RuntimeAdapter
-from try_professional.adapters.mcp import MCP_TOOLS, McpAdapter, McpService, ToolError
+from try_professional.adapters.mcp import MCP_TOOLS, McpAdapter, McpService, ToolError, claude_code
 from try_professional.core.orchestrator import Orchestrator
-from try_professional.core.pipeline import Purpose
+from try_professional.core.pipeline import HumanDecided, Purpose
 from try_professional.org import Org
 
 from .conftest import RecordingMemory
@@ -315,6 +317,87 @@ class TestRealProtocol:
 
         names, org = asyncio.run(asyncio.wait_for(scenario(), 90))
         assert "run_start" in names and org["root_role"] == "executive/ceo"
+
+
+class TestAStoppedCommand:
+    """A real command stopped at its limit, and neither way forward worked for someone on Claude Code."""
+
+    def _stopped(self, make_org: Callable[..., Org], tmp_path: Path) -> tuple[McpService, str, dict[str, Any]]:
+        def mutate(org_dir: Path) -> None:
+            path = org_dir / "org.yaml"
+            doc = yaml.safe_load(path.read_text(encoding="utf-8"))
+            doc["pipeline"]["budget"]["max_tokens_per_run"] = 3000
+            path.write_text(yaml.safe_dump(doc), encoding="utf-8")
+
+        service = McpService(Orchestrator(make_org(mutate=mutate), tmp_path / "home"))
+        run_id = (current := service.run_start("Add a health check endpoint"))["run_id"]
+        for _ in range(100):
+            if current["status"] == "blocked":
+                return service, run_id, current
+            current = self._step(service, run_id, current)
+        raise AssertionError("it never stopped")
+
+    def _step(self, service: McpService, run_id: str, current: dict[str, Any]) -> dict[str, Any]:
+        action = current["actions"][0]
+        answer: dict[str, Any] = getattr(service, action["submit_with"])(
+            run_id, action["invocation_id"], _payload(service, run_id, action)
+        )
+        return answer
+
+    def _answer(self, service: McpService, run_id: str, stopped: dict[str, Any], amount: int | None = None) -> None:
+        request_id = stopped["needs_a_person"][0]["command"].split()[3]
+        service.orchestrator.handle(
+            run_id, HumanDecided(request_id=request_id, decision="resume", new_token_budget=amount)
+        )
+
+    def test_resuming_with_no_amount_adds_half_a_limit(self, make_org: Callable[..., Org], tmp_path: Path) -> None:
+        service, run_id, stopped = self._stopped(make_org, tmp_path)
+        total = service.orchestrator.state(run_id).usage.total
+        self._answer(service, run_id, stopped)
+        assert service.orchestrator.state(run_id).budget_override == total + 1500
+
+    def test_the_next_step_doesnt_stop_it_again(self, make_org: Callable[..., Org], tmp_path: Path) -> None:
+        service, run_id, stopped = self._stopped(make_org, tmp_path)
+        self._answer(service, run_id, stopped)
+        current = service.run_next_action(run_id)
+        assert current["status"] == "working"
+        assert self._step(service, run_id, current)["status"] != "blocked"
+
+    def test_it_is_still_limited_after_resuming(self, make_org: Callable[..., Org], tmp_path: Path) -> None:
+        """A person chose to go on, and didn't choose to have no limit."""
+        service, run_id, stopped = self._stopped(make_org, tmp_path)
+        self._answer(service, run_id, stopped)
+        current = service.run_next_action(run_id)
+        for _ in range(100):
+            if current["status"] != "working":
+                break
+            current = self._step(service, run_id, current)
+        assert current["status"] == "blocked"
+        state = service.orchestrator.state(run_id)
+        assert state.budget_override is not None and state.usage.total > state.budget_override
+
+    def test_a_named_amount_still_wins(self, make_org: Callable[..., Org], tmp_path: Path) -> None:
+        service, run_id, stopped = self._stopped(make_org, tmp_path)
+        self._answer(service, run_id, stopped, 99_000)
+        assert service.orchestrator.state(run_id).budget_override == 99_000
+
+    def test_the_settings_keep_a_person_s_decisions_from_a_session(self, org: Org, tmp_path: Path) -> None:
+        """Deny rules hold even when someone runs Claude Code with every permission on."""
+        claude_code.write_claude_code_files(tmp_path, org)
+        settings = json.loads((tmp_path / ".claude" / "settings.json").read_text(encoding="utf-8"))
+        assert "Bash(trypro decide *)" in settings["permissions"]["deny"]
+        assert "PowerShell(trypro init --review *)" in settings["permissions"]["deny"]
+
+    def test_company_tells_the_session_how_to_continue(self) -> None:
+        text = claude_code._COMMAND
+        assert "continue a run_id" in text
+        assert "don't start anything" in text
+        assert "/company continue <run_id>" in text
+
+    def test_company_says_what_to_do_when_a_role_wont_start(self) -> None:
+        """In a folder Claude Code doesn't trust yet, a role's own server doesn't start, and it has no tools."""
+        assert "trusted" in claude_code._COMMAND
+        assert "Never do a role's work yourself" in " ".join(claude_code._COMMAND.split())
 
 
 class TestWhatAPersonGetsBack:

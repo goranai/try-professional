@@ -125,7 +125,9 @@ def test_validate_reports_a_broken_org(project: Path, capsys: pytest.CaptureFixt
     assert "ORG004" in capsys.readouterr().out
 
 
-def test_blocked_run_flow_with_decide_and_resume(project: Path, capsys: pytest.CaptureFixture[str]) -> None:
+def test_blocked_run_flow_with_decide_and_resume(
+    project: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
     path = project / "org" / "org.yaml"
     org = yaml.safe_load(path.read_text(encoding="utf-8"))
     org["pipeline"]["budget"]["max_tokens_per_run"] = 1
@@ -138,6 +140,12 @@ def test_blocked_run_flow_with_decide_and_resume(project: Path, capsys: pytest.C
     run_id = _run_id(output)
     request_id = re.search(r"hum-\d+", output).group()  # type: ignore[union-attr]
 
+    # No person at a terminal: a model with a shell can't answer for one.
+    monkeypatch.setattr("try_professional.cli._person_at_terminal", lambda: False)
+    assert main(["decide", run_id, request_id, "resume", "--token-budget", "100000000"]) == 3
+    assert "needs a person at a terminal" in capsys.readouterr().out
+
+    monkeypatch.setattr("try_professional.cli._person_at_terminal", lambda: True)
     assert main(["decide", run_id, request_id, "nonsense"]) == 1
     assert main(["decide", run_id, request_id, "resume", "--token-budget", "100000000"]) == 0
     assert main(["resume", run_id, "--dry-run"]) == 0
