@@ -162,6 +162,24 @@ class TestRightSizing:
         assert state.charter_artifact_id is None
         assert reason in state.invocations[invocation_id].feedback[-1]
 
+    def test_a_role_named_without_its_department_still_routes(self, company: Orchestrator) -> None:
+        """A real model did this three times running, and the command was blocked over it."""
+        result, client = _run(company, override=_small({"route_role": "backend"}))
+        assert result.status == "done"
+        assert [c["purpose"] for c in client.calls] == ["intake", "execute", "review", "integrate"]
+        assert client.calls[1]["role"] == "engineering/backend"
+
+    def test_a_bad_route_lists_the_roles_that_exist(self, company: Orchestrator, org: Org) -> None:
+        from try_professional.core.pipeline import Submission
+
+        run_id, actions = company.start("Do a thing")
+        invocation_id = actions[0].invocation_id
+        state = company.state(run_id)
+        route = {"size": "small", "route_department": "engineering", "route_role": "nobody"}
+        payload = {**default_payload(state.invocations[invocation_id], state, org), **route}
+        company.handle(run_id, Submission(invocation_id=invocation_id, actor=org.root_role, payload=payload))
+        assert "engineering/backend" in company.state(run_id).invocations[invocation_id].feedback[-1]
+
     def test_an_escalation_from_a_small_command_can_grow_it(self, company: Orchestrator) -> None:
         def override(invocation: Any, state: Any, org_: Org) -> dict[str, Any] | None:
             if invocation.purpose == Purpose.INTAKE:

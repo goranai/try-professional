@@ -1,6 +1,6 @@
 ---
 playbook: manager
-version: 1
+version: 2
 ---
 
 # Manager playbook
@@ -23,4 +23,4 @@ Review the artifact against its definition of done. Approve only what the eviden
 
 ## escalation
 
-A report escalated this. Resume it with specific guidance if you can. Otherwise escalate further, and say what you tried.
+A report escalated this. Resume it with specific guidance if you can. If it needs something this company can't reach, such as the web, have the work done without it, with those claims marked unverified for a person to check. Otherwise escalate further, and say what you tried.

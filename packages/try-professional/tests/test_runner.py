@@ -113,6 +113,23 @@ class TestWhatARoleSees:
         """The CEO must report on each criterion word for word, so it has to be able to read them."""
         assert "The goal is met" in self._prompts(org, harness)["integrate"]
 
+    def test_planners_know_what_the_company_can_reach(self, org: Org, harness: Callable[..., Any]) -> None:
+        """A plan once required dated web sources from a company with no web, and the command was blocked."""
+        seen = self._prompts(org, harness)
+        for purpose in ("plan", "dispatch"):
+            assert "What this company can reach" in seen[purpose]
+            assert "Nothing here can go online" in seen[purpose]
+            assert "Nobody may invent a source" in seen[purpose]
+        assert "What this company can reach" not in seen["execute"]
+
+    def test_intake_is_shown_routes_it_can_copy(self, org: Org, harness: Callable[..., Any]) -> None:
+        assert '"engineering/backend"' in self._prompts(org, harness)["intake"]
+
+    def test_staff_keep_working_when_something_is_missing(self, org: Org, harness: Callable[..., Any]) -> None:
+        prompt = self._prompts(org, harness)["execute"]
+        assert "mark the rest unverified" in prompt
+        assert "Call escalate only if nothing useful can be done" in prompt
+
     def test_empty_workspace_is_stated_so_nobody_searches_it(self, org: Org, harness: Callable[..., Any]) -> None:
         prompt = self._prompts(org, harness)["execute"]
         assert "(empty)" in prompt and "no repository" in prompt

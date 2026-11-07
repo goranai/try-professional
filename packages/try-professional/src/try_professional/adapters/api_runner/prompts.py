@@ -73,13 +73,28 @@ def _routes(org: Org) -> dict[str, list[str]]:
     root_department = org.root_role.split("/", 1)[0]
     return {
         department.id: [
-            role
+            f"{department.id}/{role}"
             for role in department.roles
             if any(o in TASK_OUTPUTS for o in org.role(f"{department.id}/{role}").outputs)
         ]
         for department in org.departments.values()
         if department.id != root_department
     }
+
+
+def _reach(org: Org, files: list[str], search: bool) -> str:
+    """What planners must know, or they ask for work that nobody here can do."""
+    web = search and any("web_search" in role.allowed_tools for role in org.roles.values())
+    provided = ", ".join(files) if files else "none"
+    return (
+        f"Files provided: {provided}. Also company memory, each role's skills, and what a role already knows"
+        f"{', and web_search for the roles that have it' if web else ''}. "
+        f"{'Nothing else is online' if web else 'Nothing here can go online'}, and nothing here can run a program, "
+        "publish, send, or buy.\n"
+        "Ask only for work that can be finished with this. A criterion must not need a live source, link, or date "
+        "the company can't get. Ask instead that such claims be marked unverified, with what a person should check "
+        "before using them. Nobody may invent a source."
+    )
 
 
 def _artifact_section(artifact: Any) -> str:
@@ -102,6 +117,7 @@ def user_prompt(
     loadout: list[dict[str, Any]] | None = None,
     *,
     web: bool = False,
+    search: bool = False,
     briefing: Briefing | None = None,
 ) -> str:
     briefing = briefing or Briefing()
@@ -129,6 +145,9 @@ def user_prompt(
             d.id: org.role(d.head_ref).mission for d in org.departments.values() if d.id != org.root_role.split("/")[0]
         }
         parts.append(_section("Departments you can activate, and what their heads are for", installed))
+    # An adapter that passes no files runs on someone else's tools, so this can't speak for what they reach.
+    if workspace_files is not None and invocation.purpose in (Purpose.PLAN, Purpose.DISPATCH):
+        parts.append(_section("What this company can reach", _reach(org, workspace_files, search)))
     if invocation.work_package_id:
         package = state.packages[invocation.work_package_id]
         shown = package.model_dump(mode="json", include={"id", "title", "acceptance", "token_budget"})
@@ -164,7 +183,8 @@ def user_prompt(
                 "Files in this run's workspace",
                 f"{listing}\nYou can reach nothing else: no repository or shell"
                 f"{', and no network beyond web_search' if web else ', or network'}. "
-                "If the task needs something missing, call escalate.",
+                "If something is missing, do what you can with what's here, mark the rest unverified, and say what "
+                "a person must check. Call escalate only if nothing useful can be done.",
             )
         )
     if loadout:

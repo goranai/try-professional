@@ -544,6 +544,14 @@ def _work_output(outputs: tuple[str, ...]) -> str | None:
     return next((output for output in outputs if output in WORK_OUTPUT_TYPES), None)
 
 
+def _settled_route(charter: GoalCharter) -> GoalCharter:
+    """A role named on its own is clear once its department is known, so that isn't worth a retry."""
+    role, department = charter.route_role, charter.route_department
+    if role and department and "/" not in role:
+        return charter.model_copy(update={"route_role": f"{department}/{role}"})
+    return charter
+
+
 def _route_problem(charter: GoalCharter, org: Org) -> str | None:
     """Why a small command can't go where the root role sent it. Gates still apply wherever it goes."""
     root_department = org.root_role.split("/", 1)[0]
@@ -555,7 +563,8 @@ def _route_problem(charter: GoalCharter, org: Org) -> str | None:
     if not role:
         return None
     if not org.has_role(role) or role.split("/", 1)[0] != department:
-        return f"route_role '{role}' isn't a role in '{department}'"
+        known = ", ".join(f"{department}/{name}" for name in org.departments[department].roles)
+        return f"route_role '{role}' isn't a role in '{department}'. Its roles: {known}"
     if _work_output(org.role(role).outputs) is None:
         return f"route_role '{role}' doesn't produce work results. Route to the department instead"
     return None
@@ -701,6 +710,7 @@ def _on_submission(step: _Step, event: Submission) -> None:
     if invocation.purpose == Purpose.INTAKE:
         assert isinstance(parsed, GoalCharter)
         if parsed.size == "small":
+            parsed = _settled_route(parsed)
             problem = _route_problem(parsed, org)
             if problem:
                 step.reject(invocation, problem)

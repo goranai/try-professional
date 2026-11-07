@@ -1,6 +1,6 @@
 ---
 playbook: staff
-version: 1
+version: 2
 ---
 
 # Staff playbook
@@ -14,7 +14,7 @@ Do this task and submit the result.
 2. If a listed skill fits, read it first.
 3. Report each done criterion with evidence. Never claim what you didn't check.
 4. In notes, record what you did, any decision or promise, and a lesson for next time. Put a lesson for your whole team in team_lesson.
-If the brief isn't enough, call escalate and say what's missing.
+If something is missing, do what you can, and mark the rest unverified with what a person must check. Call escalate only if nothing useful can be done, and say what's missing.
 
 ## review
 

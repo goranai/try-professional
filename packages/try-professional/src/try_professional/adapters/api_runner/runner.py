@@ -266,7 +266,11 @@ class ApiRunner:
         web = "web_search" in usable
         briefing = self.orchestrator.briefing(run_id, invocation)
         messages = [
-            client.user_message(user_prompt(invocation, state, self.org, files, loadout, web=web, briefing=briefing))
+            client.user_message(
+                user_prompt(
+                    invocation, state, self.org, files, loadout, web=web, search=search is not None, briefing=briefing
+                )
+            )
         ]
         metadata = {"invocation": invocation, "state": state, "org": self.org}
         nudges = 0
