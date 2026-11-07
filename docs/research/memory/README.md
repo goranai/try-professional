@@ -26,8 +26,12 @@ Windows 11, Python 3.13, 32 GB of RAM, on 2026-11-07. See `peak_ram.json`.
 
 Two changes made the difference. Mnemosyne loaded its own copy of the model, and now shares ours. Embedding uses batches of 8, where the default of 256 pads more text at once. Thread count made no difference.
 
-A generation with a real model adds only HTTP calls to the discovery figure, and the B + C and journey harnesses record each generation's real peak. No temp folders were left behind after these runs.
+No temp folders were left behind after these runs.
 
-`trypro init` waits until 1,824 MB is free: 800 MB for the work (713 MB measured, rounded up), and a 1,024 MB safety margin.
+## With a real model
+
+The org generator evaluation ran 16 more real generations in one process, on the cheap model. Peak RAM per generation was 585 to 772 MB, and 772 MB was the process's peak overall. Generations that also searched GitHub and matched skills peaked at 666 to 772 MB. Each one's figure is in that run's `results.json` as `peak_ram_mb`. It left no temp folders behind.
+
+`trypro init` waits until 1,824 MB is free: 800 MB for the work (772 MB measured, rounded up), and a 1,024 MB safety margin.
 
 The scripted `trypro run --dry-run` loads no memory bank and no model, so its 60 MB says nothing about a real command. A real command's peak comes from the 4c journey.

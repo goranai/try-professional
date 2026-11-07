@@ -12,7 +12,7 @@ trypro run --dry-run "Build a health check endpoint"
 
 `--dry-run` uses a scripted model, so it needs no API key and spends nothing. `trypro init` downloads the local embedding model, about 0.22 GB.
 
-**Memory:** `trypro init` peaks at about 720 MB of RAM ([measured on Windows 11](https://github.com/goranai/try-professional/blob/main/docs/research/memory/README.md)). Before it starts, it waits until 1.8 GB is free, which includes a 1 GB safety margin, and it checks again every 3 minutes. Change the margin with `TRYPRO_MEMORY_MARGIN_MB`, or turn the check off with `TRYPRO_MEMORY_CHECK=off`. If memory runs low during a command, it stops at a safe point, and `trypro resume <run-id>` continues it.
+**Memory:** `trypro init` peaks at about 800 MB of RAM ([measured on Windows 11](https://github.com/goranai/try-professional/blob/main/docs/research/memory/README.md)). Before it starts, it waits until 1.8 GB is free, which includes a 1 GB safety margin, and it checks again every 3 minutes. Change the margin with `TRYPRO_MEMORY_MARGIN_MB`, or turn the check off with `TRYPRO_MEMORY_CHECK=off`. If memory runs low during a command, it stops at a safe point, and `trypro resume <run-id>` continues it.
 
 Once a company exists:
 

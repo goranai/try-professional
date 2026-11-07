@@ -15,8 +15,8 @@ import time
 from collections.abc import Callable
 from pathlib import Path
 
-# See docs/research/memory/. A first generation measured 713 MB, and this rounds up. The others are estimates until
-# the B + C and journey harnesses measure them: a later generation adds to a loaded model, and a command loads one.
+# See docs/research/memory/. Real generations peaked at 772 MB, and this rounds up. The other two are estimates: a
+# later generation adds to a loaded model, and the journey will measure a command, which loads one.
 GENERATION_PEAK_MB = 800
 GENERATION_AFTER_MODEL_LOADED_MB = 250
 COMMAND_PEAK_MB = 800
