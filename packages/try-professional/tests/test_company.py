@@ -635,6 +635,15 @@ class TestPlaybooks:
             assert text
             assert estimate_tokens(text) <= 250, (level, step)
 
+    @pytest.mark.parametrize("level", ["manager", "staff"])
+    def test_a_reviewer_is_told_to_check_and_not_to_trust(self, level: str) -> None:
+        """A real reviewer noted an invented claim as minor, which on its own would have been approved."""
+        text = playbooks.section(level, "review")
+        assert "Don't rely on its evidence" in text
+        assert "redo every sum" in text
+        assert "count any limit" in text
+        assert "at least major" in text
+
     def test_a_head_doing_a_task_follows_the_staff_playbook(self) -> None:
         assert playbooks.section("manager", "execute").startswith("Do this task")
 
