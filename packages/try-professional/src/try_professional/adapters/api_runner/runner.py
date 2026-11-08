@@ -258,6 +258,8 @@ class ApiRunner:
         system = system_prompt(role, self.org)
         try:
             client, model = self.router.route(role)
+            # A person chose another model for this role after it got stuck.
+            model = state.role_models.get(role.ref, model)
         except ClientError as error:
             return [InvocationFailed(invocation_id=action.invocation_id, reason=str(error), retryable=error.retryable)]
         workspace = context.workspace.resolve()

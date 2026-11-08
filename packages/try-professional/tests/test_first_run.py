@@ -189,7 +189,7 @@ class TestAStoppedCommandSaysWhatToDo:
         def mutate(org_dir: Path) -> None:
             path = org_dir / "org.yaml"
             doc = yaml.safe_load(path.read_text(encoding="utf-8"))
-            doc["pipeline"]["budget"]["max_tokens_per_run"] = 3000
+            doc["pipeline"]["budget"]["mcp_max_tokens_per_run"] = 3000
             path.write_text(yaml.safe_dump(doc), encoding="utf-8")
 
         orchestrator = Orchestrator(make_org(mutate=mutate), tmp_path / "home")
@@ -216,7 +216,7 @@ class TestAStoppedCommandSaysWhatToDo:
     def test_it_says_exactly_what_happened(self, make_org: Callable[..., Org], tmp_path: Path) -> None:
         _, message = self._stopped(make_org, tmp_path, True)
         assert "over its limit of 3000" in message
-        assert "by the server's estimate" in message
+        assert "by the server's corrected estimate" in message
         assert "its work so far is saved" in message
         assert "Resuming adds 1500 tokens" in message
 
@@ -319,3 +319,13 @@ class TestReportingAndContributing:
         text = (ROOT / "docs" / "releasing.md").read_text(encoding="utf-8")
         assert "publish.yml" in text
         assert "ask" in text.lower()
+
+
+def test_status_shows_both_sets_of_limits(folder: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    assert main(["init", "--company", "Demo", "--skip-model"]) == 0
+    capsys.readouterr()
+    main(["status", "--tokens"])
+    output = capsys.readouterr().out
+    assert "60,000 small, 200,000 large" in output
+    assert "150,000 small, 500,000 large" in output
+    assert "x3.3" in output

@@ -21,7 +21,7 @@ from ..org import Org
 from .audit import AuditLog, VerifyResult, archive_log, verify_log
 from .brief import Briefing, build_brief
 from .company import CompanyStore
-from .deliverables import export_deliverables, read_sources
+from .deliverables import DRAFT_FOLDER, export_deliverables, export_drafts, read_sources
 from .ledger import Ledger
 from .lock import StateLock
 from .pipeline import (
@@ -33,6 +33,7 @@ from .pipeline import (
     Purpose,
     ResolveContext,
     RunCancelled,
+    RunPhase,
     RunStarted,
     RunState,
     Submission,
@@ -162,6 +163,24 @@ class Orchestrator:
         except OSError as error:
             log.append(self.clock(), "deliverables_error", {"error": type(error).__name__})
 
+    def drafts_path(self, run_id: str) -> Path | None:
+        target = self.deliverables_path(run_id)
+        return target / DRAFT_FOLDER if target else None
+
+    def _export_drafts(self, state: RunState) -> None:
+        """A stopped run still hands over what it made, marked as not approved."""
+        target = self.drafts_path(state.run_id)
+        if target is None:
+            return
+        log = self._log(state.run_id)
+        try:
+            index = export_drafts(
+                state, self.workspace(state.run_id), target, read_sources(self.sources_path(state.run_id))
+            )
+            log.append(self.clock(), "drafts_exported", {"index": f"{DRAFT_FOLDER}/{index.name}"})
+        except OSError as error:
+            log.append(self.clock(), "drafts_error", {"error": type(error).__name__})
+
     def _log(self, run_id: str) -> AuditLog:
         log = self._logs.get(run_id)
         if log is None or log.changed_elsewhere():
@@ -232,6 +251,8 @@ class Orchestrator:
             self._note_lesson_decisions(previous, state, current, log)
             if state.phase != before:
                 log.append(self.clock(), "phase", {"from": before.value, "to": state.phase.value})
+                if state.phase in (RunPhase.BLOCKED, RunPhase.FAILED):
+                    self._export_drafts(state)
             for action in actions:
                 log.append(self.clock(), "action", action.model_dump(mode="json"))
                 if isinstance(action, ResolveContext):

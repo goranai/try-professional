@@ -60,7 +60,7 @@ It compares how many commands finish, the rounds of rework, false alarms on clea
 
 ## 4. Claude Code plugin prototype
 
-**Why.** It might remove `claude mcp add`, and ship `/company` ready to use, taking setup from 7 steps to about 5.
+**Why.** `trypro setup claude-code` already took setup from 7 steps to 5 in 0.1.2. A plugin might ship `/company` ready to use, and take a step or two more off.
 
 **How.** The first question decides everything: can a plugin's subagent get its own server, bound to one role in one company? Role isolation depends on it. It would stop there if it can't. `pip install`, generating each company's roles, and a person's approval would probably stay.
 

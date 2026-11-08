@@ -326,7 +326,8 @@ class TestAStoppedCommand:
         def mutate(org_dir: Path) -> None:
             path = org_dir / "org.yaml"
             doc = yaml.safe_load(path.read_text(encoding="utf-8"))
-            doc["pipeline"]["budget"]["max_tokens_per_run"] = 3000
+            # Each step here counts about 2,300 to 3,400 tokens, so half of this limit covers the next one.
+            doc["pipeline"]["budget"]["mcp_max_tokens_per_run"] = 9000
             path.write_text(yaml.safe_dump(doc), encoding="utf-8")
 
         service = McpService(Orchestrator(make_org(mutate=mutate), tmp_path / "home"))
@@ -354,7 +355,7 @@ class TestAStoppedCommand:
         service, run_id, stopped = self._stopped(make_org, tmp_path)
         total = service.orchestrator.state(run_id).usage.total
         self._answer(service, run_id, stopped)
-        assert service.orchestrator.state(run_id).budget_override == total + 1500
+        assert service.orchestrator.state(run_id).budget_override == total + 4500
 
     def test_the_next_step_doesnt_stop_it_again(self, make_org: Callable[..., Org], tmp_path: Path) -> None:
         service, run_id, stopped = self._stopped(make_org, tmp_path)
@@ -458,7 +459,7 @@ class TestWhatAPersonGetsBack:
         orchestrator = Orchestrator(org, tmp_path / "home", deliverables_dir=tmp_path / "out")
         _, _, done = self._finished(orchestrator)
         index = Path(done["deliverables"]).read_text(encoding="utf-8")
-        assert "counted by the server" in index
+        assert "estimated by the server" in index
         assert "model calls" not in index
 
     def test_a_final_review_is_given_the_work_it_signs_off(self, org: Org, tmp_path: Path) -> None:

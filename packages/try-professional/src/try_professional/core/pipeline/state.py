@@ -150,7 +150,7 @@ class HumanRequest(_Model):
     id: str
     question: str
     options: list[str]
-    kind: Literal["escalation", "gate_unavailable", "budget", "stalled", "runaway"]
+    kind: Literal["escalation", "gate_unavailable", "budget", "stalled", "runaway", "stuck"]
     task_id: str | None = None
     gate: str | None = None
     invocation_id: str | None = None
@@ -184,6 +184,11 @@ class RunState(_Model):
     failure_reason: str | None = None
     size: Literal["small", "large"] = "large"
     cancelled: bool = False
+    # Model calls since anything moved: a new artifact, approval, rework round, or assignment. See _check_progress.
+    progress_mark: str = ""
+    calls_since_progress: int = 0
+    # Another model a person chose for a role that got stuck. An adapter that picks models reads it.
+    role_models: dict[str, str] = {}
 
 
 # ---- Events: everything that can happen to a run ----------------------------
@@ -260,6 +265,8 @@ class HumanDecided(_Model):
     note: str = ""
     decided_by: str = "human"
     new_token_budget: int | None = None
+    # For a stuck role: another model to try it with.
+    model: str | None = None
 
 
 class RunCancelled(_Model):

@@ -13,6 +13,8 @@ import yaml
 from .model import (
     DEFAULT_MAX_TOKENS_PER_RUN,
     DEFAULT_MAX_TOKENS_PER_SMALL_COMMAND,
+    DEFAULT_MCP_MAX_TOKENS_PER_RUN,
+    DEFAULT_MCP_MAX_TOKENS_PER_SMALL_COMMAND,
     BusinessContext,
     Department,
     Gate,
@@ -235,6 +237,9 @@ def load_bundle(org: dict[str, Any], roles: dict[str, dict[str, Any]]) -> Org:
             max_tokens_per_run=budget.get("max_tokens_per_run") or DEFAULT_MAX_TOKENS_PER_RUN,
             max_tokens_per_small_command=budget.get("max_tokens_per_small_command")
             or DEFAULT_MAX_TOKENS_PER_SMALL_COMMAND,
+            mcp_max_tokens_per_run=budget.get("mcp_max_tokens_per_run") or DEFAULT_MCP_MAX_TOKENS_PER_RUN,
+            mcp_max_tokens_per_small_command=budget.get("mcp_max_tokens_per_small_command")
+            or DEFAULT_MCP_MAX_TOKENS_PER_SMALL_COMMAND,
         ),
         raw=org,
         raw_roles=roles,

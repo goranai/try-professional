@@ -1,0 +1,578 @@
+{
+ "before": {
+  "catering": {
+   "status": "done",
+   "usage": {
+    "input": 68,
+    "cache_write": 52362,
+    "cache_read": 178415,
+    "output": 10986,
+    "cost_usd_at_list_price": 0.33728,
+    "processes": 10
+   },
+   "by_purpose": {
+    "intake": {
+     "input": 6,
+     "cache_write": 6577,
+     "cache_read": 10538,
+     "output": 434,
+     "cost_usd_at_list_price": 0.03171,
+     "processes": 1
+    },
+    "execute": {
+     "input": 8,
+     "cache_write": 5006,
+     "cache_read": 22673,
+     "output": 1031,
+     "cost_usd_at_list_price": 0.03262,
+     "processes": 1
+    },
+    "review": {
+     "input": 36,
+     "cache_write": 27623,
+     "cache_read": 101209,
+     "output": 5867,
+     "cost_usd_at_list_price": 0.17935,
+     "processes": 5
+    },
+    "integrate": {
+     "input": 18,
+     "cache_write": 13156,
+     "cache_read": 43995,
+     "output": 3654,
+     "cost_usd_at_list_price": 0.0936,
+     "processes": 3
+    }
+   },
+   "steps": 10,
+   "tasks": [
+    {
+     "id": "wp1/t1",
+     "status": "approved",
+     "owner": "operations/support"
+    },
+    {
+     "id": "__final__",
+     "status": "approved",
+     "owner": "executive/ceo"
+    }
+   ],
+   "counters": {
+    "invalid_outputs": 0,
+    "rework_loops": 2,
+    "failed_invocations": 0,
+    "escalations": 0,
+    "handoffs": 0,
+    "violations": 0,
+    "package_overruns": 0,
+    "assignments": 10,
+    "amendments": 0
+   },
+   "estimated_by_server": 20814,
+   "minutes": 2.6,
+   "final": {
+    "summary_in_user_language": "Proposed reply, two sentences: \"Thank you for asking about vegetarian meals. A member of our team will confirm which vegetarian options we currently offer and will be happy to talk through your dietary needs.\" It makes no firm 'yes' claim, because no confirmed menu supports one. It uses neutral wording with no office or team assumption, and it says nothing about allergens, dishes or prices. A person must confirm vegetarian availability before anyone sends a firm 'yes'. This text has not been re-reviewed by QA or legal. The earlier PublicContent artifact (art-c950528f280217a5d0f296ad) still holds the old 'Yes, our office lunch menu...' body, so do not send it. I have left it out of artifact_refs, and the text above is the only version to use.",
+    "artifact_refs": [],
+    "criteria_results": [
+     {
+      "criterion": "Reply is exactly two sentences",
+      "met": true,
+      "evidence": "Sentence 1: 'Thank you for asking about vegetarian meals.' Sentence 2: 'A member of our team will confirm which vegetarian options we currently offer and will be happy to talk through your dietary needs.' I counted these myself. QA has not re-reviewed the revision."
+     },
+     {
+      "criterion": "Directly answers the vegetarian question",
+      "met": false,
+      "evidence": "The reply does not say 'yes', because no confirmed menu or source supports that claim. It commits to confirming availability instead. Once a person confirms a source, sentence 2 can become a direct yes."
+     },
+     {
+      "criterion": "Tone is polite and customer-appropriate",
+      "met": true,
+      "evidence": "The reply thanks the customer and offers to discuss their dietary needs, in neutral wording. This was not re-reviewed after the revision."
+     }
+    ],
+    "known_limits": [
+     "The stored PublicContent artifact art-c950528f280217a5d0f296ad still has the old body with the unsupported 'Yes' claim and the office/team assumptions. I could not edit it, so it needs replacing before anything ships.",
+     "No confirmed menu supports a vegetarian claim. A person must confirm availability first.",
+     "The revised wording has not been re-reviewed by QA or legal. The earlier passes covered the old text. Legal's check is automated and is not legal advice.",
+     "The reply makes no allergen statement. Allergen details are unconfirmed.",
+     "The reply promises a follow-up from a team member, so someone must own it.",
+     "Unverified, check before using: No specific dishes, allergens, prices or dates are stated; the underlying menu was built on assumptions and allergens are unconfirmed."
+    ]
+   }
+  },
+  "shorts": {
+   "status": "done",
+   "usage": {
+    "input": 62,
+    "cache_write": 42381,
+    "cache_read": 156052,
+    "output": 8005,
+    "cost_usd_at_list_price": 0.26529,
+    "processes": 10
+   },
+   "by_purpose": {
+    "intake": {
+     "input": 6,
+     "cache_write": 3295,
+     "cache_read": 14225,
+     "output": 409,
+     "cost_usd_at_list_price": 0.0187,
+     "processes": 1
+    },
+    "execute": {
+     "input": 8,
+     "cache_write": 5258,
+     "cache_read": 23352,
+     "output": 1028,
+     "cost_usd_at_list_price": 0.03366,
+     "processes": 1
+    },
+    "review": {
+     "input": 30,
+     "cache_write": 22669,
+     "cache_read": 75546,
+     "output": 4193,
+     "cost_usd_at_list_price": 0.14022,
+     "processes": 5
+    },
+    "integrate": {
+     "input": 18,
+     "cache_write": 11159,
+     "cache_read": 42929,
+     "output": 2375,
+     "cost_usd_at_list_price": 0.07271,
+     "processes": 3
+    }
+   },
+   "steps": 10,
+   "tasks": [
+    {
+     "id": "wp1/t1",
+     "status": "approved",
+     "owner": "distribution/title-seo"
+    },
+    {
+     "id": "__final__",
+     "status": "approved",
+     "owner": "executive/ceo"
+    }
+   ],
+   "counters": {
+    "invalid_outputs": 0,
+    "rework_loops": 2,
+    "failed_invocations": 0,
+    "escalations": 0,
+    "handoffs": 0,
+    "violations": 0,
+    "package_overruns": 0,
+    "assignments": 10,
+    "amendments": 0
+   },
+   "estimated_by_server": 16006,
+   "minutes": 2.3,
+   "final": {
+    "summary_in_user_language": "Here is the title for your YouTube Short about AI note-taking apps: \"Are AI Note-Taking Apps Actually Worth It?\" It is 42 characters long, spaces and the question mark included, and it is phrased as a curiosity question. It names no brand and makes no performance claim. No search-volume or Shorts performance data was checked.",
+    "artifact_refs": [
+     "art-31f20a99a7e01064a2b2a948"
+    ],
+    "criteria_results": [
+     {
+      "criterion": "Exactly one title is delivered",
+      "met": true,
+      "evidence": "The body holds one title: 'Are AI Note-Taking Apps Actually Worth It?'"
+     },
+     {
+      "criterion": "Title clearly refers to AI note-taking apps",
+      "met": true,
+      "evidence": "The title contains the words 'AI Note-Taking Apps'."
+     },
+     {
+      "criterion": "Title is suitable for a Short",
+      "met": true,
+      "evidence": "It is 42 characters long, so it should not be cut off, and it is a curiosity question. No Shorts performance data was checked."
+     }
+    ],
+    "known_limits": [
+     "No search-volume or keyword data was used. The title is an assumption-based choice.",
+     "No script was supplied, so it is unchecked whether the video's hook matches the question.",
+     "No Shorts performance data was checked.",
+     "The title is a question, so it promises no result or personal experience. The video's hook should ask the same question.",
+     "No trademark search or YouTube policy check beyond the title text was done.",
+     "Unverified, check before using: No search-volume data was used; the title is an assumption-based choice, not measured keyword research.",
+     "Unverified, check before using: The title is a question, so it promises no result or personal experience. The video's hook should ask the same question. No script was supplied for this task, so this match is unchecked."
+    ]
+   }
+  },
+  "umkm-snacks": {
+   "status": "done",
+   "usage": {
+    "input": 38,
+    "cache_write": 26900,
+    "cache_read": 98229,
+    "output": 5209,
+    "cost_usd_at_list_price": 0.16958,
+    "processes": 6
+   },
+   "by_purpose": {
+    "intake": {
+     "input": 6,
+     "cache_write": 3281,
+     "cache_read": 14163,
+     "output": 472,
+     "cost_usd_at_list_price": 0.01927,
+     "processes": 1
+    },
+    "execute": {
+     "input": 6,
+     "cache_write": 4701,
+     "cache_read": 14935,
+     "output": 1175,
+     "cost_usd_at_list_price": 0.03206,
+     "processes": 1
+    },
+    "review": {
+     "input": 20,
+     "cache_write": 14832,
+     "cache_read": 54712,
+     "output": 2483,
+     "cost_usd_at_list_price": 0.08966,
+     "processes": 3
+    },
+    "integrate": {
+     "input": 6,
+     "cache_write": 4086,
+     "cache_read": 14419,
+     "output": 1079,
+     "cost_usd_at_list_price": 0.02859,
+     "processes": 1
+    }
+   },
+   "steps": 6,
+   "tasks": [
+    {
+     "id": "wp1/t1",
+     "status": "approved",
+     "owner": "customer-care/care-lead"
+    },
+    {
+     "id": "__final__",
+     "status": "approved",
+     "owner": "executive/ceo"
+    }
+   ],
+   "counters": {
+    "invalid_outputs": 0,
+    "rework_loops": 0,
+    "failed_invocations": 0,
+    "escalations": 0,
+    "handoffs": 0,
+    "violations": 0,
+    "package_overruns": 0,
+    "assignments": 6,
+    "amendments": 0
+   },
+   "estimated_by_server": 9811,
+   "minutes": 1.4,
+   "final": {
+    "summary_in_user_language": "Balasan singkat untuk pelanggan sudah siap: \"Halo Kak, terima kasih sudah menghubungi kami! 😊 Ongkos kirim ke Surabaya bergantung pada berat pesanan dan pilihan kurirnya. Supaya tidak keliru, kami cek dulu tarif terbarunya. Boleh Kakak kirim jumlah/jenis keripik pisang yang ingin dipesan dan kurir yang diinginkan? Setelah itu kami konfirmasi biaya pastinya sebelum Kakak membayar. Terima kasih ya, Kak!\" Balasan ini tidak menyebut angka tarif karena data tarif belum ada. Tim perlu memastikan tarif kurir sebelum membalas lanjutan.",
+    "artifact_refs": [
+     "art-c194d7a6f65769aa62078577"
+    ],
+    "criteria_results": [
+     {
+      "criterion": "One short reply in Indonesian addressed to the customer",
+      "met": true,
+      "evidence": "Satu pesan berbahasa Indonesia yang menyapa pelanggan dengan 'Kak'."
+     },
+     {
+      "criterion": "Does not state unverified shipping figures; explains how/where cost will be confirmed",
+      "met": true,
+      "evidence": "Tidak ada angka tarif. Tim akan mengonfirmasi biaya setelah pelanggan mengirim detail pesanan dan kurir, sebelum pembayaran."
+     },
+     {
+      "criterion": "Polite, helpful tone",
+      "met": true,
+      "evidence": "Ada sapaan ramah, ucapan terima kasih, dan langkah berikutnya yang jelas."
+     }
+    ],
+    "known_limits": [
+     "Tarif resmi ke Surabaya belum tersedia, jadi tim harus mengonfirmasinya dengan kurir sebelum membalas lanjutan.",
+     "Balasan menyebut 'keripik pisang', padahal permintaan awal tidak menyebut produk itu. Periksa apakah sesuai dengan toko Anda.",
+     "Catatan open_issues dari care-lead bilang Legal belum meninjau, tetapi catatan pipeline menunjukkan wp1/t1 lolos review qa dan legal. Saya tidak memeriksa sendiri mana yang benar.",
+     "Open in 'Write one short reply to a customer asking about shipping cost to Surabaya.': Tarif resmi ke Surabaya belum tersedia; tim harus mengonfirmasi tarif kurir sebelum membalas lanjutan.",
+     "Open in 'Write one short reply to a customer asking about shipping cost to Surabaya.': Balasan belum ditinjau Legal; hanya berisi janji konfirmasi biaya, bukan teks kebijakan."
+    ]
+   }
+  }
+ },
+ "after": {
+  "catering": {
+   "status": "done",
+   "usage": {
+    "input": 30,
+    "cache_write": 20017,
+    "cache_read": 83794,
+    "output": 3779,
+    "cost_usd_at_list_price": 0.1263,
+    "processes": 4
+   },
+   "by_purpose": {
+    "intake": {
+     "input": 6,
+     "cache_write": 3116,
+     "cache_read": 14017,
+     "output": 427,
+     "cost_usd_at_list_price": 0.01815,
+     "processes": 1
+    },
+    "execute": {
+     "input": 8,
+     "cache_write": 4993,
+     "cache_read": 22683,
+     "output": 1117,
+     "cost_usd_at_list_price": 0.03343,
+     "processes": 1
+    },
+    "review": {
+     "input": 16,
+     "cache_write": 11908,
+     "cache_read": 47094,
+     "output": 2235,
+     "cost_usd_at_list_price": 0.07472,
+     "processes": 2
+    }
+   },
+   "steps": 4,
+   "tasks": [
+    {
+     "id": "wp1/t1",
+     "status": "approved",
+     "owner": "operations/support"
+    },
+    {
+     "id": "__final__",
+     "status": "approved",
+     "owner": "executive/ceo"
+    }
+   ],
+   "counters": {
+    "invalid_outputs": 0,
+    "rework_loops": 0,
+    "failed_invocations": 0,
+    "escalations": 0,
+    "handoffs": 0,
+    "violations": 0,
+    "package_overruns": 0,
+    "assignments": 4,
+    "amendments": 0
+   },
+   "estimated_by_server": 7570,
+   "minutes": 1.1,
+   "final": {
+    "summary_in_user_language": "Thank you for asking. Yes, our office lunch menu includes vegetarian options, and we are happy to talk through your team's dietary needs so we can plan the right choices.",
+    "artifact_refs": [
+     "art-b09824059949943f35fae0c6"
+    ],
+    "criteria_results": [
+     {
+      "criterion": "Reply is exactly two sentences",
+      "met": true,
+      "evidence": "'Thank you for asking.' + 'Yes, our office lunch menu includes ... right choices.'"
+     },
+     {
+      "criterion": "It directly answers whether vegetarian meals are covered",
+      "met": true,
+      "evidence": "Second sentence begins 'Yes, our office lunch menu includes vegetarian options'."
+     },
+     {
+      "criterion": "Tone is polite and customer-appropriate",
+      "met": true,
+      "evidence": "Thanks the customer and offers help with dietary needs."
+     }
+    ],
+    "known_limits": [
+     "Unverified, check before using: No dishes, days, allergens or prices are stated; the earlier menu was built on assumptions and allergens are unconfirmed."
+    ]
+   }
+  },
+  "shorts": {
+   "status": "done",
+   "usage": {
+    "input": 26,
+    "cache_write": 17033,
+    "cache_read": 67547,
+    "output": 2811,
+    "cost_usd_at_list_price": 0.10305,
+    "processes": 4
+   },
+   "by_purpose": {
+    "intake": {
+     "input": 6,
+     "cache_write": 3299,
+     "cache_read": 14232,
+     "output": 414,
+     "cost_usd_at_list_price": 0.01877,
+     "processes": 1
+    },
+    "execute": {
+     "input": 8,
+     "cache_write": 5160,
+     "cache_read": 23323,
+     "output": 1002,
+     "cost_usd_at_list_price": 0.03301,
+     "processes": 1
+    },
+    "review": {
+     "input": 12,
+     "cache_write": 8574,
+     "cache_read": 29992,
+     "output": 1395,
+     "cost_usd_at_list_price": 0.05127,
+     "processes": 2
+    }
+   },
+   "steps": 4,
+   "tasks": [
+    {
+     "id": "wp1/t1",
+     "status": "approved",
+     "owner": "distribution/title-seo"
+    },
+    {
+     "id": "__final__",
+     "status": "approved",
+     "owner": "executive/ceo"
+    }
+   ],
+   "counters": {
+    "invalid_outputs": 0,
+    "rework_loops": 0,
+    "failed_invocations": 0,
+    "escalations": 0,
+    "handoffs": 0,
+    "violations": 0,
+    "package_overruns": 0,
+    "assignments": 4,
+    "amendments": 0
+   },
+   "estimated_by_server": 5936,
+   "minutes": 0.9,
+   "final": {
+    "summary_in_user_language": "Are AI Note-Taking Apps Actually Worth It?",
+    "artifact_refs": [
+     "art-10b0894486ec4b0a005adf36"
+    ],
+    "criteria_results": [
+     {
+      "criterion": "Exactly one title is delivered",
+      "met": true,
+      "evidence": "Body contains the single title 'Are AI Note-Taking Apps Actually Worth It?'"
+     },
+     {
+      "criterion": "Title clearly refers to AI note-taking apps",
+      "met": true,
+      "evidence": "Title contains 'AI Note-Taking Apps'"
+     },
+     {
+      "criterion": "Title is suitable for a Short",
+      "met": true,
+      "evidence": "43 characters, short enough not to truncate on mobile; curiosity-question format. Not checked against the final video."
+     }
+    ],
+    "known_limits": [
+     "Unverified, check before using: No search-volume data was used; the title is an assumption-based choice, not measured keyword research.",
+     "Unverified, check before using: The question form makes no result or personal-experience promise; the Short's script must pose and address this question."
+    ]
+   }
+  },
+  "umkm-snacks": {
+   "status": "done",
+   "usage": {
+    "input": 36,
+    "cache_write": 25166,
+    "cache_read": 88716,
+    "output": 4624,
+    "cost_usd_at_list_price": 0.15585,
+    "processes": 6
+   },
+   "by_purpose": {
+    "intake": {
+     "input": 6,
+     "cache_write": 3280,
+     "cache_read": 14148,
+     "output": 456,
+     "cost_usd_at_list_price": 0.01911,
+     "processes": 1
+    },
+    "execute": {
+     "input": 12,
+     "cache_write": 9517,
+     "cache_read": 30038,
+     "output": 2228,
+     "cost_usd_at_list_price": 0.06338,
+     "processes": 2
+    },
+    "review": {
+     "input": 18,
+     "cache_write": 12369,
+     "cache_read": 44530,
+     "output": 1940,
+     "cost_usd_at_list_price": 0.07336,
+     "processes": 3
+    }
+   },
+   "steps": 6,
+   "tasks": [
+    {
+     "id": "wp1/t1",
+     "status": "approved",
+     "owner": "customer-care/care-lead"
+    },
+    {
+     "id": "__final__",
+     "status": "approved",
+     "owner": "executive/ceo"
+    }
+   ],
+   "counters": {
+    "invalid_outputs": 0,
+    "rework_loops": 1,
+    "failed_invocations": 0,
+    "escalations": 0,
+    "handoffs": 0,
+    "violations": 0,
+    "package_overruns": 0,
+    "assignments": 6,
+    "amendments": 0
+   },
+   "estimated_by_server": 8697,
+   "minutes": 1.3,
+   "final": {
+    "summary_in_user_language": "Satu balasan singkat dalam bahasa Indonesia untuk pelanggan yang menanyakan ongkos kirim ke Surabaya. Balasan tidak menjanjikan layanan dan tidak menyebut tarif.",
+    "artifact_refs": [
+     "art-b23ed7cc4ca3a636a2adf8eb"
+    ],
+    "criteria_results": [
+     {
+      "criterion": "Exactly one short reply is delivered",
+      "met": true,
+      "evidence": "Ada satu balasan dua kalimat di outputs."
+     },
+     {
+      "criterion": "Reply is in Indonesian and addresses shipping cost to Surabaya",
+      "met": true,
+      "evidence": "Balasan berbahasa Indonesia dan menyebut ongkos kirim ke Surabaya."
+     },
+     {
+      "criterion": "Reply contains no fabricated rates or unverified claims",
+      "met": true,
+      "evidence": "Tidak ada angka tarif. Klaim 'bisa kirim ke Surabaya', soal berat, dan pilihan kurir sudah dihapus. Balasan hanya berjanji mengecek ongkir. Janji 'kami kabari secepatnya' tanpa batas waktu tertentu."
+     }
+    ],
+    "known_limits": [
+     "Open in 'Write one short reply to a customer asking about shipping cost to Surabaya.': Tim harus benar-benar mengecek ongkir ke Surabaya dan menindaklanjuti pelanggan. Belum ada data tarif atau layanan pengiriman yang diverifikasi."
+    ]
+   }
+  }
+ }
+}

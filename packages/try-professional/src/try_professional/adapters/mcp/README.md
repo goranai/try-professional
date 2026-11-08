@@ -10,24 +10,24 @@ pip install 'try-professional[mcp]'
 
 ```bash
 mkdir my-company && cd my-company
-trypro mcp --help                 # Check it's installed
+trypro setup claude-code
 ```
 
-Set `GITHUB_TOKEN`, so it can search GitHub for skills. Without one a company gets no skills, and the review screen says so. Add the server to Claude Code, and ask it to design your company:
+That checks Python, Claude Code, and `GITHUB_TOKEN`, and adds the coordinator's server to Claude Code for this folder. Without a token a company gets no skills, and it says how to set one. Then ask Claude Code to design your company:
 
 ```bash
-claude mcp add trypro -- trypro mcp --coordinator --dir "$PWD"
 claude "Use the trypro tools to design a company for a catering business that delivers office lunches."
 ```
+
+To add the server by hand instead: `claude mcp add trypro -- trypro mcp --coordinator --dir "$PWD"`.
 
 It calls `org_propose`, does the design and skill matching with its own model, and stops at a review screen. **A person approves, in a terminal:**
 
 ```bash
 trypro init --review <proposal-id>
-trypro agents claude-code
 ```
 
-That writes one subagent per role and a `/company` command. Restart Claude Code in this folder, so it loads them. Say yes when it asks whether you trust the folder, or each role's server can't start. Then run:
+Approving writes one subagent per role and a `/company` command, in a folder `trypro setup claude-code` set up. Elsewhere, run `trypro agents claude-code` after approving. Restart Claude Code in this folder, so it loads them. Say yes when it asks whether you trust the folder, or each role's server can't start. Then run:
 
 ```text
 /company Write a weekly lunch menu and a price list for a new office client with 30 people
@@ -85,7 +85,7 @@ Designing a company is the same loop: `org_propose`, then `org_proposal_get` say
 
 **Tool limits only cover this server's tools.** A role's `allowed_tools` apply to memory, skill, and workspace tools here. A client's own tools, such as a shell or file editor, are outside this server's control. `trypro agents claude-code` turns them off for each role. Another client has to do the same, or use the API runner.
 
-**Token limits run on an estimate.** The server can't see what a client spends, and can't trust what it says, so budgets count what passes through the server, at about 3.5 characters per token. This misses the client's own system prompt and thinking, so it undercounts. `usage_report` records a client's own number beside it, marked as self-reported, and limits don't use that.
+**Token limits run on an estimate.** The server can't see what a client spends, and can't trust what it says, so it counts what passes through it, at about 3.5 characters per token, and multiplies that by 3.3. Across 17 commands measured through Claude Code, a client's fresh tokens were 3.3 times this count, from 2.3 to 4.6 ([the runs](../../../../../../docs/research/mcp_estimate/README.md)). Limits over MCP are 150,000 for a small command and 500,000 for a large one, by default, in those corrected tokens. `usage_report` records a client's own number beside it, marked as self-reported, and limits don't use that.
 
 ## Not available here
 

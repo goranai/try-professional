@@ -1,0 +1,145 @@
+{
+ "factor": 3.3,
+ "median": 3.28,
+ "min": 2.32,
+ "max": 4.63,
+ "n": 17,
+ "runs": [
+  {
+   "run": "small command, before 0.1.2: catering",
+   "source": "docs/research/small_commands/results.json",
+   "estimate": 20814,
+   "fresh": 63416,
+   "with_cache_reads": 241831,
+   "ratio": 3.05
+  },
+  {
+   "run": "small command, before 0.1.2: shorts",
+   "source": "docs/research/small_commands/results.json",
+   "estimate": 16006,
+   "fresh": 50448,
+   "with_cache_reads": 206500,
+   "ratio": 3.15
+  },
+  {
+   "run": "small command, before 0.1.2: umkm-snacks",
+   "source": "docs/research/small_commands/results.json",
+   "estimate": 9811,
+   "fresh": 32147,
+   "with_cache_reads": 130376,
+   "ratio": 3.28
+  },
+  {
+   "run": "small command, after 0.1.2: catering",
+   "source": "docs/research/small_commands/results.json",
+   "estimate": 7570,
+   "fresh": 23826,
+   "with_cache_reads": 107620,
+   "ratio": 3.15
+  },
+  {
+   "run": "small command, after 0.1.2: shorts",
+   "source": "docs/research/small_commands/results.json",
+   "estimate": 5936,
+   "fresh": 19870,
+   "with_cache_reads": 87417,
+   "ratio": 3.35
+  },
+  {
+   "run": "small command, after 0.1.2: umkm-snacks",
+   "source": "docs/research/small_commands/results.json",
+   "estimate": 8697,
+   "fresh": 29826,
+   "with_cache_reads": 118542,
+   "ratio": 3.43
+  },
+  {
+   "run": "journey: catering, large",
+   "source": "docs/research/journey/results_claude_code.json",
+   "estimate": 10816,
+   "fresh": 32948,
+   "with_cache_reads": 121785,
+   "ratio": 3.05
+  },
+  {
+   "run": "journey: catering, small",
+   "source": "docs/research/journey/results_claude_code.json",
+   "estimate": 9187,
+   "fresh": 28794,
+   "with_cache_reads": 131610,
+   "ratio": 3.13
+  },
+  {
+   "run": "journey: catering, later",
+   "source": "docs/research/journey/results_claude_code.json",
+   "estimate": 9608,
+   "fresh": 28654,
+   "with_cache_reads": 107024,
+   "ratio": 2.98
+  },
+  {
+   "run": "journey: shorts, large",
+   "source": "docs/research/journey/results_claude_code.json",
+   "estimate": 80606,
+   "fresh": 228256,
+   "with_cache_reads": 683059,
+   "ratio": 2.83
+  },
+  {
+   "run": "journey: shorts, small",
+   "source": "docs/research/journey/results_claude_code.json",
+   "estimate": 7023,
+   "fresh": 25211,
+   "with_cache_reads": 111319,
+   "ratio": 3.59
+  },
+  {
+   "run": "journey: shorts, later",
+   "source": "docs/research/journey/results_claude_code.json",
+   "estimate": 134289,
+   "fresh": 312120,
+   "with_cache_reads": 885415,
+   "ratio": 2.32
+  },
+  {
+   "run": "journey: umkm-snacks, large",
+   "source": "docs/research/journey/results_claude_code.json",
+   "estimate": 12648,
+   "fresh": 45999,
+   "with_cache_reads": 155537,
+   "ratio": 3.64
+  },
+  {
+   "run": "journey: umkm-snacks, small",
+   "source": "docs/research/journey/results_claude_code.json",
+   "estimate": 7858,
+   "fresh": 27041,
+   "with_cache_reads": 113931,
+   "ratio": 3.44
+  },
+  {
+   "run": "journey: umkm-snacks, later",
+   "source": "docs/research/journey/results_claude_code.json",
+   "estimate": 14952,
+   "fresh": 53152,
+   "with_cache_reads": 191718,
+   "ratio": 3.55
+  },
+  {
+   "run": "acceptance: first command",
+   "source": "docs/research/journey/results_acceptance.json",
+   "estimate": 20186,
+   "fresh": 93364,
+   "with_cache_reads": 836662,
+   "ratio": 4.63
+  },
+  {
+   "run": "acceptance: second command",
+   "source": "docs/research/journey/results_acceptance.json",
+   "estimate": 37762,
+   "fresh": 132211,
+   "with_cache_reads": 1195323,
+   "ratio": 3.5
+  }
+ ]
+}

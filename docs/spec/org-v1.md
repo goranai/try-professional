@@ -65,7 +65,12 @@ pipeline:
   max_rework: 2
   max_invalid_outputs: 2
   working_language: auto
-  budget: { max_tokens_per_run: null, on_exceeded: escalate }
+  budget:
+    max_tokens_per_small_command: 60000
+    max_tokens_per_run: 200000
+    mcp_max_tokens_per_small_command: 150000
+    mcp_max_tokens_per_run: 500000
+    on_exceeded: escalate
 ```
 
 | Field | Required | Meaning |
@@ -81,7 +86,8 @@ pipeline:
 | `pipeline.max_rework` | No | Change requests allowed per task before escalating. Default 2 |
 | `pipeline.max_invalid_outputs` | No | Retries of an invalid output before escalating. Default 2 |
 | `pipeline.working_language` | No | `auto`, the default, makes each command's work follow that command's language. Otherwise one BCP 47 code, which fixes the language. Generated companies get a code only when the business explicitly asks for one language |
-| `pipeline.budget.max_tokens_per_run` | No | Token ceiling for a run, or `null` for none |
+| `pipeline.budget.max_tokens_per_small_command`, `.max_tokens_per_run` | No | Where a command stops and asks a person, in real tokens, on the API runner. Defaults 60,000 and 200,000. `null` means the default, and there's no way to have no limit |
+| `pipeline.budget.mcp_max_tokens_per_small_command`, `.mcp_max_tokens_per_run` | No | The same over MCP, where usage is the server's estimate times 3.3. Defaults 150,000 and 500,000 |
 | `llm_overrides` | No | Per-department or per-role model settings. See [Model overrides](#model-overrides) |
 
 ## Model overrides

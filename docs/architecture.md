@@ -51,7 +51,7 @@ Try Professional turns an LLM agent runtime into a structured company: a hierarc
 | Skill index | Separate catalog outside Mnemosyne, same embedding model. Memory banks stay on Mnemosyne. | Owner |
 | Benchmark spending | Decided after Phase 5. The estimate is shown first, and the approved amount is never exceeded. All three setups use the same mid-priced model. | Owner |
 | Python | 3.10 to 3.13 required in CI. 3.14 allowed to fail until Mnemosyne officially supports it. | Owner |
-| Repository | `goranai/try-professional`, private until v0.1.0. | Owner |
+| Repository | `goranai/try-professional`, public since 2026-11-08. | Owner |
 | LLM provider | Any OpenAI-compatible API, from `TRYPRO_LLM_BASE_URL`, `TRYPRO_LLM_API_KEY` and `TRYPRO_LLM_MODEL` in `.env`. Everyone uses these unless `llm_overrides` in `org.yaml` says otherwise. `OPENAI_API_KEY` is never used. | Owner |
 | Model | `deepseek-v4.1-flash-1017`: passed tool calling, a tool loop and JSON output. Phase 6 uses the same model. | Owner's preference, confirmed by test |
 | Secrets | `.env` is gitignored, and a scan of the working tree and full history runs before every push. | Owner |
@@ -1147,7 +1147,7 @@ All were resolved by the owner on 2026-11-06.
 | Q2 | Build it, given the existing tools? | Yes, as the lockfile, license and pinning layer. Other scanners plug in, and ours is the default. |
 | Q3 | Separate skill catalog? | Yes, outside Mnemosyne with the same embedding model. Memory banks stay on Mnemosyne. |
 | Q4 | Benchmark model and budget | Decided after Phase 5, with `trypro bench --estimate` shown first. Nothing is spent before approval, and the approved amount is never exceeded. The same mid-priced model is used for all three setups. |
-| Q5 | GitHub owner | `goranai/try-professional`, private until v0.1.0 |
+| Q5 | GitHub owner | `goranai/try-professional`, public since 2026-11-08 |
 | Q6 | Translated test queries | Written by the maintainer agent, one file per language. The owner reviews the Indonesian file as a native speaker. |
 
 **Tools reviewed for Q2**, from their READMEs and metadata on 2026-11-06, not an audit:

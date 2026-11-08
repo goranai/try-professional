@@ -1254,7 +1254,68 @@ def _token_limit(state: RunState, org: Org) -> int:
     if state.budget_override:
         return state.budget_override
     pipeline = org.pipeline
+    if state.usage.estimated:
+        # Over MCP: corrected estimates, with their own limits.
+        return pipeline.mcp_max_tokens_per_small_command if state.size == "small" else pipeline.mcp_max_tokens_per_run
     return pipeline.max_tokens_per_small_command if state.size == "small" else pipeline.max_tokens_per_run
+
+
+# Model calls with nothing moving before a run counts as stuck. Two full attempts at a step, on the API runner.
+STUCK_CALLS = 24
+# At the token limit, this many calls with nothing moving means stuck, not merely expensive.
+STUCK_AT_LIMIT = 8
+
+
+def _progress_mark(state: RunState) -> str:
+    """What changes when a run gets anywhere: something accepted, approved, sent back, or newly assigned."""
+    approved = sum(task.status == TaskStatus.APPROVED for task in state.tasks.values())
+    counters = state.counters
+    return f"{len(state.artifacts)}:{approved}:{counters.rework_loops}:{counters.assignments}:{state.phase.value}"
+
+
+def _ask_stuck(step: _Step, invocation: Invocation | None, calls: int) -> None:
+    """Say which role, doing what, and what keeps failing, and offer choices that don't just add budget."""
+    if invocation is None:
+        step.ask_human(
+            f"This command looks stuck: {calls} model calls with nothing accepted, approved, or sent back. "
+            "Retry, or cancel?",
+            ["retry", "cancel"],
+            "stuck",
+        )
+        return
+    failing = invocation.feedback[-1] if invocation.feedback else "nothing it handed in was accepted"
+    can_waive = invocation.purpose == Purpose.REVIEW and invocation.gate is not None
+    waive = (
+        f" Waive the {invocation.gate} review of this task, with your name and a reason (--by, --note)."
+        if can_waive
+        else ""
+    )
+    step.ask_human(
+        f"This command looks stuck. {invocation.role} has used {calls} model calls on its "
+        f"{invocation.purpose.value} step with nothing accepted, approved, or sent back. "
+        f"What keeps failing: {failing[:300]} "
+        f"Retry it, ideally with another model for {invocation.role} (--model).{waive} Or cancel the command.",
+        ["retry", "waive", "cancel"] if can_waive else ["retry", "cancel"],
+        "stuck",
+        task_id=invocation.task_id,
+        gate=invocation.gate,
+        invocation_id=invocation.id,
+    )
+
+
+def _check_progress(step: _Step, event: UsageRecorded) -> bool:
+    """True if this call left the run stuck. Tokens rising while nothing moves is a loop, not work."""
+    state = step.state
+    mark = _progress_mark(state)
+    if mark != state.progress_mark:
+        state.progress_mark = mark
+        state.calls_since_progress = 0
+        return False
+    state.calls_since_progress += 1
+    if state.calls_since_progress < STUCK_CALLS or state.phase in TERMINAL_PHASES or state.phase == RunPhase.BLOCKED:
+        return False
+    _ask_stuck(step, state.invocations.get(event.invocation_id or ""), state.calls_since_progress)
+    return True
 
 
 def _on_usage(step: _Step, event: UsageRecorded) -> None:
@@ -1272,13 +1333,19 @@ def _on_usage(step: _Step, event: UsageRecorded) -> None:
         bucket.cached_input_tokens += event.cached_input_tokens
         bucket.calls += 1
     _note_package_usage(step, event)
+    if _check_progress(step, event):
+        return
     limit = _token_limit(state, step.org)
     if state.usage.total <= limit or state.phase in TERMINAL_PHASES:
         return
     if state.phase == RunPhase.BLOCKED:
         return
+    if state.calls_since_progress >= STUCK_AT_LIMIT:
+        # More budget wouldn't help a loop, so this asks what to change instead.
+        _ask_stuck(step, state.invocations.get(event.invocation_id or ""), state.calls_since_progress)
+        return
     counters = state.counters
-    how = " by the server's estimate" if state.usage.estimated else ""
+    how = " by the server's corrected estimate" if state.usage.estimated else ""
     step.ask_human(
         f"This command stopped at {state.usage.total} tokens{how}, "
         f"over its limit of {limit}. Nothing more is spent until you decide, and its work so far is saved. "
@@ -1299,8 +1366,20 @@ def _on_human(step: _Step, event: HumanDecided) -> None:
         state.human_requests[request.id] = request
         raise IllegalEvent("BAD_DECISION", f"'{event.decision}' is not one of {request.options}")
 
+    if (
+        request.kind == "stuck"
+        and event.decision == "waive"
+        and (not event.note.strip() or event.decided_by == "human")
+    ):
+        state.human_requests[request.id] = request
+        raise IllegalEvent("WAIVER_NEEDS_A_NAME", "A waiver needs the name of who decided, and a reason.")
+
     if not state.human_requests:
         state.phase = RunPhase.EXECUTION
+
+    if request.kind == "stuck":
+        _on_stuck_decision(step, request, event)
+        return
 
     if event.decision == "abandon":
         if request.invocation_id and request.invocation_id in state.suspended:
@@ -1320,6 +1399,32 @@ def _on_human(step: _Step, event: HumanDecided) -> None:
         state.budget_override = event.new_token_budget or state.usage.total + _token_limit(state, step.org) // 2
     elif request.kind == "runaway":
         state.assignment_limit = state.counters.assignments + MAX_ASSIGNMENTS
+
+
+def _on_stuck_decision(step: _Step, request: Any, event: HumanDecided) -> None:
+    state = step.state
+    state.calls_since_progress = 0
+    state.progress_mark = ""
+    invocation = state.invocations.get(request.invocation_id or "")
+    if event.decision == "cancel":
+        step.fail_run(f"Stopped by {event.decided_by} after it got stuck. {event.note}".strip())
+        return
+    if event.decision == "waive" and invocation is not None and request.task_id and request.gate:
+        # Only a review can be waived: there's no work to approve when the work itself is what's stuck.
+        task = state.tasks[request.task_id]
+        state.invocations.pop(invocation.id, None)
+        step.waive(task, request.gate, event.note, event.decided_by)
+        step.next_gate(task)
+        return
+    if invocation is not None:
+        invocation.attempts = 0
+        if event.model:
+            state.role_models[invocation.role] = event.model
+        invocation.feedback.append(
+            "A person asked for another try"
+            + (f", with {event.model}" if event.model else "")
+            + ". Do what's asked, and hand it in, rather than redoing the same steps."
+        )
 
 
 def _on_cancel(step: _Step, event: RunCancelled) -> None:

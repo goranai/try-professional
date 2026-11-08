@@ -136,11 +136,95 @@ def export_deliverables(state: RunState, workspace: Path, target: Path, retrieve
     if state.usage.estimated:
         lines += [
             "",
-            f"Tokens: about {state.usage.total}, counted by the server from what passed through it. "
-            "Your client's own count is higher, often by several times, and it's the one that's billed.",
+            f"Tokens: about {state.usage.total}, estimated by the server from what passed through it, and corrected "
+            "for what clients were measured to spend. Your client's own count is the one billed.",
         ]
     else:
         lines += ["", f"Tokens: {state.usage.total} total, in {state.usage.calls} model calls."]
     index = target / "index.md"
     index.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
     return index
+
+
+DRAFT_FOLDER = "draft"
+
+
+def stop_reason(state: RunState) -> str:
+    """Why a run stopped, in a line: its open question, or why it failed."""
+    if state.human_requests:
+        question = next(iter(state.human_requests.values())).question
+        return " ".join(question.split())[:240]
+    return state.failure_reason or "it stopped"
+
+
+def export_drafts(state: RunState, workspace: Path, target: Path, retrieved: dict[str, str]) -> Path:
+    """When a run stops before it's done, a person still gets what it made: labelled, and with what reviewers said."""
+    if target.exists():
+        shutil.rmtree(target)
+    target.mkdir(parents=True)
+    reason = stop_reason(state)
+    label = f"NOT APPROVED: stopped at {reason}"
+    rows = []
+    for task in state.tasks.values():
+        artifact = state.artifacts.get(task.result_artifact_id or "")
+        if artifact is None or artifact.type == "FinalDeliverable":
+            continue
+        name = _UNSAFE.sub("-", f"{task.owner_role.replace('/', '-')}-{task.task_id}") + ".md"
+        body = [f"# {label}", "", f"## {task.title}", "", f"By {task.owner_role}. Status: {task.status.value}.", ""]
+        body += _render(artifact.type, artifact.payload, retrieved)
+        said = _verdicts_on(state, artifact.artifact_id)
+        if said:
+            body += ["", "## What reviewers said", "", *said]
+        (target / name).write_text("\n".join(body) + "\n", encoding="utf-8", newline="\n")
+        rows.append(
+            f"| [{name}]({name}) | {task.owner_role} | {task.status.value} | {', '.join(task.passed_gates) or 'none'} |"
+        )
+    copied = _copy_workspace(workspace, target)
+    lines = [
+        f"# {label}",
+        "",
+        f"Goal: {state.goal}",
+        f"Run: {state.run_id}",
+        "",
+        "This is what the company made before it stopped. Nobody approved it, so read it as a draft. "
+        "If the run goes on and finishes, the approved work replaces this folder.",
+        "",
+        "## Work",
+        "",
+        "| File | Made by | Status | Reviews passed |",
+        "|---|---|---|---|",
+        *(rows or ["| Nothing was handed in yet. | | | |"]),
+        "",
+    ]
+    if copied:
+        lines += ["## Files roles wrote", ""]
+        lines += [f"- [files/{name}](files/{name})" for name in copied]
+    index = target / "index.md"
+    index.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
+    return index
+
+
+def _verdicts_on(state: RunState, artifact_id: str) -> list[str]:
+    lines = []
+    for artifact in state.artifacts.values():
+        if artifact.type == "ReviewVerdict" and artifact.payload.get("subject_artifact_id") == artifact_id:
+            who = f"{artifact.produced_by}, {artifact.payload['gate']}: {artifact.payload['decision']}"
+            lines += [
+                f"- {issue['severity']}: {issue['description']} ({who})" for issue in artifact.payload.get("issues", [])
+            ]
+    return lines
+
+
+def _copy_workspace(workspace: Path, target: Path) -> list[str]:
+    copied: list[str] = []
+    root = workspace.resolve()
+    if not root.is_dir():
+        return copied
+    for path in sorted(root.rglob("*")):
+        relative = path.relative_to(root)
+        if path.is_file() and not path.is_symlink() and relative.parts[0] != _INPUTS:
+            destination = target / "files" / relative
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(path, destination)
+            copied.append(relative.as_posix())
+    return copied

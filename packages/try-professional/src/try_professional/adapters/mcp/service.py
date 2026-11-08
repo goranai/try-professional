@@ -69,6 +69,10 @@ COORDINATOR_TOOLS = ("org_get", "run_start", "run_status", "run_next_action", "a
 DEFAULT_AUDIT_TAIL = 20
 MAX_AUDIT_TAIL = 200
 CHARS_PER_TOKEN = 3.5
+# What passes through this server undercounts what a client spends: its own instructions, thinking, and tool calls.
+# Over 17 commands measured through Claude Code, the client's fresh tokens (input, cache writes, and output, leaving out
+# re-reads of cached text) were 3.3 times this server's count, from 2.3 to 4.6. docs/research/mcp_estimate has the runs.
+MCP_ESTIMATE_FACTOR = 3.3
 
 _CONTINUE = re.compile(r"\s*/?(?:company\s+)?continue\s+(run-[0-9a-f]+)\s*", re.IGNORECASE)
 
@@ -217,7 +221,11 @@ class McpService:
         """Ready to run, so nobody has to work out a command. Only a person at a terminal can answer."""
         answers = "\n".join(f"  trypro decide {run_id} {question.request_id} {o}" for o in question.options)
         carry_on = f"/company continue {run_id}" if self.coordinator else f"Call run_next_action with run_id {run_id}"
-        return f"{question.question}\n\nIn a terminal, run one of these:\n{answers}\n\nThen, to carry on:\n  {carry_on}"
+        text = f"{question.question}\n\nIn a terminal, run one of these:\n{answers}\n\nThen, to carry on:\n  {carry_on}"
+        drafts = self.orchestrator.drafts_path(run_id)
+        if drafts is not None and (drafts / "index.md").is_file():
+            text += f"\n\nWhat it made so far, not approved: {(drafts / 'index.md').as_posix()}"
+        return text
 
     def _index_of(self, run_id: str, status: str) -> str | None:
         """Where a person finds the result, so whoever is coordinating can tell them."""
@@ -232,8 +240,8 @@ class McpService:
                 invocation_id=invocation_id,
                 role=role,
                 model=ESTIMATED_BY_SERVER,
-                input_tokens=round(len(sent) / CHARS_PER_TOKEN),
-                output_tokens=round(len(received) / CHARS_PER_TOKEN),
+                input_tokens=round(len(sent) / CHARS_PER_TOKEN * MCP_ESTIMATE_FACTOR),
+                output_tokens=round(len(received) / CHARS_PER_TOKEN * MCP_ESTIMATE_FACTOR),
             ),
         )
 

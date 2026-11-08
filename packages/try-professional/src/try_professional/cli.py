@@ -21,6 +21,7 @@ from .adapters.api_runner.runner import ApiRunner, ModelRoutes, RunResult
 from .adapters.api_runner.scripted import ScriptedClient
 from .adapters.mcp import McpService, ToolError
 from .adapters.mcp.claude_code import write_claude_code_files
+from .adapters.mcp.service import MCP_ESTIMATE_FACTOR
 from .check_model import NOT_RECOMMENDED, ModelUnreachable, ScriptedModel, check_model, render_check
 from .config import (
     CONFIG_NAME,
@@ -929,6 +930,8 @@ def cmd_decide(args: argparse.Namespace) -> int:
                 decision=args.decision,
                 note=args.note or "",
                 new_token_budget=args.token_budget,
+                decided_by=args.by or "human",
+                model=args.model,
             ),
         )
     except IllegalEvent as error:
@@ -936,8 +939,8 @@ def cmd_decide(args: argparse.Namespace) -> int:
         return 1
     finally:
         orchestrator.close()
-    if args.decision == "abandon":
-        _print("Recorded. That work is abandoned, and its records stay.")
+    if args.decision in ("abandon", "cancel"):
+        _print("Recorded. That work is stopped, and its records stay.")
         return 0
     _print("Recorded. To continue, in Claude Code:")
     _print(f"  /company continue {args.run_id}")
@@ -990,6 +993,16 @@ def _status_skill_gaps(config: ProjectConfig) -> None:
 
 
 def _status_tokens(orchestrator: Orchestrator) -> None:
+    budget = orchestrator.org.pipeline
+    _print("Where a command stops and asks you, in this company:")
+    _print(
+        f"  API runner, real tokens:            {budget.max_tokens_per_small_command:,} small, "
+        f"{budget.max_tokens_per_run:,} large"
+    )
+    _print(
+        f"  Over MCP, the server's estimate x{MCP_ESTIMATE_FACTOR}: {budget.mcp_max_tokens_per_small_command:,} small, "
+        f"{budget.mcp_max_tokens_per_run:,} large"
+    )
     _print("Tokens by month:")
     months = orchestrator.company.tokens_by_month()
     if not months:
@@ -1153,6 +1166,8 @@ def build_parser() -> argparse.ArgumentParser:
     decide.add_argument("decision")
     decide.add_argument("--note")
     decide.add_argument("--token-budget", type=int)
+    decide.add_argument("--by", help="Your name. A waiver needs it")
+    decide.add_argument("--model", help="For a stuck role: another model to retry it with")
     decide.set_defaults(func=cmd_decide)
 
     status = sub.add_parser("status", help="Show the backlog, handoffs, memory and tokens, or one run")

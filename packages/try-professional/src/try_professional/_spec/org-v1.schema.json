@@ -240,6 +240,14 @@
                 "escalate"
               ],
               "default": "escalate"
+            },
+            "mcp_max_tokens_per_small_command": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "mcp_max_tokens_per_run": {
+              "type": "integer",
+              "minimum": 1
             }
           }
         }

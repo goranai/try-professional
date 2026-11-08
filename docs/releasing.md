@@ -6,7 +6,7 @@ A published version can't be changed or reused, so these run in order, and each 
 
 - [ ] Raise `__version__` in `packages/try-professional/src/try_professional/__init__.py`.
 - [ ] Raise `skill-customs` too, only if it changed. Check that `try-professional`'s dependency range still allows it.
-- [ ] Update `CHANGELOG.md`, and the version in the README's first lines. Regenerate `packages/try-professional/README.md`, which has the same text with absolute links.
+- [ ] Update `CHANGELOG.md`, and the version in the README's first lines. Run `python scripts/package_readme.py`, which writes the README PyPI shows, with links that work there. A test fails if it's out of date.
 - [ ] Check every number in the README still has something behind it.
 
 ## 2. Check locally

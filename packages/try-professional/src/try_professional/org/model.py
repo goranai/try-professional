@@ -83,6 +83,12 @@ class Gate:
 # rounds the pipeline allows used 37,762, and one that stopped needed 54,605 to finish. A large one used 134,289.
 DEFAULT_MAX_TOKENS_PER_RUN = 200_000
 DEFAULT_MAX_TOKENS_PER_SMALL_COMMAND = 60_000
+# Over MCP, usage is the server's estimate times MCP_ESTIMATE_FACTOR, which is closer to what a client really spends.
+# Every command measured through Claude Code finishes under these: corrected, the most a small one came to was 124,615,
+# and a large one 443,154. Stuck-run detection is the first defense, and these are the last. The API runner counts real
+# provider tokens, and keeps the lower limits above.
+DEFAULT_MCP_MAX_TOKENS_PER_RUN = 500_000
+DEFAULT_MCP_MAX_TOKENS_PER_SMALL_COMMAND = 150_000
 
 
 @dataclass(frozen=True)
@@ -94,6 +100,8 @@ class PipelineConfig:
     # A hard stop for every command, so a stuck one can't keep spending. A person decides whether it goes on.
     max_tokens_per_run: int = DEFAULT_MAX_TOKENS_PER_RUN
     max_tokens_per_small_command: int = DEFAULT_MAX_TOKENS_PER_SMALL_COMMAND
+    mcp_max_tokens_per_run: int = DEFAULT_MCP_MAX_TOKENS_PER_RUN
+    mcp_max_tokens_per_small_command: int = DEFAULT_MCP_MAX_TOKENS_PER_SMALL_COMMAND
 
 
 @dataclass(frozen=True)

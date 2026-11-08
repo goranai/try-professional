@@ -1,0 +1,194 @@
+"""A run whose tokens rise while nothing moves is stuck, and more budget doesn't fix it.
+
+A real run on a cheap model blocked at its limit, was given more, and blocked again with nothing done: the same role kept
+rewriting its workspace and never handed anything in. These play that, and what a person can do about it.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Iterator
+from pathlib import Path
+from typing import Any
+
+import pytest
+
+from try_professional.adapters.api_runner.clients import ChatRequest, ToolCall
+from try_professional.adapters.api_runner.runner import ApiRunner
+from try_professional.adapters.api_runner.scripted import default_payload
+from try_professional.core.orchestrator import Orchestrator
+from try_professional.core.pipeline import HumanDecided, IllegalEvent, Purpose
+from try_professional.core.pipeline.machine import STUCK_CALLS
+from try_professional.org import Org, load_org
+from try_professional.packs import available_packs, install_org
+
+from .test_misbehaving_model import ROUTES, BadModel, _submit
+
+SMALL = {"size": "small", "route_department": "marketing", "route_role": "marketing/content-writer"}
+
+
+@pytest.fixture
+def company(tmp_path: Path) -> Iterator[Orchestrator]:
+    install_org(tmp_path / "org", "Test", available_packs())
+    orchestrator = Orchestrator(load_org(tmp_path / "org"), tmp_path / "home")
+    yield orchestrator
+    orchestrator.close()
+
+
+def _rewrites_forever(stuck: Purpose) -> Any:
+    """A role that keeps writing files and never hands in its work."""
+
+    def reply(invocation: Any, state: Any, org: Org, _: Any) -> Any:
+        if invocation.purpose == Purpose.INTAKE:
+            return _submit({**default_payload(invocation, state, org), **SMALL})
+        if invocation.purpose == stuck:
+            return [ToolCall(id="c1", name="memory_recall", arguments={"query": "what did I write"})]
+        return None
+
+    return reply
+
+
+def _run(company: Orchestrator, reply: Any, turns: int = 30) -> tuple[Any, BadModel]:
+    client = BadModel(reply)
+    return ApiRunner(company, client, ROUTES, max_turns=turns).run("Write a launch note"), client
+
+
+def _question(company: Orchestrator, run_id: str) -> Any:
+    return next(iter(company.state(run_id).human_requests.values()))
+
+
+class TestNoticingIt:
+    def test_a_role_that_never_hands_anything_in_stops_as_stuck(self, company: Orchestrator) -> None:
+        result, client = _run(company, _rewrites_forever(Purpose.EXECUTE))
+        assert result.status == "blocked"
+        request = _question(company, result.run_id)
+        assert request.kind == "stuck"
+        assert "marketing/content-writer" in request.question
+        assert "execute" in request.question
+        assert request.options == ["retry", "cancel"]
+        assert len(client.calls) <= STUCK_CALLS + 4
+
+    def test_stuck_comes_before_a_budget_question(self, company: Orchestrator) -> None:
+        """More budget would only buy more of the same loop."""
+
+        class Expensive(BadModel):
+            def complete(self, request: ChatRequest) -> Any:
+                response = super().complete(request)
+                response.input_tokens = 3_000
+                return response
+
+        result = ApiRunner(company, Expensive(_rewrites_forever(Purpose.EXECUTE)), ROUTES, max_turns=30).run("Note")
+        assert result.status == "blocked"
+        assert _question(company, result.run_id).kind == "stuck"
+
+    def test_ordinary_work_is_never_called_stuck(self, company: Orchestrator) -> None:
+        result, _ = _run(company, lambda *_: None)
+        assert result.status == "done"
+        assert company.state(result.run_id).calls_since_progress < STUCK_CALLS
+
+
+class TestWhatAPersonCanDo:
+    def _stuck(self, company: Orchestrator, purpose: Purpose = Purpose.EXECUTE) -> tuple[str, Any]:
+        result, _ = _run(company, _rewrites_forever(purpose))
+        assert result.status == "blocked"
+        return result.run_id, _question(company, result.run_id)
+
+    def test_retry_with_another_model_is_used_for_that_role(self, company: Orchestrator) -> None:
+        run_id, request = self._stuck(company)
+        company.handle(run_id, HumanDecided(request_id=request.id, decision="retry", model="a-better-model"))
+        assert company.state(run_id).role_models == {"marketing/content-writer": "a-better-model"}
+        seen: list[str] = []
+
+        class Recording(BadModel):
+            def complete(self, request: ChatRequest) -> Any:
+                seen.append(request.model)
+                return super().complete(request)
+
+        result = ApiRunner(company, Recording(lambda *_: None), ROUTES).resume(run_id)
+        assert result.status == "done"
+        assert "a-better-model" in seen
+
+    def test_cancel_stops_it_and_says_who(self, company: Orchestrator) -> None:
+        run_id, request = self._stuck(company)
+        company.handle(
+            run_id, HumanDecided(request_id=request.id, decision="cancel", decided_by="Rina", note="Not worth it")
+        )
+        state = company.state(run_id)
+        assert state.phase.value == "failed"
+        assert "Rina" in (state.failure_reason or "")
+
+    def test_a_stuck_review_can_be_waived_with_a_name_and_a_reason(self, company: Orchestrator) -> None:
+        run_id, request = self._stuck(company, Purpose.REVIEW)
+        assert request.options == ["retry", "waive", "cancel"]
+        with pytest.raises(IllegalEvent):
+            company.handle(run_id, HumanDecided(request_id=request.id, decision="waive", note="fine"))
+        with pytest.raises(IllegalEvent):
+            company.handle(run_id, HumanDecided(request_id=request.id, decision="waive", decided_by="Rina"))
+        company.handle(
+            run_id,
+            HumanDecided(request_id=request.id, decision="waive", decided_by="Rina", note="I checked it myself"),
+        )
+        state = company.state(run_id)
+        assert {
+            "task_id": request.task_id,
+            "gate": request.gate,
+            "note": "I checked it myself",
+            "decided_by": "Rina",
+        } in (state.waivers)
+
+    def test_work_that_is_itself_stuck_cannot_be_waived(self, company: Orchestrator) -> None:
+        """There's nothing to approve, so the only ways on are another try or stopping."""
+        run_id, request = self._stuck(company, Purpose.EXECUTE)
+        with pytest.raises(IllegalEvent):
+            company.handle(
+                run_id, HumanDecided(request_id=request.id, decision="waive", decided_by="Rina", note="skip it")
+            )
+
+
+class TestDraftsWhenItStops:
+    """A real stopped run left its user with nothing, though work had been made. Drafts hand it over, labelled."""
+
+    @pytest.fixture
+    def exporting(self, tmp_path: Path) -> Iterator[Orchestrator]:
+        install_org(tmp_path / "org2", "Test", available_packs())
+        orchestrator = Orchestrator(load_org(tmp_path / "org2"), tmp_path / "home2", deliverables_dir=tmp_path / "out")
+        yield orchestrator
+        orchestrator.close()
+
+    def _never_approves(self, invocation: Any, state: Any, org: Org, _: Any) -> Any:
+        if invocation.purpose == Purpose.INTAKE:
+            return _submit({**default_payload(invocation, state, org), **SMALL})
+        if invocation.purpose == Purpose.REVIEW:
+            issues = [{"severity": "major", "description": "The price is wrong"}]
+            return _submit(
+                {**default_payload(invocation, state, org), "decision": "changes_requested", "issues": issues}
+            )
+        return None
+
+    def test_unapproved_work_is_handed_over_and_labelled(self, exporting: Orchestrator, tmp_path: Path) -> None:
+        result, _ = _run(exporting, self._never_approves)
+        assert result.status == "blocked"
+        draft = tmp_path / "out" / result.run_id / "draft"
+        index = (draft / "index.md").read_text(encoding="utf-8")
+        assert index.startswith("# NOT APPROVED: stopped at ")
+        work = [p for p in draft.glob("*.md") if p.name != "index.md"]
+        assert work, "the work it made is there"
+        text = work[0].read_text(encoding="utf-8")
+        assert text.startswith("# NOT APPROVED")
+        assert "The price is wrong" in text and "changes_requested" in text
+
+    def test_a_run_that_finishes_after_all_replaces_the_drafts(self, exporting: Orchestrator, tmp_path: Path) -> None:
+        result, _ = _run(exporting, self._never_approves)
+        request = _question(exporting, result.run_id)
+        exporting.handle(result.run_id, HumanDecided(request_id=request.id, decision="resume", note="Try again"))
+        finished = ApiRunner(exporting, BadModel(lambda *_: None), ROUTES).resume(result.run_id)
+        assert finished.status == "done"
+        assert (tmp_path / "out" / result.run_id / "index.md").is_file()
+        assert not (tmp_path / "out" / result.run_id / "draft").exists()
+
+    def test_the_person_is_told_where_the_drafts_are(self, exporting: Orchestrator) -> None:
+        from try_professional.adapters.mcp import McpService
+
+        result, _ = _run(exporting, self._never_approves)
+        message = McpService(exporting, coordinator=True).run_next_action(result.run_id)["needs_a_person"][0]
+        assert "not approved" in message["tell_the_person"]
+        assert "draft/index.md" in message["tell_the_person"]
