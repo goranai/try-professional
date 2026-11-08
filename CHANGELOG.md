@@ -2,13 +2,40 @@
 
 Each version of `try-professional`. `skill-customs` is listed only when it changes.
 
+## skill-customs 0.1.2 (not published yet)
+
+Bug fixes to the scanner, from a rescan of the same 1,449 skills with 0.1.1. [Measured before and after](docs/research/scanner/README.md#012) on a labelled synthetic set: 48 of 59 verdicts right in 0.1.1, and 59 of 59 now. The set was written for these fixes, so read the "after" as each fix working, and the earlier catches holding.
+
+### Fixed: false alarms
+
+- **Ordinary requests in code were blocked.** 0.1.1 read a few lines of code together, so a request's own `-d '{...}'` body, or the next command, looked like an upload. In 28 legitimate skills it did: API calls, GraphQL examples, and networking notes. Now a command continued over lines is read as one command, and nothing else. A body written out in full passes. Sending a file or a variable from code gets a review. Sending a secret is blocked: a key file, cloud or cluster config, an `.env` file, an environment variable named like a secret, or the whole environment. A token in an `Authorization` header doesn't count, because that's how an authenticated call works. Outside code, an instruction to upload a file is still blocked.
+- **Text in several languages, or with maths, got a review.** Only a word that mixes Latin letters with Cyrillic or Greek look-alikes is flagged now. Symbols such as Δt, μs, or σ_x aren't look-alikes, and a word is split at digits and underscores. In the rescan, this rule made 31 findings in 11 skills, and at least 12 of the findings were maths symbols.
+
+### Fixed: misses
+
+- **A secret put into the agent's own reply passed,** when there was no URL: for example, an instruction to add what's in `~/.aws` to the answer, and keep it out of the summary. Two new rules block it. `exfil-reply` catches a secret's location put into a reply, and `conceal-secret` catches one kept out of what the person is told. A warning such as "never include ~/.aws/credentials in your reply" doesn't count.
+
+### Changed
+
+- **The ruleset is 2026.11.3.** A lockfile records it, with the scanner version.
+
+## 0.1.3 (not published yet)
+
+Bug fixes from an external retest of 0.1.2 on Linux, on the API runner and `deepseek-v4.1-flash-1017`.
+
+### Fixed
+
+- **A stuck run was noticed too late.** After a person resumed it with 250,000 more tokens, a real run stopped as stuck only at 257,476 tokens and 48 model calls. A manager's answer to an escalation, and the same work being assigned again, had counted as progress. They don't now, and a run also counts as stuck after 3 refused hand-ins, or after a whole command's limit of tokens with nothing accepted, approved, or sent back. Budget a person adds doesn't raise that. Replayed call by call on the scripted model, the same run now stops at 85,516 tokens and 19 calls. [The replay, and what it doesn't show](docs/research/stuck/README.md).
+- **The draft label repeated itself, and was cut mid-word:** "NOT APPROVED: stopped at This command stopped at 63348 tokens…". It now says what the run stopped at, in a few words, such as "its token limit, at 63,348 tokens". The whole question is under "Why it stopped".
+- **A name from a private skill library was in the docs and tests,** from the external scan behind skill-customs 0.1.1. It's replaced with a neutral description, and a made-up name in the tests.
+
 ## skill-customs 0.1.1 (2026-11-08)
 
 Bug fixes to the scanner, from an external run over 1,449 skills on Linux. [Measured before and after](docs/research/scanner/README.md) on a labelled synthetic set: 18 of 29 verdicts right in 0.1.0, and 29 of 29 now, on a set written for these fixes.
 
 ### Fixed: false alarms
 
-- **A frontmatter name** such as `advanced-jailbreak-chains` blocked or flagged a skill. A name now only ever gets a note, which never changes a verdict. A frontmatter description still counts, at review at most, because agents read it.
+- **A frontmatter name**, such as a skill named after an attack technique, blocked or flagged a skill. A name now only ever gets a note, which never changes a verdict. A frontmatter description still counts, at review at most, because agents read it.
 - **`curl … | python3 -m json.tool`** was blocked as running remote code. Only a pipe into something that runs what it reads counts now, and formatters such as `json.tool` and `jq` don't.
 - **Documentation** blocked a skill: a heading about webhook.site, a threat catalog's table row, or a quoted example of an attack. Headings, tables, block quotes, reference lists, and quoted text now get review at most. Code blocks are never softened.
 

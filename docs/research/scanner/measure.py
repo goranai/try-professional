@@ -32,6 +32,8 @@ def main(source: Path, label: str, out: Path) -> None:
             folder = Path(work) / str(case["id"])
             folder.mkdir()
             (folder / "SKILL.md").write_text(str(case["text"]), encoding="utf-8")
+            for name, text in case.get("files", {}).items():
+                (folder / name).write_text(text, encoding="utf-8")
             report = scan(folder)
             fired = sorted({f.rule for f in report.findings if f.severity in ("block", "review")})
             rows.append({"id": case["id"], "pattern": case["pattern"], "kind": case["kind"],

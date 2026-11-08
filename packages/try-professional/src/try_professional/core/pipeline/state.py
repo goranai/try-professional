@@ -187,6 +187,9 @@ class RunState(_Model):
     # Model calls since anything moved: a new artifact, approval, rework round, or assignment. See _check_progress.
     progress_mark: str = ""
     calls_since_progress: int = 0
+    # Where the run stood when something last moved: its tokens, and its refused hand-ins. See _check_progress.
+    tokens_at_progress: int = 0
+    refusals_at_progress: int = 0
     # Another model a person chose for a role that got stuck. An adapter that picks models reads it.
     role_models: dict[str, str] = {}
 

@@ -22,10 +22,13 @@ class Rule:
     severity: str
     pattern: re.Pattern[str]
     message: str
+    # A match doesn't count when the words just before it match this, such as "never" before "include".
+    unless_before: re.Pattern[str] | None = None
 
 
-def _rule(rule_id: str, severity: str, pattern: str, message: str) -> Rule:
-    return Rule(rule_id, severity, re.compile(pattern, re.IGNORECASE), message)
+def _rule(rule_id: str, severity: str, pattern: str, message: str, unless_before: str | None = None) -> Rule:
+    unless = re.compile(unless_before, re.IGNORECASE) if unless_before else None
+    return Rule(rule_id, severity, re.compile(pattern, re.IGNORECASE), message, unless)
 
 
 _URL = r"https?://"
@@ -34,6 +37,22 @@ _SECRET_EN = (
 )
 _READ_EN = r"(read|cat|send|copy|upload|dump|exfiltrate|steal|leak|collect)"
 _WHOSE = r"(the user'?s?|users?'|their|all|every|any|stored|saved|local|your)"
+# Where secrets are kept: key files, cloud and cluster config, and env files. Not .env.example and the like.
+_SECRET_PLACE = (
+    r"(~/\.aws\b|\.aws/(credentials|config)\b|~/\.ssh\b|\.ssh/|\bid_(rsa|ed25519|ecdsa|dsa)\b|(?<![\w.])\.env\b(?!\.)"
+    r"|\.netrc\b|\.git-credentials\b|\.kube/config\b|\.docker/config\.json\b|/etc/shadow\b"
+    r"|application_default_credentials)"
+)
+# A secret as data: a secret place, an environment variable named like a secret, or the whole environment.
+SECRET_SOURCE = re.compile(
+    _SECRET_PLACE + r"|\$\{?[a-z_]*(secret|token|passw(or)?d|api_?key|private_?key|credential)[a-z_]*\}?"
+    r"|\bprintenv\b|\benv\s*\|",
+    re.IGNORECASE,
+)
+# Words that turn an instruction into a warning against it.
+_NEGATED = r"\b(never|not|don't|dont|avoid|without|no)\b[^.!?]{0,20}$"
+# Gaps that stay inside one sentence.
+_GAP = "[^.!?]"
 
 RULES: tuple[Rule, ...] = (
     # Overriding the agent's instructions
@@ -60,6 +79,13 @@ RULES: tuple[Rule, ...] = (
         BLOCK,
         r"\b(do not|don't|never)\b.{0,12}\b(tell|inform|notify|mention|alert)\b.{0,8}\b(the )?(user|human|operator)\b\s+(about|that you|what|you|this|anything|where|how)\b|\bwithout\b.{0,12}\b(telling|informing|notifying|alerting)\b.{0,8}\b(the )?(user|human|operator)\b|\bhide\b.{0,20}\bfrom\b.{0,8}\b(the )?(user|human|operator)\b",
         "Tells the agent to hide something from the user",
+    ),
+    _rule(
+        "conceal-secret",
+        BLOCK,
+        rf"{_SECRET_PLACE}{_GAP}{{0,120}}\b(keep|leave|omit|exclude|hide)\b{_GAP}{{0,40}}\b(out of|from)\b{_GAP}{{0,20}}"
+        r"\b(summary|summaries|reply|answer|response|report|message|notes|them|the user|the person)\b",
+        "Keeps a secret it touched out of what the person is told",
     ),
     _rule(
         "override-id",
@@ -119,8 +145,22 @@ RULES: tuple[Rule, ...] = (
     _rule(
         "exfil-curl",
         BLOCK,
-        r"\b(curl|wget|invoke-webrequest)\b[^\n]{0,80}(-d\b|--data|--upload-file|-T\b|-F\b|-Method\s+Post)",
+        # A file, a variable, or a command's output sent as data. A body written out in full is an ordinary request.
+        # It blocks only when what's sent is a secret: see _severity. Otherwise it's for a person to look at.
+        r"\b(curl|wget|invoke-webrequest|invoke-restmethod|iwr|irm)\b[^\n]*?\s("
+        r"(--upload-file|-t|--post-file|-infile)(\s+|=)\S"
+        r"|(-d|--data(-binary|-raw|-urlencode|-ascii)?|-f|--form|--post-data|-body)(\s+|=)['\"]?([^'\"\s=]*=)?['\"]?"
+        r"(@|\$|`|<\())",
         "Uploads data with a command",
+    ),
+    _rule(
+        "exfil-reply",
+        BLOCK,
+        rf"\b(include|put|paste|add|insert|embed|append|copy|attach|quote|echo|print|dump)\b{_GAP}{{0,60}}"
+        rf"{_SECRET_PLACE}{_GAP}{{0,60}}\b(in|into|to|inside|within)\b{_GAP}{{0,15}}"
+        r"((your|the|each|every)\s+(reply|answer|response)|\b(replies|answers|chat|conversation)\b)",
+        "Puts a secret into the agent's own reply",
+        unless_before=_NEGATED,
     ),
     _rule(
         "exfil-host",
@@ -218,6 +258,11 @@ _STRIP = {code: None for code in (*_INVISIBLE, *_ZERO_WIDTH)}
 # Behaviour rules that are also checked across a few lines, because rewording over a line break is an easy dodge.
 WINDOW_RULES = ("override-", "conceal-", "exfil-", "credentials-")
 WINDOW_LINES = 3
+# In code, only an instruction hidden in comments is checked across lines. Code itself spans lines all the time.
+CODE_WINDOW_RULES = ("override-", "conceal-")
+# Rules about one shell command. In code they read a command continued over lines as one, and nothing else.
+COMMAND_RULES = ("exfil-curl", "remote-pipe", "credentials-command")
+_CONTINUED = ("\\", "`", "^")
 # Shortest encoded runs worth decoding. Shorter ones are mostly ids and hashes.
 MIN_BASE64 = 24
 MIN_HEX = 32
@@ -231,6 +276,8 @@ CONFUSABLES = str.maketrans(
 )
 _LATIN = re.compile(r"[a-zA-Z]")
 _OTHER_SCRIPT = re.compile(r"[\u0370-\u03ff\u0400-\u04ff]")
+# Letters that pass for Latin ones. Others, like the Greek Δ, μ, or π of maths and units, don't hide a word.
+LOOKALIKES = frozenset(chr(code) for code in CONFUSABLES)
 _BLOB = re.compile(r"(?<![A-Za-z0-9+/])[A-Za-z0-9+/]{200,}={0,2}|\b[0-9a-fA-F]{200,}\b")
 _DATA_URI = re.compile(r"data:[a-z]+/[a-z0-9.+-]+;base64,", re.IGNORECASE)
 

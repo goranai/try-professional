@@ -17,7 +17,7 @@ from try_professional.adapters.api_runner.runner import ApiRunner
 from try_professional.adapters.api_runner.scripted import default_payload
 from try_professional.core.orchestrator import Orchestrator
 from try_professional.core.pipeline import HumanDecided, IllegalEvent, Purpose
-from try_professional.core.pipeline.machine import STUCK_CALLS
+from try_professional.core.pipeline.machine import STUCK_CALLS, STUCK_REFUSALS
 from try_professional.org import Org, load_org
 from try_professional.packs import available_packs, install_org
 
@@ -84,6 +84,74 @@ class TestNoticingIt:
         result, _ = _run(company, lambda *_: None)
         assert result.status == "done"
         assert company.state(result.run_id).calls_since_progress < STUCK_CALLS
+
+
+class TestNoticingItSooner:
+    """A real run looped for 197,000 tokens after a person added budget, because a manager's answer to an escalation,
+    and the same work assigned again, counted as progress. docs/research/stuck has the replay."""
+
+    def test_refused_hand_ins_count_as_trying_and_not_as_progress(self, company: Orchestrator) -> None:
+        def refused(invocation: Any, state: Any, org: Org, _: Any) -> Any:
+            if invocation.purpose == Purpose.INTAKE:
+                return _submit({**default_payload(invocation, state, org), **SMALL})
+            if invocation.purpose == Purpose.EXECUTE:
+                return _submit({"not": "a valid report"})
+            return None
+
+        result, client = _run(company, refused)
+        request = _question(company, result.run_id)
+        assert request.kind == "stuck"
+        assert f"{STUCK_REFUSALS} hand-ins refused" in request.question
+        assert len(client.calls) <= STUCK_REFUSALS + 2
+
+    def test_added_budget_doesnt_buy_more_of_the_same_loop(self, company: Orchestrator) -> None:
+        """Resuming with far more budget still stops a loop within one command's worth of tokens."""
+        limit = company.org.pipeline.max_tokens_per_small_command
+        per_call = limit // 8
+        resumed = False
+
+        class Expensive(BadModel):
+            def complete(self, request: ChatRequest) -> Any:
+                response = super().complete(request)
+                response.input_tokens = per_call
+                return response
+
+        def answer(question: Any) -> Any:
+            nonlocal resumed
+            request = company.state(run_id).human_requests[question.request_id]
+            if request.kind == "budget" and not resumed:
+                resumed = True
+                return HumanDecided(request_id=request.id, decision="resume", new_token_budget=limit * 50)
+            return None
+
+        def slow_then_loops(invocation: Any, state: Any, org: Org, request: Any) -> Any:
+            if invocation.purpose == Purpose.INTAKE:
+                return _submit({**default_payload(invocation, state, org), **SMALL})
+            if invocation.purpose == Purpose.EXECUTE:
+                return [ToolCall(id="c1", name="memory_recall", arguments={"query": "again"})]
+            return None
+
+        runner = ApiRunner(company, Expensive(slow_then_loops), ROUTES, max_turns=60, on_human=answer)
+        run_id, _ = company.start("Note")
+        result = runner.resume(run_id)
+        state = company.state(result.run_id)
+        assert _question(company, result.run_id).kind == "stuck"
+        assert state.usage.total <= 2 * limit + per_call
+
+    def test_an_escalation_answer_is_not_progress(self) -> None:
+        from try_professional.core.artifacts.models import Artifact
+        from try_professional.core.pipeline.budget import _progress_mark
+        from try_professional.core.pipeline.state import RunState
+
+        state = RunState(run_id="r", goal="g")
+        before = _progress_mark(state)
+        state.artifacts["a"] = Artifact(
+            artifact_id="a", type="EscalationResolution", run_id="r", produced_by="lead", payload={}
+        )
+        state.counters.assignments += 1
+        assert _progress_mark(state) == before
+        state.artifacts["b"] = Artifact(artifact_id="b", type="Draft", run_id="r", produced_by="writer", payload={})
+        assert _progress_mark(state) != before
 
 
 class TestWhatAPersonCanDo:
@@ -175,6 +243,16 @@ class TestDraftsWhenItStops:
         text = work[0].read_text(encoding="utf-8")
         assert text.startswith("# NOT APPROVED")
         assert "The price is wrong" in text and "changes_requested" in text
+
+    def test_the_label_is_short_and_the_reason_is_whole(self, exporting: Orchestrator, tmp_path: Path) -> None:
+        """A real label read "stopped at This command stopped at 63348 tokens…", cut mid-word."""
+        result, _ = _run(exporting, self._never_approves)
+        state = exporting.state(result.run_id)
+        question = next(iter(state.human_requests.values())).question
+        index = (tmp_path / "out" / result.run_id / "draft" / "index.md").read_text(encoding="utf-8")
+        label = index.splitlines()[0]
+        assert label.count("stopped") == 1 and len(label) < 80, label
+        assert " ".join(question.split()) in index
 
     def test_a_run_that_finishes_after_all_replaces_the_drafts(self, exporting: Orchestrator, tmp_path: Path) -> None:
         result, _ = _run(exporting, self._never_approves)

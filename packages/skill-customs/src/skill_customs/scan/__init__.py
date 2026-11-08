@@ -16,6 +16,7 @@ from ..policy import Policy
 from .rules import (
     _BASE64_RUN,
     _BLOB,
+    _CONTINUED,
     _DATA_URI,
     _HEX_RUN,
     _INVISIBLE,
@@ -24,19 +25,23 @@ from .rules import (
     _STRIP,
     _ZERO_WIDTH,
     BLOCK,
+    CODE_WINDOW_RULES,
+    COMMAND_RULES,
     CONFUSABLES,
     EXECUTABLE_DIRS,
     EXECUTABLE_SUFFIXES,
+    LOOKALIKES,
     NOTE,
     REVIEW,
     RULES,
+    SECRET_SOURCE,
     WINDOW_LINES,
     WINDOW_RULES,
     Rule,
 )
 
-SCANNER_VERSION = "0.1.1"
-RULESET = "2026.11.2"
+SCANNER_VERSION = "0.1.2"
+RULESET = "2026.11.3"
 ENTRY_POINT_GROUP = "skill_customs.scanners"
 _EXCERPT = 80
 _ANSI = re.compile(r"\x1b\[[0-9;?]*[ -/]*[@-~]|\x1b\][^\x07\x1b]*(\x07|\x1b\\\\)?")
@@ -98,8 +103,16 @@ class Scanner(Protocol):
 
 
 def _mixed_words(text: str) -> list[str]:
-    """Words that mix Latin letters with Cyrillic or Greek ones: how a look-alike letter hides a word from a pattern."""
-    return [w for w in re.findall(r"\w+", text) if _LATIN.search(w) and _OTHER_SCRIPT.search(w)]
+    """Words that mix Latin letters with Cyrillic or Greek look-alikes: how a word hides from a pattern.
+
+    One word at a time, split at digits and underscores too, so a subscripted symbol, like sigma_x, isn't one word.
+    A text in several languages has whole words in each, and maths has Greek letters that don't pass for Latin ones.
+    """
+    return [
+        w
+        for w in re.findall(r"[^\W\d_]+", text)
+        if _LATIN.search(w) and _OTHER_SCRIPT.search(w) and any(c in LOOKALIKES for c in w)
+    ]
 
 
 def _normalize(line: str) -> str:
@@ -129,10 +142,12 @@ class _Line:
     context: str  # prose, code, doc, name, description, frontmatter
 
 
-def _lines(text: str) -> list[_Line]:
-    """Each line, with where it sits. Code is where an instruction to run something usually is, so it stays prose."""
-    out: list[_Line] = []
+def _lines(text: str, code: bool = False) -> list[_Line]:
+    """Each line, with where it sits: frontmatter, documentation, code, or prose. A script is code throughout."""
     raw_lines = text.splitlines()
+    if code:
+        return [_Line(number, raw, _normalize(raw), "code") for number, raw in enumerate(raw_lines, start=1)]
+    out: list[_Line] = []
     in_front = bool(raw_lines) and raw_lines[0].strip() == "---"
     in_fence = False
     for number, raw in enumerate(raw_lines, start=1):
@@ -160,6 +175,22 @@ def _lines(text: str) -> list[_Line]:
     return out
 
 
+def _search(rule: Rule, text: str) -> re.Match[str] | None:
+    """The first match that isn't a warning against the very thing it matches."""
+    for hit in rule.pattern.finditer(text):
+        if rule.unless_before is None or not rule.unless_before.search(text[max(0, hit.start() - 40) : hit.start()]):
+            return hit
+    return None
+
+
+def _sends_a_secret(text: str, start: int) -> bool:
+    """Whether data an upload command sends is a secret. Headers don't count: a token sent to its own API is normal."""
+    sent = re.sub(r"(-h|--header)\s+(['\"]).*?\2", " ", text[start:])
+    if re.search(r"(-d|--data\S*|-f|--form)\s*=?\s*['\"]?@-", sent):
+        sent = text  # From standard input: whatever the command piped in.
+    return bool(SECRET_SOURCE.search(sent))
+
+
 def _severity(rule: Rule, line: _Line, start: int, end: int) -> str:
     """Where a match sits changes how sure it is. A person still reads every finding."""
     if line.context == "name":
@@ -167,12 +198,47 @@ def _severity(rule: Rule, line: _Line, start: int, end: int) -> str:
         return NOTE
     if rule.severity != BLOCK:
         return rule.severity
+    if rule.id == "exfil-curl" and line.context == "code" and not _sends_a_secret(line.text, start):
+        # Code is full of requests that send their own files. Prose telling the agent to send one is another thing.
+        return REVIEW
     if line.context in ("description", "doc"):
         # A description reaches the model, and so do headings and tables, so these stay findings, for a person.
         return REVIEW
     if any(q.start() <= start and end <= q.end() for q in _QUOTED.finditer(line.text)):
         return REVIEW
     return BLOCK
+
+
+def _commands(lines: list[_Line]) -> tuple[dict[int, _Line], set[int]]:
+    """Shell commands continued over lines, as one line each, by first line number; and the lines that continue one."""
+    commands: dict[int, _Line] = {}
+    continuations: set[int] = set()
+    group: list[_Line] = []
+    for line in [*lines, None]:
+        if group and (line is None or line.context != "code" or line.number != group[-1].number + 1):
+            group = _flush(group, commands, continuations)
+        if line is None or line.context != "code":
+            continue
+        if group or line.raw.rstrip().endswith(_CONTINUED):
+            group.append(line)
+            if not line.raw.rstrip().endswith(_CONTINUED):
+                group = _flush(group, commands, continuations)
+    return commands, continuations
+
+
+def _flush(group: list[_Line], commands: dict[int, _Line], continuations: set[int]) -> list[_Line]:
+    if len(group) > 1:
+
+        def strip(text: str) -> str:
+            stripped = text.rstrip()
+            return stripped[:-1] if stripped.endswith(_CONTINUED) else stripped
+
+        first = group[0]
+        commands[first.number] = _Line(
+            first.number, " ".join(strip(g.raw) for g in group), " ".join(strip(g.text) for g in group), "code"
+        )
+        continuations.update(g.number for g in group[1:])
+    return []
 
 
 def _decoded(text: str) -> list[str]:
@@ -233,12 +299,14 @@ class BuiltinScanner:
             if b"\0" in data[:8192]:
                 findings.append(Finding("binary-file", REVIEW, relative, 0, "Binary content can't be scanned"))
                 continue
-            findings += self._scan_text(relative, data.decode("utf-8", errors="replace"))
+            script = Path(relative).suffix.lower() in EXECUTABLE_SUFFIXES
+            findings += self._scan_text(relative, data.decode("utf-8", errors="replace"), script)
         return findings
 
-    def _scan_text(self, relative: str, text: str) -> list[Finding]:
+    def _scan_text(self, relative: str, text: str, script: bool = False) -> list[Finding]:
         findings: list[Finding] = []
-        lines = _lines(text)
+        lines = _lines(text, code=script)
+        commands, continuations = _commands(lines)
         matched: set[tuple[str, int]] = set()
         for line in lines:
             findings += self._hidden_characters(relative, line.number, line.raw)
@@ -248,17 +316,24 @@ class BuiltinScanner:
                     Finding("mixed-script", REVIEW, relative, line.number, message, excerpt=_safe_excerpt(line.raw))
                 )
             for rule in RULES:
-                hit = rule.pattern.search(line.text)
+                target = line
+                if rule.id in COMMAND_RULES and line.context == "code":
+                    if line.number in continuations:
+                        continue
+                    target = commands.get(line.number, line)
+                hit = _search(rule, target.text)
                 if hit:
                     matched.add((rule.id, line.number))
-                    severity = _severity(rule, line, hit.start(), hit.end())
+                    severity = _severity(rule, target, hit.start(), hit.end())
                     findings.append(
-                        Finding(rule.id, severity, relative, line.number, rule.message, excerpt=_safe_excerpt(line.raw))
+                        Finding(
+                            rule.id, severity, relative, line.number, rule.message, excerpt=_safe_excerpt(target.raw)
+                        )
                     )
             for plain in _decoded(line.raw):
                 normalized = _normalize(" ".join(plain.split()))
                 for rule in RULES:
-                    if rule.pattern.search(normalized):
+                    if _search(rule, normalized):
                         message = f"{rule.message}, hidden in encoded text"
                         findings.append(Finding(rule.id, rule.severity, relative, line.number, message))
             if _BLOB.search(line.raw) or _DATA_URI.search(line.raw):
@@ -285,12 +360,13 @@ class BuiltinScanner:
             if all(w.context == "doc" for w in window):
                 joined = _Line(joined.number, joined.raw, joined.text, "doc")
             span = range(first.number, window[-1].number + 1)
+            in_code = any(w.context == "code" for w in window)
             for rule in RULES:
-                if not rule.id.startswith(WINDOW_RULES) or any((rule.id, n) in matched for n in span):
+                if not rule.id.startswith(CODE_WINDOW_RULES if in_code else WINDOW_RULES) or rule.id in COMMAND_RULES:
                     continue
-                if any((rule.id, n) in reported for n in span):
+                if any((rule.id, n) in matched for n in span) or any((rule.id, n) in reported for n in span):
                     continue
-                hit = rule.pattern.search(joined.text)
+                hit = _search(rule, joined.text)
                 if hit:
                     reported.update((rule.id, n) for n in span)
                     findings.append(

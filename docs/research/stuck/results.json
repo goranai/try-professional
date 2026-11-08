@@ -1,0 +1,196 @@
+{
+ "0.1.2": {
+  "try_professional": "0.1.2",
+  "runs": [
+   {
+    "kind": "the external run, replayed",
+    "status": "blocked",
+    "stopped_by": "stuck",
+    "questions": [
+     {
+      "kind": "budget",
+      "tokens": 60543,
+      "calls": 14,
+      "calls_since_progress": 7,
+      "rework_rounds": 1,
+      "escalations": 0
+     },
+     {
+      "kind": "stuck",
+      "tokens": 257476,
+      "calls": 48,
+      "calls_since_progress": 12,
+      "rework_rounds": 3,
+      "escalations": 1
+     }
+    ],
+    "tokens": 257476,
+    "calls": 48
+   },
+   {
+    "kind": "never hands in",
+    "status": "blocked",
+    "stopped_by": "stuck",
+    "questions": [
+     {
+      "kind": "stuck",
+      "tokens": 64701,
+      "calls": 11,
+      "calls_since_progress": 9,
+      "rework_rounds": 0,
+      "escalations": 0
+     }
+    ],
+    "tokens": 64701,
+    "calls": 11
+   },
+   {
+    "kind": "refused hand-ins",
+    "status": "blocked",
+    "stopped_by": "stuck",
+    "questions": [
+     {
+      "kind": "stuck",
+      "tokens": 64701,
+      "calls": 11,
+      "calls_since_progress": 9,
+      "rework_rounds": 0,
+      "escalations": 0
+     }
+    ],
+    "tokens": 64701,
+    "calls": 11
+   },
+   {
+    "kind": "sent back, then loops",
+    "status": "blocked",
+    "stopped_by": "stuck",
+    "questions": [
+     {
+      "kind": "budget",
+      "tokens": 63484,
+      "calls": 11,
+      "calls_since_progress": 1,
+      "rework_rounds": 1,
+      "escalations": 0
+     },
+     {
+      "kind": "stuck",
+      "tokens": 252035,
+      "calls": 37,
+      "calls_since_progress": 10,
+      "rework_rounds": 3,
+      "escalations": 1
+     }
+    ],
+    "tokens": 252035,
+    "calls": 37
+   },
+   {
+    "kind": "slow but fine",
+    "status": "done",
+    "stopped_by": null,
+    "questions": [],
+    "tokens": 39172,
+    "calls": 9
+   }
+  ]
+ },
+ "0.1.3": {
+  "try_professional": "0.1.0.dev0",
+  "runs": [
+   {
+    "kind": "the external run, replayed",
+    "status": "blocked",
+    "stopped_by": "stuck",
+    "questions": [
+     {
+      "kind": "budget",
+      "tokens": 60543,
+      "calls": 14,
+      "calls_since_progress": 7,
+      "rework_rounds": 1,
+      "escalations": 0
+     },
+     {
+      "kind": "stuck",
+      "tokens": 85516,
+      "calls": 19,
+      "calls_since_progress": 12,
+      "rework_rounds": 1,
+      "escalations": 0
+     }
+    ],
+    "tokens": 85516,
+    "calls": 19
+   },
+   {
+    "kind": "never hands in",
+    "status": "blocked",
+    "stopped_by": "stuck",
+    "questions": [
+     {
+      "kind": "stuck",
+      "tokens": 64701,
+      "calls": 11,
+      "calls_since_progress": 9,
+      "rework_rounds": 0,
+      "escalations": 0
+     }
+    ],
+    "tokens": 64701,
+    "calls": 11
+   },
+   {
+    "kind": "refused hand-ins",
+    "status": "blocked",
+    "stopped_by": "stuck",
+    "questions": [
+     {
+      "kind": "stuck",
+      "tokens": 48008,
+      "calls": 8,
+      "calls_since_progress": 6,
+      "rework_rounds": 0,
+      "escalations": 0
+     }
+    ],
+    "tokens": 48008,
+    "calls": 8
+   },
+   {
+    "kind": "sent back, then loops",
+    "status": "blocked",
+    "stopped_by": "stuck",
+    "questions": [
+     {
+      "kind": "budget",
+      "tokens": 63484,
+      "calls": 11,
+      "calls_since_progress": 1,
+      "rework_rounds": 1,
+      "escalations": 0
+     },
+     {
+      "kind": "stuck",
+      "tokens": 230125,
+      "calls": 34,
+      "calls_since_progress": 8,
+      "rework_rounds": 3,
+      "escalations": 1
+     }
+    ],
+    "tokens": 230125,
+    "calls": 34
+   },
+   {
+    "kind": "slow but fine",
+    "status": "done",
+    "stopped_by": null,
+    "questions": [],
+    "tokens": 39172,
+    "calls": 9
+   }
+  ]
+ }
+}

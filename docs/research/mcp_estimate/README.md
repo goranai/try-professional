@@ -21,7 +21,7 @@ We compared the server's count with Claude Code's own usage, on every command wh
 
 - **The limits over MCP are in corrected tokens.** 150,000 for a small command and 500,000 for a large one, by default. Every one of these 17 commands would have finished under them. Corrected, the most a small one came to was 124,615, and a large one 443,154: the second Shorts batch, whose real ratio was only 2.3, so the correction overcounts it. 500,000 leaves room for one more round of rework on a command like that.
 - **The API runner keeps 60,000 and 200,000.** It counts real tokens from the provider, and needs no correction. Higher limits there would only let a stuck run on a cheap model spend more.
-- **Stuck-run detection comes first on both.** A run whose tokens rise while nothing moves stops after 24 model calls, whatever its limit.
+- **Stuck-run detection comes first on both.** A run stops as stuck after 24 model calls with nothing moving, 3 refused hand-ins, or a whole command's limit of tokens with nothing moving, whatever budget a person added. [How that was measured](../stuck/README.md).
 
 ## What it doesn't show
 

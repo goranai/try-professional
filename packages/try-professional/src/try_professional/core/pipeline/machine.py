@@ -20,7 +20,16 @@ from .base import (
     TERMINAL_PHASES,
     IllegalEvent,
 )
-from .budget import STUCK_AT_LIMIT, STUCK_CALLS, _check_runaway, _check_stall, _on_usage, _token_limit
+from .budget import (
+    STUCK_AT_LIMIT,
+    STUCK_CALLS,
+    STUCK_REFUSALS,
+    STUCK_TOKEN_SHARE,
+    _check_runaway,
+    _check_stall,
+    _on_usage,
+    _token_limit,
+)
 from .decisions import _on_escalation, _on_failure, _on_human
 from .handoffs import _on_handoff
 from .state import (
@@ -153,6 +162,8 @@ _REEXPORTED = (
     QA_GATE,
     STUCK_AT_LIMIT,
     STUCK_CALLS,
+    STUCK_REFUSALS,
+    STUCK_TOKEN_SHARE,
     TERMINAL_PHASES,
     _token_limit,
 )

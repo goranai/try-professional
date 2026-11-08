@@ -149,12 +149,31 @@ def export_deliverables(state: RunState, workspace: Path, target: Path, retrieve
 DRAFT_FOLDER = "draft"
 
 
+# What a run stopped at, by the kind of question it asked, to finish "stopped at".
+_STOPPED_AT = {
+    "budget": "its token limit",
+    "stuck": "a step that looked stuck",
+    "escalation": "a question for a person",
+    "gate_unavailable": "a review nobody could do",
+    "runaway": "its limit on assignments",
+    "stalled": "a point with no work it could start",
+}
+
+
 def stop_reason(state: RunState) -> str:
-    """Why a run stopped, in a line: its open question, or why it failed."""
+    """What a run stopped at, in a few words, to finish the label "NOT APPROVED: stopped at"."""
     if state.human_requests:
-        question = next(iter(state.human_requests.values())).question
-        return " ".join(question.split())[:240]
-    return state.failure_reason or "it stopped"
+        request = next(iter(state.human_requests.values()))
+        at = _STOPPED_AT.get(request.kind, "a question for a person")
+        return f"{at}, at {state.usage.total:,} tokens" if request.kind in ("budget", "stuck") else at
+    return "a failure" if state.failure_reason else "a stop"
+
+
+def stop_detail(state: RunState) -> str:
+    """Why a run stopped, in full: its open question, or why it failed."""
+    if state.human_requests:
+        return " ".join(next(iter(state.human_requests.values())).question.split())
+    return state.failure_reason or "It stopped."
 
 
 def export_drafts(state: RunState, workspace: Path, target: Path, retrieved: dict[str, str]) -> Path:
@@ -188,6 +207,10 @@ def export_drafts(state: RunState, workspace: Path, target: Path, retrieved: dic
         "",
         "This is what the company made before it stopped. Nobody approved it, so read it as a draft. "
         "If the run goes on and finishes, the approved work replaces this folder.",
+        "",
+        "## Why it stopped",
+        "",
+        stop_detail(state),
         "",
         "## Work",
         "",

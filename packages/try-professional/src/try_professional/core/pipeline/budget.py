@@ -43,6 +43,11 @@ def _token_limit(state: RunState, org: Org) -> int:
     """A person's own decision wins. Otherwise every command has a limit, and a small one has a smaller one."""
     if state.budget_override:
         return state.budget_override
+    return _own_limit(state, org)
+
+
+def _own_limit(state: RunState, org: Org) -> int:
+    """The command's own limit, before any budget a person added."""
     pipeline = org.pipeline
     if state.usage.estimated:
         # Over MCP: corrected estimates, with their own limits.
@@ -54,23 +59,43 @@ def _token_limit(state: RunState, org: Org) -> int:
 STUCK_CALLS = 24
 
 
+# Hand-ins refused, with nothing moving. A few tries at the same thing, and it's a loop.
+STUCK_REFUSALS = 3
+
+
+# Tokens spent with nothing moving, as a share of the command's own limit: a whole command's worth. One slow but real
+# step on a cheap model was measured at most of a small command's limit, so less would stop real work. Budget a
+# person adds doesn't raise it, so resuming a loop doesn't buy more of the same loop.
+STUCK_TOKEN_SHARE = 1.0
+
+
 # At the token limit, this many calls with nothing moving means stuck, not merely expensive.
 STUCK_AT_LIMIT = 8
 
 
 def _progress_mark(state: RunState) -> str:
-    """What changes when a run gets anywhere: something accepted, approved, sent back, or newly assigned."""
+    """What changes when a run gets anywhere: work accepted, approved, or sent back, or a task added or settled.
+
+    Not a manager's answer to an escalation, or the same work assigned again: in a real run, those made a loop look
+    like progress for 13 calls.
+    """
+    work = sum(artifact.type != "EscalationResolution" for artifact in state.artifacts.values())
+    settled = sum(task.status in (TaskStatus.APPROVED, TaskStatus.FAILED) for task in state.tasks.values())
     approved = sum(task.status == TaskStatus.APPROVED for task in state.tasks.values())
-    counters = state.counters
-    return f"{len(state.artifacts)}:{approved}:{counters.rework_loops}:{counters.assignments}:{state.phase.value}"
+    rework = state.counters.rework_loops
+    return f"{work}:{approved}:{settled}:{len(state.tasks)}:{rework}:{state.phase.value}"
 
 
 def _ask_stuck(step: _Step, invocation: Invocation | None, calls: int) -> None:
     """Say which role, doing what, and what keeps failing, and offer choices that don't just add budget."""
+    state = step.state
+    spent = f"{calls} model calls and {state.usage.total - state.tokens_at_progress} tokens"
+    refused = state.counters.invalid_outputs - state.refusals_at_progress
+    if refused:
+        spent += f", with {refused} hand-ins refused,"
     if invocation is None:
         step.ask_human(
-            f"This command looks stuck: {calls} model calls with nothing accepted, approved, or sent back. "
-            "Retry, or cancel?",
+            f"This command looks stuck: {spent} with nothing accepted, approved, or sent back. Retry, or cancel?",
             ["retry", "cancel"],
             "stuck",
         )
@@ -83,7 +108,7 @@ def _ask_stuck(step: _Step, invocation: Invocation | None, calls: int) -> None:
         else ""
     )
     step.ask_human(
-        f"This command looks stuck. {invocation.role} has used {calls} model calls on its "
+        f"This command looks stuck. {invocation.role} has used {spent} on its "
         f"{invocation.purpose.value} step with nothing accepted, approved, or sent back. "
         f"What keeps failing: {failing[:300]} "
         f"Retry it, ideally with another model for {invocation.role} (--model).{waive} Or cancel the command.",
@@ -102,9 +127,18 @@ def _check_progress(step: _Step, event: UsageRecorded) -> bool:
     if mark != state.progress_mark:
         state.progress_mark = mark
         state.calls_since_progress = 0
+        state.tokens_at_progress = state.usage.total
+        state.refusals_at_progress = state.counters.invalid_outputs
         return False
     state.calls_since_progress += 1
-    if state.calls_since_progress < STUCK_CALLS or state.phase in TERMINAL_PHASES or state.phase == RunPhase.BLOCKED:
+    if state.phase in TERMINAL_PHASES or state.phase == RunPhase.BLOCKED:
+        return False
+    looping = (
+        state.calls_since_progress >= STUCK_CALLS
+        or state.counters.invalid_outputs - state.refusals_at_progress >= STUCK_REFUSALS
+        or state.usage.total - state.tokens_at_progress >= _own_limit(state, step.org) * STUCK_TOKEN_SHARE
+    )
+    if not looping:
         return False
     _ask_stuck(step, state.invocations.get(event.invocation_id or ""), state.calls_since_progress)
     return True

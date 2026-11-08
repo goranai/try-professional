@@ -4,7 +4,7 @@ The lockfile, license, and pinning layer for agent skills.
 
 Agent skills are folders of instructions, and sometimes scripts, that you download from strangers and give to an agent. `skill-customs` records exactly what you installed, from which commit, under which license, and how far you trust it, the way a lockfile does for code. It works with any agent framework and has one dependency, PyYAML.
 
-**The scanner is a tripwire for importing third-party skills, not a full audit.** Its verdicts are for a person to read, not for anything to obey. It has been run on about 1,450 skills, on Linux, and [what that found](https://github.com/goranai/try-professional/blob/main/docs/research/scanner/README.md) shaped 0.1.1. It doesn't compete on scanning: a static scanner ships as the default, and other scanners plug in. Use the best one you can find.
+**The scanner is a tripwire for importing third-party skills, not a full audit.** Its verdicts are for a person to read, not for anything to obey. It has been run on about 1,450 skills, on Linux, and [what that found](https://github.com/goranai/try-professional/blob/main/docs/research/scanner/README.md) shaped 0.1.1 and 0.1.2. It doesn't compete on scanning: a static scanner ships as the default, and other scanners plug in. Use the best one you can find.
 
 ```text
 GitHub ─► fetch by full SHA ─► license gate ─► scan ─► skills.lock
@@ -43,7 +43,7 @@ Set `GITHUB_TOKEN` for higher rate limits. It's optional, read-only access to pu
 - **Quarantine is a real location.** A skill that isn't approved isn't in the folder your agent reads.
 - **An approval covers one exact version.** Any change to the content voids it.
 
-**The scanner is a tripwire, not an audit.** It reads text for known signs of an attack, in five languages, including text hidden in base64 or hex, split over lines, or written with look-alike letters. A block or a review is a reason for a person to look, and a pass means only that no known sign was found. Headings, tables, quoted examples, and a description in frontmatter can lower a block to a review, and never lower it further. A skill's name only ever gets a note.
+**The scanner is a tripwire, not an audit.** It reads text for known signs of an attack, in five languages, including text hidden in base64 or hex, split over lines, or written with look-alike letters. A block or a review is a reason for a person to look, and a pass means only that no known sign was found. Headings, tables, quoted examples, and a description in frontmatter can lower a block to a review, and never lower it further. A skill's name only ever gets a note. In code, a request that sends its own data passes, one that sends a file or a variable gets a review, and one that sends a secret is blocked.
 
 **A passing scan doesn't mean a skill is safe.** It means no known signal was found. Static rules can be bypassed by rephrasing, and they will sometimes flag innocent text: a skill that teaches prompt writing may well quote the phrases the rules look for. That's why `indexed` skills should still be treated as untrusted data, and why your runtime should limit what an agent can do whatever a skill tells it. Scanning reduces risk, and doesn't remove it.
 

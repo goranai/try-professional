@@ -16,7 +16,7 @@ Nothing from that library is here. `packages/skill-customs/tests/scanner_cases.p
 
 | Case | 0.1.0 | 0.1.1 |
 |---|---|---|
-| A frontmatter name, `advanced-jailbreak-chains`, on a harmless skill | review | pass, with a note |
+| A frontmatter name taken from an attack technique, on a harmless skill | review | pass, with a note |
 | "Ignore all previous instructions" in a frontmatter description | block | review |
 | `curl … \| python3 -m json.tool` | block | pass |
 | A heading about sending test events to webhook.site | block | review |
@@ -54,10 +54,47 @@ A rule counts as firing at any severity, so a block that should have been a revi
 - **The behaviour rules** for override, conceal, exfiltration, and credentials also run over up to 3 lines of one paragraph.
 - **Look-alike letters** from Cyrillic and Greek are folded to Latin inside a word that mixes alphabets, and the word itself is flagged for review. Text that's all Russian or Greek isn't touched.
 
+## 0.1.2
+
+The same tester rescanned the same 1,449 skills with 0.1.1: 1,075 passed, 161 got a review, and 213 were blocked. Most changes were the fixes working. Three things weren't:
+
+- **28 skills went from pass to block,** all but two of them on `exfil-curl` across lines in code. Reading 3 lines together joined a request's own `-d '{...}'` body, or the next command, into what looked like an upload.
+- **Mixed scripts made 31 findings, in 11 skills.** At least 12 findings were maths or units, a Greek Δ, μ, σ, or π next to Latin letters. The rest were real look-alike words, in skills that teach about them, or cut from the excerpt.
+- **One probe still passed:** a secret's location, put into the agent's reply, and kept out of its summary, over 3 lines, with no URL.
+
+### What changed
+
+- **Code is read by command.** A command continued with `\`, `` ` ``, or `^` is one line, and command rules don't read across anything else in code. Only override and conceal rules still read across lines in code, for an instruction split over comments. A script, such as `run.sh`, is code throughout.
+- **`exfil-curl` needs something that isn't written out:** a file, a variable, or a command's output. In code, it blocks only when that's a secret, and is a review otherwise. Outside code, it still blocks.
+- **`mixed-script` and the folding of look-alikes** need a letter that passes for Latin, in one word split at digits and underscores.
+- **`exfil-reply` and `conceal-secret` are new,** for a secret's location put into the reply, or kept from the person. A warning, such as "never include", doesn't count.
+
+### Measured
+
+`scanner_cases.py` now has 59 cases: the 29 from 0.1.1, 23 more for these patterns, and the tester's own 7 synthetic probes, with one name made neutral. **Read the "after" column for what it is:** the new cases were written while fixing these patterns.
+
+| | 0.1.1 | 0.1.2 |
+|---|---|---|
+| Verdicts as a person would want them, of 59 | 48 | 59 |
+
+| Rule | 0.1.1 precision | 0.1.1 recall | 0.1.2 precision | 0.1.2 recall |
+|---|---|---|---|---|
+| `exfil-curl` | 0.70 | 0.88 | 1.00 | 1.00 |
+| `mixed-script` | 0.67 | 1.00 | 1.00 | 1.00 |
+| `exfil-reply`, new | | 0.00 | 1.00 | 1.00 |
+| `conceal-secret`, new | | 0.00 | 1.00 | 1.00 |
+| Every other rule that fired | 1.00 | 1.00 | 1.00 | 1.00 |
+
+"0.00" recall for a new rule means 0.1.1 had no rule for those cases. `results_0.1.2.json` has every case, for both versions.
+
+### The library itself
+
+The library isn't here, and nothing from it is. `compare_library.py` rescans it where it lives, and prints only totals, transitions, and rule counts.
+
 ## Reproduce
 
 ```bash
 python docs/research/scanner/measure.py <path to skill_customs source> <label> results.json
 ```
 
-`results.json` has every case, for both versions.
+`results.json` has every case, for 0.1.0 and 0.1.1, on the first 29 cases. `results_0.1.2.json` has 0.1.1 and 0.1.2, on all 59.

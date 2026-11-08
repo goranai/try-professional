@@ -13,6 +13,8 @@ from skill_customs import scan
 @pytest.mark.parametrize("case", CASES, ids=[str(c["id"]) for c in CASES])
 def test_each_case_gets_its_verdict(tmp_path: Path, case: dict[str, object]) -> None:
     (tmp_path / "SKILL.md").write_text(str(case["text"]), encoding="utf-8")
+    for name, text in dict(case.get("files", {})).items():  # type: ignore[call-overload]
+        (tmp_path / name).write_text(text, encoding="utf-8")
     report = scan(tmp_path)
     fired = {f.rule for f in report.findings if f.severity in ("block", "review")}
     assert report.verdict == case["verdict"], (fired, case.get("note"))
@@ -21,7 +23,8 @@ def test_each_case_gets_its_verdict(tmp_path: Path, case: dict[str, object]) -> 
 
 def test_a_name_in_frontmatter_is_a_note_and_not_a_finding(tmp_path: Path) -> None:
     (tmp_path / "SKILL.md").write_text(
-        "---\nname: advanced-jailbreak-chains\ndescription: Defenses.\n---\nSummarize the report.\n", encoding="utf-8"
+        "---\nname: jailbreak-techniques-explained\ndescription: Defenses.\n---\nSummarize the report.\n",
+        encoding="utf-8",
     )
     report = scan(tmp_path)
     assert report.verdict == "pass"
