@@ -1159,6 +1159,21 @@ def cmd_chat(args: argparse.Namespace) -> int:
         return 2
 
 
+def cmd_telegram(args: argparse.Namespace) -> int:
+    from .telegram import TelegramError, serve_from_env
+
+    root = Path(args.dir).resolve() if args.dir else Path.cwd()
+    if not (root / "org" / "org.yaml").exists():
+        _print('No company here yet. Make one with: trypro start "<what you want>"')
+        return 2
+    load_env_file(root)
+    try:
+        return serve_from_env(root, _print)
+    except TelegramError as error:
+        _print(str(error))
+        return 1
+
+
 def cmd_doctor(args: argparse.Namespace) -> int:
     checks = run_checks(Path.cwd())
     if args.report:
@@ -1292,6 +1307,10 @@ def build_parser() -> argparse.ArgumentParser:
         help="Only start and follow work, and hand it to servers bound to each role. It can't do a role's work",
     )
     mcp.set_defaults(func=cmd_mcp)
+
+    telegram = sub.add_parser("telegram", help="Talk to your company from Telegram. Needs a bot token in .env")
+    telegram.add_argument("--dir", help="The company's folder. Default: here")
+    telegram.set_defaults(func=cmd_telegram)
 
     chat = sub.add_parser("chat", help="Talk to your company: say what you want, and the CEO answers")
     chat.add_argument("--dir", help="The company's folder. Default: here")

@@ -16,6 +16,18 @@ How to use a company as a part of your own agent, with Claude Code as the best-s
 
 **Two things stay with a person, by design, and no API does them:** approving a company the AI designed (`trypro init --review`), and answering a run's questions (`trypro decide`, at a terminal). An agent can show a person the question, and can't answer it for them.
 
+## Ways to talk to a company
+
+| Front door | Engine | Command |
+|---|---|---|
+| Claude Code | Claude Code, on a Claude plan | open the folder, and say what you want |
+| Terminal | its own engine, any OpenAI-compatible model | `trypro chat` |
+| Telegram | its own engine | `trypro telegram`, with `TELEGRAM_BOT_TOKEN` and `TELEGRAM_ALLOWED_CHAT_IDS` in `.env` |
+
+In both engines, roles that do or check work have a computer. On Claude Code, that's Claude Code's own tools. On its own engine, it's `shell`, in the run's workspace, and `web_fetch`. A command that changes something outside, such as a push or a new issue, needs a person's approval. With no person to ask, it doesn't run. `computer_tools: false` in `trypro.yaml`, or `trypro agents claude-code --sandboxed`, keeps a company to documents.
+
+`try_professional.chat.Conversation` is the core every front door shares: `Conversation(root, ask_person=..., approve=...).handle(message)`. It's experimental, and a good start for your own front door.
+
 ## The quickest start
 
 `trypro start "<what you want>"` in an empty folder does the steps below in one go: setup, a design, a person's approval, and the first job, in Claude Code. Afterwards, plain requests in Claude Code go to the company, through the front desk in `CLAUDE.md`.

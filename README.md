@@ -5,11 +5,21 @@
 [![License: MIT](https://img.shields.io/github/license/goranai/try-professional)](LICENSE)
 [![Python](https://img.shields.io/pypi/pyversions/try-professional)](https://pypi.org/project/try-professional/)
 
-**Turn Claude Code into a permanent AI company: one prompt builds a hierarchy of agents with roles, memory and vetted skills. Multi-agent orchestration via MCP.**
+**An agent harness where your agent is a whole company.** You talk to the CEO. Managers split the work, workers do it with real tools, QA and managers check it, and the CEO answers you. Every role is a full agent, with its own memory and skills.
 
-**Preview: proven on Claude only.** v0.1.2. It works, and it has rough edges. [What was tested](#what-was-tested-and-how).
+**Preview: proven on Claude only.** It works, and it has rough edges. [What was tested](#what-was-tested-and-how).
 
-You describe a business, and Claude Code designs a company for it: departments, roles, and skills from GitHub that are checked before they're used. You approve it, and then you give it commands. It works only when you give it a command, and it remembers between commands: every role, from the CEO down, keeps its own memory and knows what it's working on.
+You say what you want, and a company is designed for it: departments, roles, and skills from GitHub that are checked before they're used. You approve it, and then you talk to it, from the terminal, from Claude Code, or from Telegram. It works when you ask, and it remembers: every role, from the CEO down, keeps its own memory, and lessons from each job carry into the next.
+
+**Two engines:**
+- **Claude Code,** on your Claude plan. This is the most tested.
+- **Its own engine,** with any OpenAI-compatible key, such as DeepSeek, Grok, or OpenAI: `trypro chat`. Cheap models finish less often today.
+
+| Talk to it | How |
+|---|---|
+| Claude Code | Open the company's folder in Claude Code, and say what you want |
+| The terminal | `trypro chat` |
+| Telegram | `trypro telegram`, with a bot token in `.env` |
 
 ## Who it's for
 

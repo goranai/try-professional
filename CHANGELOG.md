@@ -2,6 +2,21 @@
 
 Each version of `try-professional`. `skill-customs` is listed only when it changes.
 
+## 0.5.0 (2026-11-08)
+
+An agent harness of its own: talk to your company, with any model.
+
+### Added
+
+- **Its own engine's roles have a computer too.** On the API runner, every role that does or checks work gets `shell`, which runs in its run's workspace (`git`, `gh`, `curl`, `python`), and `web_fetch`. So a company of real agents works with any OpenAI-compatible key, without Claude Code. A command that changes something outside, such as a push, a new issue or pull request, or a publish, asks a person first, and doesn't run with nobody to ask. The model's own API keys never reach a command; a GitHub token does, so `gh` works. `computer_tools: false` in `trypro.yaml` keeps a company to documents.
+- **`trypro chat`: talk to your company.** Say what you want, and the CEO takes it down the hierarchy and answers. Questions and approvals are asked in the conversation, "continue" picks up a command that stopped, and it remembers the last few exchanges.
+- **`trypro telegram`: the same, from Telegram.** Set `TELEGRAM_BOT_TOKEN` and `TELEGRAM_ALLOWED_CHAT_IDS` in `.env`. Only those chats can give it work. It uses Telegram's Bot API directly, with no new dependency.
+
+### Not yet
+
+- **Cheap models aren't tuned.** On DeepSeek, an earlier small command finished one run in three. Tuning needs paid runs, and comes next, with the owner's approval.
+- **The engine's computer was tested on a scripted model.** Its first real runs are yours.
+
 ## 0.4.0 (2026-11-08)
 
 A company of real agents: the hierarchy decides who does what and who checks it, and every role can use a computer.
