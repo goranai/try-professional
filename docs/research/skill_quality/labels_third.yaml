@@ -1,0 +1,130 @@
+# The third set's labels. Written by a separate Claude instance (claude-opus-5-5, through claude -p, with no
+# tools and no project context), on 2026-11-08, before anything scored these skills. It saw only the
+# unlabelled packet: the 22 roles, and each skill's name and description, under IDs, shuffled. Not a person.
+third:
+  04-script-video-global:
+  - marketing/social
+  09-customer-insight-global:
+  - product/ux-researcher
+  - research/analyst
+  14-email-marketing-global:
+  - marketing/content-writer
+  - marketing/marketing-lead
+  19-ab-test-setup-global:
+  - marketing/marketing-lead
+  - research/analyst
+  23-personal-brand-strategy-global:
+  - marketing/marketing-lead
+  28-community-building-global: []
+  32-seo-growth-global:
+  - marketing/seo
+  37-social-caption-global:
+  - marketing/social
+  42-image-brief-global:
+  - marketing/marketing-lead
+  47-design-review-global:
+  - marketing/marketing-lead
+  52-account-structure-global:
+  - marketing/marketing-lead
+  57-next-ads-plan-global:
+  - marketing/marketing-lead
+  62-marketing-review-global:
+  - marketing/marketing-lead
+  67-agency-vendor-brief-global:
+  - operations/ops-lead
+  ad-creative:
+  - marketing/content-writer
+  - marketing/marketing-lead
+  ai-seo:
+  - marketing/seo
+  angular-architect:
+  - engineering/frontend
+  aso:
+  - marketing/seo
+  chaos-engineer:
+  - engineering/devops
+  churn-prevention:
+  - operations/support
+  - product/product-manager
+  code-reviewer:
+  - engineering/qa
+  - engineering/tech-lead
+  cold-email:
+  - sales/sales-lead
+  competitor-profiling:
+  - research/analyst
+  content-strategy:
+  - marketing/content-writer
+  - marketing/marketing-lead
+  - marketing/seo
+  copy-editing:
+  - marketing/content-writer
+  - marketing/marketing-lead
+  cro:
+  - marketing/content-writer
+  - marketing/marketing-lead
+  debugging-wizard:
+  - engineering/backend
+  - engineering/frontend
+  directory-submissions:
+  - marketing/seo
+  dotnet-core-expert:
+  - engineering/backend
+  events:
+  - marketing/marketing-lead
+  fine-tuning-expert: []
+  golang-pro:
+  - engineering/backend
+  image: []
+  kotlin-specialist:
+  - engineering/backend
+  launch:
+  - marketing/marketing-lead
+  - product/product-manager
+  link-building:
+  - marketing/seo
+  marketing-ideas:
+  - marketing/marketing-lead
+  marketing-plan:
+  - marketing/marketing-lead
+  mcp-developer: []
+  nestjs-expert:
+  - engineering/backend
+  offers:
+  - marketing/marketing-lead
+  - sales/sales-lead
+  paywalls:
+  - product/product-manager
+  playwright-expert:
+  - engineering/frontend
+  - engineering/qa
+  pricing:
+  - finance/finance-lead
+  - product/product-manager
+  programmatic-seo:
+  - marketing/seo
+  public-relations:
+  - marketing/marketing-lead
+  rag-architect: []
+  reverse-engineer-marketing:
+  - marketing/marketing-lead
+  - research/analyst
+  rust-engineer:
+  - engineering/backend
+  sales-enablement:
+  - sales/proposal-writer
+  - sales/sales-lead
+  seo-audit:
+  - marketing/seo
+  shopify-expert: []
+  site-architecture:
+  - marketing/seo
+  - product/ux-researcher
+  social:
+  - marketing/social
+  sql-pro:
+  - engineering/backend
+  test-master:
+  - engineering/qa
+  vue-expert-js:
+  - engineering/frontend

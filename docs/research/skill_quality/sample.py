@@ -21,6 +21,8 @@ REPOS = {
     "addyosmani/agent-skills": "301b02b12bff98e4688e6984af6556802322bbde",
     "coreyhaines31/marketingskills": "96798cf38736ecdba015a1d2b0521b0c8f8f41dd",
     "minhnv0807/ai-business-skills": "4ef06ff9aa8bf5b6d065da9547e486991acab54d",
+    # Added for the third set, on 2026-11-08, before any of its skills was read.
+    "Jeffallan/claude-skills": "078a25cc5bfd8011459be7b91d004e900c1d02d3",
 }
 
 
@@ -44,6 +46,14 @@ def picks() -> dict[str, list[tuple[str, str]]]:
         "heldout": [("addyosmani/agent-skills", p) for p in addy[1::2]]
         + [("coreyhaines31/marketingskills", p) for p in corey[2::4]]
         + [("minhnv0807/ai-business-skills", p) for p in business[0::5]],
+        # The third set: what the first two left of the marketing repository, more business skills, and a fourth
+        # repository for engineering roles. Labelled by someone else, before anything scores it.
+        "third": [("coreyhaines31/marketingskills", p) for p in corey[1::4] + corey[3::4]]
+        + [("minhnv0807/ai-business-skills", p) for p in business[2::5]]
+        + [
+            ("Jeffallan/claude-skills", p)
+            for p in folders("Jeffallan/claude-skills", REPOS["Jeffallan/claude-skills"])[0::4]
+        ],
     }
 
 
@@ -58,9 +68,11 @@ def frontmatter(repo: str, commit: str, path: str) -> dict[str, str]:
     }
 
 
-def main(out: Path) -> None:
+def main(out: Path, only: str = "") -> None:
     sets = {}
     for split, chosen in picks().items():
+        if only and split != only:
+            continue
         sets[split] = [
             {"repo": repo, "commit": REPOS[repo], "path": path, **frontmatter(repo, REPOS[repo], path)}
             for repo, path in chosen
@@ -71,4 +83,4 @@ def main(out: Path) -> None:
 
 
 if __name__ == "__main__":
-    main(Path(sys.argv[1]))
+    main(Path(sys.argv[1]), sys.argv[2] if len(sys.argv) > 2 else "")

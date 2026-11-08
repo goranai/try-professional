@@ -10,7 +10,7 @@ How well matching offers each role the skills it would use, measured on 2026-11-
 
 ## How it ran
 
-- `run_quality.py` pins the skills, builds the product's shortlists of 20 per role, and has `claude -p` on `claude-sonnet-5-5` judge each role. It gets the same instructions and assignment the product hands a Claude Code session, with no tools, and in an empty folder. It ran on a Claude plan.
+- `run_quality.py` pins the skills, builds the product's shortlists, 20 per role then and 30 since 0.2.0, and has `claude -p` on `claude-sonnet-5-5` judge each role. It gets the same instructions and assignment the product hands a Claude Code session, with no tools, and in an empty folder. It ran on a Claude plan.
 - Categories are hidden, and the company has no business description, as in [earlier measurements](../loadouts/README.md).
 - **The tuning set** was for finding a change. **The held-out set** was scored once before the change, and once after. Its errors weren't read until both scores were in.
 
@@ -40,9 +40,19 @@ The judge is told to leave out "skills that belong to a neighbouring role", but 
 - **One model.** Version 7 is untested on the API runner's cheap models, where the judge works the same way.
 - **Small sets,** and noise of about 3 matches between identical runs.
 
-## Next
+## The third set: a larger shortlist
 
-A larger shortlist, 30 per role, would raise the coverage ceiling, at about half again the judge's input. The held-out set has had its two scores, so that needs a third fresh set. The rest of these repositories' skills, which weren't sampled, would do.
+A shortlist of 20 per role capped coverage, so 30 was tested on a third fresh set, scored once at each size.
+
+- **57 skills,** picked by a fixed rule: the 26 marketing skills the first two sets left, 14 more business skills, and 17 engineering skills from a fourth repository never used here, `Jeffallan/claude-skills` (`sample.py`).
+- **Labelled independently.** The labels aren't the builder's. They were written by **a separate Claude instance**, `claude-opus-5-5` through `claude -p`, with no tools and no project context, and not by a person. It saw only an unlabelled packet: the 22 roles, and each skill's name and description, under shuffled IDs, with no repository names (`third_set_packet.md`). Its answer is `labels_third.yaml`, and its fingerprint is in `labels.sha256`, from before the first score. The judge that's scored is Sonnet, so the labeller and the judge are different models.
+
+| Third set, 69 labelled matches | Suggested | Right | Precision | Coverage | Kept by the shortlist | Judge input |
+|---|---|---|---|---|---|---|
+| Shortlist of 20 | 39 | 28 | 72% | 41% | 52/69 | 98,144 |
+| **Shortlist of 30** | 52 | 40 | **77%** | **58%** | 62/69 | 120,563 |
+
+**30 is kept, from 0.2.0.** It found 12 more right matches, well beyond the run-to-run noise of about 3, with no loss of precision, for about 23% more judge input. The rest of what limits coverage is the judge, which turned down 22 of the 62 labelled matches it was shown.
 
 ## Reproduce
 

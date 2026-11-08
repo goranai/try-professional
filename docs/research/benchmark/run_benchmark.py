@@ -61,7 +61,39 @@ DESIGN_PROMPT = (
     "answer asks: submit the design with org_proposal_submit, and then judge each role's skills with "
     "org_skill_judgment_submit. When the status is ready_for_a_person, reply with only the proposal id."
 )
+CONTINUE_PROMPT = (
+    "Use the trypro tools to finish designing proposal {proposal}. Call org_proposal_get with it, and do what each "
+    "answer asks, until the status is ready_for_a_person. Then reply with only the proposal id."
+)
 _lock = threading.Lock()
+
+
+def github_token() -> None:
+    """Skill discovery needs a GitHub token. It's read from the GitHub CLI into this process, and never printed."""
+    if not os.environ.get("GITHUB_TOKEN"):
+        token = subprocess.run(["gh", "auth", "token"], capture_output=True, text=True).stdout.strip()
+        if not token:
+            raise SystemExit("No GitHub token, so companies would get no skills. Run gh auth login first.")
+        os.environ["GITHUB_TOKEN"] = token
+
+
+def stop_services(folder: Path) -> list[int]:
+    """Stop the embedding service a run's company started, by its exact process IDs. Only ones under this run's
+    own folder, which only this harness started."""
+    marker = str(folder).replace("/", "\\").lower()
+    listed = subprocess.run(
+        ["powershell", "-NoProfile", "-Command",
+         "Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like '*embed_service*' } | "
+         "ForEach-Object { \"$($_.ProcessId)`t$($_.CommandLine)\" }"],
+        capture_output=True, text=True,
+    ).stdout  # fmt: skip
+    stopped = []
+    for line in listed.splitlines():
+        pid, _, command = line.partition("\t")
+        if pid.strip().isdigit() and marker in command.replace("/", "\\").lower():
+            subprocess.run(["powershell", "-NoProfile", "-Command", f"Stop-Process -Id {int(pid)} -Confirm:$false"])
+            stopped.append(int(pid))
+    return stopped
 
 
 def design_hash() -> str:
@@ -97,6 +129,15 @@ def design(out: Path, key: str, business: str) -> Path:
     found = re.search(r"prop-[0-9a-f]+", str(designed.get("result")))
     if found is None:
         raise SystemExit(f"No proposal for {key}: {str(designed)[:400]}")
+    # A session can stop before its design is ready. Another one picks it up where it stopped.
+    for _ in range(4):
+        status = json.loads((root / ".trypro" / "proposals" / found.group() / "meta.json").read_text("utf-8"))["status"]
+        if status in ("proposed", "approved"):
+            break
+        more = session(CONTINUE_PROMPT.format(proposal=found.group()), root, flags, "mcp__trypro__*", model=MODEL)
+        print(f"{key}: continued a design that was {status}: {str(more.get('result'))[:80]}", flush=True)
+    else:
+        raise SystemExit(f"{key}'s design never got ready.")
     bundle = load_proposal(root, found.group())
     by = "the benchmark harness, standing in for a person, without edits"
     use_embedding_service(root / ".trypro")
@@ -478,6 +519,8 @@ def one_run(out: Path, run: dict[str, Any], frozen: str) -> None:
     print(f"[{run['id']}] start", flush=True)
     outcome = SETUP_FN[run["setup"]](str(spec["goal"]), meta, company, work, budget)
     outcome["seconds"] = round(time.time() - started)
+    if run["setup"] == "hierarchy":
+        stop_services(company)
     files, closing = collect_work(run["setup"], work, outcome)
     target = folder / "work_files"
     target.mkdir()
@@ -507,6 +550,7 @@ def main() -> None:
     command, out = sys.argv[1], Path(sys.argv[2]).resolve()
     out.mkdir(parents=True, exist_ok=True)
     frozen = check_frozen()
+    github_token()
     if command == "design":
         for key, spec in [*GOALS.items(), ("pilot", PILOT)]:
             print(f"designing {key}", flush=True)

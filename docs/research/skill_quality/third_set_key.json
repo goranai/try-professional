@@ -1,0 +1,230 @@
+{
+ "S01": {
+  "repo": "coreyhaines31/marketingskills",
+  "path": "skills/marketing-ideas"
+ },
+ "S02": {
+  "repo": "coreyhaines31/marketingskills",
+  "path": "skills/pricing"
+ },
+ "S03": {
+  "repo": "minhnv0807/ai-business-skills",
+  "path": "skills/en/14-email-marketing-global"
+ },
+ "S04": {
+  "repo": "minhnv0807/ai-business-skills",
+  "path": "skills/en/52-account-structure-global"
+ },
+ "S05": {
+  "repo": "minhnv0807/ai-business-skills",
+  "path": "skills/en/62-marketing-review-global"
+ },
+ "S06": {
+  "repo": "coreyhaines31/marketingskills",
+  "path": "skills/sales-enablement"
+ },
+ "S07": {
+  "repo": "minhnv0807/ai-business-skills",
+  "path": "modules/personal-branding/en/23-personal-brand-strategy-global"
+ },
+ "S08": {
+  "repo": "coreyhaines31/marketingskills",
+  "path": "skills/cro"
+ },
+ "S09": {
+  "repo": "Jeffallan/claude-skills",
+  "path": "skills/rust-engineer"
+ },
+ "S10": {
+  "repo": "minhnv0807/ai-business-skills",
+  "path": "skills/en/67-agency-vendor-brief-global"
+ },
+ "S11": {
+  "repo": "coreyhaines31/marketingskills",
+  "path": "skills/image"
+ },
+ "S12": {
+  "repo": "coreyhaines31/marketingskills",
+  "path": "skills/directory-submissions"
+ },
+ "S13": {
+  "repo": "coreyhaines31/marketingskills",
+  "path": "skills/aso"
+ },
+ "S14": {
+  "repo": "coreyhaines31/marketingskills",
+  "path": "skills/offers"
+ },
+ "S15": {
+  "repo": "coreyhaines31/marketingskills",
+  "path": "skills/public-relations"
+ },
+ "S16": {
+  "repo": "Jeffallan/claude-skills",
+  "path": "skills/nestjs-expert"
+ },
+ "S17": {
+  "repo": "coreyhaines31/marketingskills",
+  "path": "skills/cold-email"
+ },
+ "S18": {
+  "repo": "minhnv0807/ai-business-skills",
+  "path": "skills/en/19-ab-test-setup-global"
+ },
+ "S19": {
+  "repo": "Jeffallan/claude-skills",
+  "path": "skills/angular-architect"
+ },
+ "S20": {
+  "repo": "Jeffallan/claude-skills",
+  "path": "skills/sql-pro"
+ },
+ "S21": {
+  "repo": "coreyhaines31/marketingskills",
+  "path": "skills/content-strategy"
+ },
+ "S22": {
+  "repo": "minhnv0807/ai-business-skills",
+  "path": "skills/en/32-seo-growth-global"
+ },
+ "S23": {
+  "repo": "coreyhaines31/marketingskills",
+  "path": "skills/programmatic-seo"
+ },
+ "S24": {
+  "repo": "Jeffallan/claude-skills",
+  "path": "skills/test-master"
+ },
+ "S25": {
+  "repo": "minhnv0807/ai-business-skills",
+  "path": "skills/en/37-social-caption-global"
+ },
+ "S26": {
+  "repo": "minhnv0807/ai-business-skills",
+  "path": "skills/en/57-next-ads-plan-global"
+ },
+ "S27": {
+  "repo": "Jeffallan/claude-skills",
+  "path": "skills/vue-expert-js"
+ },
+ "S28": {
+  "repo": "coreyhaines31/marketingskills",
+  "path": "skills/competitor-profiling"
+ },
+ "S29": {
+  "repo": "coreyhaines31/marketingskills",
+  "path": "skills/site-architecture"
+ },
+ "S30": {
+  "repo": "coreyhaines31/marketingskills",
+  "path": "skills/ai-seo"
+ },
+ "S31": {
+  "repo": "Jeffallan/claude-skills",
+  "path": "skills/debugging-wizard"
+ },
+ "S32": {
+  "repo": "coreyhaines31/marketingskills",
+  "path": "skills/paywalls"
+ },
+ "S33": {
+  "repo": "minhnv0807/ai-business-skills",
+  "path": "skills/en/42-image-brief-global"
+ },
+ "S34": {
+  "repo": "Jeffallan/claude-skills",
+  "path": "skills/kotlin-specialist"
+ },
+ "S35": {
+  "repo": "Jeffallan/claude-skills",
+  "path": "skills/dotnet-core-expert"
+ },
+ "S36": {
+  "repo": "Jeffallan/claude-skills",
+  "path": "skills/chaos-engineer"
+ },
+ "S37": {
+  "repo": "coreyhaines31/marketingskills",
+  "path": "skills/copy-editing"
+ },
+ "S38": {
+  "repo": "Jeffallan/claude-skills",
+  "path": "skills/fine-tuning-expert"
+ },
+ "S39": {
+  "repo": "minhnv0807/ai-business-skills",
+  "path": "skills/en/09-customer-insight-global"
+ },
+ "S40": {
+  "repo": "coreyhaines31/marketingskills",
+  "path": "skills/social"
+ },
+ "S41": {
+  "repo": "Jeffallan/claude-skills",
+  "path": "skills/shopify-expert"
+ },
+ "S42": {
+  "repo": "coreyhaines31/marketingskills",
+  "path": "skills/reverse-engineer-marketing"
+ },
+ "S43": {
+  "repo": "Jeffallan/claude-skills",
+  "path": "skills/playwright-expert"
+ },
+ "S44": {
+  "repo": "coreyhaines31/marketingskills",
+  "path": "skills/launch"
+ },
+ "S45": {
+  "repo": "Jeffallan/claude-skills",
+  "path": "skills/golang-pro"
+ },
+ "S46": {
+  "repo": "coreyhaines31/marketingskills",
+  "path": "skills/events"
+ },
+ "S47": {
+  "repo": "minhnv0807/ai-business-skills",
+  "path": "modules/personal-branding/en/28-community-building-global"
+ },
+ "S48": {
+  "repo": "Jeffallan/claude-skills",
+  "path": "skills/code-reviewer"
+ },
+ "S49": {
+  "repo": "Jeffallan/claude-skills",
+  "path": "skills/mcp-developer"
+ },
+ "S50": {
+  "repo": "Jeffallan/claude-skills",
+  "path": "skills/rag-architect"
+ },
+ "S51": {
+  "repo": "coreyhaines31/marketingskills",
+  "path": "skills/ad-creative"
+ },
+ "S52": {
+  "repo": "minhnv0807/ai-business-skills",
+  "path": "skills/en/47-design-review-global"
+ },
+ "S53": {
+  "repo": "coreyhaines31/marketingskills",
+  "path": "skills/seo-audit"
+ },
+ "S54": {
+  "repo": "coreyhaines31/marketingskills",
+  "path": "skills/link-building"
+ },
+ "S55": {
+  "repo": "coreyhaines31/marketingskills",
+  "path": "skills/churn-prevention"
+ },
+ "S56": {
+  "repo": "minhnv0807/ai-business-skills",
+  "path": "skills/en/04-script-video-global"
+ },
+ "S57": {
+  "repo": "coreyhaines31/marketingskills",
+  "path": "skills/marketing-plan"
+ }
+}

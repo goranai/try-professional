@@ -106,10 +106,15 @@ class ClaudeCodeJudge:
 
 
 def prepare(split: str) -> tuple[Path, Any, SkillCatalog, dict[str, list[str]]]:
-    sampled = json.loads((HERE / "sampled.json").read_text(encoding="utf-8"))
-    labels_by_name = yaml.safe_load((HERE / "labels.yaml").read_text(encoding="utf-8"))
-    chosen = [*sampled["tune"], *sampled["heldout"]] if split == "all" else sampled[split]
-    names = {**labels_by_name["tune"], **labels_by_name["heldout"]}
+    if split == "third":
+        # Sampled and labelled apart: the labels are a separate Claude instance's, not the builder's.
+        chosen = json.loads((HERE / "sampled_third.json").read_text(encoding="utf-8"))["third"]
+        names = yaml.safe_load((HERE / "labels_third.yaml").read_text(encoding="utf-8"))["third"]
+    else:
+        sampled = json.loads((HERE / "sampled.json").read_text(encoding="utf-8"))
+        labels_by_name = yaml.safe_load((HERE / "labels.yaml").read_text(encoding="utf-8"))
+        chosen = [*sampled["tune"], *sampled["heldout"]] if split == "all" else sampled[split]
+        names = {**labels_by_name["tune"], **labels_by_name["heldout"]}
     work = Path(tempfile.mkdtemp(prefix="trypro-quality-"))
     install_org(work / "org", "Quality", available_packs())
     org = load_org(work / "org")
@@ -147,10 +152,10 @@ def measure_shortlist(split: str) -> None:
     catalog.close()
 
 
-def measure_judge(split: str, label: str, out: Path) -> None:
+def measure_judge(split: str, label: str, out: Path, size: int = 20) -> None:
     work, org, catalog, labels = prepare(split)
     wanted = wanted_pairs(labels)
-    lists = make_shortlist(org, catalog.eligible(), catalog.embedder, Decisions(work / "n.yaml"))
+    lists = make_shortlist(org, catalog.eligible(), catalog.embedder, Decisions(work / "n.yaml"), size=size)
     shortlisted = {(role, c.record.skill_id) for role, items in lists.items() for c in items}
     cache = RerankCache(work / "verdicts.sqlite")
     started = time.time()
@@ -162,6 +167,7 @@ def measure_judge(split: str, label: str, out: Path) -> None:
     correct = len(got & wanted)
     result = {
         "split": split,
+        "shortlist_size": size,
         "model": MODEL,
         "skills": len(labels),
         "labelled_matches": len(wanted),
@@ -194,6 +200,6 @@ if __name__ == "__main__":
     if sys.argv[1] == "shortlist":
         measure_shortlist(sys.argv[2])
     elif sys.argv[1] == "judge":
-        measure_judge(sys.argv[2], sys.argv[3], Path(sys.argv[4]))
+        measure_judge(sys.argv[2], sys.argv[3], Path(sys.argv[4]), int(sys.argv[5]) if len(sys.argv) > 5 else 20)
     else:
         raise SystemExit(__doc__)

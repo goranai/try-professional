@@ -34,7 +34,7 @@ from .trade import off_trade_reason
 PROMPT_VERSION = "7"
 # A shortlist limits recall, whatever the judge does. On 29 real skills, 12 kept 38 of 50 labelled
 # matches, and 20 kept 48. See docs/research/loadouts/.
-SHORTLIST_SIZE = 20
+SHORTLIST_SIZE = 30
 SHORTLIST_FLOOR = 0.15
 MAX_DESCRIPTION = 200
 MAX_BUSINESS = 500
