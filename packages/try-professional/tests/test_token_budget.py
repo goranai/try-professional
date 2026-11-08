@@ -25,7 +25,9 @@ spec.loader.exec_module(measure_prompts)
 # Raised on 2026-11-08 from 34700 for a computer: the shell and web_fetch, given to every step that does or checks work.
 # Raised on 2026-11-09 from 36400 because prompts now say that roles have that computer. They used to say "no shell,
 # no network", so planners didn't ask for work a role could do, such as searching GitHub.
-TOTAL_CHAR_BUDGET = 37200
+# Then to 37600, telling planners that a held step counts as done: without it, a real run looped, reviewers asking for
+# an issue to exist that only a person could post.
+TOTAL_CHAR_BUDGET = 37600
 
 
 def test_a_minimal_run_stays_within_its_prompt_budget() -> None:

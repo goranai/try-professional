@@ -183,7 +183,7 @@ class TestMemoryAndSkills:
         service, run_id, invocation = self._at_execute(orchestrator)
         state = orchestrator.state(run_id)
         payload = default_payload(state.invocations[invocation], state, orchestrator.org)
-        assert service.artifact_submit(run_id, invocation, payload, notes={"made_up": 1})["accepted"] is False
+        assert service.artifact_submit(run_id, invocation, payload, notes={"did": 5})["accepted"] is False
 
     def test_no_client_can_change_company_memory(self, orchestrator: Orchestrator) -> None:
         """A person approves company memory. Over MCP, even the CEO could once skip that."""

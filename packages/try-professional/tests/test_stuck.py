@@ -156,6 +156,63 @@ class TestNoticingItSooner:
         assert _progress_mark(state) != before
 
 
+class TestWorkOnAComputer:
+    """A real role looking for a mistake in a repository ran out of turns, and was called stuck, while still working."""
+
+    def _explores(self, commands: Any, hand_in_after: int) -> Any:
+        count = {"calls": 0}
+
+        def reply(invocation: Any, state: Any, org: Org, _: Any) -> Any:
+            if invocation.purpose == Purpose.INTAKE:
+                return _submit({**default_payload(invocation, state, org), **SMALL})
+            if invocation.purpose == Purpose.EXECUTE and count["calls"] < hand_in_after:
+                count["calls"] += 1
+                return [ToolCall(id="c1", name="function=shell", arguments={"command": commands(count["calls"])})]
+            return None
+
+        return reply
+
+    def test_new_commands_are_work_and_get_the_turns_they_need(self, company: Orchestrator) -> None:
+        client = BadModel(self._explores(lambda n: f"echo step {n}", hand_in_after=STUCK_CALLS + 6))
+        result = ApiRunner(company, client, ROUTES).run("Look through the repository")
+        assert result.status == "done"
+        audit = (company.audit_path(result.run_id)).read_text(encoding="utf-8")
+        assert '"what": "echo step 3"' in audit, "what a role ran is on the record"
+        assert "function=shell" not in audit, "a prefixed tool name is the same tool"
+
+    def test_the_same_command_again_and_again_is_still_stuck(self, company: Orchestrator) -> None:
+        client = BadModel(self._explores(lambda n: "echo same", hand_in_after=100))
+        result = ApiRunner(company, client, ROUTES).run("Look through the repository")
+        assert result.status == "blocked"
+        assert _question(company, result.run_id).kind == "stuck"
+
+
+class TestRoomToReply:
+    def test_a_reply_cut_off_gets_twice_the_room(self, company: Orchestrator) -> None:
+        """A reasoning model's thinking counts as output. Cut off, it's asked again with more room, up to 128k."""
+        from try_professional.adapters.api_runner.clients import ChatResponse
+
+        rooms: list[int] = []
+
+        class Cramped(BadModel):
+            def complete(self, request: ChatRequest) -> Any:
+                if request.metadata["invocation"].purpose == Purpose.EXECUTE:
+                    rooms.append(request.max_tokens)
+                    if request.max_tokens < 64_000:
+                        return ChatResponse(text="thinking...", tool_calls=[], stop_reason="max_tokens",
+                                            assistant_message={"role": "assistant", "content": "thinking..."})  # fmt: skip
+                return super().complete(request)
+
+        def small(invocation: Any, state: Any, org: Org, _: Any) -> Any:
+            if invocation.purpose == Purpose.INTAKE:
+                return _submit({**default_payload(invocation, state, org), **SMALL})
+            return None
+
+        result = ApiRunner(company, Cramped(small), ROUTES).run("Write a launch note")
+        assert result.status == "done"
+        assert rooms[:3] == [16_000, 32_000, 64_000]
+
+
 class TestWhatAPersonCanDo:
     def _stuck(self, company: Orchestrator, purpose: Purpose = Purpose.EXECUTE) -> tuple[str, Any]:
         result, _ = _run(company, _rewrites_forever(purpose))

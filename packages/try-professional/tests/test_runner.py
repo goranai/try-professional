@@ -378,7 +378,8 @@ class TestAgentLoop:
         assert not events[0].retryable and "cyber" in events[0].reason
 
     def test_token_limit_without_output_fails_retryably(self, org: Org, tmp_path: Path) -> None:
-        client = SequenceClient([text_response("partial", "max_tokens")])
+        """Each time it's cut off it gets twice the room, 16k to 128k, and only then fails."""
+        client = SequenceClient([text_response("partial", "max_tokens") for _ in range(4)])
         events, _, _ = _first_invocation(org, tmp_path, client)
         assert events[0].kind == "invocation_failed" and events[0].retryable
 

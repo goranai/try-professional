@@ -61,6 +61,7 @@ STUCK_CALLS = 24
 
 # Hand-ins refused, with nothing moving. A few tries at the same thing, and it's a loop.
 STUCK_REFUSALS = 3
+FRESH_ACTIONS_PER_STEP = 3
 
 
 # Tokens spent with nothing moving, as a share of the command's own limit: a whole command's worth. One slow but real
@@ -83,7 +84,10 @@ def _progress_mark(state: RunState) -> str:
     settled = sum(task.status in (TaskStatus.APPROVED, TaskStatus.FAILED) for task in state.tasks.values())
     approved = sum(task.status == TaskStatus.APPROVED for task in state.tasks.values())
     rework = state.counters.rework_loops
-    return f"{work}:{approved}:{settled}:{len(state.tasks)}:{rework}:{state.phase.value}"
+    # Doing something new on a computer, such as another command, is work in progress. Every few count as a step, so a
+    # role that keeps exploring isn't called stuck, and one that repeats itself still is.
+    exploring = state.counters.fresh_actions // FRESH_ACTIONS_PER_STEP
+    return f"{work}:{approved}:{settled}:{len(state.tasks)}:{rework}:{state.phase.value}:{exploring}"
 
 
 def _spent_a_whole_limit(state: RunState, org: Org) -> bool:

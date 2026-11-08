@@ -315,6 +315,20 @@ def settle_notes(payload: Any, notes: Any) -> tuple[Any, Any]:
     if not isinstance(notes, dict):
         return payload, notes
     fitted = dict(notes)
+    # Other names for the same notes. A real role wrote "did_not_do", and lost its finished work over it.
+    for other, name in _NOTE_ALIASES.items():
+        value = fitted.pop(other, None)
+        if isinstance(value, list):
+            value = "; ".join(str(item) for item in value)
+        if isinstance(value, str) and value.strip():
+            if name == "did":
+                value = f"Not done: {value}" if other in ("did_not_do", "not_done") else value
+                fitted["did"] = f"{fitted.get('did', '')} {value}".strip()
+            elif name in ("decided", "promised"):
+                fitted[name] = [*(fitted.get(name) or []), value]
+            elif not fitted.get(name):
+                fitted[name] = value
+    fitted = {key: value for key, value in fitted.items() if key in WorkNotes.model_fields}
     for name, limit in _NOTE_TEXT_LIMITS.items():
         if isinstance(fitted.get(name), str):
             fitted[name] = fitted[name][:limit]
@@ -322,6 +336,20 @@ def settle_notes(payload: Any, notes: Any) -> tuple[Any, Any]:
         if isinstance(fitted.get(name), list):
             fitted[name] = fitted[name][:_NOTE_LIST_LIMIT]
     return payload, fitted
+
+
+_NOTE_ALIASES = {
+    "did_not_do": "did",
+    "not_done": "did",
+    "done": "did",
+    "summary": "did",
+    "decisions": "decided",
+    "promises": "promised",
+    "follow_ups": "promised",
+    "lessons": "lesson",
+    "learned": "lesson",
+    "team_lessons": "team_lesson",
+}
 
 
 class Retrospective(_Strict):
@@ -377,7 +405,41 @@ _ALIASES: dict[str, dict[str, tuple[str, ...]]] = {
     "Claim": {"claim": ("text", "statement", "content"), "source": ("sources", "url", "link", "citation")},
     "CriterionResult": {"criterion": ("text", "item", "name", "criteria"), "met": ("satisfied", "passed", "done")},
     "DoneCriterion": {"criterion": ("text", "item", "name", "criteria"), "met": ("satisfied", "passed", "done")},
-    "ReviewIssue": {"description": ("issue", "problem", "text", "finding", "detail")},
+    "ReviewIssue": {
+        "description": (
+            "issue",
+            "problem",
+            "text",
+            "finding",
+            "detail",
+            "summary",
+            "message",
+            "comment",
+            "reason",
+            "explanation",
+            "title",
+            "note",
+        ),
+    },
+    "TestRun": {
+        "command": ("cmd", "test", "check", "name", "how", "step"),
+        "result": ("output", "outcome", "status", "evidence", "passed"),
+    },
+    "DepartmentActivation": {"id": ("department", "department_id", "dept", "name"), "reason": ("why", "rationale")},
+    "WorkPackage": {
+        "id": ("package_id", "work_package_id", "key"),
+        "owner_department": ("department", "owner", "owner_dept", "department_id"),
+        "acceptance": (
+            "acceptance_criteria",
+            "criteria",
+            "done_when",
+            "success_criteria",
+            "acceptance_tests",
+            "definition_of_done",
+            "done_criteria",
+            "checks",
+        ),
+    },
 }
 # Extra detail on a review issue that's worth keeping, folded into its description.
 _ISSUE_DETAIL = ("where", "location", "fix", "suggestion", "recommendation")
@@ -419,7 +481,23 @@ def _settle(model: type[BaseModel], data: dict[str, Any], *, top: bool = False) 
             out["unverified"] = True
         if not out.get("source") and not out.get("unverified"):
             out["unverified"] = True
+    if model.__name__ == "WorkPackage" and not out.get("id") and isinstance(out.get("title"), str):
+        # A name for it, from its own title. Nothing it says changes.
+        out["id"] = re.sub(r"[^a-z0-9]+", "-", out["title"].lower()).strip("-")[:40] or out.get("id")
+    if model.__name__ == "TestRun" and isinstance(out.get("result"), bool):
+        out["result"] = "passed" if out["result"] else "failed"
     fields = model.model_fields
+    if top:
+        # A role's own notes, or the language, put inside the payload by mistake. They're bookkeeping, and an
+        # executing role's notes have already been moved to where they belong. Flags are never dropped: they decide
+        # which reviews run.
+        for wrapper in ("notes", "language"):
+            if wrapper not in fields:
+                out.pop(wrapper, None)
+    for name, info in fields.items():
+        # One item where a list of text belongs: "acceptance": "It works", for ["It works"].
+        if isinstance(out.get(name), str) and _is_text_list(info.annotation):
+            out[name] = [out[name]]
     if not top:
         # Nested items lose fields they don't have. Top-level extras are still refused, where they mean a wrong type.
         out = {key: value for key, value in out.items() if key in fields}
@@ -433,6 +511,12 @@ def _settle(model: type[BaseModel], data: dict[str, Any], *, top: bool = False) 
         elif isinstance(value, dict):
             out[name] = _settle(inner, value)
     return out
+
+
+def _is_text_list(annotation: Any) -> bool:
+    import typing
+
+    return typing.get_origin(annotation) is list and typing.get_args(annotation) == (str,)
 
 
 def _item_model(annotation: Any) -> type[BaseModel] | None:

@@ -55,6 +55,7 @@ TEAM_SKILLS_SHOWN = 3
 # Who is told what happened to earlier work outside: whoever plans, assigns, does, or checks work.
 OUTSIDE_PURPOSES = (Purpose.PLAN, Purpose.DISPATCH, Purpose.EXECUTE, Purpose.REVIEW)
 Execute = Callable[[Path, str], str]
+MAX_HELD_SHOWN = 1500
 
 
 _LOOKS_LIKE_A_FILE = re.compile(r"[\w./ -]+\.[A-Za-z0-9]{1,8}")
@@ -325,9 +326,13 @@ class Orchestrator:
                     skills = [str(item.get("name") or item.get("skill_id", "")) for item in self.skills.loadout(member)]
                     team[member] = {"open_tasks": counts[member], "skills": skills[:TEAM_SKILLS_SHOWN]}
             outside: list[str] = []
+            held: list[str] = []
             if invocation.purpose in OUTSIDE_PURPOSES:
                 outside = self.outside.record_lines()
-        return Briefing(brief=brief, pending_lessons=lessons, team=team, outside=outside)
+            if invocation.purpose in (*OUTSIDE_PURPOSES, Purpose.INTEGRATE):
+                held = [f"#{h.id}, from {h.role}: {h.command[:MAX_HELD_SHOWN]}"
+                        for h in self.outside.held() if h.run_id == run_id]  # fmt: skip
+        return Briefing(brief=brief, pending_lessons=lessons, team=team, outside=outside, held=held)
 
     def cancel(self, run_id: str, reason: str = "Cancelled by a person") -> None:
         self.handle(run_id, RunCancelled(reason=reason))
@@ -456,6 +461,8 @@ class Orchestrator:
                 state.counters.violations += 1
             elif kind == "invalid_output":
                 state.counters.invalid_outputs += 1
+            elif kind == "tool_call" and data.get("fresh"):
+                state.counters.fresh_actions += 1
             log.append(self.clock(), kind, data)
             self.ledger.save(state, log.head, self.clock())
 

@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import dataclasses
+import json
+import re
 from collections.abc import Callable, Iterable
 from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 from dataclasses import dataclass, field
@@ -27,7 +30,7 @@ from ...core.pipeline import (
 from ...org import Org, Role
 from ...resources import stop_if_memory_low
 from ..base import Capabilities, Delivery, Mode, ProvisionReport, VerifyReport
-from .clients import ChatClient, ChatRequest, ClientError, ToolResult
+from .clients import MAX_OUTPUT_TOKENS_CEILING, ChatClient, ChatRequest, ClientError, ToolResult, output_tokens
 from .prompts import system_prompt, user_prompt
 from .tools import (
     COMPUTER_TOOLS,
@@ -43,6 +46,12 @@ from .tools import (
 
 HumanHandler = Callable[[AskHuman], "HumanDecided | None"]
 DEFAULT_MAX_TURNS = 12
+# Work on a computer takes more turns: cloning, reading, searching, checking. A real role looking for a mistake in a
+# repository ran out of 12 before it could hand anything in. Loop protection still stops one that repeats itself.
+COMPUTER_MAX_TURNS = 40
+# What a role does on a computer that's new for its step counts as work. Reading its own files and notes doesn't.
+WORK_TOOLS = ("shell", "web_fetch", "web_search")
+_TOOL_PREFIX = re.compile(r"^\s*(?:functions?[.=:]|tools?[.=:])\s*", re.IGNORECASE)
 MAX_NUDGES = 2
 
 _READ = frozenset({"workspace_read", "workspace_list"})
@@ -116,7 +125,7 @@ class ApiRunner:
         routes: ModelRoutes | None = None,
         *,
         router: Router | None = None,
-        max_turns: int = DEFAULT_MAX_TURNS,
+        max_turns: int | None = None,
         on_human: HumanHandler | None = None,
         computer: bool = True,
         approve: Callable[[str, str], bool] | None = None,
@@ -130,6 +139,7 @@ class ApiRunner:
             router = StaticRouter(client, routes)
         self.router = router
         self.routes = routes
+        # None: as many as the step needs, by kind. A number: exactly that many, for every step.
         self.max_turns = max_turns
         self.on_human = on_human
         # Roles get a shell and the web, unless a company should only write documents.
@@ -311,8 +321,12 @@ class ApiRunner:
         ]
         metadata = {"invocation": invocation, "state": state, "org": self.org}
         nudges = 0
+        on_computer = self.computer and action.purpose in COMPUTER_PURPOSES
+        turns = self.max_turns or (COMPUTER_MAX_TURNS if on_computer else DEFAULT_MAX_TURNS)
+        done_before: set[str] = set()
+        room = output_tokens()
 
-        for _ in range(self.max_turns):
+        for _ in range(turns):
             # Stop spending as soon as the run is blocked. The invocation stays open and
             # is delivered again if a human lets the run continue.
             if self.orchestrator.state(run_id).phase == RunPhase.BLOCKED:
@@ -321,7 +335,9 @@ class ApiRunner:
             stop_if_memory_low()
             try:
                 response = client.complete(
-                    ChatRequest(system=system, messages=messages, tools=tools, model=model, metadata=metadata)
+                    ChatRequest(
+                        system=system, messages=messages, tools=tools, model=model, metadata=metadata, max_tokens=room
+                    )
                 )
             except ClientError as error:
                 return [
@@ -347,6 +363,14 @@ class ApiRunner:
                         invocation_id=action.invocation_id, reason=f"The model refused{detail}.", retryable=False
                     )
                 ]
+
+            cut_off = response.stop_reason == "max_tokens" and (
+                not response.tool_calls or any(call.parse_error for call in response.tool_calls)
+            )
+            if cut_off and room < MAX_OUTPUT_TOKENS_CEILING:
+                # It ran out of room mid-reply, often while thinking. The same call again, with twice the room.
+                room = min(room * 2, MAX_OUTPUT_TOKENS_CEILING)
+                continue
 
             messages.append(response.assistant_message)
 
@@ -377,7 +401,9 @@ class ApiRunner:
 
             results: list[ToolResult] = []
             control_event: Any = None
-            for call in response.tool_calls:
+            for named in response.tool_calls:
+                # Some models name a tool "function=shell" or "functions.shell". It's the same tool.
+                call = dataclasses.replace(named, name=_TOOL_PREFIX.sub("", named.name).strip())
                 if call.parse_error:
                     results.append(ToolResult(call.id, call.parse_error, is_error=True))
                     continue
@@ -398,11 +424,21 @@ class ApiRunner:
                         self.orchestrator.skill_used(
                             run_id, action.task_id, role.ref, str(call.arguments.get("skill_id", ""))
                         )
-                    self.orchestrator.record(
-                        run_id,
-                        "tool_call",
-                        {"invocation_id": action.invocation_id, "role": role.ref, "tool": call.name},
-                    )
+                    record: dict[str, Any] = {
+                        "invocation_id": action.invocation_id,
+                        "role": role.ref,
+                        "tool": call.name,
+                    }
+                    if call.name in WORK_TOOLS:
+                        # What a role ran or read is on the record, and something new for this step is work.
+                        what = str(
+                            call.arguments.get("command") or call.arguments.get("url") or call.arguments.get("query")
+                        )
+                        record["what"] = what[:300]
+                        key = f"{call.name}:{what}"
+                        record["fresh"] = key not in done_before
+                        done_before.add(key)
+                    self.orchestrator.record(run_id, "tool_call", record)
                     results.append(ToolResult(call.id, output))
                 except ToolRefused as error:
                     self.orchestrator.record(
@@ -418,7 +454,7 @@ class ApiRunner:
         return [
             InvocationFailed(
                 invocation_id=action.invocation_id,
-                reason=f"No artifact after {self.max_turns} turns.",
+                reason=f"No artifact after {turns} turns.",
                 retryable=False,
             )
         ]
@@ -450,7 +486,7 @@ class ApiRunner:
                 if notes is not None:
                     parse_payload("WorkNotes", notes)
             except (ArtifactError, ValueError) as error:
-                self._count_invalid(run_id, action, str(error))
+                self._count_invalid(run_id, action, str(error), arguments)
                 return f"Rejected, fix this and call {SUBMIT} again: {error}"
             return Submission(
                 invocation_id=action.invocation_id,
@@ -474,7 +510,9 @@ class ApiRunner:
             return HandoffRaised(invocation_id=action.invocation_id, actor=action.role, payload=arguments)
         return f"Unknown control tool {name}"
 
-    def _count_invalid(self, run_id: str, action: InvokeRole, reason: str) -> None:
-        self.orchestrator.record(
-            run_id, "invalid_output", {"invocation_id": action.invocation_id, "role": action.role, "reason": reason}
-        )
+    def _count_invalid(self, run_id: str, action: InvokeRole, reason: str, handed_in: Any = None) -> None:
+        record = {"invocation_id": action.invocation_id, "role": action.role, "reason": reason}
+        if handed_in is not None:
+            # What was refused, so a person can see why, and the next wording to forgive can be found.
+            record["handed_in"] = json.dumps(handed_in, ensure_ascii=False, default=str)[:4000]
+        self.orchestrator.record(run_id, "invalid_output", record)

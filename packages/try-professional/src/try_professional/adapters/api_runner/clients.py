@@ -18,6 +18,18 @@ from typing import Any, Protocol
 import httpx
 
 DEFAULT_MAX_TOKENS = 16000
+# The most room a reply can be given when one runs out. step-5-preview writes up to 128k; a provider that allows less
+# says so, and its own number is used from then on.
+MAX_OUTPUT_TOKENS_CEILING = 128_000
+OUTPUT_TOKENS_ENV = "TRYPRO_LLM_MAX_OUTPUT_TOKENS"
+
+
+def output_tokens() -> int:
+    """Room for one reply. TRYPRO_LLM_MAX_OUTPUT_TOKENS sets where it starts; a reply that runs out gets more."""
+    value = os.environ.get(OUTPUT_TOKENS_ENV, "").strip().replace("_", "")
+    return int(value) if value.isdigit() and int(value) > 0 else DEFAULT_MAX_TOKENS
+
+
 ANTHROPIC_FALLBACK_BETA = "server-side-fallback-2026-07-01"
 # Claude Haiku has no server-side fallback, so the parameter is omitted for it.
 _NO_SERVER_FALLBACK = ("claude-haiku-",)
@@ -254,6 +266,8 @@ class OpenAICompatibleClient:
             base_url=base_url.rstrip("/") + "/", headers=headers, timeout=timeout, transport=transport
         )
         self.max_tokens_param = max_tokens_param
+        # Lowered if the provider says a model allows less, and kept for later calls.
+        self.output_ceiling = MAX_OUTPUT_TOKENS_CEILING
         self._temperature_refused = False
         # Some gateways refuse a long system message beside some user text, and take the same words in one message.
         self._fold_system = False
@@ -329,7 +343,7 @@ class OpenAICompatibleClient:
         body: dict[str, Any] = {
             "model": request.model,
             "messages": self._messages(request),
-            self.max_tokens_param: request.max_tokens,
+            self.max_tokens_param: min(request.max_tokens, self.output_ceiling),
         }
         if request.tools:
             body["tools"] = [
@@ -348,6 +362,13 @@ class OpenAICompatibleClient:
             detail = str(refused).lower()
             if _vague_error(refused) and not (self._fold_system and self._plain_headings):
                 data = self._reshape(request, body, refused)
+            elif "http 400" in detail and self.max_tokens_param.replace("_", " ") in detail.replace("_", " "):
+                # Asked for more room than this model has. Its own maximum, if it says one, and half if it doesn't.
+                asked = body[self.max_tokens_param]
+                allowed = [int(n) for n in re.findall(r"\b(\d{4,7})\b", detail) if 1024 <= int(n) < asked]
+                body[self.max_tokens_param] = max(allowed) if allowed else max(1024, body[self.max_tokens_param] // 2)
+                self.output_ceiling = body[self.max_tokens_param]
+                data = self._post(body)
             elif "temperature" in body and "http 400" in detail and "temperature" in detail:
                 # Some models only accept their default. That's not worth failing the call.
                 self._temperature_refused = True

@@ -200,6 +200,13 @@ class TestTheShell:
             assert workspace == company.workspace(result.run_id)
             return "exit code 0\nhttps://github.com/a/b/issues/77\n"
 
+        from try_professional.core.pipeline.state import Invocation
+
+        reviewer = Invocation(id="r", role="engineering/qa", purpose=Purpose.REVIEW, output_type="ReviewVerdict")
+        briefing = company.briefing(result.run_id, reviewer)
+        assert briefing.held == [f"#{waiting[0].id}, from {WRITER}: {waiting[0].command}"]
+        prompt = user_prompt(reviewer, company.state(result.run_id), company.org, briefing=briefing)
+        assert "is done for this run, if the command is right" in prompt, "a reviewer doesn't ask for it to be posted"
         done = company.run_held(waiting[0].id, execute, by="Rina")
         assert done is not None and done.status == "approved" and done.decided_by == "Rina"
         tracked = company.outside.outcomes()

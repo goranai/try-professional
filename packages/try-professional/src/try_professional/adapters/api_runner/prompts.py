@@ -82,6 +82,11 @@ def _routes(org: Org) -> dict[str, list[str]]:
     }
 
 
+_HELD = (
+    "These commands change something outside, so they wait for a person, who decides after this run. A step whose "
+    "exact command is held here is done for this run, if the command is right: check that it is, and don't ask for it "
+    "to be run, or held again in other words. If it's wrong, say exactly what to change."
+)
 _EARLIER_WORK = "inputs/earlier/ holds this company's finished work from earlier commands."
 
 
@@ -92,7 +97,9 @@ def _has_earlier(files: list[str]) -> bool:
 _COMPUTER = (
     "Roles that do or check work have a computer: a shell (git, gh, curl, python) and the web, so they can clone and "
     "read repositories, search GitHub, run programs, and read pages. Anything that changes something outside, such as "
-    "pushing, opening an issue or pull request, posting, or sending, happens only once a person approves it."
+    "pushing, opening an issue or pull request, posting, or sending, happens only once a person approves it. With "
+    "nobody there, it's held for one, and that step counts as done once its exact command is ready and held, so write "
+    'criteria it can meet: "the issue is ready and held for approval", not "the issue exists".'
 )
 
 
@@ -155,6 +162,10 @@ def user_prompt(
     if briefing.outside:
         lines = "\n".join(briefing.outside)
         parts.append(_section("What happened to this company's earlier work outside", untrusted("outcomes", lines)))
+    if briefing.held:
+        parts.append(
+            _section("Waiting for a person's approval", f"{_HELD}\n{untrusted('held', chr(10).join(briefing.held))}")
+        )
     if state.user_language:
         language = org.pipeline.working_language
         parts.append(

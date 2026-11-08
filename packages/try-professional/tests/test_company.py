@@ -471,11 +471,17 @@ class TestWorkState:
     def _stored_notes(self, company: Orchestrator) -> dict[str, Any]:
         return next(a.payload for a in self._state(company).artifacts.values() if a.type == "WorkNotes")
 
-    @pytest.mark.parametrize("bad", [{"did": 5}, {"invented": "x"}, "just text"])
+    @pytest.mark.parametrize("bad", [{"did": 5}, {"decided": "not a list", "promised": 3}, "just text"])
     def test_bad_notes_are_refused(self, company: Orchestrator, bad: Any) -> None:
         _, client = _run(company, override=self._notes(bad))
         assert self._state(company).counters.invalid_outputs >= 1
         assert client.calls
+
+    def test_an_unknown_note_is_dropped_and_doesnt_cost_the_work(self, company: Orchestrator) -> None:
+        """A real role wrote "did_not_do" in its notes, and its finished work was refused for it."""
+        _run(company, override=self._notes({"did": "Read it", "invented": "x"}))
+        assert self._state(company).counters.invalid_outputs == 0
+        assert "invented" not in self._stored_notes(company)
 
     def test_long_notes_are_cut_and_dont_cost_the_work(self, company: Orchestrator) -> None:
         """A real writer's note ran over the limit, and it threw away a finished deliverable, more than once."""

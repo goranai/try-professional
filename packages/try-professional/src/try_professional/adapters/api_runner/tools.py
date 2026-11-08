@@ -387,8 +387,8 @@ def _run_shell(context: ToolContext, command: str) -> str:
         number = context.hold(command)
         return (
             f"Held for a person as #{number}: nobody is here to approve it right now. It runs when a person approves "
-            f"it (trypro held approve {number}). Don't try another way. Carry on, and say in your submission that it's "
-            "waiting for approval."
+            f"it (trypro held approve {number}). For this run, that step is done: don't run it, or hold it again, in "
+            f"other words. Finish your work, and say in your submission that #{number} is waiting for approval."
         )
     if outside and (context.approve is None or not context.approve(context.role, command)):
         raise ToolRefused(

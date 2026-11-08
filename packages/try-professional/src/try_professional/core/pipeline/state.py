@@ -132,6 +132,9 @@ class Counters(_Model):
     package_overruns: int = 0
     assignments: int = 0
     amendments: int = 0
+    # Commands, pages, and searches a role hadn't already done in that step. Doing new things is working; repeating
+    # the same call isn't.
+    fresh_actions: int = 0
 
 
 class Usage(_Model):
