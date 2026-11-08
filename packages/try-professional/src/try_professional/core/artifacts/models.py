@@ -372,6 +372,80 @@ class ArtifactError(ValueError):
     """A payload failed its schema. The message is safe to show to the model."""
 
 
+# What models often call a field instead. Only names that can't mean anything else here.
+_ALIASES: dict[str, dict[str, tuple[str, ...]]] = {
+    "Claim": {"claim": ("text", "statement", "content"), "source": ("sources", "url", "link", "citation")},
+    "CriterionResult": {"criterion": ("text", "item", "name", "criteria"), "met": ("satisfied", "passed", "done")},
+    "DoneCriterion": {"criterion": ("text", "item", "name", "criteria"), "met": ("satisfied", "passed", "done")},
+    "ReviewIssue": {"description": ("issue", "problem", "text", "finding", "detail")},
+}
+# Extra detail on a review issue that's worth keeping, folded into its description.
+_ISSUE_DETAIL = ("where", "location", "fix", "suggestion", "recommendation")
+
+
+def settle_payload(type_name: str, payload: Any) -> Any:
+    """Forgive how cheap models word a payload, and never what it says.
+
+    In real runs, every hand-in was refused over field names: "text" for "claim", "issue" and "fix" for
+    "description", or an extra "status". Known alternative names are mapped, unknown fields in nested items are
+    dropped, and a claim with no source is marked unverified, which is what a person is then told. The strict check
+    still runs afterwards, on everything that matters: missing content, wrong values, and unmet rules.
+    """
+    model = PAYLOAD_TYPES.get(type_name)
+    if model is None or not isinstance(payload, dict):
+        return payload
+    return _settle(model, payload, top=True)
+
+
+def _settle(model: type[BaseModel], data: dict[str, Any], *, top: bool = False) -> dict[str, Any]:
+    out = dict(data)
+    for field, names in _ALIASES.get(model.__name__, {}).items():
+        if field not in out:
+            found = next((name for name in names if name in out), None)
+            if found is not None:
+                value = out.pop(found)
+                out[field] = value[0] if field == "source" and isinstance(value, list) and value else value
+    if model.__name__ == "ReviewIssue":
+        extra = [f"{name}: {out[name]}" for name in _ISSUE_DETAIL if isinstance(out.get(name), str) and out[name]]
+        if extra and isinstance(out.get("description"), str):
+            out["description"] = f"{out['description']} ({'; '.join(extra)})"
+        if isinstance(out.get("severity"), str):
+            severity = out["severity"].strip().lower()
+            out["severity"] = {"critical": "blocker", "high": "major", "medium": "major", "low": "minor"}.get(
+                severity, severity
+            )
+    if model.__name__ == "Claim":
+        if out.get("verified") is False:
+            out["unverified"] = True
+        if not out.get("source") and not out.get("unverified"):
+            out["unverified"] = True
+    fields = model.model_fields
+    if not top:
+        # Nested items lose fields they don't have. Top-level extras are still refused, where they mean a wrong type.
+        out = {key: value for key, value in out.items() if key in fields}
+    for name, info in fields.items():
+        inner = _item_model(info.annotation)
+        if inner is None or name not in out:
+            continue
+        value = out[name]
+        if isinstance(value, list):
+            out[name] = [_settle(inner, item) if isinstance(item, dict) else item for item in value]
+        elif isinstance(value, dict):
+            out[name] = _settle(inner, value)
+    return out
+
+
+def _item_model(annotation: Any) -> type[BaseModel] | None:
+    """The model a field holds, alone or in a list, if it holds one."""
+    import typing
+
+    candidates = [annotation, *typing.get_args(annotation)]
+    for candidate in candidates:
+        if isinstance(candidate, type) and issubclass(candidate, BaseModel):
+            return candidate
+    return None
+
+
 def parse_payload(type_name: str, payload: Any) -> BaseModel:
     model = PAYLOAD_TYPES.get(type_name)
     if model is None:

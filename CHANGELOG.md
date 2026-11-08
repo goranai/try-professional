@@ -2,6 +2,17 @@
 
 Each version of `try-professional`. `skill-customs` is listed only when it changes.
 
+## 0.6.0 (2026-11-08)
+
+Cheap models finish their work. On `step-5-preview`, through the company's own engine, real jobs went from 2 of 5 finished to 4 of 5, including one that used `gh` in the shell and one in Indonesian. [How it was measured](docs/research/cheap_models/README.md).
+
+### Changed
+
+- **Hand-ins are forgiven their wording, and never their content.** Cheap models name fields their own way: `text` for `claim`, `issue` and `fix` for a review's `description`, or an extra `status`. Known alternative names are mapped, unknown fields inside items are dropped, and a claim with no source is marked unverified, which is what a person is told. The strict checks still run after, on both engines.
+- **Gateways are waited out.** A 502 or 503 gets 5 retries, with waits up to 30 seconds. A 400 with no reason gets one retry, and then the instructions are sent at the top of the first message instead of as a system message, which one gateway refused beside some text.
+- **Token limits on the API runner are 120,000 for a small command and 300,000 for a large one,** up from 60,000 and 200,000. A reasoning model's thinking counts as output, and one review wrote 12,700 tokens. Over MCP, they're unchanged. Stuck-run detection still stops a loop first.
+- **A shell command's output is cut to its last 6,000 characters,** because every call re-sends it.
+
 ## 0.5.0 (2026-11-08)
 
 An agent harness of its own: talk to your company, with any model.

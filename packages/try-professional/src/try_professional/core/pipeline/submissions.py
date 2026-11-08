@@ -16,6 +16,7 @@ from ..artifacts import (
     make_artifact,
     parse_payload,
     settle_notes,
+    settle_payload,
 )
 from ..gates import deterministic_flags, triggered_gates
 from .base import QA_GATE, _check_actor, _not_done, _unreported
@@ -51,6 +52,7 @@ def _on_submission(step: _Step, event: Submission) -> None:
     submitted, submitted_notes = event.payload, event.notes
     if invocation.purpose == Purpose.EXECUTE:
         submitted, submitted_notes = settle_notes(submitted, submitted_notes)
+    submitted = settle_payload(invocation.output_type, submitted)
     try:
         parsed = parse_payload(invocation.output_type, submitted)
     except ArtifactError as error:

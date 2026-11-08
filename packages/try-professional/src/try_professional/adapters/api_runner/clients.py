@@ -203,6 +203,18 @@ def _cached_tokens(usage: dict[str, Any]) -> int:
     return int(details.get("cached_tokens") or usage.get("prompt_cache_hit_tokens") or 0)
 
 
+_VAGUE = '"message":"invalidrequest."'
+
+
+def _vague_refusal(response: httpx.Response) -> bool:
+    """A 400 with no reason at all. Gateways send it when an upstream provider fails, and the same request often
+    works a moment later. A 400 that says what's wrong is a real refusal, and isn't retried."""
+    if response.status_code != 400:
+        return False
+    text = response.text.lower()
+    return "unknown_provider_failure" in text or _VAGUE in text.replace(" ", "")
+
+
 class OpenAICompatibleClient:
     """Any /chat/completions API, using plain HTTP."""
 
@@ -214,7 +226,7 @@ class OpenAICompatibleClient:
         base_url: str,
         api_key_env: str | None = None,
         max_tokens_param: str = "max_tokens",
-        max_retries: int = 2,
+        max_retries: int = 5,
         timeout: float = 600.0,
         transport: httpx.BaseTransport | None = None,
         sleep: Any = time.sleep,
@@ -232,6 +244,8 @@ class OpenAICompatibleClient:
         )
         self.max_tokens_param = max_tokens_param
         self._temperature_refused = False
+        # Some gateways refuse a long system message beside some user text, and take the same words in one message.
+        self._fold_system = False
         self.max_retries = max_retries
         self._sleep = sleep
 
@@ -241,6 +255,15 @@ class OpenAICompatibleClient:
     def tool_results_messages(self, results: list[ToolResult]) -> list[Any]:
         return [{"role": "tool", "tool_call_id": r.call_id, "content": r.content} for r in results]
 
+    def _messages(self, request: ChatRequest) -> list[Any]:
+        messages = list(request.messages)
+        if not self._fold_system:
+            return [{"role": "system", "content": request.system}, *messages]
+        if messages and messages[0].get("role") == "user" and isinstance(messages[0].get("content"), str):
+            first = {**messages[0], "content": f"{request.system}\n\n{messages[0]['content']}"}
+            return [first, *messages[1:]]
+        return [{"role": "user", "content": request.system}, *messages]
+
     def _post(self, body: dict[str, Any]) -> dict[str, Any]:
         for attempt in range(self.max_retries + 1):
             last = attempt == self.max_retries
@@ -249,10 +272,12 @@ class OpenAICompatibleClient:
             except httpx.HTTPError as error:
                 if last:
                     raise ClientError(redact(f"request failed: {error}", self._secret), retryable=True) from error
-                self._sleep(2**attempt)
+                self._sleep(min(30, 2 ** (attempt + 1)))
                 continue
-            if response.status_code in self.RETRYABLE and not last:
-                self._sleep(2**attempt)
+            # A vague 400 gets one more try. If it comes back, complete() changes the request's shape instead.
+            vague = _vague_refusal(response) and attempt == 0
+            if (response.status_code in self.RETRYABLE or vague) and not last:
+                self._sleep(min(30, 2 ** (attempt + 1)))
                 continue
             if response.status_code >= 400:
                 retryable = response.status_code in self.RETRYABLE
@@ -267,7 +292,7 @@ class OpenAICompatibleClient:
     def complete(self, request: ChatRequest) -> ChatResponse:
         body: dict[str, Any] = {
             "model": request.model,
-            "messages": [{"role": "system", "content": request.system}, *request.messages],
+            "messages": self._messages(request),
             self.max_tokens_param: request.max_tokens,
         }
         if request.tools:
@@ -284,13 +309,19 @@ class OpenAICompatibleClient:
         try:
             data = self._post(body)
         except ClientError as refused:
-            # Some models only accept their default. That's not worth failing the call.
             detail = str(refused).lower()
-            if "temperature" not in body or "http 400" not in detail or "temperature" not in detail:
+            if "http 400" in detail and _VAGUE in detail.replace(" ", "") and not self._fold_system:
+                # The same instructions, at the top of the first message, instead of as a system message.
+                self._fold_system = True
+                body["messages"] = self._messages(request)
+                data = self._post(body)
+            elif "temperature" in body and "http 400" in detail and "temperature" in detail:
+                # Some models only accept their default. That's not worth failing the call.
+                self._temperature_refused = True
+                del body["temperature"]
+                data = self._post(body)
+            else:
                 raise
-            self._temperature_refused = True
-            del body["temperature"]
-            data = self._post(body)
         choices = data.get("choices") or []
         if not choices:
             raise ClientError(f"response has no choices: {str(data)[:300]}", retryable=True)

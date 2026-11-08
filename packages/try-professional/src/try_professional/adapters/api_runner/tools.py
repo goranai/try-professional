@@ -36,7 +36,7 @@ class ToolRefused(Exception):
 # A role is a full agent: it can use a computer. These are granted by the runner, not by a role's file.
 COMPUTER_TOOLS = ("shell", "web_fetch")
 SHELL_TIMEOUT_SECONDS = 300
-MAX_OUTPUT_CHARS = 20_000
+MAX_OUTPUT_CHARS = 6_000
 MAX_FETCH_BYTES = 500_000
 # The model's own keys never reach a command it runs. A GitHub token does, so gh works.
 _KEPT_SECRETS = {"GITHUB_TOKEN", "GH_TOKEN"}

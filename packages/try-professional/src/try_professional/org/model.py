@@ -81,8 +81,8 @@ class Gate:
 
 # Raised in 0.1.1 from 150,000 and 40,000. Stricter reviews mean more rework: a small command with the 2 rework
 # rounds the pipeline allows used 37,762, and one that stopped needed 54,605 to finish. A large one used 134,289.
-DEFAULT_MAX_TOKENS_PER_RUN = 200_000
-DEFAULT_MAX_TOKENS_PER_SMALL_COMMAND = 60_000
+DEFAULT_MAX_TOKENS_PER_RUN = 300_000
+DEFAULT_MAX_TOKENS_PER_SMALL_COMMAND = 120_000
 # Over MCP, usage is the server's estimate times MCP_ESTIMATE_FACTOR, which is closer to what a client really spends.
 # Every command measured through Claude Code finishes under these: corrected, the most a small one came to was 124,615,
 # and a large one 443,154. Stuck-run detection is the first defense, and these are the last. The API runner counts real

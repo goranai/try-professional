@@ -523,7 +523,7 @@ class TestEndlessBehaviour:
 
     def test_a_large_command_stops_at_the_first_call_over_its_limit(self, company: Orchestrator) -> None:
         """It may cross the limit by one call's worth, and no more: the next call never happens."""
-        per_call = 40_000
+        per_call = DEFAULT_MAX_TOKENS_PER_RUN // 5
 
         class Expensive(BadModel):
             def complete(self, request: ChatRequest) -> ChatResponse:
@@ -541,7 +541,7 @@ class TestEndlessBehaviour:
         class Expensive(BadModel):
             def complete(self, request: ChatRequest) -> ChatResponse:
                 response = super().complete(request)
-                response.input_tokens = 200_000
+                response.input_tokens = DEFAULT_MAX_TOKENS_PER_RUN
                 return response
 
         client = Expensive(lambda *_: None)

@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Protocol
 
-from ...core.artifacts import ArtifactError, Flags, parse_payload, settle_notes
+from ...core.artifacts import ArtifactError, Flags, parse_payload, settle_notes, settle_payload
 from ...core.orchestrator import Orchestrator
 from ...core.pipeline import (
     AskHuman,
@@ -420,6 +420,7 @@ class ApiRunner:
             payload, notes = arguments.get("payload"), arguments.get("notes")
             if action.purpose == Purpose.EXECUTE:
                 payload, notes = settle_notes(payload, notes)
+            payload = settle_payload(action.output_type, payload)
             try:
                 parse_payload(action.output_type, payload)
                 flags = Flags.model_validate(arguments.get("flags") or {})

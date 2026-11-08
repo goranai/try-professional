@@ -1,0 +1,278 @@
+{
+ "before": {
+  "deepseek-v4.1-flash-1017/reply": {
+   "status": "done",
+   "reason": "",
+   "input_tokens": 5284,
+   "output_tokens": 947,
+   "calls": 3,
+   "seconds": 9,
+   "summary": "Deliveries are made Monday to Friday, and your order will arrive within 3 working days. Please note that we do not deliver on weekends."
+  },
+  "deepseek-v4.1-flash-1017/plan": {
+   "status": "blocked",
+   "reason": "This command stopped at 67474 tokens, over its limit of 60000. Nothing more is spent until you decide, and its work so far is saved. So far: 4 assignments, 0 rejected outputs, 1 rounds of rework, 0 escalations. Resuming adds 30000 tokens, unless you name an amount with --token-budget. Abandoning stops it here.",
+   "input_tokens": 61065,
+   "output_tokens": 6409,
+   "calls": 13,
+   "seconds": 97,
+   "summary": ""
+  },
+  "deepseek-v4.1-flash-1017/fix": {
+   "status": "done",
+   "reason": "",
+   "input_tokens": 9053,
+   "output_tokens": 2330,
+   "calls": 4,
+   "seconds": 20,
+   "summary": "Our coffee is roasted fresh every day and served until 5pm."
+  },
+  "deepseek-v4.1-flash-1017/github": {
+   "status": "blocked",
+   "reason": "This command looks stuck. research/analyst has used 12 model calls and 58048 tokens on its execute step with nothing accepted, approved, or sent back. What keeps failing: The previous attempt failed: HTTP 502: gateway error page Retry it, ideally with another model for research/analyst (--model). Or cancel the command.",
+   "input_tokens": 59103,
+   "output_tokens": 3374,
+   "calls": 14,
+   "seconds": 204,
+   "summary": ""
+  },
+  "deepseek-v4.1-flash-1017/indonesian": {
+   "status": "done",
+   "reason": "",
+   "input_tokens": 21573,
+   "output_tokens": 5321,
+   "calls": 8,
+   "seconds": 62,
+   "summary": "Kami tutup pada hari Minggu. Kami buka setiap hari Senin sampai Sabtu, pukul 08.00 sampai 17.00."
+  },
+  "kimi-k3/reply": {
+   "status": "done",
+   "reason": "",
+   "input_tokens": 4642,
+   "output_tokens": 3227,
+   "calls": 3,
+   "seconds": 22,
+   "summary": "Hi there, thanks for your question about delivery times! We deliver Monday to Friday within 3 working days, so please note that we do not deliver on weekends."
+  },
+  "kimi-k3/plan": {
+   "status": "blocked",
+   "reason": "Escalated by executive/ceo: Could not complete: HTTP 400: {\"error\":{\"type\":\"invalid_request\",\"code\":\"unknown_provider_failure\",\"message\":\"Invalid request.\"},\"request_id\":\"92ecd843-de98-49b6-a0f6-e2df26a2a23c\"}",
+   "input_tokens": 4961,
+   "output_tokens": 2914,
+   "calls": 4,
+   "seconds": 265,
+   "summary": ""
+  },
+  "kimi-k3/fix": {
+   "status": "done",
+   "reason": "",
+   "input_tokens": 4686,
+   "output_tokens": 2992,
+   "calls": 3,
+   "seconds": 17,
+   "summary": "Our coffee is roasted fresh every day and served until 5pm."
+  },
+  "kimi-k3/github": {
+   "status": "blocked",
+   "reason": "Escalated by executive/ceo: Could not complete: HTTP 400: {\"error\":{\"type\":\"invalid_request\",\"code\":\"unknown_provider_failure\",\"message\":\"Invalid request.\"},\"request_id\":\"24d3f59b-688b-43a2-a783-4dcc05d3f001\"}",
+   "input_tokens": 1092,
+   "output_tokens": 1227,
+   "calls": 1,
+   "seconds": 9,
+   "summary": ""
+  },
+  "kimi-k3/indonesian": {
+   "status": "done",
+   "reason": "",
+   "input_tokens": 4824,
+   "output_tokens": 4397,
+   "calls": 3,
+   "seconds": 58,
+   "summary": "Maaf, kami tidak buka pada hari Minggu. Kami buka setiap hari Senin sampai Sabtu, pukul 08.00 sampai 17.00, dan kami dengan senang hati siap melayani Anda pada jam tersebut."
+  },
+  "step-5-preview/reply": {
+   "status": "done",
+   "reason": "",
+   "input_tokens": 20460,
+   "output_tokens": 8070,
+   "calls": 8,
+   "seconds": 69,
+   "summary": "We deliver Monday to Friday, and delivery takes within 3 working days. We do not deliver on weekends."
+  },
+  "step-5-preview/plan": {
+   "status": "blocked",
+   "reason": "This command stopped at 68803 tokens, over its limit of 60000. Nothing more is spent until you decide, and its work so far is saved. So far: 4 assignments, 3 rejected outputs, 1 rounds of rework, 0 escalations. Resuming adds 30000 tokens, unless you name an amount with --token-budget. Abandoning stops it here.",
+   "input_tokens": 39449,
+   "output_tokens": 29354,
+   "calls": 7,
+   "seconds": 184,
+   "summary": ""
+  },
+  "step-5-preview/fix": {
+   "status": "done",
+   "reason": "",
+   "input_tokens": 8253,
+   "output_tokens": 3438,
+   "calls": 4,
+   "seconds": 27,
+   "summary": "Our coffee is roasted fresh every day and served until 5pm."
+  },
+  "step-5-preview/github": {
+   "status": "blocked",
+   "reason": "This command looks stuck. engineering/backend has used 8 model calls and 62185 tokens, with 1 hand-ins refused, on its execute step with nothing accepted, approved, or sent back. What keeps failing: nothing it handed in was accepted Retry it, ideally with another model for engineering/backend (--model). Or cancel the command.",
+   "input_tokens": 59075,
+   "output_tokens": 8102,
+   "calls": 10,
+   "seconds": 69,
+   "summary": ""
+  },
+  "step-5-preview/indonesian": {
+   "status": "blocked",
+   "reason": "Escalated by executive/ceo: Could not complete: HTTP 400: {\"error\":{\"type\":\"invalid_request\",\"code\":\"unknown_provider_failure\",\"message\":\"Invalid request.\"},\"request_id\":\"ab2b3741-7a94-46c5-a6d6-0a81f3bf4284\"}",
+   "input_tokens": 0,
+   "output_tokens": 0,
+   "calls": 0,
+   "seconds": 2,
+   "summary": ""
+  },
+  "glm-5.3-Flash/reply": {
+   "status": "blocked",
+   "reason": "Escalated by executive/ceo: Could not complete: HTTP 502: gateway error page",
+   "input_tokens": 1136,
+   "output_tokens": 925,
+   "calls": 1,
+   "seconds": 157,
+   "summary": ""
+  },
+  "glm-5.3-Flash/plan": {
+   "status": "blocked",
+   "reason": "Escalated by executive/ceo: Could not complete: HTTP 502: gateway error page",
+   "input_tokens": 1122,
+   "output_tokens": 592,
+   "calls": 1,
+   "seconds": 272,
+   "summary": ""
+  },
+  "glm-5.3-Flash/fix": {
+   "status": "blocked",
+   "reason": "Escalated by executive/ceo: Could not complete: HTTP 400: {\"error\":{\"type\":\"invalid_request\",\"code\":\"invalid_request\",\"message\":\"Invalid request.\"},\"request_id\":\"ae173934-5fb9-4c8f-9d3a-0dc52f607ce0\"}",
+   "input_tokens": 1132,
+   "output_tokens": 1066,
+   "calls": 1,
+   "seconds": 33,
+   "summary": ""
+  },
+  "glm-5.3-Flash/github": {
+   "status": "blocked",
+   "reason": "Escalated by executive/ceo: Could not complete: HTTP 502: gateway error page",
+   "input_tokens": 0,
+   "output_tokens": 0,
+   "calls": 0,
+   "seconds": 91,
+   "summary": ""
+  },
+  "glm-5.3-Flash/indonesian": {
+   "status": "blocked",
+   "reason": "Escalated by executive/ceo: Could not complete: HTTP 400: {\"error\":{\"type\":\"invalid_request\",\"code\":\"invalid_request\",\"message\":\"Invalid request.\"},\"request_id\":\"37d8ff4e-8487-4d7b-9271-e37a6df1f191\"}",
+   "input_tokens": 1148,
+   "output_tokens": 914,
+   "calls": 1,
+   "seconds": 8,
+   "summary": ""
+  }
+ },
+ "after": {
+  "step-5-preview/reply": {
+   "status": "done",
+   "reason": "",
+   "input_tokens": 8038,
+   "output_tokens": 2849,
+   "calls": 4,
+   "seconds": 27,
+   "summary": "We deliver Monday to Friday, and your order will arrive within 3 working days. Please note that we do not make deliveries on weekends."
+  },
+  "step-5-preview/plan": {
+   "status": "blocked",
+   "reason": "This command looks stuck. marketing/social has used 4 model calls and 30338 tokens, with 3 hand-ins refused, on its execute step with nothing accepted, approved, or sent back. What keeps failing: nothing it handed in was accepted Retry it, ideally with another model for marketing/social (--model). Or cancel the command.",
+   "input_tokens": 27700,
+   "output_tokens": 8230,
+   "calls": 6,
+   "seconds": 49,
+   "summary": ""
+  },
+  "step-5-preview/fix": {
+   "status": "done",
+   "reason": "",
+   "input_tokens": 8676,
+   "output_tokens": 4777,
+   "calls": 4,
+   "seconds": 39,
+   "summary": "Our coffee is roasted fresh every day and served until 5pm."
+  },
+  "step-5-preview/github": {
+   "status": "blocked",
+   "reason": "This command stopped at 124384 tokens, over its limit of 120000. Nothing more is spent until you decide, and its work so far is saved. So far: 4 assignments, 4 rejected outputs, 1 rounds of rework, 0 escalations. Resuming adds 60000 tokens, unless you name an amount with --token-budget. Abandoning stops it here.",
+   "input_tokens": 100696,
+   "output_tokens": 23688,
+   "calls": 20,
+   "seconds": 180,
+   "summary": ""
+  },
+  "step-5-preview/indonesian": {
+   "status": "blocked",
+   "reason": "Escalated by executive/ceo: Could not complete: HTTP 400: {\"error\":{\"type\":\"invalid_request\",\"code\":\"unknown_provider_failure\",\"message\":\"Invalid request.\"},\"request_id\":\"ca47673e-6bdb-4100-a7bd-7bc1ec8d3e8c\"}",
+   "input_tokens": 0,
+   "output_tokens": 0,
+   "calls": 0,
+   "seconds": 66,
+   "summary": ""
+  }
+ },
+ "after-2": {
+  "step-5-preview/reply": {
+   "status": "done",
+   "reason": "",
+   "input_tokens": 11213,
+   "output_tokens": 3328,
+   "calls": 5,
+   "seconds": 40,
+   "summary": "Hello, we make deliveries Monday to Friday, and your order should arrive within 3 working days. Please note that we do not deliver on weekends."
+  },
+  "step-5-preview/plan": {
+   "status": "blocked",
+   "reason": "This command stopped at 123466 tokens, over its limit of 120000. Nothing more is spent until you decide, and its work so far is saved. So far: 6 assignments, 3 rejected outputs, 2 rounds of rework, 0 escalations. Resuming adds 60000 tokens, unless you name an amount with --token-budget. Abandoning stops it here.",
+   "input_tokens": 77156,
+   "output_tokens": 46310,
+   "calls": 13,
+   "seconds": 269,
+   "summary": ""
+  },
+  "step-5-preview/fix": {
+   "status": "done",
+   "reason": "",
+   "input_tokens": 5791,
+   "output_tokens": 2633,
+   "calls": 3,
+   "seconds": 21,
+   "summary": "Our coffee is roasted fresh every day and served until 5pm."
+  },
+  "step-5-preview/github": {
+   "status": "done",
+   "reason": "",
+   "input_tokens": 56937,
+   "output_tokens": 9154,
+   "calls": 15,
+   "seconds": 113,
+   "summary": "Identified and verified one public GitHub repository about Markdown editors with more than 1800 stars, using only the shell and the gh CLI (read-only).\n\nRepository: Milkdown/milkdown\nStar count: 12,055 (verified via `gh api repos/Milkdown/milkdown`, field stargazers_count)\nFirst README heading: `# :baby_bottle:&nbsp;&nbsp;Milkdown` (line 1 of the README, i.e. the baby-bottle emoji, two non-breaking spaces, then \"Milkdown\")\n\nSupporting facts: the repository is public (`.private == false`), its description is \"Plugin driven WYSIWYG markdown editor framework\", and its topics include \"markdown-edi"
+  },
+  "step-5-preview/indonesian": {
+   "status": "done",
+   "reason": "",
+   "input_tokens": 24857,
+   "output_tokens": 10212,
+   "calls": 6,
+   "seconds": 66,
+   "summary": "Terima kasih sudah menghubungi kami. Kami informasikan bahwa kami tidak buka pada hari Minggu; jam operasional kami adalah Senin sampai Sabtu pukul 08.00 sampai 17.00."
+  }
+ }
+}

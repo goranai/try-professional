@@ -30,6 +30,7 @@ from .models import (
     make_artifact,
     parse_payload,
     settle_notes,
+    settle_payload,
 )
 
 __all__ = [
@@ -62,4 +63,5 @@ __all__ = [
     "make_artifact",
     "parse_payload",
     "settle_notes",
+    "settle_payload",
 ]
