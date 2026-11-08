@@ -82,6 +82,10 @@ def _routes(org: Org) -> dict[str, list[str]]:
     }
 
 
+_OUTSIDE_CRITERIA = (
+    "Sending, posting, or opening something outside waits for a person's approval, so its criterion is that it's "
+    'ready and held: "the issue is ready and held for approval", not "the issue exists".'
+)
 _HELD = (
     "These commands change something outside, so they wait for a person, who decides after this run. A step whose "
     "exact command is held here is done for this run, if the command is right: check that it is, and don't ask for it "
@@ -177,6 +181,8 @@ def user_prompt(
         )
     if invocation.purpose == Purpose.INTAKE:
         parts.append(_section("Departments and their roles", _routes(org)))
+        if computer:
+            parts.append(_section("Steps that go outside", _OUTSIDE_CRITERIA))
     if invocation.purpose == Purpose.INTEGRATE:
         # From the pipeline's own record. A real CEO once reported no reviews, because it couldn't see them.
         reviews = {t.task_id: t.passed_gates for t in state.tasks.values() if t.task_id != invocation.task_id}

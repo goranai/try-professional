@@ -27,7 +27,8 @@ spec.loader.exec_module(measure_prompts)
 # no network", so planners didn't ask for work a role could do, such as searching GitHub.
 # Then to 37600, telling planners that a held step counts as done: without it, a real run looped, reviewers asking for
 # an issue to exist that only a person could post.
-TOTAL_CHAR_BUDGET = 37600
+# And to 37800 for the same rule at intake, where a real CEO still wrote "the issue is opened" as a criterion.
+TOTAL_CHAR_BUDGET = 37800
 
 
 def test_a_minimal_run_stays_within_its_prompt_budget() -> None:
