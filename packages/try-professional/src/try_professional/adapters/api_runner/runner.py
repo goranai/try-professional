@@ -50,6 +50,8 @@ DEFAULT_MAX_TURNS = 12
 # Work on a computer takes more turns: cloning, reading, searching, checking. A real role looking for a mistake in a
 # repository ran out of 12 before it could hand anything in. Loop protection still stops one that repeats itself.
 COMPUTER_MAX_TURNS = 40
+# A review checks work; it doesn't redo it. A real reviewer given 40 turns spent 15 calls re-running every search.
+REVIEW_MAX_TURNS = 16
 # What a role does on a computer that's new for its step counts as work. Reading its own files and notes doesn't.
 WORK_TOOLS = ("shell", "web_fetch", "web_search")
 _TOOL_PREFIX = re.compile(r"^\s*(?:functions?[.=:]|tools?[.=:])\s*", re.IGNORECASE)
@@ -331,7 +333,11 @@ class ApiRunner:
         metadata = {"invocation": invocation, "state": state, "org": self.org}
         nudges = 0
         on_computer = self.computer and action.purpose in COMPUTER_PURPOSES
-        turns = self.max_turns or (COMPUTER_MAX_TURNS if on_computer else DEFAULT_MAX_TURNS)
+        turns = self.max_turns or (
+            (REVIEW_MAX_TURNS if action.purpose == Purpose.REVIEW else COMPUTER_MAX_TURNS)
+            if on_computer
+            else DEFAULT_MAX_TURNS
+        )
         done_before: set[str] = set()
         room = output_tokens()
 

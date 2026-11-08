@@ -30,7 +30,9 @@ spec.loader.exec_module(measure_prompts)
 # And to 37800 for the same rule at intake, where a real CEO still wrote "the issue is opened" as a criterion.
 # And to 38500 in 0.6.2, for rules against passing work around: the fewest roles, no handing work back, and saying
 # what another department has before asking it. One avoided step costs far more than this.
-TOTAL_CHAR_BUDGET = 38500
+# Then 38700, for "stop when it's done" and "re-run only what the verdict rests on": a real job's worker and reviewer
+# spent 73 calls re-checking work that had already been checked.
+TOTAL_CHAR_BUDGET = 38700
 
 
 def test_a_minimal_run_stays_within_its_prompt_budget() -> None:

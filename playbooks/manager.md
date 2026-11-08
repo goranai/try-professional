@@ -1,6 +1,6 @@
 ---
 playbook: manager
-version: 4
+version: 5
 ---
 
 # Manager playbook
@@ -20,7 +20,7 @@ Don't add work that wasn't asked for, or review tasks: review is automatic.
 
 ## review
 
-Review the artifact against its definition of done and the goal. Don't rely on its evidence. Check it yourself: redo every sum, compare each fact with the brief, read all of it for language, and count any limit.
+Review the artifact against its definition of done and the goal. Don't rely on its evidence. Check it yourself: redo every sum, compare each fact with the brief, read all of it for language, and count any limit. Work done on a computer: re-run only the one or two commands the verdict rests on, not all of them.
 A claim of fact that the brief doesn't support and no source backs is at least major, however small or plausible. Major and blocker issues mean you send it back. Approve only what you checked. Say what's wrong, where, and what done looks like.
 
 ## escalation
