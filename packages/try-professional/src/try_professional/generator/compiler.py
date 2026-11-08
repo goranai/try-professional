@@ -1,6 +1,6 @@
 """Turn a proposal into org.yaml and role files. Everything that matters for safety is decided here.
 
-The model never chooses tools, gates, escalation, budgets, or endpoints. Executive, Legal, and QA come
+The model never chooses tools, gates, escalation, budgets, or endpoints. Executive, QA, and Legal when needed, come
 from fixed definitions, and a proposal naming those departments has that part ignored.
 """
 
@@ -307,9 +307,10 @@ def compile_org(template: Template, proposal: OrgProposal) -> CompiledOrg:
         qa, qa_roles = _qa_department()
         departments.append(qa)
         roles.update(qa_roles)
-    legal, legal_roles = _locked_pack(LEGAL)
-    departments.append(legal)
-    roles.update(legal_roles)
+    if proposal.needs_legal:
+        legal, legal_roles = _locked_pack(LEGAL)
+        departments.append(legal)
+        roles.update(legal_roles)
 
     pipeline = copy.deepcopy(DEFAULT_PIPELINE)
     pipeline["working_language"] = proposal.working_language
@@ -322,7 +323,8 @@ def compile_org(template: Template, proposal: OrgProposal) -> CompiledOrg:
         "company": company,
         "root_role": ROOT_ROLE,
         "departments": departments,
-        "gates": copy.deepcopy(DEFAULT_GATES),
+        # A legal gate only with a Legal department. Most businesses don't need one.
+        "gates": copy.deepcopy(DEFAULT_GATES) if proposal.needs_legal else {},
         "pipeline": pipeline,
     }
     return CompiledOrg(org, roles, notes)

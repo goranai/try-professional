@@ -122,8 +122,27 @@ def test_model_declaring_no_flags_cannot_avoid_the_gate(org: Org, harness: Calla
     assert all(a.flags.public_facing for a in state.artifacts.values() if a.type == "PublicContent")
 
 
-def test_missing_legal_pack_blocks_and_escalates(make_org: Callable[..., Org], harness: Callable[..., Any]) -> None:
+def _gate_without_legal(org_dir: Any) -> None:
+    """The legal gate configured, and its department gone: edited by hand, since removing the pack removes both."""
+    import yaml
+
+    from try_professional.packs import DEFAULT_GATES
+
+    path = org_dir / "org.yaml"
+    data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    data["gates"] = yaml.safe_load(yaml.safe_dump(DEFAULT_GATES))
+    path.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
+
+
+def test_without_legal_there_is_no_legal_gate(make_org: Callable[..., Org], harness: Callable[..., Any]) -> None:
     org = make_org(["executive", "marketing"])
+    assert org.gates == {}
+    result = harness(org, _plan("marketing")).runner.run("Write a launch post")
+    assert result.status == "done"
+
+
+def test_missing_legal_pack_blocks_and_escalates(make_org: Callable[..., Org], harness: Callable[..., Any]) -> None:
+    org = make_org(["executive", "marketing"], mutate=_gate_without_legal)
     run = harness(org, _plan("marketing"))
     result = run.runner.run("Write a launch post")
     assert result.status == "blocked"
@@ -133,7 +152,7 @@ def test_missing_legal_pack_blocks_and_escalates(make_org: Callable[..., Org], h
 
 
 def test_human_waiver_continues_and_is_logged(make_org: Callable[..., Org], harness: Callable[..., Any]) -> None:
-    org = make_org(["executive", "marketing"])
+    org = make_org(["executive", "marketing"], mutate=_gate_without_legal)
     run = harness(org, _plan("marketing"))
     result = run.runner.run("Write a launch post")
 

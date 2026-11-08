@@ -2,6 +2,21 @@
 
 Each version of `try-professional`. `skill-customs` is listed only when it changes.
 
+## 0.4.0 (2026-11-08)
+
+A company of real agents: the hierarchy decides who does what and who checks it, and every role can use a computer.
+
+### Changed
+
+- **Every role is a full agent in Claude Code.** Roles' subagents get Claude Code's own tools: the shell, files, `git` and `gh`, and web search and fetch, beside the server bound to their role. The flow is the same: you, the CEO, a manager, a worker, QA, and back up to you. Claude Code asks you before commands unless you allow them. To keep the old behaviour, documents only, run `trypro agents claude-code --sandboxed`. Tested once for real: a worker used `gh` to find two popular repos and a real error in each README, the research lead checked both, and the CEO reported back, for $0.34 at list price.
+- **Legal is optional, and off by default.** A designed company gets a Legal department only for regulated work, such as law, health care, finance, or insurance, and the default company has none. With Legal, its review works as before. `trypro pack add legal` adds it, with its gate, and `trypro pack remove legal` removes both.
+
+### Before you upgrade
+
+- **Existing companies keep their Legal department,** and work as before.
+- **Rerun `trypro agents claude-code`** in an existing company, so its roles get their tools and the front desk.
+- **The experimental API runner** is unchanged: its roles still have only the company's own tools.
+
 ## 0.3.0 (2026-11-08)
 
 Say what you want, and a company gets to work.

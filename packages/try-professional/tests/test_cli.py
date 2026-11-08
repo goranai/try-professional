@@ -29,7 +29,7 @@ def test_init_creates_a_working_company(
 ) -> None:
     monkeypatch.chdir(tmp_path)
     assert main(["init", "--company", "Demo", "--skip-model"]) == 0
-    assert "9 departments and 22 roles" in capsys.readouterr().out
+    assert "8 departments and 20 roles" in capsys.readouterr().out
     assert (tmp_path / "org" / "org.yaml").is_file()
     assert (tmp_path / "org" / "roles" / "engineering" / "backend.yaml").is_file()
     assert (tmp_path / "trypro.yaml").is_file()

@@ -69,12 +69,21 @@ def test_root_pack_cannot_be_removed(tmp_path: Path) -> None:
         remove_pack(tmp_path, "executive")
 
 
-def test_removing_legal_warns_but_stays_valid(tmp_path: Path) -> None:
+def test_removing_legal_removes_its_gate(tmp_path: Path) -> None:
     install_org(tmp_path, "Test", available_packs())
     remove_pack(tmp_path, "legal")
-    issues = validate_bundle(*read_documents(tmp_path))
-    assert [i.code for i in issues] == ["ORG101"]
-    assert all(i.severity == "warning" for i in issues)
+    org, roles = read_documents(tmp_path)
+    assert validate_bundle(org, roles) == []
+    assert "legal" not in (org.get("gates") or {})
+
+
+def test_adding_legal_adds_its_gate(tmp_path: Path) -> None:
+    install_org(tmp_path, "Test", ["executive", "marketing"])
+    assert not read_documents(tmp_path)[0].get("gates")
+    add_pack(tmp_path, "legal")
+    org, roles = read_documents(tmp_path)
+    assert org["gates"]["legal"]["reviewer"] == "legal/counsel"
+    assert validate_bundle(org, roles) == []
 
 
 def test_extension_keys_survive_pack_edits(tmp_path: Path) -> None:

@@ -161,9 +161,17 @@ class TestClaudeCodeFiles:
     def test_a_role_gets_only_its_own_bound_server(self, tmp_path: Path, org: Any) -> None:
         front = self._front(role_agent(tmp_path, org, org.role("engineering/backend")))
         assert front["name"] == agent_name("engineering/backend") == "trypro-engineering-backend"
-        assert front["tools"] == f"mcp__{ROLE_SERVER}__*", "no shell, no file tools"
+        tools = [tool.strip() for tool in front["tools"].split(",")]
+        # A full agent: its own role's server, and a computer to work with. Never the session's coordinator.
+        assert tools[0] == f"mcp__{ROLE_SERVER}__*"
+        assert {"Bash", "Read", "Write", "WebSearch"} <= set(tools)
+        assert not any(tool.startswith(f"mcp__{SERVER}__") for tool in tools)
         args = front["mcpServers"][0][ROLE_SERVER]["args"]
         assert "--role" in args and "engineering/backend" in args
+
+    def test_a_sandboxed_role_gets_only_its_server(self, tmp_path: Path, org: Any) -> None:
+        front = self._front(role_agent(tmp_path, org, org.role("engineering/backend"), sandboxed=True))
+        assert front["tools"] == f"mcp__{ROLE_SERVER}__*", "no shell, no file tools"
 
     def test_a_roles_server_isnt_named_like_the_sessions(self) -> None:
         """Claude Code used the session's server when they matched, so a role wasn't bound to anything."""

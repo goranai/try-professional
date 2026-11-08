@@ -87,9 +87,14 @@ def compose_org(company: str, packs: list[str]) -> dict[str, Any]:
         "company": {"name": company},
         "root_role": "executive/ceo",
         "departments": [pack_department(name) for name in packs],
-        "gates": yaml.safe_load(yaml.safe_dump(DEFAULT_GATES)),
+        "gates": yaml.safe_load(yaml.safe_dump(DEFAULT_GATES)) if "legal" in packs else {},
         "pipeline": yaml.safe_load(yaml.safe_dump(DEFAULT_PIPELINE)),
     }
+
+
+def default_packs() -> list[str]:
+    """Every pack but Legal, which a business adds when it needs one: trypro pack add legal."""
+    return [name for name in available_packs() if name != "legal"]
 
 
 def install_org(org_dir: Path, company: str, packs: list[str]) -> None:
@@ -104,6 +109,8 @@ def add_pack(org_dir: Path, name: str) -> None:
     if any(d["id"] == name for d in org["departments"]):
         raise ValueError(f"department '{name}' is already installed")
     org["departments"].append(pack_department(name))
+    if name in DEFAULT_GATES:
+        org.setdefault("gates", {})[name] = yaml.safe_load(yaml.safe_dump(DEFAULT_GATES[name]))
     _copy_roles(name, org_dir)
     dump_org(org, org_dir)
 
@@ -116,6 +123,8 @@ def remove_pack(org_dir: Path, name: str) -> None:
     if len(remaining) == len(org["departments"]):
         raise ValueError(f"department '{name}' is not installed")
     org["departments"] = remaining
+    # A gate with no one to review would stop every run it applies to.
+    (org.get("gates") or {}).pop(name, None)
     dump_org(org, org_dir)
     shutil.rmtree(org_dir / "roles" / name, ignore_errors=True)
 

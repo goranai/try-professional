@@ -73,7 +73,7 @@ from .memory.embedding import use_embedding_service
 from .org import Org, OrgValidationError, load_org, validate_bundle
 from .org.loader import read_documents
 from .org.policy import check_policy
-from .packs import add_pack, available_packs, install_org, remove_pack
+from .packs import add_pack, available_packs, default_packs, install_org, remove_pack
 from .resources import COMMAND_PEAK_MB, LowMemory, wait_for_memory
 from .setup import CLAUDE_CODE, runtime_of, setup_claude_code
 from .skills import (
@@ -279,7 +279,7 @@ def cmd_init(args: argparse.Namespace) -> int:
     if (config.exists() or (org_dir / "org.yaml").exists()) and not args.force:
         _print(f"{root} already has a company. Use --force to replace org/ and {CONFIG_NAME}.")
         return 1
-    packs = args.packs.split(",") if args.packs else available_packs()
+    packs = args.packs.split(",") if args.packs else default_packs()
     unknown = sorted(set(packs) - set(available_packs()))
     if unknown:
         _print(f"Unknown packs: {', '.join(unknown)}. Available: {', '.join(available_packs())}")
@@ -721,7 +721,7 @@ class _Design:
 def cmd_agents(args: argparse.Namespace) -> int:
     config = load_config(Path.cwd())
     org = load_org(config.org_dir)
-    written = write_claude_code_files(config.root, org, args.model)
+    written = write_claude_code_files(config.root, org, args.model, args.sandboxed)
     _print(f"Wrote {len(org.roles)} role agents to .claude/agents, the /company command, and .mcp.json.")
     _print("Start Claude Code in this folder (restart it if it's open, so it loads them), and run:")
     _print('  /company "<what you want done>"')
@@ -1278,6 +1278,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     agents = sub.add_parser("agents", help="Set up an agent runtime to run this company")
     agents.add_argument("runtime", choices=["claude-code"])
+    agents.add_argument(
+        "--sandboxed",
+        action="store_true",
+        help="Roles get only the company's own tools, and no shell, files, or web. By default they're full agents",
+    )
     agents.add_argument(
         "--model",
         choices=["sonnet", "opus", "haiku", "inherit"],

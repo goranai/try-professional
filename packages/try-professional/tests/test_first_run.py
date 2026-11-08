@@ -144,7 +144,7 @@ class TestDoctorReport:
             "executive/ceo",
         ):
             assert private not in output, private
-        assert "company: 9 departments, 22 roles" in output
+        assert "company: 8 departments, 20 roles" in output
 
     def test_a_private_check_still_shows_something_was_wrong(self, folder: Path, capsys: Any) -> None:
         self._company(folder)

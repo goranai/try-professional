@@ -13,7 +13,7 @@ You describe a business, and Claude Code designs a company for it: departments, 
 
 ## Who it's for
 
-**Freelancers, agencies, and small businesses that send documents to clients or the public:** proposals, replies, flyers, newsletters, policies. Each piece of work gets a review nobody can skip, a separate legal check when it touches claims, privacy, or terms, and an audit trail you can show a client.
+**Anyone who wants a team of agents, organized like a professional company:** you give the CEO a job, a department's manager hands it to a worker, the worker does it with real tools (the shell, `git` and `gh`, files, and the web), QA and the manager check it, and the CEO reports back to you. Each role remembers its own work, uses its own skills, and leaves an audit trail.
 
 **For an everyday one-off task, use a single agent.** It's cheaper and faster. A hierarchy spends tokens on reviews, and that's only worth it when a mistake would reach someone outside.
 
@@ -156,7 +156,8 @@ Each piece of work has one owner, gets reviewed, and leaves an audit log you can
 - **A company from one description**, adapted from five industry templates, in any language. It proposes, and a person approves.
 - **Skills from GitHub, vetted first.** `skill-customs` pins each one to a commit and checks its license and content, and a model judges which ones fit each role. It can also be used [on its own](https://github.com/goranai/try-professional/blob/main/packages/skill-customs/README.md).
 - **A permanent company.** Roles have their own memory, departments and the company have shared memory, and later commands get the finished work of earlier ones.
-- **Reviews that can't be skipped.** QA reviews everything. Legal review is triggered by what the work is, whatever a model declares.
+- **Every role is a full agent.** In Claude Code, each role works with the shell, `git` and `gh`, files, and the web, and Claude Code asks you before commands unless you allow them. `trypro agents claude-code --sandboxed` takes those tools away, for a company that should only write documents.
+- **Reviews that can't be skipped.** QA reviews everything. A Legal department is optional, and off unless the business needs one: then its review is triggered by what the work is, whatever a model declares.
 - **Rules held by code.** Work must report on every item of its brief. Reviews can't approve with blockers. Unmet criteria and unverified claims reach you even if a final report leaves them out. Every command stops at a token limit and asks you, by default 60,000 for a small one and 200,000 for a large one on the API runner, and 150,000 and 500,000 over MCP, where usage is an estimate. It also stops, and says why, when a role keeps spending with nothing moving. [Tests play a misbehaving model](https://github.com/goranai/try-professional/blob/main/packages/try-professional/tests/test_misbehaving_model.py) against these.
 - **Real separation over MCP.** Each role's server shows it only its own assignment, memory, and skills, and the session's server can't do a role's work.
 
@@ -172,7 +173,7 @@ CEO: turns it into criteria someone can check
 Department: does the work  <-------- sent back, saying what's wrong
     |                                    ^
     v                                    |
-QA reviews it, and then Legal, if it's public or touches licenses or personal data
+QA reviews it, and then Legal, if the company has one and the work is public or touches licenses or personal data
     |
     v
 CEO: the final report, in your language
@@ -183,7 +184,7 @@ deliverables/<run-id>/index.md, and an audit log
 
 1. **Design.** Claude Code calls the `trypro` tools to adapt one of five industry templates to your business, and to match skills to roles. [`skill-customs`](https://github.com/goranai/try-professional/blob/main/packages/skill-customs/README.md) pins each skill to a commit, and checks its license and content.
 2. **Approve.** You read the proposal and approve it in a terminal. No model can do this.
-3. **Roles.** Approving, in a folder `trypro setup claude-code` set up, writes one subagent per role. Each has no shell and no file tools, only a server bound to that role. `trypro agents claude-code` writes them again after a company changes.
+3. **Roles.** Approving, in a folder `trypro setup claude-code` set up, writes one subagent per role. Each has Claude Code's own tools, and a server bound to that role, which gives it only its own assignment, memory, and skills. `trypro agents claude-code` writes them again after a company changes.
 4. **Commands.** Your session only coordinates. It can see who's next, and it can't read an assignment or submit anything. A small command goes straight to one role, and a large one is planned by department heads.
 5. **Memory.** Roles keep their own memory, and later commands get the finished work of earlier ones.
 
@@ -267,7 +268,7 @@ On DeepSeek through the API runner, the one small command that finished took 25,
 - **It's only been proven on Claude.** On a cheap model, expect blocked commands and wasted tokens.
 - **Skill coverage is thin.** In real generations, 14% to 29% of what roles need had a matching skill, and the review screen says so. Roles without a skill rely on their instructions. Judged on a labelled set, skill matching found 33 of 44 right skills, and 19 of its 52 suggestions were wrong, so read what you approve.
 - **Cost per command is high** for small jobs. See above. Since 0.1.2, a small command that one role does goes through intake, the work, QA, and Legal if its triggers apply, and no longer a final report and its review.
-- **It works with files only.** It doesn't publish, send, buy, render video, or browse the web unless you turn on search. Its output tells you what a person must check.
+- **Real tools need care.** In Claude Code, roles can run commands and use the web, so a role can see the folder it runs in. Claude Code asks you before commands unless you allow them. The experimental API runner still gives roles only the company's own tools, with no shell.
 - **It can't check facts without sources.** With no web access, it marks claims as unverified, and leaves placeholders such as `[Bakery name]` or `[ISI PROMO]` for you to fill in.
 - **Reviews aren't proof.** [The test above](https://github.com/goranai/try-professional/blob/main/docs/research/qa_gates/README.md) is small, and a weak reviewer can still approve weak work. They can also be too strict, and send back good work.
 - **A command can stop at its token limit.** Rework costs tokens. In one acceptance run a small command stopped at the old 40,000 limit just short of finishing, and in the run that finished, the same command used about 37,800. That's why the default is now 60,000. Until it finishes, its work isn't exported as files. It tells you what happened and the exact lines to run: `trypro decide`, and then `/company continue <run-id>`, and it did finish when we tried it.

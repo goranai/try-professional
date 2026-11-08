@@ -30,7 +30,7 @@ from .config import CONFIG_NAME, CONFIG_TEMPLATE, load_config
 from .core.orchestrator import Orchestrator
 from .org import Org, load_org, validate_bundle
 from .org.loader import read_documents
-from .packs import available_packs, install_org
+from .packs import available_packs, default_packs, install_org
 
 __all__ = ["Company", "CompanyError", "RoleInfo", "RunResult", "RunStatus"]
 
@@ -91,13 +91,14 @@ class Company:
 
     @classmethod
     def create(cls, root: str | Path, *, name: str | None = None, packs: list[str] | None = None) -> Company:
-        """The default company, built from packs of ready-made departments. No model is called, and nothing is
-        spent. It has no skills until you add some (`trypro skills`). A company the AI designs from a description
-        comes from `trypro init "<description>"` instead, because a person approves it."""
+        """The default company, built from packs of ready-made departments, with no Legal unless `packs` names
+        it. No model is called, and nothing is spent. It has no skills until you add some (`trypro skills`). A company
+        the AI designs from a description comes from `trypro init "<description>"` instead, because a person approves
+        it."""
         folder = Path(root).resolve()
         if (folder / "org" / "org.yaml").exists():
             raise CompanyError(f"{folder} already has a company. Open it with Company(path).")
-        chosen = packs or available_packs()
+        chosen = packs or default_packs()
         unknown = sorted(set(chosen) - set(available_packs()))
         if unknown:
             raise CompanyError(f"Unknown packs: {', '.join(unknown)}. Available: {', '.join(available_packs())}")
@@ -185,12 +186,13 @@ class Company:
 
     # ---- Claude Code ---------------------------------------------------------------------------------------------
 
-    def setup_claude_code(self) -> list[Path]:
+    def setup_claude_code(self, *, sandboxed: bool = False) -> list[Path]:
         """Write what Claude Code needs to run this company: the /company command, one subagent per role, each bound
-        to its own role's server, and .mcp.json. Run it again after changing roles. Returns the files written."""
+        to its own role's server, and .mcp.json. Each role is a full agent, with the shell, files, git, and the web,
+        unless `sandboxed`. Run it again after changing roles. Returns the files written."""
         from .adapters.mcp.claude_code import write_claude_code_files
 
-        write_claude_code_files(self.root, self.org)
+        write_claude_code_files(self.root, self.org, sandboxed=sandboxed)
         claude = self.root / ".claude"
         return sorted([*claude.rglob("*.md"), self.root / ".mcp.json"])
 

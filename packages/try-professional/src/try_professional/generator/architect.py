@@ -35,13 +35,15 @@ You're designing the company itself. Adapt the template below to this business.
 missing. To keep a template department as it is, give its id in from_template with no roles.
 - Add only departments and roles this business would really have. Fewer is better: every role costs tokens on \
 every run.
-- Executive, Legal, and QA exist in every company and are added for you. Don't include them.
+- Executive and QA exist in every company and are added for you. Don't include them. A Legal department is added \
+only if you set needs_legal, for regulated work such as law, health care, finance, or insurance. Most businesses \
+don't need it.
 - Each department has exactly one head. A department of one person is fine.
 - Name each head what this business would call them: a CTO, a CFO, a Creative Director. The name is a title, and \
 adds no layer of management.
-- The company produces files only: research, scripts, plans, briefs, schedules. It can't render video, upload, \
-publish, or spend. Don't design roles that claim to.
-- It has no access to live data unless a person provides files, so don't promise real-time analysis.
+- Each role is a full agent on a computer: it can use a shell, git, GitHub's CLI, files, and the web. Design roles \
+for the work itself, and leave tools out of their names.
+- It can't spend money, and anything that publishes or changes something outside needs a person's approval first.
 - skill_needs are short English phrases naming a capability, such as "write a video hook". They're used to find \
 skills, so be concrete, and don't include anything private about the business.
 - Keep a template department's id and name when they fit this business. Only rename what this trade really calls \
@@ -83,7 +85,7 @@ def user_prompt(description: str, template: Template, previous: OrgProposal | No
     parts = [
         f"## Business\n{description}",
         f"## Closest template: {template.name}\n{json.dumps(template.summary(), ensure_ascii=False)}",
-        f"## Limit\nAt most {MAX_ROLES - 7} roles of your own: Executive, Legal, and QA use the rest.",
+        f"## Limit\nAt most {MAX_ROLES - 7} roles of your own: Executive, QA, and Legal if needed use the rest.",
     ]
     if previous is not None:
         parts.append(f"## Your previous proposal\n{previous.model_dump_json(exclude_defaults=True)}")

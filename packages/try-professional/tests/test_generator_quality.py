@@ -301,7 +301,10 @@ class TestNames:
         assert replace(role, id="seo-lead", title="").display_name == "SEO Lead"
 
     def test_compliance_reviewer_reads_as_a_name(self) -> None:
-        assert _org().role("legal/compliance-reviewer").display_name == "Compliance Reviewer"
+        compiled = compile_org(_template(), _template().keep_all("X").model_copy(update={"needs_legal": True}))
+        assert load_bundle(compiled.org, compiled.roles).role("legal/compliance-reviewer").display_name == (
+            "Compliance Reviewer"
+        )
 
     def test_escaped_names_are_cleaned(self) -> None:
         proposal = OrgProposal.model_validate(

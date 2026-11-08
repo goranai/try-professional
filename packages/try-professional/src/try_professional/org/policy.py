@@ -1,6 +1,6 @@
 """What a generated company must have. Separate from the spec, which stays permissive.
 
-org/v1 allows a company with no Legal department, because departments are removable. Nothing is
+Legal is optional: a business that needs it gets a Legal department and its gate together. Nothing is
 activated from `trypro init "..."` unless it also passes this. Someone can still change a company
 by hand afterwards.
 """
@@ -39,10 +39,11 @@ def check_policy(org: dict[str, Any], roles: dict[str, dict[str, Any]]) -> list[
     if root.split("/", 1)[0] != EXECUTIVE or departments.get(EXECUTIVE, {}).get("activation") != "always":
         issues.append(Issue("GEN001", "the root role must be in an always-active Executive department"))
 
-    if LEGAL not in departments:
-        issues.append(Issue("GEN002", "a generated company must have a Legal department"))
+    # Legal is optional. A company that has it keeps its whole gate, and one that doesn't has no legal gate.
     gate = (org.get("gates") or {}).get(LEGAL) or {}
-    if (
+    if (LEGAL in departments) != bool(gate):
+        issues.append(Issue("GEN002", "a Legal department and its gate come together, or not at all"))
+    if LEGAL in departments and (
         set(gate.get("triggers", [])) != REQUIRED_TRIGGERS
         or gate.get("on_unavailable", "block") != "block"
         or str(gate.get("reviewer", "")).split("/", 1)[0] != LEGAL

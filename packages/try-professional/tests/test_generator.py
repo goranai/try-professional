@@ -48,7 +48,7 @@ from try_professional.generator.compiler import QA_REVIEWER, role_document
 from try_professional.generator.provision import needs_in_search_order
 from try_professional.org import load_bundle, load_org, validate_bundle
 from try_professional.org.policy import MAX_ROLES, check_policy
-from try_professional.packs import available_packs, install_org
+from try_professional.packs import default_packs, install_org
 from try_professional.skills import Decisions, RerankCache, SkillCatalog, Verdict, clean_line, rerank, shortlist
 from try_professional.skills.catalog import UNCATEGORIZED, SkillRecord
 
@@ -159,14 +159,13 @@ class TestTemplates:
             "distribution",
             "analytics",
             "qa",
-            "legal",
         }
         assert {"editor", "thumbnail-designer"} <= set(departments["production"]["roles"])
         assert {"title-seo", "scheduler"} <= set(departments["distribution"]["roles"])
 
     def test_general_company_keeps_the_nine_departments(self) -> None:
         compiled = compile_org(load_template(GENERAL), load_template(GENERAL).keep_all("Co"))
-        assert set(available_packs()) <= {d["id"] for d in compiled.org["departments"]}
+        assert set(default_packs()) <= {d["id"] for d in compiled.org["departments"]}
 
     def test_choosing_a_template_happens_locally(self) -> None:
         ranked = rank_templates("a marketing agency for clients", FakeEmbedder())
@@ -185,11 +184,18 @@ class TestCompilerHoldsTheLine:
             {"company_name": "X", "departments": [{"id": "work", "name": "Work", "roles": [_role("boss", "head")]}]}
         )
         ids = {d["id"] for d in compiled.org["departments"]}
-        assert {"executive", "qa", "legal"} <= ids
-        assert compiled.org["gates"]["legal"]["on_unavailable"] == "block"
+        assert {"executive", "qa"} <= ids
+        # Legal only when the business needs it, and then always with its whole gate.
+        assert "legal" not in ids and compiled.org["gates"] == {}
+        _, with_legal = self._check(
+            {"company_name": "X", "needs_legal": True,
+             "departments": [{"id": "work", "name": "Work", "roles": [_role("boss", "head")]}]}
+        )  # fmt: skip
+        assert "legal" in {d["id"] for d in with_legal.org["departments"]}
+        assert with_legal.org["gates"]["legal"]["on_unavailable"] == "block"
 
     def test_a_proposal_cant_replace_legal(self) -> None:
-        arguments = _keep()
+        arguments = {**_keep(), "needs_legal": True}
         arguments["departments"].append({"id": "legal", "name": "Fake", "roles": [_role("yes-man", "head")]})
         _, compiled = self._check(arguments)
         assert "legal/yes-man" not in compiled.roles
@@ -298,7 +304,8 @@ class TestCompilerHoldsTheLine:
 
 class TestPolicy:
     def _bundle(self) -> tuple[dict[str, Any], dict[str, Any]]:
-        compiled = compile_org(_template(), _template().keep_all("X"))
+        # With Legal, so its rules have something to check.
+        compiled = compile_org(_template(), _template().keep_all("X").model_copy(update={"needs_legal": True}))
         return compiled.org, compiled.roles
 
     def test_a_compiled_company_passes(self) -> None:
@@ -323,11 +330,13 @@ class TestPolicy:
         assert code in [issue.code for issue in check_policy(org, roles)]
 
     def test_the_spec_itself_stays_permissive(self, tmp_path: Path) -> None:
-        """A company with no Legal is still valid org/v1, because departments are removable."""
+        """A company with no Legal is valid, and so is one with Legal and its whole gate. Half of one isn't."""
         install_org(tmp_path / "org", "Co", ["engineering"])
         loaded = load_org(tmp_path / "org")
         assert [i for i in validate_bundle(loaded.raw, loaded.raw_roles) if i.severity == "error"] == []
-        assert "GEN002" in [issue.code for issue in check_policy(loaded.raw, loaded.raw_roles)]
+        assert "GEN002" not in [issue.code for issue in check_policy(loaded.raw, loaded.raw_roles)]
+        half = {**loaded.raw, "gates": {"legal": {"reviewer": "legal/counsel"}}}
+        assert "GEN002" in [issue.code for issue in check_policy(half, loaded.raw_roles)]
 
     def test_the_size_limit_leaves_room_for_general_company(self) -> None:
         compiled = compile_org(load_template(GENERAL), load_template(GENERAL).keep_all("X"))
@@ -1104,8 +1113,8 @@ class TestCommandLine:
         monkeypatch.chdir(tmp_path)
         assert main(["init", "--skip-model", "--packs", "engineering"]) == 0
         assert main(["org", "validate"]) == 0
-        assert main(["org", "validate", "--policy"]) == 1
-        assert "GEN002" in capsys.readouterr().out
+        assert main(["org", "validate", "--policy"]) == 0
+        assert "GEN002" not in capsys.readouterr().out
 
     def test_templates_are_listed(self, capsys: pytest.CaptureFixture[str]) -> None:
         assert main(["templates"]) == 0

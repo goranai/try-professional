@@ -23,8 +23,20 @@ def test_the_package_exports_the_stable_api() -> None:
 def test_create_builds_a_valid_default_company(company: Company) -> None:
     assert company.validate() == []
     refs = {role.ref for role in company.roles()}
-    assert {"executive/ceo", "marketing/content-writer", "legal/counsel"} <= refs
+    assert {"executive/ceo", "marketing/content-writer", "engineering/qa"} <= refs
     assert any(role.is_head for role in company.roles())
+    # Legal is optional, and off by default.
+    assert not any(ref.startswith("legal/") for ref in refs)
+    assert company.org.gates == {}
+
+
+def test_legal_comes_with_its_gate_when_asked_for(tmp_path: Path) -> None:
+    from try_professional.packs import default_packs
+
+    company = Company.create(tmp_path / "clinic", name="Clinic", packs=[*default_packs(), "legal"])
+    assert company.validate() == []
+    assert "legal/counsel" in {role.ref for role in company.roles()}
+    assert company.org.gates["legal"].reviewer == "legal/counsel"
 
 
 def test_create_refuses_a_folder_that_has_a_company(company: Company) -> None:

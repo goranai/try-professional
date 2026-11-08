@@ -159,6 +159,11 @@ class OrgProposal(_Strict):
         "auto", description="auto, or one BCP 47 code if the business explicitly asks for one language"
     )
     business: ProposedBusiness = Field(default_factory=ProposedBusiness)
+    needs_legal: bool = Field(
+        False,
+        description="True only for regulated work, such as law, health care, finance, or insurance, or a business that "
+        "handles sensitive personal data. It adds a Legal department that reviews public work",
+    )
     departments: list[ProposedDepartment] = Field(min_length=1, max_length=12)
 
     @field_validator("working_language", mode="before")
