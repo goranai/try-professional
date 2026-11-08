@@ -45,6 +45,8 @@ from try_professional.memory.embedding import use_embedding_service  # noqa: E40
 from try_professional.org import load_org  # noqa: E402
 
 MODEL = "claude-sonnet-5-5"
+ROLE_MODEL = os.environ.get("TRYPRO_BENCH_ROLE_MODEL", "sonnet")
+CODE_COMMIT = os.environ.get("TRYPRO_BENCH_COMMIT", "")
 SETUPS = ("one-agent", "flat-swarm", "hierarchy")
 RUNS_PER_CELL = 3
 SEED = 20261108
@@ -177,22 +179,48 @@ def raise_limits(root: Path) -> None:
 
 
 def loadouts(root: Path) -> dict[str, list[str]]:
+    from try_professional.cli import _skills
+
     config = load_config(root)
-    orchestrator = Orchestrator(load_org(config.org_dir), config.home)
-    try:
-        return {ref: [str(s.get("name")) for s in orchestrator.skills.loadout(ref)] for ref in orchestrator.org.roles}
-    finally:
-        orchestrator.close()
+    org = load_org(config.org_dir)
+    skills = _skills(config, org)
+    return {ref: [str(s["skill_id"]).rsplit("/", 1)[-1] for s in skills.loadout(ref)] for ref in org.roles}
 
 
 def company_meta(out: Path, key: str) -> dict[str, Any]:
     return json.loads((out / "companies" / f"{key}.json").read_text(encoding="utf-8"))
 
 
+REVIEWER = re.compile(r"review|\bqa\b|quality|compliance|counsel|legal", re.IGNORECASE)
+SESSION_MODEL = {"hierarchy": MODEL, "hierarchy-mixed": "claude-haiku-5-5", "hierarchy-haiku": "claude-haiku-5-5"}
+
+
+def is_reviewer(org: Any, ref: str) -> bool:
+    """docs/research/mixed_models/DESIGN.md's rule: a review department, or a reviewer by id or title."""
+    department, role_id = ref.split("/", 1)
+    return bool(REVIEWER.search(department) or REVIEWER.search(role_id) or REVIEWER.search(org.role(ref).title))
+
+
+def set_role_models(dest: Path, setup: str) -> dict[str, str]:
+    """The models each role's subagent runs on, for the mixed-models study. The benchmark itself is all Sonnet."""
+    org = load_org(dest / "org")
+    chosen = {}
+    for ref in org.roles:
+        if setup == "hierarchy-haiku" or (setup == "hierarchy-mixed" and is_reviewer(org, ref)):
+            chosen[ref] = "haiku"
+        else:
+            chosen[ref] = "sonnet"
+        agent = dest / ".claude" / "agents" / f"trypro-{ref.replace('/', '-')}.md"
+        text = agent.read_text(encoding="utf-8")
+        agent.write_text(re.sub(r"(?m)^model: \w+$", f"model: {chosen[ref]}", text, count=1), encoding="utf-8")
+    return chosen
+
+
 def fresh_company(out: Path, key: str, dest: Path) -> Path:
     """A new copy of the approved company, with Claude Code's files pointing at the copy."""
     shutil.copytree(out / "companies" / key, dest, ignore=shutil.ignore_patterns("*.lock"))
-    write_claude_code_files(dest, load_org(dest / "org"))
+    # Every role on Sonnet, as the design says. By default a "fast" role would get Haiku.
+    write_claude_code_files(dest, load_org(dest / "org"), model=ROLE_MODEL)
     return dest
 
 
@@ -435,7 +463,9 @@ def decide(company: Path, run_id: str, person: Person) -> int:
     return answered
 
 
-def hierarchy(goal: str, meta: dict[str, Any], company: Path, work: Path, budget: float) -> dict[str, Any]:
+def hierarchy(
+    goal: str, meta: dict[str, Any], company: Path, work: Path, budget: float, session_model: str = MODEL
+) -> dict[str, Any]:
     person, usage, cost, sessions = Person(), {}, 0.0, 0
     allowed = f"Agent,mcp__trypro__*,{ROLE_PREFIX}*"
     prompt = f"/company {full_text(goal)}"
@@ -446,7 +476,7 @@ def hierarchy(goal: str, meta: dict[str, Any], company: Path, work: Path, budget
         if left <= 0.01:
             break
         flags = ["--max-budget-usd", f"{left:.2f}"]
-        result = session(prompt, company, flags, allowed, model=MODEL)
+        result = session(prompt, company, flags, allowed, model=session_model)
         sessions += 1
         session_cost = float((result.get("usage") or {}).get("cost_usd_at_list_price") or 0.0)
         cost += session_cost
@@ -472,12 +502,18 @@ def hierarchy(goal: str, meta: dict[str, Any], company: Path, work: Path, budget
             "report": str(state.get("final_artifact_id"))}  # fmt: skip
 
 
-SETUP_FN = {"one-agent": one_agent, "flat-swarm": flat_swarm, "hierarchy": hierarchy}
+SETUP_FN = {
+    "one-agent": one_agent,
+    "flat-swarm": flat_swarm,
+    "hierarchy": hierarchy,
+    "hierarchy-mixed": hierarchy,
+    "hierarchy-haiku": hierarchy,
+}
 
 
 def collect_work(setup: str, folder: Path, result: dict[str, Any]) -> tuple[list[tuple[str, str]], str]:
     """The final files a run left, and its CLOSING.md. The hierarchy's own report to a person isn't the work."""
-    if setup == "hierarchy":
+    if setup.startswith("hierarchy"):
         base = folder / "deliverables" / str(result.get("run_id"))
         roots = [base / "draft"] if (base / "draft").is_dir() else [base]
     else:
@@ -508,8 +544,10 @@ def one_run(out: Path, run: dict[str, Any], frozen: str) -> None:
     spec = PILOT if run["goal"] == "pilot" else GOALS[run["goal"]]
     meta = company_meta(out, run["goal"])
     budget = BUDGET_USD[str(spec["size"])]
-    if run["setup"] == "hierarchy":
+    role_models: dict[str, str] = {}
+    if run["setup"].startswith("hierarchy"):
         company = fresh_company(out, run["goal"], folder / "company")
+        role_models = set_role_models(company, run["setup"])
         work = company
     else:
         company = out / "companies" / run["goal"]
@@ -517,9 +555,13 @@ def one_run(out: Path, run: dict[str, Any], frozen: str) -> None:
         work.mkdir()
     started = time.time()
     print(f"[{run['id']}] start", flush=True)
-    outcome = SETUP_FN[run["setup"]](str(spec["goal"]), meta, company, work, budget)
+    if run["setup"].startswith("hierarchy"):
+        outcome = hierarchy(str(spec["goal"]), meta, company, work, budget, SESSION_MODEL[run["setup"]])
+        outcome["role_models"] = role_models
+    else:
+        outcome = SETUP_FN[run["setup"]](str(spec["goal"]), meta, company, work, budget)
     outcome["seconds"] = round(time.time() - started)
-    if run["setup"] == "hierarchy":
+    if run["setup"].startswith("hierarchy"):
         stop_services(company)
     files, closing = collect_work(run["setup"], work, outcome)
     target = folder / "work_files"
@@ -527,7 +569,8 @@ def one_run(out: Path, run: dict[str, Any], frozen: str) -> None:
     for n, (name, text) in enumerate(files, start=1):
         (target / f"{n:02d}.txt").write_text(f"{name}\n\n{text}", encoding="utf-8")
     (folder / "closing.md").write_text(closing, encoding="utf-8")
-    record = {**run, "design_sha256": frozen, "budget_usd": budget, **outcome, "files": len(files),
+    record = {**run, "design_sha256": frozen, "code_commit": CODE_COMMIT, "role_model": ROLE_MODEL,
+              "budget_usd": budget, **outcome, "files": len(files),
               "has_closing": bool(closing.strip())}  # fmt: skip
     result_path.write_text(json.dumps(record, ensure_ascii=False, indent=1), encoding="utf-8")
     print(f"[{run['id']}] {'finished' if record['finished'] else 'unfinished'} ${record['cost_usd']}", flush=True)
@@ -559,6 +602,22 @@ def main() -> None:
     if command == "pilot":
         for setup in SETUPS:
             one_run(out, {"id": f"pilot-{setup}", "goal": "pilot", "setup": setup, "n": 1}, frozen)
+        return
+    if command == "mixed":
+        # After the benchmark: docs/research/mixed_models/DESIGN.md. One run per goal for each.
+        runs = [{"id": f"{g}-{s}-1", "goal": g, "setup": s, "n": 1} for g in GOALS
+                for s in ("hierarchy-mixed", "hierarchy-haiku")]  # fmt: skip
+        with ThreadPoolExecutor(max_workers=PARALLEL) as pool:
+            list(pool.map(lambda r: one_run(out, r, frozen), runs))
+        return
+    if command == "loadouts":
+        for meta_path in [*sorted((out / "companies").glob("G*.json")), out / "companies" / "pilot.json"]:
+            if "operator" in meta_path.name or not meta_path.is_file():
+                continue
+            meta = json.loads(meta_path.read_text(encoding="utf-8"))
+            meta["loadouts"] = loadouts(out / "companies" / meta_path.stem)
+            meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=1), encoding="utf-8")
+            print(meta_path.stem, sum(len(v) for v in meta["loadouts"].values()), "skill slots")
         return
     if command == "run":
         runs = plan()
