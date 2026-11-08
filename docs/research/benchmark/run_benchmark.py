@@ -93,7 +93,14 @@ def stop_services(folder: Path) -> list[int]:
     for line in listed.splitlines():
         pid, _, command = line.partition("\t")
         if pid.strip().isdigit() and marker in command.replace("/", "\\").lower():
-            subprocess.run(["powershell", "-NoProfile", "-Command", f"Stop-Process -Id {int(pid)} -Confirm:$false"])
+            subprocess.run(
+                [
+                    "powershell",
+                    "-NoProfile",
+                    "-Command",
+                    f"Stop-Process -Id {int(pid)} -Confirm:$false -ErrorAction SilentlyContinue",
+                ]
+            )
             stopped.append(int(pid))
     return stopped
 

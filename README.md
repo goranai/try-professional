@@ -109,6 +109,26 @@ trypro cancel <run-id>                        Stop it. Its records stay
 trypro agents claude-code                     Rewrite the roles for Claude Code, after the company changes
 ```
 
+## Build on Try Professional
+
+A company can be a part of your own agent. The Python API is **stable** across 0.x minor versions; the MCP tools and the adapter interface are **experimental**. [What's stable, the Claude Code path, custom roles, and extending it](docs/building-on.md).
+
+```python
+from try_professional import Company
+
+company = Company.create("acme", name="Acme")  # the default company: no model, no cost
+company.add_role(
+    "marketing",
+    "newsletter-editor",
+    title="Newsletter Editor",
+    mission="Write the weekly customer newsletter.",
+    skill_needs=["write email newsletters"],
+)
+company.setup_claude_code()  # then, in Claude Code: /company <goal>
+```
+
+[`examples/claude-code-agent`](examples/claude-code-agent/) has a `delegate()` tool your agent can call, to hand a goal to the company through Claude Code and read back what it made. Approving a company the AI designed, and answering a run's questions, stay with a person.
+
 ## Multi-agent orchestration for Claude Code
 
 Each piece of work has one owner, gets reviewed, and leaves an audit log you can verify. Each role runs as its own subagent, which sees only its own assignment, memory, and skills. The rules that matter are enforced by code, not by asking a model nicely.
