@@ -321,7 +321,7 @@ class TestPolicy:
             (lambda o, r: o["departments"][1].pop("qa_gate"), "GEN004"),
             (lambda o, r: r["scriptwriting/scriptwriter"]["allowed_tools"].append("shell"), "GEN006"),
             (lambda o, r: o.update(llm_overrides={"qa": {"model": "x"}}), "GEN007"),
-            (lambda o, r: o["pipeline"]["budget"].update(max_tokens_per_run=None), "GEN008"),
+            (lambda o, r: o["pipeline"]["budget"].update(max_tokens_per_run=-5), "GEN008"),
         ],
     )  # fmt: skip
     def test_each_rule_catches_its_case(self, change: Any, code: str) -> None:
@@ -843,9 +843,9 @@ class TestEstimate:
         ]}))  # fmt: skip
         assert estimate_run(load_bundle(small.org, small.roles)).high < estimate_run(shorts_org).high
 
-    def test_general_company_warns_about_its_ceiling(self) -> None:
+    def test_no_ceiling_means_no_warning(self) -> None:
         compiled = compile_org(load_template(GENERAL), load_template(GENERAL).keep_all("X"))
-        assert estimate_run(load_bundle(compiled.org, compiled.roles)).may_hit_ceiling
+        assert not estimate_run(load_bundle(compiled.org, compiled.roles)).may_hit_ceiling
 
 
 class FakeGitHub(GitHubClient):

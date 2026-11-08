@@ -326,6 +326,5 @@ def test_status_shows_both_sets_of_limits(folder: Path, capsys: pytest.CaptureFi
     capsys.readouterr()
     main(["status", "--tokens"])
     output = capsys.readouterr().out
-    assert "120,000 small, 300,000 large" in output
-    assert "150,000 small, 500,000 large" in output
+    assert "no limit small, no limit large" in output
     assert "x3.3" in output

@@ -23,8 +23,11 @@ from try_professional.core.orchestrator import Orchestrator
 from try_professional.core.pipeline import Purpose, Submission
 from try_professional.core.pipeline.machine import _token_limit
 from try_professional.org import Org, load_org
-from try_professional.org.model import DEFAULT_MAX_TOKENS_PER_RUN, DEFAULT_MAX_TOKENS_PER_SMALL_COMMAND
 from try_professional.packs import available_packs, install_org
+
+from .conftest import LARGE_LIMIT as DEFAULT_MAX_TOKENS_PER_RUN
+from .conftest import SMALL_LIMIT as DEFAULT_MAX_TOKENS_PER_SMALL_COMMAND
+from .conftest import with_limits
 
 ROUTES = ModelRoutes({"standard": "m", "executive": "m", "fast": "m"})
 
@@ -62,6 +65,8 @@ def _submit(payload: Any, **extra: Any) -> list[ToolCall]:
 @pytest.fixture
 def org(tmp_path: Path) -> Org:
     install_org(tmp_path / "org", "Test", available_packs())
+    # These tests are about stopping a misbehaving model, so their company has limits to stop at.
+    with_limits(tmp_path / "org")
     return load_org(tmp_path / "org")
 
 
@@ -490,13 +495,13 @@ class TestEndlessBehaviour:
         assert company.org.pipeline.max_tokens_per_run == DEFAULT_MAX_TOKENS_PER_RUN
         assert company.org.pipeline.max_tokens_per_small_command == DEFAULT_MAX_TOKENS_PER_SMALL_COMMAND
 
-    def test_a_company_with_no_budget_written_down_still_has_one(self, tmp_path: Path) -> None:
+    def test_a_company_with_no_budget_written_down_has_no_token_limit(self, tmp_path: Path) -> None:
         install_org(tmp_path / "bare", "Bare", available_packs())
         path = tmp_path / "bare" / "org.yaml"
         data = yaml.safe_load(path.read_text(encoding="utf-8"))
-        del data["pipeline"]["budget"]
+        data["pipeline"].pop("budget", None)
         path.write_text(yaml.safe_dump(data), encoding="utf-8")
-        assert load_org(tmp_path / "bare").pipeline.max_tokens_per_run == DEFAULT_MAX_TOKENS_PER_RUN
+        assert load_org(tmp_path / "bare").pipeline.max_tokens_per_run is None
 
     def test_a_small_command_stops_at_its_own_smaller_limit(self, company: Orchestrator) -> None:
         """A stuck small command once spent 212,016 tokens. It stops well before that now, and says what happened."""

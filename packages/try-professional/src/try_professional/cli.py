@@ -1013,17 +1013,17 @@ def _status_skill_gaps(config: ProjectConfig) -> None:
         _print(f"Skill gaps: {len(gaps)} needs with no skill. See them with: trypro skills gaps")
 
 
+def _limit(value: int | None) -> str:
+    return "no limit" if value is None else f"{value:,}"
+
+
 def _status_tokens(orchestrator: Orchestrator) -> None:
     budget = orchestrator.org.pipeline
-    _print("Where a command stops and asks you, in this company:")
-    _print(
-        f"  API runner, real tokens:            {budget.max_tokens_per_small_command:,} small, "
-        f"{budget.max_tokens_per_run:,} large"
-    )
-    _print(
-        f"  Over MCP, the server's estimate x{MCP_ESTIMATE_FACTOR}: {budget.mcp_max_tokens_per_small_command:,} small, "
-        f"{budget.mcp_max_tokens_per_run:,} large"
-    )
+    _print("Token limits, where a command stops and asks you (none unless org.yaml sets pipeline.budget):")
+    small, large = _limit(budget.max_tokens_per_small_command), _limit(budget.max_tokens_per_run)
+    _print(f"  API runner, real tokens:            {small} small, {large} large")
+    small, large = _limit(budget.mcp_max_tokens_per_small_command), _limit(budget.mcp_max_tokens_per_run)
+    _print(f"  Over MCP, the server's estimate x{MCP_ESTIMATE_FACTOR}: {small} small, {large} large")
     _print("Tokens by month:")
     months = orchestrator.company.tokens_by_month()
     if not months:

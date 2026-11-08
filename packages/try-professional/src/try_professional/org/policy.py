@@ -66,6 +66,9 @@ def check_policy(org: dict[str, Any], roles: dict[str, dict[str, Any]]) -> list[
         issues.append(Issue("GEN007", "a generated company can't name its own model endpoints or keys"))
 
     budget = (org.get("pipeline") or {}).get("budget") or {}
-    if not budget.get("max_tokens_per_run"):
-        issues.append(Issue("GEN008", "a generated company must have a token ceiling"))
+    for name in ("max_tokens_per_run", "max_tokens_per_small_command"):
+        value = budget.get(name)
+        # No limit is fine. A limit that's set has to be a real one.
+        if value is not None and (not isinstance(value, int) or value <= 0):
+            issues.append(Issue("GEN008", f"{name} must be a positive number of tokens, or left out for no limit"))
     return issues

@@ -367,8 +367,10 @@ class TestBudgets:
         assert state.package_usage["wp1"] > 1
 
     def test_package_budgets_cant_exceed_the_run_limit(self, company: Orchestrator, org: Org) -> None:
-        limit = org.pipeline.max_tokens_per_run
-        assert limit
+        from dataclasses import replace
+
+        limit = 300_000
+        company.org = replace(org, pipeline=replace(org.pipeline, max_tokens_per_run=limit))
         run_id, _ = company.start("Do a thing")
         runner = ApiRunner(company, ScriptedClient(self._plan(limit + 1)), ROUTES)
         result = runner.resume(run_id)

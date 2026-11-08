@@ -10,7 +10,7 @@ Cheap models finish their work. On `step-5-preview`, through the company's own e
 
 - **Hand-ins are forgiven their wording, and never their content.** Cheap models name fields their own way: `text` for `claim`, `issue` and `fix` for a review's `description`, or an extra `status`. Known alternative names are mapped, unknown fields inside items are dropped, and a claim with no source is marked unverified, which is what a person is told. The strict checks still run after, on both engines.
 - **Gateways are waited out.** A 502 or 503 gets 5 retries, with waits up to 30 seconds. A 400 with no reason gets one retry, and then the instructions are sent at the top of the first message instead of as a system message, which one gateway refused beside some text.
-- **Token limits on the API runner are 120,000 for a small command and 300,000 for a large one,** up from 60,000 and 200,000. A reasoning model's thinking counts as output, and one review wrote 12,700 tokens. Over MCP, they're unchanged. Stuck-run detection still stops a loop first.
+- **No token limits by default.** A company works until the job is done. Loop protection still stops a role that goes in circles: 24 model calls with nothing moving, or 3 hand-ins refused in a row. To cap spending, set `max_tokens_per_small_command` and `max_tokens_per_run` (and the `mcp_` ones) under `pipeline.budget`. Companies that already have limits written in `org/org.yaml` keep them; delete those lines to remove them. `null` or a missing line means no limit.
 - **A shell command's output is cut to its last 6,000 characters,** because every call re-sends it.
 
 ## 0.5.0 (2026-11-08)

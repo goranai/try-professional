@@ -39,14 +39,14 @@ def _note_package_usage(step: _Step, event: UsageRecorded) -> None:
         state.counters.package_overruns += 1
 
 
-def _token_limit(state: RunState, org: Org) -> int:
+def _token_limit(state: RunState, org: Org) -> int | None:
     """A person's own decision wins. Otherwise every command has a limit, and a small one has a smaller one."""
     if state.budget_override:
         return state.budget_override
     return _own_limit(state, org)
 
 
-def _own_limit(state: RunState, org: Org) -> int:
+def _own_limit(state: RunState, org: Org) -> int | None:
     """The command's own limit, before any budget a person added."""
     pipeline = org.pipeline
     if state.usage.estimated:
@@ -84,6 +84,12 @@ def _progress_mark(state: RunState) -> str:
     approved = sum(task.status == TaskStatus.APPROVED for task in state.tasks.values())
     rework = state.counters.rework_loops
     return f"{work}:{approved}:{settled}:{len(state.tasks)}:{rework}:{state.phase.value}"
+
+
+def _spent_a_whole_limit(state: RunState, org: Org) -> bool:
+    """With a token limit set, a whole one spent with nothing moving is a loop. With none, calls and refusals decide."""
+    limit = _own_limit(state, org)
+    return limit is not None and state.usage.total - state.tokens_at_progress >= limit * STUCK_TOKEN_SHARE
 
 
 def _ask_stuck(step: _Step, invocation: Invocation | None, calls: int) -> None:
@@ -136,7 +142,7 @@ def _check_progress(step: _Step, event: UsageRecorded) -> bool:
     looping = (
         state.calls_since_progress >= STUCK_CALLS
         or state.counters.invalid_outputs - state.refusals_at_progress >= STUCK_REFUSALS
-        or state.usage.total - state.tokens_at_progress >= _own_limit(state, step.org) * STUCK_TOKEN_SHARE
+        or _spent_a_whole_limit(state, step.org)
     )
     if not looping:
         return False
@@ -162,7 +168,7 @@ def _on_usage(step: _Step, event: UsageRecorded) -> None:
     if _check_progress(step, event):
         return
     limit = _token_limit(state, step.org)
-    if state.usage.total <= limit or state.phase in TERMINAL_PHASES:
+    if limit is None or state.usage.total <= limit or state.phase in TERMINAL_PHASES:
         return
     if state.phase == RunPhase.BLOCKED:
         return

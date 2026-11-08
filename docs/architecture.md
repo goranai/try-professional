@@ -1008,7 +1008,7 @@ Nothing is marked complete without passing tests. Each phase ends with what was 
 
 The permanent-company journey (4c) ran on Claude through the MCP adapter, with each role as its own process, on three businesses. See `docs/research/journey/README.md`. **It proves the system and the MCP path, and it doesn't prove quality on a cheap model.** The acceptance journey passed on 2026-11-08, on its sixth run, and reviewers were tested with seeded flaws: see that README and `docs/research/qa_gates/README.md`.
 
-Rules that matter are now enforced by code, whichever model runs, and `test_misbehaving_model.py` plays a bad model against them. Every command has a token limit by default. Each company shares one embedding process. `trypro check-model` needs a model to finish one small real command before calling it suitable.
+Rules that matter are now enforced by code, whichever model runs, and `test_misbehaving_model.py` plays a bad model against them. A command can have a token limit, set under `pipeline.budget`; there's none by default, and loop protection stops a role going in circles. Each company shares one embedding process. `trypro check-model` needs a model to finish one small real command before calling it suitable.
 
 | Phase | Builds | Exit criteria |
 |---|---|---|

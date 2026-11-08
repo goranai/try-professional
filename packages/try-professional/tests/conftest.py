@@ -159,3 +159,18 @@ def text_response(text: str, stop_reason: str = "end", detail: str = "") -> Chat
         model="test-model",
         detail=detail,
     )
+
+
+SMALL_LIMIT = 120_000
+LARGE_LIMIT = 300_000
+
+
+def with_limits(org_dir: Path, small: int = SMALL_LIMIT, large: int = LARGE_LIMIT) -> None:
+    """Token limits are off by default. Tests of what happens at one set one here."""
+    import yaml
+
+    path = org_dir / "org.yaml"
+    data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    budget = data.setdefault("pipeline", {}).setdefault("budget", {})
+    budget.update(max_tokens_per_run=large, max_tokens_per_small_command=small)
+    path.write_text(yaml.safe_dump(data, sort_keys=False, allow_unicode=True), encoding="utf-8")

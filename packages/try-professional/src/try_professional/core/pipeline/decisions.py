@@ -165,7 +165,7 @@ def _on_human(step: _Step, event: HumanDecided) -> None:
         step.next_gate(task)
     elif request.kind == "budget":
         # With no amount, half a limit more. Otherwise the very next token would stop it again. It can stop again after.
-        state.budget_override = event.new_token_budget or state.usage.total + _token_limit(state, step.org) // 2
+        state.budget_override = event.new_token_budget or state.usage.total + (_token_limit(state, step.org) or 0) // 2
     elif request.kind == "runaway":
         state.assignment_limit = state.counters.assignments + MAX_ASSIGNMENTS
 

@@ -21,6 +21,7 @@ from try_professional.core.pipeline.machine import STUCK_CALLS, STUCK_REFUSALS
 from try_professional.org import Org, load_org
 from try_professional.packs import available_packs, install_org
 
+from .conftest import with_limits
 from .test_misbehaving_model import ROUTES, BadModel, _submit
 
 SMALL = {"size": "small", "route_department": "marketing", "route_role": "marketing/content-writer"}
@@ -29,6 +30,7 @@ SMALL = {"size": "small", "route_department": "marketing", "route_role": "market
 @pytest.fixture
 def company(tmp_path: Path) -> Iterator[Orchestrator]:
     install_org(tmp_path / "org", "Test", available_packs())
+    with_limits(tmp_path / "org")
     orchestrator = Orchestrator(load_org(tmp_path / "org"), tmp_path / "home")
     yield orchestrator
     orchestrator.close()

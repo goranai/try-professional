@@ -243,9 +243,9 @@ class TestWhatARoleSees:
             payload = submit_spec(name).input_schema["properties"]["payload"]
             assert set(payload["properties"]) == set(model.model_fields), name
 
-    def test_new_companies_have_a_token_ceiling_by_default(self, org: Org) -> None:
-        assert org.pipeline.max_tokens_per_run == 300_000
-        assert org.pipeline.max_tokens_per_small_command == 120_000
+    def test_new_companies_have_no_token_limit_by_default(self, org: Org) -> None:
+        assert org.pipeline.max_tokens_per_run is None
+        assert org.pipeline.max_tokens_per_small_command is None
 
     def test_check_model_keeps_its_own_bar(self) -> None:
         """A higher limit for real work must not make a model easier to call suitable."""
