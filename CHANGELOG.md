@@ -2,6 +2,31 @@
 
 Each version of `try-professional`. `skill-customs` is listed only when it changes.
 
+## 0.2.0 (2026-11-08)
+
+Better skill matching, and a stable base to build other agents on.
+
+### Before you upgrade
+
+- **Existing companies keep working,** with no change to `org/` or `trypro.yaml`.
+- **Skills already matched stay as they are.** The new matching applies when a company is designed, or its skills are matched again (`trypro skills match`). Judgments cached before 0.2.0 are made again once.
+- **The Python API is new, and stable** from this version: `from try_professional import Company`. Anything else you imported before is internal, and may change.
+
+### Added
+
+- **A stable Python API,** `try_professional.Company`: create or open a company, add custom roles, validate, write Claude Code's files, run a command, and read its status, deliverables, and final report. What's stable and what's experimental is in [docs/building-on.md](docs/building-on.md).
+- **An example of building on it:** [`examples/claude-code-agent`](examples/claude-code-agent/), with a company that has a custom role, and a `delegate()` tool another agent calls through Claude Code.
+
+### Changed
+
+- **Skill matching finds more of the right skills.** Each role's shortlist holds 30 skills, up from 20. On a fresh set of 57 public skills, labelled by a separate Claude instance and not by a person: 40 right matches against 28, and precision of 77% against 72%. [How it was measured](docs/research/skill_quality/README.md).
+- **The skill judge sees the company's other roles,** from 0.1.3, measured again here with the larger shortlist.
+
+### Not in this version
+
+- **The three-way benchmark** against one agent and a flat team is designed, reviewed for bias by a separate Claude instance, and frozen, and its harness works. It was stopped after 9 of 54 runs, because finishing it would have used the owner's Claude plan for most of a day. **There's no result yet.** [Its status](docs/research/benchmark/README.md).
+- **Mixed models per role:** [its design is written](docs/research/mixed_models/DESIGN.md), and it hasn't run.
+
 ## skill-customs 0.1.2 (2026-11-08)
 
 Bug fixes to the scanner, from a rescan of the same 1,449 skills with 0.1.1. [Measured before and after](docs/research/scanner/README.md#012) on a labelled synthetic set: 48 of 59 verdicts right in 0.1.1, and 59 of 59 now. The set was written for these fixes, so read the "after" as each fix working, and the earlier catches holding.

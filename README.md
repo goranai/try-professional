@@ -233,7 +233,7 @@ Those ran before reviews got stricter, which adds rework. The acceptance run on 
 
 The last one has a real round of rework on its work in 0.1.2, so it saved little. One run of each, so expect some spread. [Details](docs/research/small_commands/README.md).
 
-A hierarchy spends more than one agent would. On the first table's small commands, reviews alone took 39% to 46% of the output tokens. No comparison with a flat setup has been measured yet, and that benchmark is planned for v0.2.
+A hierarchy spends more than one agent would. On the first table's small commands, reviews alone took 39% to 46% of the output tokens. No comparison with a flat setup has been measured yet. [The benchmark](docs/research/benchmark/README.md) is designed, reviewed for bias, and frozen, and it will be run in a later version.
 
 On DeepSeek through the API runner, the one small command that finished took 25,020 tokens: [details](docs/research/journey/check_model_deepseek.json).
 
@@ -305,8 +305,8 @@ trypro check-model --dry-run
 
 In a rough order, which [your feedback can change](docs/roadmap-v0.2.md):
 
-- **A three-way benchmark** against a flat swarm and a single agent.
-- **Mixed models per role,** such as Haiku for reviewers and Sonnet for the work, measured against all Sonnet and all Haiku.
+- **Finishing the three-way benchmark** against a flat swarm and a single agent. [Its design is frozen](docs/research/benchmark/DESIGN.md).
+- **Mixed models per role,** such as Haiku for reviewers and Sonnet for the work, measured against all Sonnet and all Haiku. [Its design is written](docs/research/mixed_models/DESIGN.md).
 - **Quality on cheap models,** through self-refinement.
 - **A Claude Code plugin,** if it can keep roles separate, to make setup shorter.
 - **More runtimes.** Hermes and others. There's no Hermes adapter yet, and `skill-customs`' guide for it hasn't been tried on a real install. ["Add support for <runtime>" issues](https://github.com/goranai/try-professional/issues?q=is%3Aissue+is%3Aopen+label%3Aadapter) are open to anyone.

@@ -1,0 +1,308 @@
+[
+ {
+  "run": "G1-flat-swarm-1",
+  "ended": "2026-11-08 13:34",
+  "cost_usd": 0.0,
+  "reason": "The Claude plan's 5-hour usage limit. The harness didn't recognize its wording, so it didn't wait, and the run failed. Thrown away, and run again from scratch."
+ },
+ {
+  "run": "G1-flat-swarm-3",
+  "ended": "2026-11-08 13:53",
+  "cost_usd": 0.0,
+  "reason": "The Claude plan's 5-hour usage limit. The harness didn't recognize its wording, so it didn't wait, and the run failed. Thrown away, and run again from scratch."
+ },
+ {
+  "run": "G1-hierarchy-1",
+  "ended": "2026-11-08 13:50",
+  "cost_usd": 0.0,
+  "reason": "The Claude plan's 5-hour usage limit. The harness didn't recognize its wording, so it didn't wait, and the run failed. Thrown away, and run again from scratch."
+ },
+ {
+  "run": "G1-hierarchy-2",
+  "ended": "2026-11-08 13:30",
+  "cost_usd": 0.0,
+  "reason": "The Claude plan's 5-hour usage limit. The harness didn't recognize its wording, so it didn't wait, and the run failed. Thrown away, and run again from scratch."
+ },
+ {
+  "run": "G1-hierarchy-3",
+  "ended": "2026-11-08 13:30",
+  "cost_usd": 0.0,
+  "reason": "The Claude plan's 5-hour usage limit. The harness didn't recognize its wording, so it didn't wait, and the run failed. Thrown away, and run again from scratch."
+ },
+ {
+  "run": "G1-one-agent-1",
+  "ended": "2026-11-08 13:53",
+  "cost_usd": 0.0,
+  "reason": "The Claude plan's 5-hour usage limit. The harness didn't recognize its wording, so it didn't wait, and the run failed. Thrown away, and run again from scratch."
+ },
+ {
+  "run": "G1-one-agent-2",
+  "ended": "2026-11-08 13:30",
+  "cost_usd": 0.0,
+  "reason": "The Claude plan's 5-hour usage limit. The harness didn't recognize its wording, so it didn't wait, and the run failed. Thrown away, and run again from scratch."
+ },
+ {
+  "run": "G1-one-agent-3",
+  "ended": "2026-11-08 13:27",
+  "cost_usd": 0.0651,
+  "reason": "The Claude plan's 5-hour usage limit. The harness didn't recognize its wording, so it didn't wait, and the run failed. Thrown away, and run again from scratch."
+ },
+ {
+  "run": "G2-flat-swarm-1",
+  "ended": "2026-11-08 13:41",
+  "cost_usd": 0.0,
+  "reason": "The Claude plan's 5-hour usage limit. The harness didn't recognize its wording, so it didn't wait, and the run failed. Thrown away, and run again from scratch."
+ },
+ {
+  "run": "G2-flat-swarm-2",
+  "ended": "2026-11-08 13:44",
+  "cost_usd": 0.0,
+  "reason": "The Claude plan's 5-hour usage limit. The harness didn't recognize its wording, so it didn't wait, and the run failed. Thrown away, and run again from scratch."
+ },
+ {
+  "run": "G2-flat-swarm-3",
+  "ended": "2026-11-08 13:57",
+  "cost_usd": 0.0,
+  "reason": "The Claude plan's 5-hour usage limit. The harness didn't recognize its wording, so it didn't wait, and the run failed. Thrown away, and run again from scratch."
+ },
+ {
+  "run": "G2-hierarchy-1",
+  "ended": "2026-11-08 13:37",
+  "cost_usd": 0.0,
+  "reason": "The Claude plan's 5-hour usage limit. The harness didn't recognize its wording, so it didn't wait, and the run failed. Thrown away, and run again from scratch."
+ },
+ {
+  "run": "G2-hierarchy-2",
+  "ended": "2026-11-08 13:47",
+  "cost_usd": 0.0,
+  "reason": "The Claude plan's 5-hour usage limit. The harness didn't recognize its wording, so it didn't wait, and the run failed. Thrown away, and run again from scratch."
+ },
+ {
+  "run": "G2-one-agent-1",
+  "ended": "2026-11-08 13:29",
+  "cost_usd": 0.0,
+  "reason": "The Claude plan's 5-hour usage limit. The harness didn't recognize its wording, so it didn't wait, and the run failed. Thrown away, and run again from scratch."
+ },
+ {
+  "run": "G2-one-agent-2",
+  "ended": "2026-11-08 13:41",
+  "cost_usd": 0.0,
+  "reason": "The Claude plan's 5-hour usage limit. The harness didn't recognize its wording, so it didn't wait, and the run failed. Thrown away, and run again from scratch."
+ },
+ {
+  "run": "G2-one-agent-3",
+  "ended": "2026-11-08 13:30",
+  "cost_usd": 0.0,
+  "reason": "The Claude plan's 5-hour usage limit. The harness didn't recognize its wording, so it didn't wait, and the run failed. Thrown away, and run again from scratch."
+ },
+ {
+  "run": "G3-flat-swarm-1",
+  "ended": "2026-11-08 13:29",
+  "cost_usd": 0.5081,
+  "reason": "The Claude plan's 5-hour usage limit. The harness didn't recognize its wording, so it didn't wait, and the run failed. Thrown away, and run again from scratch."
+ },
+ {
+  "run": "G3-flat-swarm-2",
+  "ended": "2026-11-08 13:30",
+  "cost_usd": 0.0,
+  "reason": "The Claude plan's 5-hour usage limit. The harness didn't recognize its wording, so it didn't wait, and the run failed. Thrown away, and run again from scratch."
+ },
+ {
+  "run": "G3-flat-swarm-3",
+  "ended": "2026-11-08 13:50",
+  "cost_usd": 0.0,
+  "reason": "The Claude plan's 5-hour usage limit. The harness didn't recognize its wording, so it didn't wait, and the run failed. Thrown away, and run again from scratch."
+ },
+ {
+  "run": "G3-hierarchy-1",
+  "ended": "2026-11-08 13:53",
+  "cost_usd": 0.0,
+  "reason": "The Claude plan's 5-hour usage limit. The harness didn't recognize its wording, so it didn't wait, and the run failed. Thrown away, and run again from scratch."
+ },
+ {
+  "run": "G3-hierarchy-2",
+  "ended": "2026-11-08 13:47",
+  "cost_usd": 0.0,
+  "reason": "The Claude plan's 5-hour usage limit. The harness didn't recognize its wording, so it didn't wait, and the run failed. Thrown away, and run again from scratch."
+ },
+ {
+  "run": "G3-hierarchy-3",
+  "ended": "2026-11-08 13:30",
+  "cost_usd": 0.0,
+  "reason": "The Claude plan's 5-hour usage limit. The harness didn't recognize its wording, so it didn't wait, and the run failed. Thrown away, and run again from scratch."
+ },
+ {
+  "run": "G3-one-agent-1",
+  "ended": "2026-11-08 13:41",
+  "cost_usd": 0.0,
+  "reason": "The Claude plan's 5-hour usage limit. The harness didn't recognize its wording, so it didn't wait, and the run failed. Thrown away, and run again from scratch."
+ },
+ {
+  "run": "G3-one-agent-2",
+  "ended": "2026-11-08 13:53",
+  "cost_usd": 0.0,
+  "reason": "The Claude plan's 5-hour usage limit. The harness didn't recognize its wording, so it didn't wait, and the run failed. Thrown away, and run again from scratch."
+ },
+ {
+  "run": "G3-one-agent-3",
+  "ended": "2026-11-08 13:55",
+  "cost_usd": 0.0,
+  "reason": "The Claude plan's 5-hour usage limit. The harness didn't recognize its wording, so it didn't wait, and the run failed. Thrown away, and run again from scratch."
+ },
+ {
+  "run": "G4-flat-swarm-1",
+  "ended": "2026-11-08 13:41",
+  "cost_usd": 0.0,
+  "reason": "The Claude plan's 5-hour usage limit. The harness didn't recognize its wording, so it didn't wait, and the run failed. Thrown away, and run again from scratch."
+ },
+ {
+  "run": "G4-flat-swarm-2",
+  "ended": "2026-11-08 13:37",
+  "cost_usd": 0.0,
+  "reason": "The Claude plan's 5-hour usage limit. The harness didn't recognize its wording, so it didn't wait, and the run failed. Thrown away, and run again from scratch."
+ },
+ {
+  "run": "G4-flat-swarm-3",
+  "ended": "2026-11-08 13:33",
+  "cost_usd": 0.0,
+  "reason": "The Claude plan's 5-hour usage limit. The harness didn't recognize its wording, so it didn't wait, and the run failed. Thrown away, and run again from scratch."
+ },
+ {
+  "run": "G4-hierarchy-1",
+  "ended": "2026-11-08 13:33",
+  "cost_usd": 0.0,
+  "reason": "The Claude plan's 5-hour usage limit. The harness didn't recognize its wording, so it didn't wait, and the run failed. Thrown away, and run again from scratch."
+ },
+ {
+  "run": "G4-hierarchy-2",
+  "ended": "2026-11-08 13:30",
+  "cost_usd": 0.0,
+  "reason": "The Claude plan's 5-hour usage limit. The harness didn't recognize its wording, so it didn't wait, and the run failed. Thrown away, and run again from scratch."
+ },
+ {
+  "run": "G4-hierarchy-3",
+  "ended": "2026-11-08 13:53",
+  "cost_usd": 0.0,
+  "reason": "The Claude plan's 5-hour usage limit. The harness didn't recognize its wording, so it didn't wait, and the run failed. Thrown away, and run again from scratch."
+ },
+ {
+  "run": "G4-one-agent-1",
+  "ended": "2026-11-08 13:51",
+  "cost_usd": 0.0,
+  "reason": "The Claude plan's 5-hour usage limit. The harness didn't recognize its wording, so it didn't wait, and the run failed. Thrown away, and run again from scratch."
+ },
+ {
+  "run": "G4-one-agent-2",
+  "ended": "2026-11-08 13:55",
+  "cost_usd": 0.0,
+  "reason": "The Claude plan's 5-hour usage limit. The harness didn't recognize its wording, so it didn't wait, and the run failed. Thrown away, and run again from scratch."
+ },
+ {
+  "run": "G4-one-agent-3",
+  "ended": "2026-11-08 13:47",
+  "cost_usd": 0.0,
+  "reason": "The Claude plan's 5-hour usage limit. The harness didn't recognize its wording, so it didn't wait, and the run failed. Thrown away, and run again from scratch."
+ },
+ {
+  "run": "G5-flat-swarm-1",
+  "ended": "2026-11-08 13:47",
+  "cost_usd": 0.0,
+  "reason": "The Claude plan's 5-hour usage limit. The harness didn't recognize its wording, so it didn't wait, and the run failed. Thrown away, and run again from scratch."
+ },
+ {
+  "run": "G5-flat-swarm-2",
+  "ended": "2026-11-08 13:47",
+  "cost_usd": 0.0,
+  "reason": "The Claude plan's 5-hour usage limit. The harness didn't recognize its wording, so it didn't wait, and the run failed. Thrown away, and run again from scratch."
+ },
+ {
+  "run": "G5-flat-swarm-3",
+  "ended": "2026-11-08 13:44",
+  "cost_usd": 0.0,
+  "reason": "The Claude plan's 5-hour usage limit. The harness didn't recognize its wording, so it didn't wait, and the run failed. Thrown away, and run again from scratch."
+ },
+ {
+  "run": "G5-hierarchy-1",
+  "ended": "2026-11-08 13:51",
+  "cost_usd": 0.0,
+  "reason": "The Claude plan's 5-hour usage limit. The harness didn't recognize its wording, so it didn't wait, and the run failed. Thrown away, and run again from scratch."
+ },
+ {
+  "run": "G5-hierarchy-2",
+  "ended": "2026-11-08 13:47",
+  "cost_usd": 0.0,
+  "reason": "The Claude plan's 5-hour usage limit. The harness didn't recognize its wording, so it didn't wait, and the run failed. Thrown away, and run again from scratch."
+ },
+ {
+  "run": "G5-hierarchy-3",
+  "ended": "2026-11-08 13:50",
+  "cost_usd": 0.0,
+  "reason": "The Claude plan's 5-hour usage limit. The harness didn't recognize its wording, so it didn't wait, and the run failed. Thrown away, and run again from scratch."
+ },
+ {
+  "run": "G5-one-agent-1",
+  "ended": "2026-11-08 13:41",
+  "cost_usd": 0.0,
+  "reason": "The Claude plan's 5-hour usage limit. The harness didn't recognize its wording, so it didn't wait, and the run failed. Thrown away, and run again from scratch."
+ },
+ {
+  "run": "G5-one-agent-2",
+  "ended": "2026-11-08 13:30",
+  "cost_usd": 0.0,
+  "reason": "The Claude plan's 5-hour usage limit. The harness didn't recognize its wording, so it didn't wait, and the run failed. Thrown away, and run again from scratch."
+ },
+ {
+  "run": "G6-flat-swarm-1",
+  "ended": "2026-11-08 13:55",
+  "cost_usd": 0.0,
+  "reason": "The Claude plan's 5-hour usage limit. The harness didn't recognize its wording, so it didn't wait, and the run failed. Thrown away, and run again from scratch."
+ },
+ {
+  "run": "G6-flat-swarm-2",
+  "ended": "2026-11-08 13:37",
+  "cost_usd": 0.0,
+  "reason": "The Claude plan's 5-hour usage limit. The harness didn't recognize its wording, so it didn't wait, and the run failed. Thrown away, and run again from scratch."
+ },
+ {
+  "run": "G6-flat-swarm-3",
+  "ended": "2026-11-08 13:51",
+  "cost_usd": 0.0,
+  "reason": "The Claude plan's 5-hour usage limit. The harness didn't recognize its wording, so it didn't wait, and the run failed. Thrown away, and run again from scratch."
+ },
+ {
+  "run": "G6-hierarchy-1",
+  "ended": "2026-11-08 13:30",
+  "cost_usd": 0.0,
+  "reason": "The Claude plan's 5-hour usage limit. The harness didn't recognize its wording, so it didn't wait, and the run failed. Thrown away, and run again from scratch."
+ },
+ {
+  "run": "G6-hierarchy-2",
+  "ended": "2026-11-08 13:29",
+  "cost_usd": 0.0,
+  "reason": "The Claude plan's 5-hour usage limit. The harness didn't recognize its wording, so it didn't wait, and the run failed. Thrown away, and run again from scratch."
+ },
+ {
+  "run": "G6-hierarchy-3",
+  "ended": "2026-11-08 13:37",
+  "cost_usd": 0.0,
+  "reason": "The Claude plan's 5-hour usage limit. The harness didn't recognize its wording, so it didn't wait, and the run failed. Thrown away, and run again from scratch."
+ },
+ {
+  "run": "G6-one-agent-1",
+  "ended": "2026-11-08 13:44",
+  "cost_usd": 0.0,
+  "reason": "The Claude plan's 5-hour usage limit. The harness didn't recognize its wording, so it didn't wait, and the run failed. Thrown away, and run again from scratch."
+ },
+ {
+  "run": "G6-one-agent-2",
+  "ended": "2026-11-08 13:37",
+  "cost_usd": 0.0,
+  "reason": "The Claude plan's 5-hour usage limit. The harness didn't recognize its wording, so it didn't wait, and the run failed. Thrown away, and run again from scratch."
+ },
+ {
+  "run": "G6-one-agent-3",
+  "ended": "2026-11-08 13:50",
+  "cost_usd": 0.0,
+  "reason": "The Claude plan's 5-hour usage limit. The harness didn't recognize its wording, so it didn't wait, and the run failed. Thrown away, and run again from scratch."
+ }
+]

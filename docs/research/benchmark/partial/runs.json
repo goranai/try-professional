@@ -1,0 +1,192 @@
+[
+ {
+  "id": "G1-flat-swarm-2",
+  "goal": "G1",
+  "setup": "flat-swarm",
+  "n": 2,
+  "finished": true,
+  "cost_usd": 2.3299,
+  "seconds": 331,
+  "files": 4,
+  "has_closing": true,
+  "questions": [
+   {
+    "question": "What phone number and Gas Safe number should appear on the sheet?",
+    "kind": "other",
+    "native_kind": "",
+    "answer": "Not available."
+   },
+   {
+    "question": "How will the business store and use caller details?",
+    "kind": "other",
+    "native_kind": "",
+    "answer": "Not available."
+   }
+  ],
+  "design_sha256": "d33c93b729e3661d918a5a26a05186ca5228b378cf15df1d9ceeab2b6fe26ea1",
+  "code_commit": "dc6120e"
+ },
+ {
+  "id": "G1-one-agent-3",
+  "goal": "G1",
+  "setup": "one-agent",
+  "n": 3,
+  "finished": true,
+  "cost_usd": 0.0807,
+  "seconds": 22,
+  "files": 3,
+  "has_closing": true,
+  "questions": [],
+  "design_sha256": "d33c93b729e3661d918a5a26a05186ca5228b378cf15df1d9ceeab2b6fe26ea1",
+  "code_commit": "dc6120e"
+ },
+ {
+  "id": "G2-hierarchy-3",
+  "goal": "G2",
+  "setup": "hierarchy",
+  "n": 3,
+  "finished": true,
+  "cost_usd": 0.4404,
+  "seconds": 210,
+  "files": 1,
+  "has_closing": true,
+  "questions": [],
+  "design_sha256": "d33c93b729e3661d918a5a26a05186ca5228b378cf15df1d9ceeab2b6fe26ea1",
+  "code_commit": "dc6120e"
+ },
+ {
+  "id": "G2-one-agent-1",
+  "goal": "G2",
+  "setup": "one-agent",
+  "n": 1,
+  "finished": true,
+  "cost_usd": 0.0511,
+  "seconds": 12,
+  "files": 1,
+  "has_closing": true,
+  "questions": [],
+  "design_sha256": "d33c93b729e3661d918a5a26a05186ca5228b378cf15df1d9ceeab2b6fe26ea1",
+  "code_commit": "dc6120e"
+ },
+ {
+  "id": "G3-flat-swarm-1",
+  "goal": "G3",
+  "setup": "flat-swarm",
+  "n": 1,
+  "finished": true,
+  "cost_usd": 2.3583,
+  "seconds": 341,
+  "files": 3,
+  "has_closing": true,
+  "questions": [
+   {
+    "question": "How do students enrol, and who signs the email?",
+    "kind": "other",
+    "native_kind": "",
+    "answer": "Not available."
+   },
+   {
+    "question": "Does the 50% refund end at the start or the end of the second class?",
+    "kind": "other",
+    "native_kind": "",
+    "answer": "Not available."
+   },
+   {
+    "question": "Did past students agree to receive marketing emails, and is enrolment online, by phone, or in person?",
+    "kind": "other",
+    "native_kind": "",
+    "answer": "Not available."
+   },
+   {
+    "question": "Do past students agree to receive marketing email, and who signs the email?",
+    "kind": "other",
+    "native_kind": "",
+    "answer": "Not available."
+   }
+  ],
+  "design_sha256": "d33c93b729e3661d918a5a26a05186ca5228b378cf15df1d9ceeab2b6fe26ea1",
+  "code_commit": "dc6120e"
+ },
+ {
+  "id": "G3-flat-swarm-2",
+  "goal": "G3",
+  "setup": "flat-swarm",
+  "n": 2,
+  "finished": true,
+  "cost_usd": 2.4162,
+  "seconds": 388,
+  "files": 3,
+  "has_closing": true,
+  "questions": [
+   {
+    "question": "How do students register, and who signs the email? What do the materials include, and is the course taught in English or Spanish? Does a full refund on 23 Feb still count, and does \"until the second class\" mean before it starts or after it ends?",
+    "kind": "other",
+    "native_kind": "",
+    "answer": "Not available."
+   },
+   {
+    "question": "Do you have a written marketing-consent or privacy policy, and its terms of sale?",
+    "kind": "other",
+    "native_kind": "",
+    "answer": "Not available."
+   },
+   {
+    "question": "Can legal/counsel, or the owner, confirm the lawful basis for emailing past students and whether statutory cancellation rights apply?",
+    "kind": "other",
+    "native_kind": "",
+    "answer": "Not available."
+   }
+  ],
+  "design_sha256": "d33c93b729e3661d918a5a26a05186ca5228b378cf15df1d9ceeab2b6fe26ea1",
+  "code_commit": "dc6120e"
+ },
+ {
+  "id": "G4-flat-swarm-3",
+  "goal": "G4",
+  "setup": "flat-swarm",
+  "n": 3,
+  "finished": true,
+  "cost_usd": 2.0129,
+  "seconds": 279,
+  "files": 3,
+  "has_closing": true,
+  "questions": [
+   {
+    "question": "Apakah pengrajin atau pemilik punya panduan setrika, dry clean, dan ketahanan warna? Jika ada, saya tambahkan ke templat.",
+    "kind": "other",
+    "native_kind": "",
+    "answer": "Not available."
+   }
+  ],
+  "design_sha256": "d33c93b729e3661d918a5a26a05186ca5228b378cf15df1d9ceeab2b6fe26ea1",
+  "code_commit": "dc6120e"
+ },
+ {
+  "id": "G5-one-agent-3",
+  "goal": "G5",
+  "setup": "one-agent",
+  "n": 3,
+  "finished": true,
+  "cost_usd": 0.0531,
+  "seconds": 15,
+  "files": 1,
+  "has_closing": true,
+  "questions": [],
+  "design_sha256": "d33c93b729e3661d918a5a26a05186ca5228b378cf15df1d9ceeab2b6fe26ea1",
+  "code_commit": "dc6120e"
+ },
+ {
+  "id": "G6-hierarchy-2",
+  "goal": "G6",
+  "setup": "hierarchy",
+  "n": 2,
+  "finished": true,
+  "cost_usd": 0.3783,
+  "seconds": 159,
+  "files": 2,
+  "has_closing": true,
+  "questions": [],
+  "design_sha256": "d33c93b729e3661d918a5a26a05186ca5228b378cf15df1d9ceeab2b6fe26ea1",
+  "code_commit": "dc6120e"
+ }
+]
