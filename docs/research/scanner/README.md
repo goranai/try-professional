@@ -91,6 +91,18 @@ The same tester rescanned the same 1,449 skills with 0.1.1: 1,075 passed, 161 go
 
 The library isn't here, and nothing from it is. `compare_library.py` rescans it where it lives, and prints only totals, transitions, and rule counts.
 
+## 0.1.3
+
+An external retest of 0.1.2 found `remote-pipe` still blocking 5 legitimate skills. It counted any interpreter after a pipe, though `python3 -c "…"` and `node -e "…"` run their own code and read stdin as data, and it read the `||` of `curl … || node restart.js` as a pipe. 12 synthetic cases cover these and the attacks that must stay blocked. **The rule now needs a single pipe into something that runs stdin as code,** within one command. Inline code that hands stdin to `eval` or `exec` still counts.
+
+| | 0.1.2 | 0.1.3 |
+|---|---|---|
+| Verdicts right, of 71 | 67 | 71 |
+| `remote-pipe` precision | 0.67 | 1.00 |
+| `remote-pipe` recall | 1.00 | 1.00 |
+
+The 12 cases were written for this fix, so read 71 of 71 as the fix working, and the earlier catches holding. `results_0.1.3.json` has every case.
+
 ## Reproduce
 
 ```bash

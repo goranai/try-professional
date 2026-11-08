@@ -40,8 +40,8 @@ from .rules import (
     Rule,
 )
 
-SCANNER_VERSION = "0.1.2"
-RULESET = "2026.11.3"
+SCANNER_VERSION = "0.1.3"
+RULESET = "2026.11.4"
 ENTRY_POINT_GROUP = "skill_customs.scanners"
 _EXCERPT = 80
 _ANSI = re.compile(r"\x1b\[[0-9;?]*[ -/]*[@-~]|\x1b\][^\x07\x1b]*(\x07|\x1b\\\\)?")

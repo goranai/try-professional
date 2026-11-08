@@ -11,6 +11,12 @@
 
 You describe a business, and Claude Code designs a company for it: departments, roles, and skills from GitHub that are checked before they're used. You approve it, and then you give it commands. It works only when you give it a command, and it remembers between commands: every role, from the CEO down, keeps its own memory and knows what it's working on.
 
+## Who it's for
+
+**Freelancers, agencies, and small businesses that send documents to clients or the public:** proposals, replies, flyers, newsletters, policies. Each piece of work gets a review nobody can skip, a separate legal check when it touches claims, privacy, or terms, and an audit trail you can show a client.
+
+**For an everyday one-off task, use a single agent.** It's cheaper and faster. A hierarchy spends tokens on reviews, and that's only worth it when a mistake would reach someone outside.
+
 ## Demo
 
 ![A real run in Claude Code: setting up, designing a catering company, approving it, one command, and its deliverables](https://raw.githubusercontent.com/goranai/try-professional/main/docs/assets/demo.svg?sanitize=true)

@@ -2,6 +2,16 @@
 
 Each version of `try-professional`. `skill-customs` is listed only when it changes.
 
+## 0.2.1 (2026-11-08)
+
+- **The README says who it's for:** people sending client-facing or public documents that need a review nobody can skip, and an audit trail. And that for an everyday one-off task, a single agent is cheaper and faster.
+- **Uses skill-customs 0.1.3,** with fewer false alarms on downloads piped to an interpreter.
+
+## skill-customs 0.1.3 (2026-11-08)
+
+- **`remote-pipe` blocked legitimate commands.** It now flags a download piped into something that runs stdin as code: `| sh`, `| bash`, `| python3 -`, `| ruby`, and the like, with or without `sudo`. It no longer flags an interpreter given its own code, which reads stdin as data (`python3 -c "…"`, `node -e "…"`, `bash -c "…"`), formatters such as `jq`, a plain download with no pipe, or a health check followed by `||` or `&&` and another command. Inline code that hands stdin to `eval` or `exec` is still blocked, as is `curl … install.sh | bash`. On the labelled synthetic set: 67 of 71 verdicts right in 0.1.2, and 71 of 71 now; `remote-pipe` precision went from 0.67 to 1.00, with recall still 1.00. **Verified on synthetic fixtures only.** The 12 new cases were written for this fix. [Details](docs/research/scanner/README.md#013).
+- **The ruleset is 2026.11.4.**
+
 ## 0.2.0 (2026-11-08)
 
 Better skill matching, and a stable base to build other agents on.

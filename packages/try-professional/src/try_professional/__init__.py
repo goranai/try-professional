@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 __all__ = ["Company", "CompanyError", "__version__"]
 
 if TYPE_CHECKING:

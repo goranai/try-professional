@@ -223,9 +223,14 @@ RULES: tuple[Rule, ...] = (
     _rule(
         "remote-pipe",
         BLOCK,
-        # Into something that runs what it reads. python -m json.tool, jq, and other formatters only print it.
-        r"\b(curl|wget|irm|iwr|invoke-webrequest|invoke-restmethod)\b[^\n]{0,120}\|\s*(sudo\s+)?"
-        r"((sh|bash|zsh|dash|ksh|fish|iex|invoke-expression|perl|ruby|php)\b|python[0-9.]*\b(?!\s+-m\b)|node\b)",
+        # Into something that runs stdin as code. Not an interpreter given its own code (python -c, node -e, -m),
+        # which reads stdin as data; not formatters such as jq; and not "||", or a later command after && or ;.
+        r"\b(curl|wget|irm|iwr|invoke-webrequest|invoke-restmethod)\b(?:(?!&&|\|\||;)[^\n]){0,160}?"
+        r"(?<!\|)\|(?!\|)\s*(sudo\s+)?"
+        r"((sh|bash|zsh|dash|ksh|fish|perl|ruby|php|node|python[0-9.]*)\b"
+        r"(?!\s+(-c|-e|-m|-r|-p|--eval|--command|--print)\b)|iex\b|invoke-expression\b"
+        # Inline code that hands what it read to eval or exec still runs the download.
+        r"|(perl|ruby|php|node|python[0-9.]*)\s+(-c|-e|-r|--eval)\s+[^\n]{0,300}?(\b(eval|exec)\s*\(|\bnew\s+function\s*\())",
         "Pipes a download into a shell",
     ),
     _rule("remote-iex", BLOCK, r"\biex\s*\(|\binvoke-expression\b", "Runs a downloaded string in PowerShell"),
