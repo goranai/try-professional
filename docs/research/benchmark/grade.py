@@ -30,7 +30,10 @@ from run_claude_code import WAIT_FOR_LIMIT_SECONDS, _claude  # noqa: E402
 GRADER = "claude-opus-5-5"
 SEED = 7
 PARALLEL = 4
-_LIMIT = re.compile(r"usage limit|rate.?limit|limit reached|hit your limit|too many requests|overloaded", re.IGNORECASE)
+_LIMIT = re.compile(
+    r"usage limit|rate.?limit|limit reached|hit your (\S+ )?limit|resets? \d|too many requests|overloaded",
+    re.IGNORECASE,
+)
 # Lines that say who did what in the process, rather than being the work. One rule, for every setup.
 _PROCESS = re.compile(
     r"NOT APPROVED|\b(approved|reviewed|checked|signed off) by\b|\breviewers? said\b|\brun-[0-9a-f]{8,}\b|"

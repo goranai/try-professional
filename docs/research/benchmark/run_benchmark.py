@@ -30,6 +30,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent / "journey"))
 sys.path.insert(0, str(HERE))
 
+import run_acceptance  # noqa: E402
 from goals import BUDGET_USD, GOALS, PILOT, full_text  # noqa: E402
 from run_acceptance import ROLE_PREFIX, session  # noqa: E402
 from run_claude_code import WAIT_FOR_LIMIT_SECONDS, _claude  # noqa: E402
@@ -56,7 +57,10 @@ MAX_OTHER_ANSWERS = 5
 MAX_HIERARCHY_SESSIONS = 12
 FILE_TOOLS = "Read,Write,Edit,Glob,Grep,Skill"
 NO_LIMIT = 50_000_000
-_LIMIT = re.compile(r"usage limit|rate.?limit|limit reached|hit your limit|too many requests|overloaded", re.IGNORECASE)
+_LIMIT = re.compile(
+    r"usage limit|rate.?limit|limit reached|hit your (\S+ )?limit|resets? \d|too many requests|overloaded",
+    re.IGNORECASE,
+)
 _BUDGET_WORDS = re.compile(r"budget|token|limit|spend|spent|cost", re.IGNORECASE)
 DESIGN_PROMPT = (
     "Use the trypro tools to design a company for this business: {business}. Call org_propose, and do what each "
@@ -68,6 +72,24 @@ CONTINUE_PROMPT = (
     "answer asks, until the status is ready_for_a_person. Then reply with only the proposal id."
 )
 _lock = threading.Lock()
+# Time spent waiting out a plan's usage limit, per run. It isn't the setup's time, so it's taken off.
+_waits = threading.local()
+
+
+def pause(seconds: float) -> None:
+    _waits.total = getattr(_waits, "total", 0.0) + seconds
+    time.sleep(seconds)
+
+
+class _CountingTime:
+    """run_acceptance's session sleeps through usage limits. This counts those sleeps, for the run that waited."""
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(time, name)
+
+    @staticmethod
+    def sleep(seconds: float) -> None:
+        pause(seconds)
 
 
 def github_token() -> None:
@@ -275,7 +297,7 @@ def claude(prompt: str, cwd: Path, budget: float, resume: str = "") -> dict[str,
             result = {"is_error": True, "result": (done.stdout + done.stderr)[-500:]}
         if result.get("is_error") and _LIMIT.search(str(result.get("result", ""))):
             print(f"Usage limit, waiting {WAIT_FOR_LIMIT_SECONDS}s", flush=True)
-            time.sleep(WAIT_FOR_LIMIT_SECONDS)
+            pause(WAIT_FOR_LIMIT_SECONDS)
             continue
         return result
 
@@ -561,13 +583,15 @@ def one_run(out: Path, run: dict[str, Any], frozen: str) -> None:
         work = folder / "work"
         work.mkdir()
     started = time.time()
+    _waits.total = 0.0
     print(f"[{run['id']}] start", flush=True)
     if run["setup"].startswith("hierarchy"):
         outcome = hierarchy(str(spec["goal"]), meta, company, work, budget, SESSION_MODEL[run["setup"]])
         outcome["role_models"] = role_models
     else:
         outcome = SETUP_FN[run["setup"]](str(spec["goal"]), meta, company, work, budget)
-    outcome["seconds"] = round(time.time() - started)
+    outcome["waited_for_limits_seconds"] = round(getattr(_waits, "total", 0.0))
+    outcome["seconds"] = round(time.time() - started - outcome["waited_for_limits_seconds"])
     if run["setup"].startswith("hierarchy"):
         stop_services(company)
     files, closing = collect_work(run["setup"], work, outcome)
@@ -595,6 +619,7 @@ def plan() -> list[dict[str, Any]]:
 
 
 def main() -> None:
+    run_acceptance.time = _CountingTime()  # type: ignore[assignment]
     if os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN"):
         raise SystemExit("An Anthropic key is set, which would bill the API. Unset it, so this uses the Claude plan.")
     command, out = sys.argv[1], Path(sys.argv[2]).resolve()

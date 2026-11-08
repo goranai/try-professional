@@ -70,7 +70,7 @@ MAX_LIMIT_WAITS = 200
 SAMPLE_SECONDS = 3
 UPDATE_WAITS = 20
 UPDATE_WAIT_SECONDS = 30
-_LIMIT = re.compile(r"usage limit|rate.?limit|limit reached|hit your limit|too many requests|overloaded", re.IGNORECASE)
+_LIMIT = re.compile(r"usage limit|rate.?limit|limit reached|hit your (\S+ )?limit|resets? \d|too many requests|overloaded", re.IGNORECASE)
 _ROLE_SYSTEM = """You are one role in a company, and you work on one assignment, then stop.
 
 Call run_next_action with the run_id you're given. Its "instructions" and "assignment" are your job, and they're all you \

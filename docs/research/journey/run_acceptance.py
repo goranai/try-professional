@@ -37,7 +37,7 @@ FIRST = "Write a one-page website proposal for a family bakery that wants online
 SECOND = "The bakery liked the proposal. Write the homepage copy for the site we proposed, following that proposal."
 OPERATOR_MODEL = "sonnet"
 SESSION_TIMEOUT_SECONDS = 3600
-_LIMIT = re.compile(r"usage limit|rate.?limit|limit reached|hit your limit|too many requests|overloaded", re.IGNORECASE)
+_LIMIT = re.compile(r"usage limit|rate.?limit|limit reached|hit your (\S+ )?limit|resets? \d|too many requests|overloaded", re.IGNORECASE)
 _DESIGN_PROMPT = (
     f"Use the trypro tools to design a company for this business: {DESCRIPTION}. Call org_propose, and do what each "
     "answer asks: submit the design with org_proposal_submit, and then judge each role's skills with "
