@@ -39,8 +39,8 @@ _FULL_TOOLS = (
     "Do the work with your own tools as well: the shell, git and gh, files, and the web. The company's tools, listed "
     "under may_use, are for your assignment, memory, skills, and the workspace. Hand in what you made in your "
     "submission, and files through workspace_write, because only those reach whoever reviews your work. When you "
-    "put something out, such as an issue, a pull request, or a post, give its link to outcome_track, so the company "
-    "learns from what happens to it."
+    "put something out, such as a pull request, a post, a quote, or an email, give its link or a reference, and who "
+    "it went to, to outcome_track, so the company learns from what happens to it."
 )
 _SANDBOXED_TOOLS = "Use only the tools it lists under may_use."
 _COMMAND = """---

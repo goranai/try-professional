@@ -25,7 +25,7 @@ from .company import CompanyStore
 from .deliverables import DRAFT_FOLDER, export_deliverables, export_drafts, read_sources
 from .ledger import Ledger
 from .lock import StateLock
-from .outside import Held, Outcome, OutsideStore, describe_link, outcome_lesson, urls_in
+from .outside import RUN_ID, Held, Outcome, OutsideStore, describe_link, outcome_lesson, urls_in
 from .pipeline import (
     Action,
     ContextResolved,
@@ -328,9 +328,10 @@ class Orchestrator:
             outside: list[str] = []
             held: list[str] = []
             if invocation.purpose in OUTSIDE_PURPOSES:
-                outside = self.outside.record_lines()
+                outside = self.outside.record_lines(focus=state.goal)
             if invocation.purpose in (*OUTSIDE_PURPOSES, Purpose.INTEGRATE):
                 held = [f"#{h.id}, from {h.role}: {h.command[:MAX_HELD_SHOWN]}"
+                        + (f"\n{h.checks}" if h.checks else "")
                         for h in self.outside.held() if h.run_id == run_id]  # fmt: skip
         return Briefing(brief=brief, pending_lessons=lessons, team=team, outside=outside, held=held)
 
@@ -516,7 +517,15 @@ class Orchestrator:
         return any(known == run_id for known, _ in self.ledger.list_runs())
 
     def track_outcome(
-        self, run_id: str, role: str, url: str, *, kind: str = "", title: str = "", command: str = ""
+        self,
+        run_id: str,
+        role: str,
+        url: str,
+        *,
+        kind: str = "",
+        title: str = "",
+        command: str = "",
+        target: str = "",
     ) -> Outcome | None:
         """Start following something the company put out. Everyone who worked on the run shares what comes of it."""
         guessed_kind, guessed_title = describe_link(url, command)
@@ -524,7 +533,13 @@ class Orchestrator:
             known = self._has_run(run_id)
             credited = [role]
             if known:
-                credited += [task.owner_role for task in self.ledger.load(run_id).tasks.values() if task.owner_role]
+                state = self.ledger.load(run_id)
+                credited += [task.owner_role for task in state.tasks.values() if task.owner_role]
+                # Posting what an earlier command found credits who found it, too, when that command is named.
+                runs = {run_id, *(found for found in RUN_ID.findall(f"{state.goal} {command}") if found != run_id)}
+                for earlier in runs - {run_id}:
+                    if self._has_run(earlier):
+                        credited += [t.owner_role for t in self.ledger.load(earlier).tasks.values() if t.owner_role]
             item = self.outside.track(
                 url,
                 run_id=run_id,
@@ -533,9 +548,10 @@ class Orchestrator:
                 kind=kind or guessed_kind,
                 title=title or guessed_title,
                 at=self.clock(),
+                target=target,
             )
             if item is not None and known:
-                self.record(run_id, "outcome_tracked", {"id": item.id, "url": item.url, "role": role})
+                self.record(run_id, "outcome_tracked", {"id": item.id, "ref": item.ref, "role": role})
         return item
 
     def settle_outcome(self, outcome_id: int, status: str, note: str = "", *, by: str) -> Outcome | None:
@@ -566,11 +582,17 @@ class Orchestrator:
                 self.record(item.run_id, "outcome_settled", {"id": item.id, "status": status, "by": by})
         return item
 
-    def hold_command(self, run_id: str, role: str, command: str) -> int:
-        """A command that changes something outside, with nobody there to approve it. It waits for a person."""
+    def hold_command(self, run_id: str, role: str, command: str, checks: str = "") -> int:
+        """A command that changes something outside, with nobody there to approve it. It waits for a person, with what
+        code found about it first, such as issues that may already report the same thing."""
         with self._lock:
             number = self.outside.hold(
-                run_id=run_id, role=role, command=command, workspace=self.workspace(run_id), at=self.clock()
+                run_id=run_id,
+                role=role,
+                command=command,
+                workspace=self.workspace(run_id),
+                at=self.clock(),
+                checks=checks,
             )
             self.record(run_id, "command_held", {"id": number, "role": role, "command": command})
         return number

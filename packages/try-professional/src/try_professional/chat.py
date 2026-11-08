@@ -34,6 +34,7 @@ HELP = """Say what you want, in your own words, and the company works on it.
   /held          Commands waiting for your approval, such as posting an issue
   /approve 3     Run held command 3        /deny 3   Refuse it
   /outcomes      What the company put out, and what came of it
+  /outcome 3 rejected "too expensive"   Tell it what happened. Everyone who worked on it learns it
   /schedules     What it does on a timer
   /help          This
   /quit          Leave. The company remembers this conversation."""
@@ -175,9 +176,31 @@ class Conversation:
                 status = self.company.status(run_id)
                 rows.append(f"{run_id}  {status.phase:<9} {status.goal.splitlines()[0][:70]}")
             return Reply("\n".join(rows) or "No commands yet.")
-        if name in ("/held", "/approve", "/deny", "/outcomes", "/schedules"):
+        if name in ("/held", "/approve", "/deny", "/outcomes", "/outcome", "/schedules"):
             return self._outside(name, message.split()[1:])
         return Reply(f"Unknown command {name}. /help lists them.")
+
+    def _settle(self, args: list[str]) -> Reply:
+        """What happened to something the company sent, as a person tells it: a client's answer, a post's reception.
+        Every role that worked on it learns it, the same way a checked GitHub verdict is learned."""
+        from .cli import _outside_orchestrator
+        from .core.outside import OUTCOME_STATUSES
+
+        if len(args) < 2 or not args[0].lstrip("#").isdigit() or args[1].lower() not in OUTCOME_STATUSES:
+            return Reply(
+                f"Say: /outcome <number> <{'|'.join(OUTCOME_STATUSES)}> <what was said>. /outcomes lists them."
+            )
+        number, status, said = int(args[0].lstrip("#")), args[1].lower(), " ".join(args[2:])
+        orchestrator = _outside_orchestrator(self.company.root, with_memory=True)
+        try:
+            if orchestrator.outside.outcome(number) is None:
+                return Reply(f"There's no #{number}. /outcomes lists them.")
+            changed = orchestrator.settle_outcome(number, status, said, by=self.person)
+        finally:
+            orchestrator.close()
+        if changed is None:
+            return Reply(f"#{number} was already {status}.")
+        return Reply(f"#{number} is {status}. Everyone who worked on it learns that, with what you said.")
 
     def _outside(self, name: str, args: list[str]) -> Reply:
         """Approvals, outcomes, and schedules. Someone in this conversation is the person the company works for."""
@@ -188,12 +211,20 @@ class Conversation:
         try:
             outside = orchestrator.outside
             if name == "/held":
-                rows = [f"#{h.id} {h.role}: {h.command}" for h in outside.held()]
+                rows = [
+                    f"#{h.id} {h.role}: {h.command}" + (f"\n{h.checks}" if h.checks else "") for h in outside.held()
+                ]
                 return Reply(
                     "\n".join([*rows, "", "/approve <number> or /deny <number>"]) if rows else "Nothing waits."
                 )
             if name == "/outcomes":
-                return Reply("\n".join(outside.record_lines(limit=15)) or "Nothing tracked yet.")
+                items = outside.outcomes(limit=15)
+                if not items:
+                    return Reply("Nothing tracked yet.")
+                rows = [f"#{i.id} {i.status}: {i.kind} to {i.target or '?'}, {i.ref} {i.title}".strip() for i in items]
+                return Reply("\n".join([*rows, "", "/outcome <number> <verdict> <what was said>"]))
+            if name == "/outcome":
+                return self._settle(args)
             if name == "/schedules":
                 rows = [f"{s.name}: every {describe_every(s.every_seconds)}, next {s.next_at[:16]}. {s.goal[:80]}"
                         for s in outside.schedules()]  # fmt: skip

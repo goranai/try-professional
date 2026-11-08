@@ -141,7 +141,7 @@ trypro agents claude-code                     Rewrite the roles for Claude Code,
 
 ### When it works on its own
 
-What a company puts out, such as an issue, a pull request, a post, or an email, is tracked. What happens to it becomes a lesson for every role that worked on it, and a reply becomes a follow-up command. Commands can run on a timer, and while nobody is watching, anything that changes something outside waits for your approval.
+Whatever the work is, what a company sends out, such as a pull request, a post, a quote to a client, or an email, is tracked with who it went to. What happens to it, with the reason, goes back to every role that worked on it, and the next job for the same client, repository, or site starts from it. A reply becomes a follow-up command. Commands can run on a timer, and while nobody is watching, anything that changes something outside waits for your approval.
 
 ```text
 trypro schedule add daily "<what to do each time>" --every 1d    Run a command on a timer
@@ -151,14 +151,17 @@ trypro held                                                    What waits for yo
 trypro held approve <number>                                   Run it. Or: trypro held deny <number>
 trypro outcomes                                                What it put out, and what came of it
 trypro outcomes check                                          Check GitHub links now, with gh
-trypro outcomes set <number> accepted --note "<why>"           Say what happened, where no check can
+trypro outcomes set <number> rejected --note "<what was said>"  Say what happened, where no check can
+trypro outcomes add "<link or reference>" --run <id> --role <role> --target "<client>"
 ```
 
-- **Tracked by itself:** a link printed by an outside command you approved, such as the issue `gh issue create` opened. In Claude Code, a role gives its link to `outcome_track`.
-- **Checked by itself:** GitHub issues and pull requests, through `gh`, with no model. Merged or closed as completed counts as accepted. Closed as not planned counts as rejected, and a duplicate as a duplicate. No reply in 30 days counts as ignored. A maintainer's words are kept with it. Anything else, you settle with `trypro outcomes set`.
-- **Learned from:** each role that worked on it gets the lesson in its own memory, and each department head decides whether the department keeps it. Roles that plan, assign, do, or check work see the company's track record.
-- **Followed up:** a new reply from someone else queues a command to read the thread, and answer only if an answer is needed. Posting that answer needs your approval, like any other.
-- **From chat:** `/held`, `/approve 3`, `/deny 3`, `/outcomes`, and `/schedules` work in `trypro chat` and on Telegram. With a Telegram bot set up, each round's summary is sent there.
+- **Tracked:** a link printed by an outside command you approved, such as the pull request `gh pr create` opened. In Claude Code, a role gives a link or any reference, and who it went to, to `outcome_track`. A target is a repository, a client, a site, or anything a role names.
+- **Verdicts, for any work:** accepted, rejected, duplicate (they already had it), by design (it's how they mean it to be), low impact (right, and not worth acting on), or ignored. You give one from the terminal or chat, with what was said: `/outcome 3 rejected "went with a cheaper quote"`.
+- **Checked by code, where it can be:** GitHub issues and pull requests, through `gh`, with no model, is the checker that ships. It reads GitHub's own record, labels, and a maintainer's last words, links a duplicate to the issue it duplicates, and calls 30 days without a reply ignored.
+- **Learned from:** each role that worked on it gets the lesson, with the reason, in its own memory, and each department head decides whether the department keeps it. When a command names an earlier command's run, its roles are credited too. Roles that plan, assign, do, or check work see the record, with whatever their work names first: that client's, repository's, or site's history, and what it doesn't want.
+- **Checked before it goes out:** whoever decides on something outside, you at the prompt, or later in `trypro held`, and the reviewers, sees what the company already sent to the same target, and what came of it. Searches can plug in beside that; one that ships looks for issues a new GitHub issue may duplicate.
+- **Followed up:** a new reply from someone else queues a command to read it, and answer only if an answer is needed. That answer needs your approval, like anything else.
+- **From chat:** `/held`, `/approve 3`, `/deny 3`, `/outcomes`, `/outcome`, and `/schedules` work in `trypro chat` and on Telegram. With a Telegram bot set up, each round's summary is sent there.
 - **Scheduled rounds use the company's own engine,** with the model `trypro.yaml` names. Claude Code isn't run unattended.
 
 ## Build on Try Professional
@@ -192,7 +195,7 @@ Each piece of work has one owner, gets reviewed, and leaves an audit log you can
 - **Reviews that can't be skipped.** QA reviews everything. A Legal department is optional, and off unless the business needs one: then its review is triggered by what the work is, whatever a model declares.
 - **Rules held by code.** Work must report on every item of its brief. Reviews can't approve with blockers. Unmet criteria and unverified claims reach you even if a final report leaves them out. There's no token limit unless you set one: a company works until the job is done. It does stop, and say why, when a role keeps going in circles: 24 model calls with nothing moving, or 3 hand-ins refused in a row. To cap spending, set `max_tokens_per_small_command` and `max_tokens_per_run` under `pipeline.budget` in `org/org.yaml`, and a command stops at them and asks you. [Tests play a misbehaving model](https://github.com/goranai/try-professional/blob/main/packages/try-professional/tests/test_misbehaving_model.py) against these.
 - **Real separation over MCP.** Each role's server shows it only its own assignment, memory, and skills, and the session's server can't do a role's work.
-- **It learns from what happened.** What the company puts out is tracked, and what came of it, accepted, rejected, a duplicate, or ignored, becomes a lesson for every role that worked on it. [How](#when-it-works-on-its-own)
+- **It learns from what happened.** Whatever the work, what the company sends out is tracked with who it went to, and what came of it, with the reason, goes back to every role that worked on it. The next job for that client, repository, or site starts from it. [How](#when-it-works-on-its-own)
 
 ## How it works
 

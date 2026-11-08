@@ -1,6 +1,7 @@
 """What a company did outside, what came of it, and what waits for a person.
 
-Work that leaves the company, such as an issue, a pull request, a post, or an email, meets the world later. What
+Nothing here is about one kind of work. Work that leaves the company, such as a pull request, a post, a quote to a
+client, or an email, meets the world later. What
 happened to it is the best teacher a role has, so it's recorded here, checked, and turned into lessons for the roles
 that worked on it. Commands that change something outside, from a run with nobody there to ask, wait here for a
 person. And a company can work on a timer: schedules live here too.
@@ -20,10 +21,15 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-OUTCOME_STATUSES = ("open", "accepted", "rejected", "duplicate", "ignored")
+# by_design: it works as the project means it to. low_impact: real, but not worth acting on.
+OUTCOME_STATUSES = ("open", "accepted", "rejected", "duplicate", "by_design", "low_impact", "ignored")
 MAX_TEXT = 300
 RECENT_SHOWN = 8
 _URL = re.compile(r"https?://[^\s\"'<>)\]]+")
+_GITHUB_REPO = re.compile(r"github\.com/([\w.-]+/[\w.-]+)")
+_HOST = re.compile(r"https?://(?:www\.)?([^/\s:]+)")
+RECORD_TARGETS_SHOWN = 3
+RUN_ID = re.compile(r"\brun-[0-9a-f]{12}\b")
 _EVERY = re.compile(r"^\s*(\d+)\s*([mhdw])\s*$", re.IGNORECASE)
 _UNIT_SECONDS = {"m": 60, "h": 3600, "d": 86400, "w": 604800}
 MIN_EVERY_SECONDS = 15 * 60
@@ -31,7 +37,8 @@ MIN_EVERY_SECONDS = 15 * 60
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS outcomes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    url TEXT NOT NULL UNIQUE,
+    ref TEXT NOT NULL UNIQUE,
+    target TEXT NOT NULL DEFAULT '',
     run_id TEXT NOT NULL,
     role TEXT NOT NULL,
     credited TEXT NOT NULL,
@@ -53,7 +60,8 @@ CREATE TABLE IF NOT EXISTS held (
     status TEXT NOT NULL,
     decided_by TEXT,
     decided_at TEXT,
-    output TEXT NOT NULL DEFAULT ''
+    output TEXT NOT NULL DEFAULT '',
+    checks TEXT NOT NULL DEFAULT ''
 );
 CREATE TABLE IF NOT EXISTS schedules (
     name TEXT PRIMARY KEY,
@@ -71,6 +79,16 @@ def _clean(text: Any, limit: int = MAX_TEXT) -> str:
     return " ".join("".join(c if c.isprintable() else " " for c in str(text)).split())[:limit]
 
 
+def target_of(ref: str) -> str:
+    """Who or what a piece of work went to, from its link: a repository on GitHub, and otherwise the site. A role or a
+    person can name it instead: a client, a project, a channel."""
+    github = _GITHUB_REPO.search(ref or "")
+    if github:
+        return github.group(1).lower().removesuffix(".git")
+    host = _HOST.match(ref or "")
+    return host.group(1).lower() if host else ""
+
+
 def urls_in(text: str) -> list[str]:
     """Links a command printed, such as the issue `gh issue create` just opened. Order kept, repeats dropped."""
     seen: dict[str, None] = {}
@@ -84,7 +102,7 @@ _TITLE = re.compile(r"""(?:--title|-t)(?:\s+|=)(?:"((?:[^"\\]|\\.)*)"|'([^']*)'|
 
 def describe_link(url: str, command: str = "") -> tuple[str, str]:
     """What kind of thing a link is, and its title if the command that made it gave one."""
-    kind = "link"
+    kind = "link" if _URL.match(url or "") else "item"
     if re.search(r"github\.com/[^/]+/[^/]+/issues/\d+", url):
         kind = "issue"
     elif re.search(r"github\.com/[^/]+/[^/]+/pull/\d+", url):
@@ -96,17 +114,27 @@ def describe_link(url: str, command: str = "") -> tuple[str, str]:
     return kind, _clean(title)
 
 
+def _line(item: Outcome) -> str:
+    note = f" ({item.note})" if item.note else ""
+    title = f" '{item.title}'" if item.title else ""
+    return f"{item.status}: {item.kind} {item.ref}{title}{note}"
+
+
 _LESSONS = {
     "accepted": "It was accepted. What led to it worked: keep doing it that way.",
     "rejected": (
-        "It was turned down. Before the next one, make sure it's wanted: the project's own rules, what it already "
-        "plans, and whether it's worth the reader's time."
+        "It was turned down. Before the next one, make sure it's wanted: their own rules, what they already plan, and "
+        "whether it's worth their time."
     ),
     "duplicate": (
-        "It was closed as a duplicate. Before posting, search what's already there, open and closed, and link to it "
-        "if it's close."
+        "They already had it. Before sending the next one, check what they already have, and point to it if it's close."
     ),
-    "ignored": "Nobody answered. A place that doesn't answer isn't worth more of the same work.",
+    "by_design": (
+        "It wasn't a problem to them: it's the way they mean it to be. Don't send that, or things like it, to them "
+        "again."
+    ),
+    "low_impact": ("It was right, and not worth acting on. Bring them what matters to them, not small things."),
+    "ignored": "Nobody answered. Somewhere that doesn't answer isn't worth more of the same work.",
     "open": "It's open again.",
 }
 
@@ -114,8 +142,9 @@ _LESSONS = {
 def outcome_lesson(item: Outcome) -> str:
     """A lesson from what happened, written by code from the record. A quoted reply is someone else's words."""
     title = f" '{item.title}'" if item.title else ""
+    to = f" to {item.target}" if item.target else ""
     note = f" What was said: {item.note}" if item.note else ""
-    return _clean(f"What happened after: the {item.kind}{title} at {item.url}. {_LESSONS[item.status]}{note}", 600)
+    return _clean(f"What happened after: the {item.kind}{title}{to}, {item.ref}. {_LESSONS[item.status]}{note}", 600)
 
 
 def parse_every(text: str) -> int:
@@ -139,7 +168,10 @@ def describe_every(seconds: int) -> str:
 @dataclass(frozen=True)
 class Outcome:
     id: int
-    url: str
+    # A link, or any reference a person would know it by, such as "quote 12 to Acme Bakery".
+    ref: str
+    # Who or what it went to: a repository, a client, a site, a channel. What it's remembered under.
+    target: str
     run_id: str
     role: str
     credited: tuple[str, ...]
@@ -150,6 +182,11 @@ class Outcome:
     note: str
     checked_at: str | None
     seen_replies: int
+
+    @property
+    def url(self) -> str:
+        """The link, when the reference is one."""
+        return self.ref if _URL.match(self.ref) else ""
 
     def to_dict(self) -> dict[str, Any]:
         return {**self.__dict__, "credited": list(self.credited)}
@@ -166,6 +203,8 @@ class Held:
     status: str
     decided_by: str | None
     output: str
+    # What code found before a person decides, such as issues that may already report the same thing.
+    checks: str = ""
 
 
 @dataclass(frozen=True)
@@ -178,13 +217,15 @@ class Schedule:
     last_run_id: str | None
 
 
-_OUTCOME_COLUMNS = "id, url, run_id, role, credited, kind, title, created_at, status, note, checked_at, seen_replies"
-_HELD_COLUMNS = "id, run_id, role, command, workspace, created_at, status, decided_by, output"
+_OUTCOME_COLUMNS = (
+    "id, ref, target, run_id, role, credited, kind, title, created_at, status, note, checked_at, seen_replies"
+)
+_HELD_COLUMNS = "id, run_id, role, command, workspace, created_at, status, decided_by, output, checks"
 
 
 def _outcome(row: Any) -> Outcome:
     values = list(row)
-    values[4] = tuple(json.loads(values[4]))
+    values[5] = tuple(json.loads(values[5]))
     return Outcome(*values)
 
 
@@ -204,19 +245,30 @@ class OutsideStore:
     # ---- outcomes ---------------------------------------------------------------
 
     def track(
-        self, url: str, *, run_id: str, role: str, credited: list[str], kind: str, title: str, at: str
+        self,
+        ref: str,
+        *,
+        run_id: str,
+        role: str,
+        credited: list[str],
+        kind: str,
+        title: str,
+        at: str,
+        target: str = "",
     ) -> Outcome | None:
-        """Start tracking something the company put out. The same link twice is tracked once."""
-        url = _clean(url, 500)
-        if not _URL.fullmatch(url):
+        """Start following something the company put out: a link, or any reference. The same one twice is one."""
+        ref = _clean(ref, 500)
+        if len(ref) < 3:
             return None
+        target = _clean(target, 120).lower() or target_of(ref)
         with self._lock, self._conn:
             self._conn.execute(
-                "INSERT OR IGNORE INTO outcomes (url, run_id, role, credited, kind, title, created_at, status) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, 'open')",
-                (url, run_id, role, json.dumps(sorted(set(credited))), _clean(kind, 40) or "link", _clean(title), at),
-            )
-            row = self._conn.execute(f"SELECT {_OUTCOME_COLUMNS} FROM outcomes WHERE url = ?", (url,)).fetchone()
+                "INSERT OR IGNORE INTO outcomes (ref, target, run_id, role, credited, kind, title, created_at, status) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'open')",
+                (ref, target, run_id, role, json.dumps(sorted(set(credited))), _clean(kind, 40) or "item",
+                 _clean(title), at),
+            )  # fmt: skip
+            row = self._conn.execute(f"SELECT {_OUTCOME_COLUMNS} FROM outcomes WHERE ref = ?", (ref,)).fetchone()
         return _outcome(row)
 
     def outcome(self, outcome_id: int) -> Outcome | None:
@@ -224,12 +276,15 @@ class OutsideStore:
             row = self._conn.execute(f"SELECT {_OUTCOME_COLUMNS} FROM outcomes WHERE id = ?", (outcome_id,)).fetchone()
         return _outcome(row) if row else None
 
-    def outcomes(self, status: str | None = None, limit: int = 200) -> list[Outcome]:
-        query = f"SELECT {_OUTCOME_COLUMNS} FROM outcomes"
+    def outcomes(self, status: str | None = None, limit: int = 200, *, target: str = "") -> list[Outcome]:
+        query = f"SELECT {_OUTCOME_COLUMNS} FROM outcomes WHERE 1 = 1"
         args: list[Any] = []
         if status:
-            query += " WHERE status = ?"
+            query += " AND status = ?"
             args.append(status)
+        if target:
+            query += " AND target = ?"
+            args.append(target.lower())
         with self._lock:
             rows = self._conn.execute(f"{query} ORDER BY id DESC LIMIT ?", (*args, limit)).fetchall()
         return [_outcome(row) for row in rows]
@@ -254,23 +309,54 @@ class OutsideStore:
                 "UPDATE outcomes SET seen_replies = ?, checked_at = ? WHERE id = ?", (count, at, outcome_id)
             )
 
-    def record_lines(self, limit: int = RECENT_SHOWN) -> list[str]:
-        """What a role is told about the company's track record: a count, and the newest items."""
+    def targets_in(self, text: str) -> list[str]:
+        """The targets this company has worked for that a text names, such as a repository, a client, or a site."""
+        with self._lock:
+            known = [r[0] for r in self._conn.execute("SELECT DISTINCT target FROM outcomes WHERE target != ''")]
+        lowered = (text or "").lower()
+        return sorted((t for t in known if t in lowered), key=lambda t: (-len(t), t))
+
+    def history_for(self, text: str, limit: int = RECENT_SHOWN) -> str:
+        """Before something goes out: what this company already sent to the same target, and what came of it."""
+        lines = []
+        for target in self.targets_in(text)[:RECORD_TARGETS_SHOWN]:
+            items = self.outcomes(target=target, limit=limit)
+            lines += [f"Already sent to {target}:"] + [f"  {_line(item)}" for item in items]
+        return "\n".join(lines)
+
+    def record_lines(self, limit: int = RECENT_SHOWN, *, focus: str = "") -> list[str]:
+        """What a role is told about the company's track record. Any target the work names comes first, such as a
+        repository, a client, or a site: what happened there before, and what it doesn't want. Then the company's
+        count, and its newest items."""
         with self._lock:
             counts = dict(self._conn.execute("SELECT status, COUNT(*) FROM outcomes GROUP BY status").fetchall())
         if not counts:
             return []
+        lines: list[str] = []
+        shown: set[int] = set()
+        for repo in self.targets_in(focus)[:RECORD_TARGETS_SHOWN]:
+            items = self.outcomes(target=repo, limit=limit)
+            if not items:
+                continue
+            tally: dict[str, int] = {}
+            for item in items:
+                tally[item.status] = tally.get(item.status, 0) + 1
+            lines.append(f"In {repo}: " + ", ".join(f"{n} {s}" for s, n in tally.items()) + ".")
+            for item in items:
+                if item.status == "by_design":
+                    lines.append(f"{repo} means it to be this way, don't send it again: '{item.title}' ({item.note})")
+                else:
+                    lines.append(_line(item))
+                shown.add(item.id)
         total = sum(counts.values())
         summary = ", ".join(f"{counts[s]} {s}" for s in OUTCOME_STATUSES if counts.get(s))
-        lines = [f"{total} tracked: {summary}."]
-        for item in self.outcomes(limit=limit):
-            note = f" ({item.note})" if item.note else ""
-            lines.append(f"{item.status}: {item.kind} {item.url} '{item.title}'{note}")
+        lines.append(f"The company, {total} tracked: {summary}.")
+        lines += [_line(item) for item in self.outcomes(limit=limit) if item.id not in shown]
         return lines
 
     # ---- commands held for a person ---------------------------------------------
 
-    def hold(self, *, run_id: str, role: str, command: str, workspace: Path, at: str) -> int:
+    def hold(self, *, run_id: str, role: str, command: str, workspace: Path, at: str, checks: str = "") -> int:
         with self._lock, self._conn:
             existing = self._conn.execute(
                 "SELECT id FROM held WHERE run_id = ? AND command = ? AND status = 'waiting'", (run_id, command)
@@ -278,9 +364,9 @@ class OutsideStore:
             if existing:
                 return int(existing[0])
             cursor = self._conn.execute(
-                "INSERT INTO held (run_id, role, command, workspace, created_at, status) "
-                "VALUES (?, ?, ?, ?, ?, 'waiting')",
-                (run_id, role, command, str(workspace), at),
+                "INSERT INTO held (run_id, role, command, workspace, created_at, status, checks) "
+                "VALUES (?, ?, ?, ?, ?, 'waiting', ?)",
+                (run_id, role, command, str(workspace), at, checks[:2000]),
             )
             return int(cursor.lastrowid or 0)
 

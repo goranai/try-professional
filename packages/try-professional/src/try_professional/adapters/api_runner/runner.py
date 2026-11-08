@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import dataclasses
 import json
 import re
@@ -114,6 +115,12 @@ class RunResult:
     size: str = ""
 
 
+def _github_search(command: str) -> str:
+    from ...outcomes import possible_duplicates
+
+    return possible_duplicates(command)
+
+
 class ApiRunner:
     name = "api_runner"
     mode: Mode = "push"
@@ -148,6 +155,8 @@ class ApiRunner:
         self.approve = approve
         # With nobody to ask, hold those commands for a person instead of refusing them. For unattended runs.
         self.hold = hold
+        # Searches that plug in before something goes out, beside the company's own record. GitHub's ships.
+        self.check_outside: Callable[[str], str] | None = _github_search
 
     # ---- RuntimeAdapter ---------------------------------------------------------
 
@@ -288,7 +297,7 @@ class ApiRunner:
             skills=self.orchestrator.skills,
             search=search,
             note_source=lambda url, day: self.orchestrator.note_source(run_id, url, day),
-            approve=self.approve,
+            approve=self._asking(),
             hold=self._holder(run_id, role.ref) if self.hold else None,
             track=lambda url, command: self._track(run_id, role.ref, url, command),
         )
@@ -460,7 +469,32 @@ class ApiRunner:
         ]
 
     def _holder(self, run_id: str, role: str) -> Callable[[str], int]:
-        return lambda command: self.orchestrator.hold_command(run_id, role, command)
+        def hold(command: str) -> int:
+            return self.orchestrator.hold_command(run_id, role, command, self._checks(command))
+
+        return hold
+
+    def _checks(self, command: str) -> str:
+        """Before anything goes out, for whoever decides: what the company already sent to the same target, and what
+        came of it, and what a plugged-in search found. Any business, any department. Uses no model."""
+        found = [self.orchestrator.outside.history_for(command)]
+        # A check helps the person deciding, and failing one mustn't stop the run.
+        with contextlib.suppress(Exception):
+            found.append(self.check_outside(command) if self.check_outside else "")
+        return "\n".join(part for part in found if part)
+
+    def _asking(self) -> Callable[[str, str], bool] | None:
+        """A person asked at the time sees the same checks as one deciding later."""
+        approve = self.approve
+        if approve is None:
+            return None
+
+        def ask(role: str, command: str) -> bool:
+            checks = self._checks(command)
+            return approve(role, f"{command}\n\n# Before you decide:\n# " + checks.replace("\n", "\n# ") if checks
+                           else command)  # fmt: skip
+
+        return ask
 
     def _track(self, run_id: str, role: str, url: str, command: str) -> None:
         """Following what an outside command made helps later runs, and failing to must never stop this one."""

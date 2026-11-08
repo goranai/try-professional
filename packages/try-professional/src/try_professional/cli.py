@@ -39,6 +39,7 @@ from .core.audit import read_records
 from .core.brief import build_brief, role_card
 from .core.lock import command_lock
 from .core.orchestrator import Orchestrator, utc_now
+from .core.outside import OUTCOME_STATUSES
 from .core.pipeline import HumanDecided, IllegalEvent, Purpose
 from .doctor import print_checks, report, run_checks
 from .generator import (
@@ -1189,14 +1190,14 @@ def cmd_outcomes(args: argparse.Namespace) -> int:
                 _print("Nothing tracked yet. Links an approved command prints are tracked, and roles can add theirs.")
                 return 0
             for item in items:
-                _print(f"#{item.id:<4} {item.status:<9} {item.kind:<12} {item.url}")
+                _print(f"#{item.id:<4} {item.status:<10} {item.kind:<12} {item.target or '-':<24} {item.ref}")
                 if item.title or item.note:
                     _print(f"       {item.title}{'  - ' + item.note if item.note else ''}")
             return 0
         if action == "check":
             report = check(orchestrator)
             for settled in report.settled:
-                _print(f"#{settled.id} {settled.status}: {settled.url}. Every role that worked on it gets the lesson.")
+                _print(f"#{settled.id} {settled.status}: {settled.ref}. Every role that worked on it gets the lesson.")
             for url in report.follow_ups:
                 _print(f"New replies on {url}: a follow-up is queued. `trypro schedule run` runs it.")
             for problem in report.problems:
@@ -1205,12 +1206,12 @@ def cmd_outcomes(args: argparse.Namespace) -> int:
             return 1 if report.problems and not report.checked else 0
         if action == "add":
             tracked = orchestrator.track_outcome(
-                args.run_id, args.role, args.url, kind=args.kind or "", title=args.title or ""
+                args.run_id, args.role, args.ref, kind=args.kind or "", title=args.title or "", target=args.target or ""
             )
             if tracked is None:
-                _print("That isn't a link. Give the full https:// address.")
+                _print("Give a link, or a reference a person would know it by.")
                 return 2
-            _print(f"Tracking #{tracked.id}: {tracked.url}")
+            _print(f"Tracking #{tracked.id}: {tracked.ref}" + (f", sent to {tracked.target}" if tracked.target else ""))
             return 0
         if orchestrator.outside.outcome(args.id) is None:
             _print(f"There's no outcome #{args.id}.")
@@ -1236,6 +1237,8 @@ def cmd_held(args: argparse.Namespace) -> int:
             for item in waiting:
                 _print(f"#{item.id}  {item.role}, run {item.run_id}:")
                 _print(f"    {item.command}")
+                for line in item.checks.splitlines():
+                    _print(f"    | {line}")
             if waiting:
                 _print(
                     "Approve one with `trypro held approve <number>`, or refuse it with `trypro held deny <number>`."
@@ -1471,19 +1474,22 @@ def build_parser() -> argparse.ArgumentParser:
 
     outcomes = sub.add_parser("outcomes", help="What the company put out, and what came of it. Roles learn from it")
     outcomes.add_argument("--dir", help="The company's folder. Default: here")
-    outcomes.add_argument("--status", choices=["open", "accepted", "rejected", "duplicate", "ignored"])
+    outcomes.add_argument("--status", choices=OUTCOME_STATUSES)
     outcomes.set_defaults(func=cmd_outcomes, outcomes_command=None)
     outcome_sub = outcomes.add_subparsers(dest="outcomes_command")
     outcome_sub.add_parser("check", help="Check GitHub issues and pull requests with gh, and queue follow-ups")
-    outcome_add = outcome_sub.add_parser("add", help="Track a link the company put out")
-    outcome_add.add_argument("url")
+    outcome_add = outcome_sub.add_parser("add", help="Track something the company put out: a link, or any reference")
+    outcome_add.add_argument("ref", help='A link, or a reference such as "quote 12, emailed"')
+    outcome_add.add_argument(
+        "--target", help="Who or what it went to: a client, a project, a site. Default: from the link"
+    )
     outcome_add.add_argument("--run", dest="run_id", required=True, help="The run that made it")
     outcome_add.add_argument("--role", required=True, help="The role that put it out, such as outreach/poster")
     outcome_add.add_argument("--title")
     outcome_add.add_argument("--kind", help="Such as issue, post, or email. Default: from the link")
     outcome_set = outcome_sub.add_parser("set", help="Say what happened to something, when no check can")
     outcome_set.add_argument("id", type=int)
-    outcome_set.add_argument("status", choices=["open", "accepted", "rejected", "duplicate", "ignored"])
+    outcome_set.add_argument("status", choices=OUTCOME_STATUSES)
     outcome_set.add_argument("--note", help="What was said, or why")
     outcome_set.add_argument("--by", help="Your name. Default: your username")
 

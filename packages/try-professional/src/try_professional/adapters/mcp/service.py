@@ -366,13 +366,15 @@ class McpService:
         state = self.orchestrator.state(run_id)
         return invocation_id in state.invocations and state.phase.value != "blocked"
 
-    def outcome_track(self, run_id: str, invocation_id: str, url: str, title: str = "") -> dict[str, Any]:
+    def outcome_track(
+        self, run_id: str, invocation_id: str, ref: str, title: str = "", target: str = "", kind: str = ""
+    ) -> dict[str, Any]:
         """A role put something out. Any role may ask; code records it, and a check or a person says what came of it."""
         role = self._role_for(run_id, invocation_id)
-        item = self.orchestrator.track_outcome(run_id, role, url, title=title)
+        item = self.orchestrator.track_outcome(run_id, role, ref, title=title, target=target, kind=kind)
         if item is None:
-            raise ToolError("That isn't a link. Give the full https:// address of what you put out.")
-        return {"tracked": True, "id": item.id, "kind": item.kind}
+            raise ToolError("Give a link, or a reference a person would know it by, such as 'quote 12 to Acme'.")
+        return {"tracked": True, "id": item.id, "kind": item.kind, "target": item.target}
 
     def usage_report(self, run_id: str, invocation_id: str, input_tokens: int, output_tokens: int) -> dict[str, Any]:
         """What the client says it spent. It's kept for people to read, and limits don't rest on it."""

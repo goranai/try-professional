@@ -93,7 +93,7 @@ class TestTheRecord:
         again = store.track("https://github.com/a/b/issues/1", run_id="r2", role="x/z", credited=[], kind="", title="",
                             at=NOW)  # fmt: skip
         assert first is not None and again is not None and first.id == again.id
-        assert store.track("not a link", run_id="r", role="x/y", credited=[], kind="", title="", at=NOW) is None
+        assert store.track("", run_id="r", role="x/y", credited=[], kind="", title="", at=NOW) is None
         store.close()
 
     def test_a_status_changes_once(self, tmp_path: Path) -> None:
@@ -105,7 +105,7 @@ class TestTheRecord:
         assert store.settle(item.id, "accepted", "liked again", NOW) is None
         with pytest.raises(ValueError):
             store.settle(item.id, "great", "", NOW)
-        assert store.record_lines()[0] == "1 tracked: 1 accepted."
+        assert store.record_lines()[0] == "The company, 1 tracked: 1 accepted."
         store.close()
 
     def test_links_and_titles_come_from_what_a_command_printed(self) -> None:
@@ -321,7 +321,7 @@ class TestChecking:
         gh = FakeGh({url: {"state": "CLOSED", "stateReason": "NOT_PLANNED",
                            "comments": [_comment("maintainer", "Not a bug: that's how it's meant to work.")]}})  # fmt: skip
         report = check(company, gh=gh, now=lambda: NOW)
-        assert [i.status for i in report.settled] == ["rejected"]
+        assert [i.status for i in report.settled] == ["by_design"], "how it's meant to work isn't just turned down"
         assert "maintainer" in report.settled[0].note and "meant to work" in report.settled[0].note
         assert company.memory.notes, "the roles learn it"  # type: ignore[attr-defined]
 
@@ -411,7 +411,7 @@ class TestFromChat:
         assert f"#{number}" in conversation.handle("/held").text
         assert "Ran" in conversation.handle(f"/approve {number}").text
         assert "isn't waiting" in conversation.handle(f"/deny {number}").text
-        assert "1 tracked: 1 open." in conversation.handle("/outcomes").text
+        assert "#1 open: issue to a/b, https://github.com/a/b/issues/8" in conversation.handle("/outcomes").text
 
 
 class TestFromClaudeCode:
@@ -424,6 +424,9 @@ class TestFromClaudeCode:
         answer = role.outcome_track(run_id, invocation.id, "https://github.com/a/b/pull/12", "Fix docs")
         assert answer["tracked"] is True and answer["kind"] == "pull request"
         with pytest.raises(ToolError):
-            role.outcome_track(run_id, invocation.id, "a pull request I opened")
+            role.outcome_track(run_id, invocation.id, "")
+        quote = role.outcome_track(run_id, invocation.id, "Quote 12, emailed", target="Acme Bakery", kind="quote")
+        assert quote["target"] == "acme bakery" and quote["kind"] == "quote", "not only links"
+
         with pytest.raises(ToolError):
             coordinator.outcome_track(run_id, invocation.id, "https://github.com/a/b/pull/13")
