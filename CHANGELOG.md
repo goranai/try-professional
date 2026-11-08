@@ -2,9 +2,11 @@
 
 Each version of `try-professional`. `skill-customs` is listed only when it changes.
 
-## skill-customs 0.1.2 (not published yet)
+## skill-customs 0.1.2 (2026-11-08)
 
 Bug fixes to the scanner, from a rescan of the same 1,449 skills with 0.1.1. [Measured before and after](docs/research/scanner/README.md#012) on a labelled synthetic set: 48 of 59 verdicts right in 0.1.1, and 59 of 59 now. The set was written for these fixes, so read the "after" as each fix working, and the earlier catches holding.
+
+**These fixes were verified on synthetic fixtures only.** The 1,449-skill library they came from wasn't rescanned with 0.1.2, so how its totals moved isn't known.
 
 ### Fixed: false alarms
 
@@ -19,9 +21,13 @@ Bug fixes to the scanner, from a rescan of the same 1,449 skills with 0.1.1. [Me
 
 - **The ruleset is 2026.11.3.** A lockfile records it, with the scanner version.
 
-## 0.1.3 (not published yet)
+## 0.1.3 (2026-11-08)
 
 Bug fixes from an external retest of 0.1.2 on Linux, on the API runner and `deepseek-v4.1-flash-1017`.
+
+### Changed
+
+- **The skill judge sees the company's other roles.** It was told to leave out skills that belong to a neighbouring role, but never shown the others, so it guessed. On a fresh held-out set of 39 public skills, judged by Claude Sonnet, precision rose from 54% to 62%, and coverage didn't change: 56% before and 53% after, within run-to-run noise. Judgments cached by earlier versions are made again once. [How it was measured](docs/research/skill_quality/README.md).
 
 ### Fixed
 
