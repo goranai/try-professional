@@ -120,6 +120,20 @@ def test_a_payload_sent_as_text_and_met_in_other_words() -> None:
         parse_payload("PublicContent", settle_payload("PublicContent", unclear))
 
 
+def test_a_task_without_an_id_and_a_review_in_its_own_words() -> None:
+    """From one real multi-department job: three refusals over wording, none over content."""
+    plan = {"tasks": [{"title": "Draft the caption", "owner_role": "marketing/social", "goal": "Write it",
+                       "expected_output": "A caption", "definition_of_done": ["One caption"],
+                       "output_type": "PublicContent"}]}  # fmt: skip
+    settled = settle_payload("TaskPlan", plan)
+    assert settled["tasks"][0]["id"] == "draft-the-caption"
+    verdict = {"gate": "qa", "subject_artifact_id": "a", "decision": "changes_requested",
+               "summary": "Two problems", "checks_performed": ["read it"],
+               "issues": [{"severity": "nit", "description": "A typo"}, {"severity": "critical", "description": "Wrong price"}]}  # fmt: skip
+    parsed = parse_payload("ReviewVerdict", settle_payload("ReviewVerdict", verdict))
+    assert [i.severity for i in parsed.issues] == ["minor", "blocker"]  # type: ignore[attr-defined]
+
+
 def test_flags_in_the_wrong_place_are_still_refused() -> None:
     """Flags decide which reviews run, so they're never quietly dropped."""
     with pytest.raises(ArtifactError, match="flags"):

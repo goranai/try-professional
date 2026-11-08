@@ -187,6 +187,39 @@ class TestWorkOnAComputer:
         assert _question(company, result.run_id).kind == "stuck"
 
 
+class TestASmallConversation:
+    """A real analyst reading web pages sent 2.8 million input tokens in 22 calls: each page, again, every call."""
+
+    def test_old_outputs_are_cut_in_batches_and_the_newest_kept(self) -> None:
+        from try_professional.adapters.api_runner.runner import KEPT_TOOL_OUTPUTS, _cut_old_outputs
+
+        page = "x" * 5000
+        messages: list[Any] = [{"role": "user", "content": "Brief"}]
+        for n in range(2 * KEPT_TOOL_OUTPUTS - 1):
+            messages += [
+                {"role": "assistant", "content": ""},
+                {"role": "tool", "tool_call_id": str(n), "content": page},
+            ]
+        _cut_old_outputs(messages)
+        assert all(m["content"] == page for m in messages if m["role"] == "tool"), "not yet: nothing changes"
+        messages += [{"role": "tool", "tool_call_id": "last", "content": page}]
+        _cut_old_outputs(messages)
+        outputs = [m["content"] for m in messages if m["role"] == "tool"]
+        assert all(len(o) < 600 and "cut to its start" in o for o in outputs[:-KEPT_TOOL_OUTPUTS])
+        assert outputs[-KEPT_TOOL_OUTPUTS:] == [page] * KEPT_TOOL_OUTPUTS
+        assert messages[0]["content"] == "Brief", "the brief is never cut"
+
+    def test_the_same_for_claudes_message_shape(self) -> None:
+        from try_professional.adapters.api_runner.runner import KEPT_TOOL_OUTPUTS, _cut_old_outputs
+
+        blocks = [
+            {"type": "tool_result", "tool_use_id": str(n), "content": "y" * 3000} for n in range(2 * KEPT_TOOL_OUTPUTS)
+        ]
+        messages: list[Any] = [{"role": "user", "content": blocks}]
+        _cut_old_outputs(messages)
+        assert sum("cut to its start" in b["content"] for b in blocks) == KEPT_TOOL_OUTPUTS
+
+
 class TestRoomToReply:
     def test_a_reply_cut_off_gets_twice_the_room(self, company: Orchestrator) -> None:
         """A reasoning model's thinking counts as output. Cut off, it's asked again with more room, up to 128k."""

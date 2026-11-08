@@ -52,6 +52,10 @@ DEFAULT_MAX_TURNS = 12
 COMPUTER_MAX_TURNS = 40
 # A review checks work; it doesn't redo it. A real reviewer given 40 turns spent 15 calls re-running every search.
 REVIEW_MAX_TURNS = 16
+# Tool outputs kept whole in a step's conversation. Older ones are cut to their start, because every call sends the
+# whole conversation again: a real analyst reading web pages sent 2.8 million input tokens in 22 calls.
+KEPT_TOOL_OUTPUTS = 6
+CUT_OUTPUT_CHARS = 400
 # What a role does on a computer that's new for its step counts as work. Reading its own files and notes doesn't.
 WORK_TOOLS = ("shell", "web_fetch", "web_search")
 _TOOL_PREFIX = re.compile(r"^\s*(?:functions?[.=:]|tools?[.=:])\s*", re.IGNORECASE)
@@ -115,6 +119,35 @@ class RunResult:
     cached_input_tokens: int = 0
     calls: int = 0
     size: str = ""
+
+
+_CUT_MARK = "...(an earlier output, cut to its start"
+
+
+def _cut(content: str) -> str:
+    if len(content) <= CUT_OUTPUT_CHARS:
+        return f"{content}\n{_CUT_MARK})"
+    return f"{content[:CUT_OUTPUT_CHARS]}\n{_CUT_MARK} to keep the conversation small. Run it again if you need it.)"
+
+
+def _cut_old_outputs(messages: list[Any]) -> None:
+    """Keep the newest tool outputs whole, and cut older ones to their start. Works for both message shapes."""
+    places: list[tuple[dict[str, Any], str | None]] = []
+    for message in messages:
+        if not isinstance(message, dict):
+            continue
+        if message.get("role") == "tool" and isinstance(message.get("content"), str):
+            places.append((message, None))
+        elif message.get("role") == "user" and isinstance(message.get("content"), list):
+            places += [(block, "content") for block in message["content"]
+                       if isinstance(block, dict) and block.get("type") == "tool_result"
+                       and isinstance(block.get("content"), str)]  # fmt: skip
+    whole = [holder for holder, _ in places if _CUT_MARK not in holder["content"]]
+    # In batches: what was sent before stays the same for several calls, so a provider's prompt cache still works.
+    if len(whole) < 2 * KEPT_TOOL_OUTPUTS:
+        return
+    for holder in whole[:-KEPT_TOOL_OUTPUTS]:
+        holder["content"] = _cut(holder["content"])
 
 
 def _github_search(command: str) -> str:
@@ -465,6 +498,7 @@ class ApiRunner:
             if control_event is not None:
                 return [control_event]
             messages.extend(client.tool_results_messages(results))
+            _cut_old_outputs(messages)
 
         return [
             InvocationFailed(

@@ -476,6 +476,14 @@ _ALIASES: dict[str, dict[str, tuple[str, ...]]] = {
 # How a model says a criterion was met, or wasn't. Anything else stays as it is, and is refused.
 _SAID_MET = {"met", "yes", "true", "done", "pass", "passed", "complete", "completed", "achieved", "satisfied", "ok"}
 _SAID_NOT_MET = {"not met", "unmet", "no", "false", "fail", "failed", "partial", "partly met", "pending", "not done"}
+_SEVERITY = {
+    "critical": "blocker", "severe": "blocker", "blocking": "blocker",
+    "high": "major", "medium": "major", "moderate": "major", "important": "major", "serious": "major",
+    "low": "minor", "info": "minor", "informational": "minor", "nit": "minor", "nitpick": "minor",
+    "suggestion": "minor", "trivial": "minor", "cosmetic": "minor",
+}  # fmt: skip
+# A reviewer's own account of how it checked. Kept nowhere, and never a reason to refuse its verdict.
+_REVIEW_NARRATIVE = ("summary", "checks_performed", "checks", "verification", "evidence", "comments", "rationale")
 # Extra detail on a review issue that's worth keeping, folded into its description.
 _ISSUE_DETAIL = ("where", "location", "fix", "suggestion", "recommendation")
 
@@ -515,15 +523,13 @@ def _settle(model: type[BaseModel], data: dict[str, Any], *, top: bool = False) 
             out["description"] = f"{out['description']} ({'; '.join(extra)})"
         if isinstance(out.get("severity"), str):
             severity = out["severity"].strip().lower()
-            out["severity"] = {"critical": "blocker", "high": "major", "medium": "major", "low": "minor"}.get(
-                severity, severity
-            )
+            out["severity"] = _SEVERITY.get(severity, severity)
     if model.__name__ == "Claim":
         if out.get("verified") is False:
             out["unverified"] = True
         if not out.get("source") and not out.get("unverified"):
             out["unverified"] = True
-    if model.__name__ == "WorkPackage" and not out.get("id") and isinstance(out.get("title"), str):
+    if model.__name__ in ("WorkPackage", "TaskSpec") and not out.get("id") and isinstance(out.get("title"), str):
         # A name for it, from its own title. Nothing it says changes.
         out["id"] = re.sub(r"[^a-z0-9]+", "-", out["title"].lower()).strip("-")[:40] or out.get("id")
     if model.__name__ in ("CriterionResult", "DoneCriterion") and isinstance(out.get("met"), str):
@@ -542,6 +548,9 @@ def _settle(model: type[BaseModel], data: dict[str, Any], *, top: bool = False) 
         for wrapper in ("notes", "language"):
             if wrapper not in fields:
                 out.pop(wrapper, None)
+        if model.__name__ == "ReviewVerdict":
+            for narrative in _REVIEW_NARRATIVE:
+                out.pop(narrative, None)
     for name, info in fields.items():
         # One item where a list of text belongs: "acceptance": "It works", for ["It works"].
         if isinstance(out.get(name), str) and _is_text_list(info.annotation):
