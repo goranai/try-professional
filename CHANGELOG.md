@@ -2,7 +2,7 @@
 
 Each version of `try-professional`. `skill-customs` is listed only when it changes.
 
-## skill-customs 0.1.1 (not published yet)
+## skill-customs 0.1.1 (2026-11-08)
 
 Bug fixes to the scanner, from an external run over 1,449 skills on Linux. [Measured before and after](docs/research/scanner/README.md) on a labelled synthetic set: 18 of 29 verdicts right in 0.1.0, and 29 of 29 now, on a set written for these fixes.
 
@@ -23,7 +23,7 @@ Bug fixes to the scanner, from an external run over 1,449 skills on Linux. [Meas
 - **A new severity, `note`,** for findings that are recorded but never change a verdict. A lockfile written by 0.1.1 can list one.
 - **The scanner is described as what it is:** a tripwire for importing third-party skills, not a full audit.
 
-## 0.1.2 (not published yet)
+## 0.1.2 (2026-11-08)
 
 Small fixes that matter to someone using it, and none of v0.2's features.
 
