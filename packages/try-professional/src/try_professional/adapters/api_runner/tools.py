@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any
 
 from ...core.artifacts import PAYLOAD_TYPES, Flags, WorkNotes
+from ...core.outside import urls_in
 from ...core.ports import MemoryPort, SearchPort, SkillPort
 from .clients import ClientError, ToolSpec
 from .prompts import untrusted
@@ -283,6 +284,10 @@ class ToolContext:
     note_source: Callable[[str, str], None] | None = None
     # A person's answer to "may this role run this?", or None when nobody is there to ask.
     approve: Callable[[str, str], bool] | None = None
+    # With nobody there to ask, the command waits for a person, and this returns its number. None: it's refused.
+    hold: Callable[[str], int] | None = None
+    # Follows a link an approved outside command printed, such as the issue it opened. Takes the URL and command.
+    track: Callable[[str, str], None] | None = None
 
 
 def _resolve(workspace: Path, relative: Any) -> Path:
@@ -377,18 +382,39 @@ def run_tool(context: ToolContext, name: str, arguments: dict[str, Any]) -> str:
 def _run_shell(context: ToolContext, command: str) -> str:
     if not command.strip():
         raise ToolRefused("command must be a non-empty string")
-    if needs_a_person(command) and (context.approve is None or not context.approve(context.role, command)):
+    outside = needs_a_person(command)
+    if outside and context.approve is None and context.hold is not None:
+        number = context.hold(command)
+        return (
+            f"Held for a person as #{number}: nobody is here to approve it right now. It runs when a person approves "
+            f"it (trypro held approve {number}). Don't try another way. Carry on, and say in your submission that it's "
+            "waiting for approval."
+        )
+    if outside and (context.approve is None or not context.approve(context.role, command)):
         raise ToolRefused(
             "That changes something outside, so a person has to approve it, and none did. Put what you'd run, and "
             "why, in your submission, for a person to decide."
         )
+    result = execute(context.workspace, command)
+    if outside and context.track is not None:
+        for url in urls_in(result):
+            context.track(url, command)
+    head, _, output = result.partition("\n")
+    if len(output) > MAX_OUTPUT_CHARS:
+        output = f"...(first {len(output) - MAX_OUTPUT_CHARS} characters cut)\n" + output[-MAX_OUTPUT_CHARS:]
+    return untrusted("shell", f"{head}\n{output}")
+
+
+def execute(workspace: Path, command: str) -> str:
+    """Run a command in a workspace as a role's shell does: bash, no model keys, a time limit. There's no approval
+    check here: a caller running something outside has already had a person approve it."""
     environment = {k: v for k, v in os.environ.items() if k in _KEPT_SECRETS or not _SECRET_NAME.search(k)}
-    context.workspace.mkdir(parents=True, exist_ok=True)
+    workspace.mkdir(parents=True, exist_ok=True)
     try:
         done = subprocess.run(
             _shell_command(command),
             shell=isinstance(_shell_command(command), str),
-            cwd=context.workspace,
+            cwd=workspace,
             env=environment,
             capture_output=True,
             text=True,
@@ -399,10 +425,7 @@ def _run_shell(context: ToolContext, command: str) -> str:
         )
     except subprocess.TimeoutExpired:
         return f"Stopped after {SHELL_TIMEOUT_SECONDS} seconds."
-    output = (done.stdout or "") + (done.stderr or "")
-    if len(output) > MAX_OUTPUT_CHARS:
-        output = f"...(first {len(output) - MAX_OUTPUT_CHARS} characters cut)\n" + output[-MAX_OUTPUT_CHARS:]
-    return untrusted("shell", f"exit code {done.returncode}\n{output}")
+    return f"exit code {done.returncode}\n{(done.stdout or '') + (done.stderr or '')}"
 
 
 def _fetch(context: ToolContext, url: str) -> str:

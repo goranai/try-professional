@@ -31,6 +31,10 @@ Approve = Callable[[str, str], bool]
 HELP = """Say what you want, in your own words, and the company works on it.
   continue       Carry on with the last command that stopped
   /runs          Your recent commands, and how they ended
+  /held          Commands waiting for your approval, such as posting an issue
+  /approve 3     Run held command 3        /deny 3   Refuse it
+  /outcomes      What the company put out, and what came of it
+  /schedules     What it does on a timer
   /help          This
   /quit          Leave. The company remembers this conversation."""
 
@@ -171,7 +175,42 @@ class Conversation:
                 status = self.company.status(run_id)
                 rows.append(f"{run_id}  {status.phase:<9} {status.goal.splitlines()[0][:70]}")
             return Reply("\n".join(rows) or "No commands yet.")
+        if name in ("/held", "/approve", "/deny", "/outcomes", "/schedules"):
+            return self._outside(name, message.split()[1:])
         return Reply(f"Unknown command {name}. /help lists them.")
+
+    def _outside(self, name: str, args: list[str]) -> Reply:
+        """Approvals, outcomes, and schedules. Someone in this conversation is the person the company works for."""
+        from .adapters.api_runner.tools import execute
+        from .core.outside import describe_every
+
+        orchestrator = self.company._orchestrator()
+        try:
+            outside = orchestrator.outside
+            if name == "/held":
+                rows = [f"#{h.id} {h.role}: {h.command}" for h in outside.held()]
+                return Reply(
+                    "\n".join([*rows, "", "/approve <number> or /deny <number>"]) if rows else "Nothing waits."
+                )
+            if name == "/outcomes":
+                return Reply("\n".join(outside.record_lines(limit=15)) or "Nothing tracked yet.")
+            if name == "/schedules":
+                rows = [f"{s.name}: every {describe_every(s.every_seconds)}, next {s.next_at[:16]}. {s.goal[:80]}"
+                        for s in outside.schedules()]  # fmt: skip
+                return Reply("\n".join(rows) or 'None. Add one: trypro schedule add <name> "<what>" --every 1d')
+            if not args or not args[0].lstrip("#").isdigit():
+                return Reply(f"Which one? {name} <number>. /held lists them.")
+            number = int(args[0].lstrip("#"))
+            held = outside.held_item(number)
+            if held is None or held.status != "waiting":
+                return Reply(f"#{number} isn't waiting for approval.")
+            if name == "/deny":
+                orchestrator.deny_held(number, by=self.person)
+                return Reply(f"Refused #{number}. It won't run.")
+            done = orchestrator.run_held(number, execute, by=self.person)
+            return Reply(f"Ran #{number}.\n{done.output[-1500:] if done else ''}".strip())
+        finally:
+            orchestrator.close()
 
 
 def terminal_chat(root: Path, *, say: Callable[[str], None] = print, read: Callable[[str], str] = input) -> int:

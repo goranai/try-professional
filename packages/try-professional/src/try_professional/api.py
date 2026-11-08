@@ -280,7 +280,14 @@ class Company:
             orchestrator = self._orchestrator()
             routes = ModelRoutes({"standard": model or "scripted", "executive": model or "scripted",
                                   "fast": model or "scripted"})  # fmt: skip
-            runner = ApiRunner(orchestrator, client or ScriptedClient(), routes, computer=computer, approve=approve)
+            runner = ApiRunner(
+                orchestrator,
+                client or ScriptedClient(),
+                routes,
+                computer=computer,
+                approve=approve,
+                hold=approve is None,
+            )
             return runner, orchestrator
         import argparse
         import os
@@ -294,4 +301,6 @@ class Company:
         finally:
             os.chdir(previous)
         runner.approve = approve
+        # With nobody to ask, a command that changes something outside waits for a person, as `trypro held` shows.
+        runner.hold = approve is None
         return runner, orchestrator

@@ -120,6 +120,7 @@ class ApiRunner:
         on_human: HumanHandler | None = None,
         computer: bool = True,
         approve: Callable[[str, str], bool] | None = None,
+        hold: bool = False,
     ) -> None:
         self.orchestrator = orchestrator
         self.org: Org = orchestrator.org
@@ -135,6 +136,8 @@ class ApiRunner:
         self.computer = computer
         # Asked before a command that changes something outside. With nobody to ask, those don't run.
         self.approve = approve
+        # With nobody to ask, hold those commands for a person instead of refusing them. For unattended runs.
+        self.hold = hold
 
     # ---- RuntimeAdapter ---------------------------------------------------------
 
@@ -276,6 +279,8 @@ class ApiRunner:
             search=search,
             note_source=lambda url, day: self.orchestrator.note_source(run_id, url, day),
             approve=self.approve,
+            hold=self._holder(run_id, role.ref) if self.hold else None,
+            track=lambda url, command: self._track(run_id, role.ref, url, command),
         )
         system = system_prompt(role, self.org)
         try:
@@ -292,7 +297,15 @@ class ApiRunner:
         messages = [
             client.user_message(
                 user_prompt(
-                    invocation, state, self.org, files, loadout, web=web, search=search is not None, briefing=briefing
+                    invocation,
+                    state,
+                    self.org,
+                    files,
+                    loadout,
+                    web=web,
+                    search=search is not None,
+                    briefing=briefing,
+                    computer=self.computer,
                 )
             )
         ]
@@ -409,6 +422,16 @@ class ApiRunner:
                 retryable=False,
             )
         ]
+
+    def _holder(self, run_id: str, role: str) -> Callable[[str], int]:
+        return lambda command: self.orchestrator.hold_command(run_id, role, command)
+
+    def _track(self, run_id: str, role: str, url: str, command: str) -> None:
+        """Following what an outside command made helps later runs, and failing to must never stop this one."""
+        try:
+            self.orchestrator.track_outcome(run_id, role, url, command=command)
+        except Exception as error:
+            self.orchestrator.record(run_id, "outcome_error", {"error": type(error).__name__})
 
     def _control(self, name: str, arguments: dict[str, Any], action: InvokeRole, run_id: str) -> Any:
         """Return an event, or an error string for the model to correct.

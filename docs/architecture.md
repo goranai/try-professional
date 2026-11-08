@@ -819,7 +819,7 @@ class RuntimeAdapter(Protocol):
 
 ### 10.2 API runner
 
-Provider-agnostic config with `anthropic` and `openai_compatible` clients. By default every role uses the `TRYPRO_LLM_*` values from the environment or `.env`, and `llm_overrides` in `org.yaml` can give a department or role its own model, key variable, or endpoint (see the [spec](spec/org-v1.md#model-overrides)). A role's override wins over its department's, one field at a time. An override with a new endpoint must also name its key variable, so a shared org file can't quietly send the default key elsewhere. Keys come only from environment variables, and are redacted from provider error messages. Identity is attested and tool permissions are fully enforced. There is no shell tool yet. A Docker-backed one is planned as opt-in.
+Provider-agnostic config with `anthropic` and `openai_compatible` clients. By default every role uses the `TRYPRO_LLM_*` values from the environment or `.env`, and `llm_overrides` in `org.yaml` can give a department or role its own model, key variable, or endpoint (see the [spec](spec/org-v1.md#model-overrides)). A role's override wins over its department's, one field at a time. An override with a new endpoint must also name its key variable, so a shared org file can't quietly send the default key elsewhere. Keys come only from environment variables, and are redacted from provider error messages. Identity is attested and tool permissions are fully enforced. Since 0.5.0, roles that do or check work also get `shell`, run in the run's workspace with the model's keys removed from its environment, and `web_fetch`. A command that changes something outside needs a person's approval; with nobody to ask, it's held for one (§10.5).
 
 - **Anthropic** uses the official `anthropic` SDK as an optional extra (`try-professional[anthropic]`), rather than raw HTTP as first proposed. That API changes quickly, and the SDK tracks it.
 - **OpenAI-compatible APIs** (OpenAI, Grok, local servers) use `httpx` directly, so they need no extra dependency.
@@ -828,7 +828,7 @@ Provider-agnostic config with `anthropic` and `openai_compatible` clients. By de
 
 ### 10.3 MCP server
 
-Tools: `org_get`, `run_start`, `run_status`, `run_next_action`, `artifact_submit`, `review_submit`, `handoff_request`, `escalate`, `usage_report`, `memory_recall`, `memory_write`, `memory_promote`, `skill_search`, `skill_get`, `audit_tail`. It uses stdio by default, and is started with `trypro mcp`. See [its README](../packages/try-professional/src/try_professional/adapters/mcp/README.md).
+Tools: `org_get`, `run_start`, `run_status`, `run_next_action`, `artifact_submit`, `review_submit`, `handoff_request`, `escalate`, `usage_report`, `memory_recall`, `memory_write`, `memory_promote`, `skill_search`, `skill_get`, `outcome_track`, `audit_tail`. It uses stdio by default, and is started with `trypro mcp`. See [its README](../packages/try-professional/src/try_professional/adapters/mcp/README.md).
 
 The server can't see what a client's model spends, so token ceilings don't apply in this mode, and `usage_report` tokens are marked as self-reported.
 
@@ -939,6 +939,15 @@ trypro hermes verify
 - Which version to support. PyPI stops at `hermes-agent` 0.19.0, the latest GitHub release is v0.23.0, and the Mnemosyne catalog entry needs `>=0.21.4`. Building v0.23.0 from its tag with `uv` failed on this machine on 2026-11-06, so the supported route is probably the official installer. Not resolved yet.
 
 **Fallback.** If live testing breaks this design, I'll report it before changing direction.
+
+### 10.5 The outside: outcomes, held commands, schedules
+
+Since 0.6.1, `.trypro/outside.sqlite` records what a company did outside, apart from run state, and only code writes to it.
+
+- **Outcomes.** A link an approved outside command printed is tracked with the run, the role that put it out, and every role that worked on the run. In Claude Code, a role gives its link to `outcome_track`. `trypro outcomes check` reads GitHub issues and pull requests with `gh`, with no model, and settles each as accepted, rejected, duplicate, or ignored. A settled outcome becomes a lesson, written by code from the record, in each credited role's personal memory, and proposed to each department's head, who adopts or drops it while dispatching, like any team lesson. The record's summary is shown to roles that plan, assign, do, or check work, inside an `untrusted` block, because a maintainer's quoted words are someone else's text.
+- **Follow-ups.** A new reply from someone else queues a command marked "Follow up on". A scheduled round runs those; commands a person queued wait for `trypro next`.
+- **Held commands.** `ApiRunner(hold=True)` turns "nobody to ask" into "wait for a person": the command is stored with its run, role, and workspace, the role is told it's waiting, and the run goes on. Approving runs it in that workspace, once (compare-and-swap on `waiting`), and tracks any link it prints. The CLI holds when there's no person at the terminal, and so does `Company.run` without an `approve` callback.
+- **Schedules.** A round is `trypro schedule run`, started by the operating system's scheduler (`trypro schedule install`), so there's no daemon. The next time is counted from when a schedule ran, so one missed while a machine was off runs once.
 
 ## 11. Benchmark harness
 

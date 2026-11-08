@@ -423,7 +423,10 @@ def _runner(args: argparse.Namespace) -> tuple[ApiRunner, Orchestrator]:
     if isinstance(orchestrator.skills, LockedSkills):
         orchestrator.feedback = orchestrator.skills
     computer = config.raw.get("computer_tools", True) is not False
-    return ApiRunner(orchestrator, router=router, computer=computer, approve=terminal_approver()), orchestrator
+    approve = terminal_approver()
+    # With nobody at the terminal, a command that changes something outside waits for a person: trypro held.
+    runner = ApiRunner(orchestrator, router=router, computer=computer, approve=approve, hold=approve is None)
+    return runner, orchestrator
 
 
 def _memory_settings(config: ProjectConfig) -> MemorySettings:
@@ -692,7 +695,7 @@ def cmd_mcp(args: argparse.Namespace) -> int:
         )
         if isinstance(orchestrator.skills, LockedSkills):
             orchestrator.feedback = orchestrator.skills
-        return McpService(orchestrator, bound_role=args.role, coordinator=args.coordinator)
+        return McpService(orchestrator, bound_role=args.role, coordinator=args.coordinator, computer=not args.sandboxed)
 
     if args.role and args.coordinator:
         print("A server is bound to a role, or coordinates. It can't be both.", file=sys.stderr)
@@ -1159,6 +1162,161 @@ def cmd_chat(args: argparse.Namespace) -> int:
         return 2
 
 
+def _here(args: argparse.Namespace) -> Path:
+    root = Path(getattr(args, "dir", None) or ".").resolve()
+    load_env_file(root)
+    return root
+
+
+def _outside_orchestrator(root: Path, *, with_memory: bool) -> Orchestrator:
+    """Lessons from outcomes go to roles' memory, so settling one needs it. Listing doesn't."""
+    config = load_config(root)
+    org = load_org(config.org_dir)
+    memory = _memory(config, org) if with_memory else None
+    return Orchestrator(org, config.home, memory=memory)
+
+
+def cmd_outcomes(args: argparse.Namespace) -> int:
+    from .outcomes import check
+
+    root = _here(args)
+    action = args.outcomes_command or "list"
+    orchestrator = _outside_orchestrator(root, with_memory=action in ("check", "set"))
+    try:
+        if action == "list":
+            items = orchestrator.outside.outcomes(args.status)
+            if not items:
+                _print("Nothing tracked yet. Links an approved command prints are tracked, and roles can add theirs.")
+                return 0
+            for item in items:
+                _print(f"#{item.id:<4} {item.status:<9} {item.kind:<12} {item.url}")
+                if item.title or item.note:
+                    _print(f"       {item.title}{'  - ' + item.note if item.note else ''}")
+            return 0
+        if action == "check":
+            report = check(orchestrator)
+            for settled in report.settled:
+                _print(f"#{settled.id} {settled.status}: {settled.url}. Every role that worked on it gets the lesson.")
+            for url in report.follow_ups:
+                _print(f"New replies on {url}: a follow-up is queued. `trypro schedule run` runs it.")
+            for problem in report.problems:
+                _print(f"Couldn't check: {problem}")
+            _print(f"Checked {report.checked}.")
+            return 1 if report.problems and not report.checked else 0
+        if action == "add":
+            tracked = orchestrator.track_outcome(
+                args.run_id, args.role, args.url, kind=args.kind or "", title=args.title or ""
+            )
+            if tracked is None:
+                _print("That isn't a link. Give the full https:// address.")
+                return 2
+            _print(f"Tracking #{tracked.id}: {tracked.url}")
+            return 0
+        if orchestrator.outside.outcome(args.id) is None:
+            _print(f"There's no outcome #{args.id}.")
+            return 2
+        changed = orchestrator.settle_outcome(args.id, args.status, args.note or "", by=args.by or getpass.getuser())
+        _print(f"#{args.id} is {args.status}. The roles that worked on it get the lesson." if changed else "No change.")
+        return 0
+    finally:
+        orchestrator.close()
+
+
+def cmd_held(args: argparse.Namespace) -> int:
+    from .adapters.api_runner.tools import execute
+
+    root = _here(args)
+    orchestrator = _outside_orchestrator(root, with_memory=False)
+    try:
+        action = args.held_command or "list"
+        if action == "list":
+            waiting = orchestrator.outside.held()
+            if not waiting:
+                _print("Nothing is waiting for your approval.")
+            for item in waiting:
+                _print(f"#{item.id}  {item.role}, run {item.run_id}:")
+                _print(f"    {item.command}")
+            if waiting:
+                _print(
+                    "Approve one with `trypro held approve <number>`, or refuse it with `trypro held deny <number>`."
+                )
+            return 0
+        held = orchestrator.outside.held_item(args.id)
+        if held is None or held.status != "waiting":
+            _print(f"#{args.id} isn't waiting for approval.")
+            return 2
+        if not _person_at_terminal():
+            _print("Approving or refusing needs a person at a terminal, or in chat. Nothing was done.")
+            return 2
+        by = args.by or getpass.getuser()
+        if action == "deny":
+            orchestrator.deny_held(args.id, by=by)
+            _print(f"Refused #{args.id}. It won't run.")
+            return 0
+        _print(f"Running #{args.id} for {held.role}: {held.command}")
+        done = orchestrator.run_held(args.id, execute, by=by)
+        _print(done.output if done else "It had already been decided.")
+        return 0
+    finally:
+        orchestrator.close()
+
+
+def cmd_schedule(args: argparse.Namespace) -> int:
+    from .core.outside import describe_every, parse_every
+    from .schedule import apply_entry, install_entry, notify, run_round, watch
+
+    root = _here(args)
+    action = args.schedule_command or "list"
+    if action == "run":
+        if args.watch:
+            return watch(root, say=_print)
+        outcome = run_round(root, say=_print, dry_run=args.dry_run)
+        text = outcome.summary(load_org(load_config(root).org_dir).company_name)
+        _print(text)
+        if outcome.ran or outcome.settled or outcome.held:
+            notify(text, _print)
+        return 1 if outcome.busy else 0
+    if action == "install":
+        shown, _ = install_entry(root, args.every_minutes)
+        if not args.apply:
+            _print("This runs a round every few minutes, from your operating system's scheduler:")
+            _print(f"  {shown}")
+            _print("Add it yourself, or run this again with --apply.")
+            return 0
+        try:
+            _print(apply_entry(root, args.every_minutes))
+        except (RuntimeError, OSError, subprocess.CalledProcessError) as error:
+            _print(f"Couldn't add it: {error}")
+            return 1
+        return 0
+    orchestrator = _outside_orchestrator(root, with_memory=False)
+    try:
+        if action == "add":
+            try:
+                every = parse_every(args.every)
+                item = orchestrator.outside.add_schedule(args.name, args.goal, every, utc_now())
+            except ValueError as error:
+                _print(str(error))
+                return 2
+            _print(f"{item.name}: every {describe_every(item.every_seconds)}, first at the next round. {item.goal}")
+            _print("Rounds run from your system's scheduler (trypro schedule install), or trypro schedule run --watch.")
+            return 0
+        if action == "remove":
+            removed = orchestrator.outside.remove_schedule(args.name)
+            _print(f"Removed {args.name}." if removed else f"There's no schedule called {args.name}.")
+            return 0 if removed else 2
+        schedules = orchestrator.outside.schedules()
+        if not schedules:
+            _print('No schedules. Add one: trypro schedule add <name> "<what to do>" --every 1d')
+        for entry in schedules:
+            last = f", last {entry.last_at[:16]} ({entry.last_run_id})" if entry.last_at else ""
+            _print(f"{entry.name:<20} every {describe_every(entry.every_seconds):<4} next {entry.next_at[:16]}{last}")
+            _print(f"    {entry.goal}")
+        return 0
+    finally:
+        orchestrator.close()
+
+
 def cmd_telegram(args: argparse.Namespace) -> int:
     from .telegram import TelegramError, serve_from_env
 
@@ -1306,7 +1464,57 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Only start and follow work, and hand it to servers bound to each role. It can't do a role's work",
     )
+    mcp.add_argument(
+        "--sandboxed", action="store_true", help="The role has only the company's tools: no shell, files, or web"
+    )
     mcp.set_defaults(func=cmd_mcp)
+
+    outcomes = sub.add_parser("outcomes", help="What the company put out, and what came of it. Roles learn from it")
+    outcomes.add_argument("--dir", help="The company's folder. Default: here")
+    outcomes.add_argument("--status", choices=["open", "accepted", "rejected", "duplicate", "ignored"])
+    outcomes.set_defaults(func=cmd_outcomes, outcomes_command=None)
+    outcome_sub = outcomes.add_subparsers(dest="outcomes_command")
+    outcome_sub.add_parser("check", help="Check GitHub issues and pull requests with gh, and queue follow-ups")
+    outcome_add = outcome_sub.add_parser("add", help="Track a link the company put out")
+    outcome_add.add_argument("url")
+    outcome_add.add_argument("--run", dest="run_id", required=True, help="The run that made it")
+    outcome_add.add_argument("--role", required=True, help="The role that put it out, such as outreach/poster")
+    outcome_add.add_argument("--title")
+    outcome_add.add_argument("--kind", help="Such as issue, post, or email. Default: from the link")
+    outcome_set = outcome_sub.add_parser("set", help="Say what happened to something, when no check can")
+    outcome_set.add_argument("id", type=int)
+    outcome_set.add_argument("status", choices=["open", "accepted", "rejected", "duplicate", "ignored"])
+    outcome_set.add_argument("--note", help="What was said, or why")
+    outcome_set.add_argument("--by", help="Your name. Default: your username")
+
+    held = sub.add_parser("held", help="Commands that change something outside, waiting for your approval")
+    held.add_argument("--dir", help="The company's folder. Default: here")
+    held.set_defaults(func=cmd_held, held_command=None)
+    held_sub = held.add_subparsers(dest="held_command")
+    for name, text in (("approve", "Run it now"), ("deny", "Refuse it")):
+        decision = held_sub.add_parser(name, help=text)
+        decision.add_argument("id", type=int)
+        decision.add_argument("--by", help="Your name. Default: your username")
+
+    schedule = sub.add_parser("schedule", help="Commands the company runs on a timer, unattended")
+    schedule.add_argument("--dir", help="The company's folder. Default: here")
+    schedule.set_defaults(func=cmd_schedule, schedule_command=None)
+    schedule_sub = schedule.add_subparsers(dest="schedule_command")
+    schedule_add = schedule_sub.add_parser("add", help="Add or replace a schedule")
+    schedule_add.add_argument("name", help="One word, such as daily-hunt")
+    schedule_add.add_argument("goal", help="What the company should do each time")
+    schedule_add.add_argument("--every", required=True, help="Such as 6h, 1d, or 1w. At least 15m")
+    schedule_remove = schedule_sub.add_parser("remove")
+    schedule_remove.add_argument("name")
+    schedule_sub.add_parser("list")
+    schedule_run = schedule_sub.add_parser(
+        "run", help="One round: check outcomes, run what's due and any follow-ups. Outside commands are held"
+    )
+    schedule_run.add_argument("--watch", action="store_true", help="Keep running a round every 5 minutes")
+    schedule_run.add_argument("--dry-run", action="store_true", help="Use a scripted model: no key, no cost")
+    schedule_install = schedule_sub.add_parser("install", help="Have your system's scheduler run a round regularly")
+    schedule_install.add_argument("--apply", action="store_true", help="Add it now, instead of showing it")
+    schedule_install.add_argument("--every-minutes", type=int, default=30)
 
     telegram = sub.add_parser("telegram", help="Talk to your company from Telegram. Needs a bot token in .env")
     telegram.add_argument("--dir", help="The company's folder. Default: here")

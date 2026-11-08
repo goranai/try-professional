@@ -89,11 +89,25 @@ def _has_earlier(files: list[str]) -> bool:
     return any(name.startswith("inputs/earlier/") for name in files)
 
 
-def _reach(org: Org, files: list[str], search: bool) -> str:
-    """What planners must know, or they ask for work that nobody here can do."""
+_COMPUTER = (
+    "Roles that do or check work have a computer: a shell (git, gh, curl, python) and the web, so they can clone and "
+    "read repositories, search GitHub, run programs, and read pages. Anything that changes something outside, such as "
+    "pushing, opening an issue or pull request, posting, or sending, happens only once a person approves it."
+)
+
+
+def _reach(org: Org, files: list[str], search: bool, computer: bool = False) -> str:
+    """What planners must know, or they ask for work that nobody here can do, or never ask for work it can."""
     web = search and any("web_search" in role.allowed_tools for role in org.roles.values())
     provided = ", ".join(files) if files else "none"
     earlier = f" {_EARLIER_WORK}" if _has_earlier(files) else ""
+    if computer:
+        return (
+            f"Files provided: {provided}.{earlier} Also company memory, each role's skills, and what a role already "
+            f"knows. {_COMPUTER} Nothing here can buy anything.\n"
+            "Ask only for what that can finish. For a source, link, or date it can't get, ask that the claim be marked "
+            "unverified, with what a person should check. Nobody may invent a source."
+        )
     return (
         f"Files provided: {provided}.{earlier} Also company memory, each role's skills, and what a role already knows"
         f"{', and web_search for roles that have it' if web else ''}. "
@@ -126,7 +140,9 @@ def user_prompt(
     web: bool = False,
     search: bool = False,
     briefing: Briefing | None = None,
+    computer: bool = False,
 ) -> str:
+    """`computer`: roles that work or check work have a shell and the web, so the prompt mustn't say otherwise."""
     briefing = briefing or Briefing()
     level = playbooks.level_of(org, invocation.role)
     parts = []
@@ -136,6 +152,9 @@ def user_prompt(
             parts.append(_section("Your stand-up", untrusted("work-state", briefing.brief.state)))
     parts.append(_section("Your assignment", playbooks.section(level, invocation.purpose.value)))
     parts.append(_section("Goal", state.goal))
+    if briefing.outside:
+        lines = "\n".join(briefing.outside)
+        parts.append(_section("What happened to this company's earlier work outside", untrusted("outcomes", lines)))
     if state.user_language:
         language = org.pipeline.working_language
         parts.append(
@@ -158,7 +177,7 @@ def user_prompt(
         parts.append(_section("Departments you can activate, and what their heads are for", installed))
     # An adapter that passes no files runs on someone else's tools, so this can't speak for what they reach.
     if workspace_files is not None and invocation.purpose in (Purpose.PLAN, Purpose.DISPATCH):
-        parts.append(_section("What this company can reach", _reach(org, workspace_files, search)))
+        parts.append(_section("What this company can reach", _reach(org, workspace_files, search, computer)))
     if invocation.work_package_id:
         package = state.packages[invocation.work_package_id]
         shown = package.model_dump(mode="json", include={"id", "title", "acceptance", "token_budget"})
@@ -192,9 +211,15 @@ def user_prompt(
         parts.append(
             _section(
                 "Files in this run's workspace",
-                f"{listing}\nYou can reach nothing else: no repository or shell"
-                f"{', and no network beyond web_search' if web else ', or network'}."
-                f"{f' {_EARLIER_WORK}' if _has_earlier(workspace_files) else ''}",
+                f"{listing}\n"
+                + (
+                    "You also have a shell (git, gh, curl, python) and the web. Anything that changes something "
+                    "outside, such as pushing, opening an issue or pull request, or posting, needs a person's approval."
+                    if computer
+                    else "You can reach nothing else: no repository or shell"
+                    f"{', and no network beyond web_search' if web else ', or network'}."
+                )
+                + (f" {_EARLIER_WORK}" if _has_earlier(workspace_files) else ""),
             )
         )
     if loadout:

@@ -6,6 +6,7 @@ model (resolving context) are handled here, so adapters see only what they must 
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import json
 import re
@@ -24,6 +25,7 @@ from .company import CompanyStore
 from .deliverables import DRAFT_FOLDER, export_deliverables, export_drafts, read_sources
 from .ledger import Ledger
 from .lock import StateLock
+from .outside import Held, Outcome, OutsideStore, describe_link, outcome_lesson, urls_in
 from .pipeline import (
     Action,
     ContextResolved,
@@ -50,6 +52,9 @@ MAX_EARLIER_RUNS = 5
 EARLIER_WORK = "earlier"
 PENDING_LESSONS_SHOWN = 3
 TEAM_SKILLS_SHOWN = 3
+# Who is told what happened to earlier work outside: whoever plans, assigns, does, or checks work.
+OUTSIDE_PURPOSES = (Purpose.PLAN, Purpose.DISPATCH, Purpose.EXECUTE, Purpose.REVIEW)
+Execute = Callable[[Path, str], str]
 
 
 _LOOKS_LIKE_A_FILE = re.compile(r"[\w./ -]+\.[A-Za-z0-9]{1,8}")
@@ -88,6 +93,7 @@ class Orchestrator:
         self.clock = clock
         self.ledger = Ledger(home / "ledger.sqlite")
         self.company = CompanyStore(home / "company.sqlite")
+        self.outside = OutsideStore(home / "outside.sqlite")
         # Several MCP servers can serve one company, one per role, so this also holds across processes.
         self._lock = StateLock(home)
         self._logs: dict[str, AuditLog] = {}
@@ -318,7 +324,10 @@ class Orchestrator:
                 for member in members:
                     skills = [str(item.get("name") or item.get("skill_id", "")) for item in self.skills.loadout(member)]
                     team[member] = {"open_tasks": counts[member], "skills": skills[:TEAM_SKILLS_SHOWN]}
-        return Briefing(brief=brief, pending_lessons=lessons, team=team)
+            outside: list[str] = []
+            if invocation.purpose in OUTSIDE_PURPOSES:
+                outside = self.outside.record_lines()
+        return Briefing(brief=brief, pending_lessons=lessons, team=team, outside=outside)
 
     def cancel(self, run_id: str, reason: str = "Cancelled by a person") -> None:
         self.handle(run_id, RunCancelled(reason=reason))
@@ -494,6 +503,93 @@ class Orchestrator:
     def verify_audit(self, run_id: str) -> VerifyResult:
         return verify_log(self.audit_path(run_id), self.ledger.audit_head(run_id))
 
+    # ---- the outside: what the company put out, what came of it, and what waits for a person --------------------
+
+    def _has_run(self, run_id: str) -> bool:
+        return any(known == run_id for known, _ in self.ledger.list_runs())
+
+    def track_outcome(
+        self, run_id: str, role: str, url: str, *, kind: str = "", title: str = "", command: str = ""
+    ) -> Outcome | None:
+        """Start following something the company put out. Everyone who worked on the run shares what comes of it."""
+        guessed_kind, guessed_title = describe_link(url, command)
+        with self._lock:
+            known = self._has_run(run_id)
+            credited = [role]
+            if known:
+                credited += [task.owner_role for task in self.ledger.load(run_id).tasks.values() if task.owner_role]
+            item = self.outside.track(
+                url,
+                run_id=run_id,
+                role=role,
+                credited=credited,
+                kind=kind or guessed_kind,
+                title=title or guessed_title,
+                at=self.clock(),
+            )
+            if item is not None and known:
+                self.record(run_id, "outcome_tracked", {"id": item.id, "url": item.url, "role": role})
+        return item
+
+    def settle_outcome(self, outcome_id: int, status: str, note: str = "", *, by: str) -> Outcome | None:
+        """What happened to it. A change becomes a lesson for every role that worked on it, and their heads decide
+        whether it's kept for the whole department. Returns the outcome only if something changed."""
+        with self._lock:
+            item = self.outside.settle(outcome_id, status, note, self.clock())
+            if item is None:
+                return None
+            lesson = outcome_lesson(item)
+            for role in item.credited:
+                if role not in self.org.roles:
+                    continue
+                # A lesson improves later runs, and failing to write one mustn't stop this.
+                with contextlib.suppress(Exception):
+                    self.memory.write(role, lesson)
+            for department in sorted({role.split("/", 1)[0] for role in item.credited if role in self.org.roles}):
+                self.company.propose_memory(
+                    "department",
+                    department,
+                    lesson,
+                    source_run=item.run_id,
+                    source=f"outcome:{item.id}",
+                    proposed_by=by,
+                    at=self.clock(),
+                )
+            if self._has_run(item.run_id):
+                self.record(item.run_id, "outcome_settled", {"id": item.id, "status": status, "by": by})
+        return item
+
+    def hold_command(self, run_id: str, role: str, command: str) -> int:
+        """A command that changes something outside, with nobody there to approve it. It waits for a person."""
+        with self._lock:
+            number = self.outside.hold(
+                run_id=run_id, role=role, command=command, workspace=self.workspace(run_id), at=self.clock()
+            )
+            self.record(run_id, "command_held", {"id": number, "role": role, "command": command})
+        return number
+
+    def run_held(self, held_id: int, execute: Execute, *, by: str) -> Held | None:
+        """A person approved a held command: run it where its role would have, and follow what it made."""
+        item = self.outside.held_item(held_id)
+        if item is None or not self.outside.decide_held(held_id, "approved", by=by, at=self.clock()):
+            return None
+        output = execute(Path(item.workspace), item.command)
+        self.outside.finish_held(held_id, output)
+        if self._has_run(item.run_id):
+            self.record(item.run_id, "held_command_ran", {"id": held_id, "by": by})
+        for url in urls_in(output):
+            self.track_outcome(item.run_id, item.role, url, command=item.command)
+        return self.outside.held_item(held_id)
+
+    def deny_held(self, held_id: int, *, by: str) -> bool:
+        item = self.outside.held_item(held_id)
+        if item is None or not self.outside.decide_held(held_id, "denied", by=by, at=self.clock()):
+            return False
+        if self._has_run(item.run_id):
+            self.record(item.run_id, "held_command_denied", {"id": held_id, "by": by})
+        return True
+
     def close(self) -> None:
         self.ledger.close()
         self.company.close()
+        self.outside.close()

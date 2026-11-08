@@ -62,6 +62,7 @@ MCP_TOOLS = (
     "workspace_read",
     "workspace_write",
     "usage_report",
+    "outcome_track",
     "audit_tail",
 )
 # All a coordinator may do. Anything else is a role's work.
@@ -82,7 +83,14 @@ class ToolError(Exception):
 
 
 class McpService:
-    def __init__(self, orchestrator: Orchestrator, *, bound_role: str | None = None, coordinator: bool = False) -> None:
+    def __init__(
+        self,
+        orchestrator: Orchestrator,
+        *,
+        bound_role: str | None = None,
+        coordinator: bool = False,
+        computer: bool = True,
+    ) -> None:
         if bound_role is not None and not orchestrator.org.has_role(bound_role):
             raise ValueError(f"'{bound_role}' isn't a role in this company")
         if bound_role is not None and coordinator:
@@ -91,6 +99,8 @@ class McpService:
         self.orchestrator = orchestrator
         self.org: Org = orchestrator.org
         self.bound_role = bound_role
+        # A bound role is a full agent unless its company was set up sandboxed: its prompt must say which.
+        self.computer = computer
 
     @property
     def attestation(self) -> Any:
@@ -250,7 +260,8 @@ class McpService:
         briefing = self.orchestrator.briefing(state.run_id, invocation)
         workspace = self._workspace_files(state.run_id)
         loadout = self.orchestrator.skills.loadout(role.ref) if invocation.purpose == Purpose.EXECUTE else []
-        return user_prompt(invocation, state, self.org, workspace, loadout, briefing=briefing)
+        computer = self.computer and bool(self.bound_role)
+        return user_prompt(invocation, state, self.org, workspace, loadout, briefing=briefing, computer=computer)
 
     def _workspace_files(self, run_id: str) -> list[str] | None:
         """Files only a bound role is limited to. An operator's client has its own tools, so this can't speak for it."""
@@ -354,6 +365,14 @@ class McpService:
         """Charging for work can use up a budget, which blocks the run before this submission arrives."""
         state = self.orchestrator.state(run_id)
         return invocation_id in state.invocations and state.phase.value != "blocked"
+
+    def outcome_track(self, run_id: str, invocation_id: str, url: str, title: str = "") -> dict[str, Any]:
+        """A role put something out. Any role may ask; code records it, and a check or a person says what came of it."""
+        role = self._role_for(run_id, invocation_id)
+        item = self.orchestrator.track_outcome(run_id, role, url, title=title)
+        if item is None:
+            raise ToolError("That isn't a link. Give the full https:// address of what you put out.")
+        return {"tracked": True, "id": item.id, "kind": item.kind}
 
     def usage_report(self, run_id: str, invocation_id: str, input_tokens: int, output_tokens: int) -> dict[str, Any]:
         """What the client says it spent. It's kept for people to read, and limits don't rest on it."""

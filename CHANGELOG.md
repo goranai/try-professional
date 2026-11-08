@@ -2,6 +2,30 @@
 
 Each version of `try-professional`. `skill-customs` is listed only when it changes.
 
+## 0.6.1 (2026-11-09)
+
+A company learns from what happened to its work, and works on its own. Nothing here is for one kind of business: whatever a company puts out, it can follow.
+
+### Added
+
+- **Outcomes.** What a company puts out, such as an issue, a pull request, a post, or an email, is tracked. A link printed by an outside command a person approved is tracked by itself, and in Claude Code a role gives its link to the new `outcome_track` tool. `trypro outcomes` lists them, and `trypro outcomes set` records what happened where no check can.
+- **Learning from them.** `trypro outcomes check` reads GitHub issues and pull requests with `gh`, and no model. Merged, or closed as completed, is accepted. Closed as not planned is rejected, a duplicate is a duplicate, and 30 days without a reply is ignored. A maintainer's words are kept with it, and a passer-by's comment on accepted work isn't. Each role that worked on it gets the lesson in its own memory, and each department head decides whether the department keeps it. Roles that plan, assign, do, or check work are shown the company's track record.
+- **Follow-ups.** A new reply from someone else queues a command to read the thread and answer only if an answer is needed.
+- **Schedules.** `trypro schedule add <name> "<command>" --every 1d`. `trypro schedule run` does one round: it checks outcomes, runs what's due, and runs follow-ups. Commands a person queued still wait for `trypro next`. `--watch` keeps going, and `trypro schedule install --apply` has Windows' Task Scheduler or cron run the rounds. A schedule missed while the machine was off runs once, not once for each time it missed. With a Telegram bot set up, a round's summary is sent there.
+- **Approvals that wait.** With nobody to ask, a command that changes something outside, such as `gh issue create` or `git push`, is held instead of refused, and the run carries on. `trypro held`, `trypro held approve <number>`, and `trypro held deny <number>`; or `/held`, `/approve 3`, and `/deny 3` in `trypro chat` and on Telegram, with `/outcomes` and `/schedules`.
+- **Company design knows about these.** For a business that puts work out where others answer, it's asked to give one role the posting and one the following up, and to keep finding, checking, and putting out with different roles where a mistake would be public.
+
+### Fixed
+
+- **Roles were told they had no shell.** Since 0.5.0, roles on the API runner have had a shell and the web, but their assignment still said "no repository or shell", and planners were told nothing could run a program. Both now say what roles can really do, on both engines. A role server in a company set up with `--sandboxed` says it has no computer.
+- **A gateway that refused markdown headings.** `step-5-preview`'s gateway refused a real assignment every time, with no reason, and took it word for word with plain "Heading:" lines in place of "## ". After a vague refusal, the client now tries the instructions in the first message, and then plain headings, and keeps the shape that works.
+- **The README** still said the API runner had no shell, and listed the old token limits in its FAQ.
+
+### Changed
+
+- **Company design has no token limit,** in line with 0.6.0. It stops after 3 attempts, as before.
+- **Outcomes, held commands, and schedules** are kept in `.trypro/outside.sqlite`. Nothing else in a company's data changes.
+
 ## 0.6.0 (2026-11-08)
 
 Cheap models finish their work. On `step-5-preview`, through the company's own engine, real jobs went from 2 of 5 finished to 4 of 5, including one that used `gh` in the shell and one in Indonesian. [How it was measured](docs/research/cheap_models/README.md).

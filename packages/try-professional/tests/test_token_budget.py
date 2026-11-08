@@ -23,7 +23,9 @@ spec.loader.exec_module(measure_prompts)
 # Raised the same day from 34000 for what a company can reach. Without it, a real plan required web sources from a
 # company with no web, and a command spent over 50,000 tokens to end blocked. About 200 tokens per large run.
 # Raised on 2026-11-08 from 34700 for a computer: the shell and web_fetch, given to every step that does or checks work.
-TOTAL_CHAR_BUDGET = 36400
+# Raised on 2026-11-09 from 36400 because prompts now say that roles have that computer. They used to say "no shell,
+# no network", so planners didn't ask for work a role could do, such as searching GitHub.
+TOTAL_CHAR_BUDGET = 37200
 
 
 def test_a_minimal_run_stays_within_its_prompt_budget() -> None:

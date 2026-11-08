@@ -46,6 +46,34 @@ def test_a_vague_refusal_is_retried_with_the_instructions_folded_in(monkeypatch:
     assert seen[-1] == ["user"], "once folded, it stays folded"
 
 
+def test_then_plain_headings_word_for_word(monkeypatch: pytest.MonkeyPatch) -> None:
+    """step-5-preview's gateway refused a real assignment with "## " headings every time, and took it as plain lines."""
+    seen: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        text = json.loads(request.content)["messages"][0]["content"]
+        seen.append(text)
+        return httpx.Response(400, json=VAGUE) if "## " in text else httpx.Response(200, json=OK)
+
+    request = ChatRequest(
+        system="## Rules\nBe brief.", messages=[{"role": "user", "content": "## Goal\nSay hi"}], tools=[], model="m"
+    )
+    client = _client(handler, monkeypatch)
+    assert client.complete(request).text == "hi"
+    assert seen[-1] == "Rules:\nBe brief.\n\nGoal:\nSay hi"
+    calls = len(seen)
+    client.complete(request)
+    assert len(seen) == calls + 1, "a shape that works is kept"
+
+
+def test_a_vague_refusal_that_no_shape_gets_past_is_reported(monkeypatch: pytest.MonkeyPatch) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(400, json=VAGUE)
+
+    with pytest.raises(ClientError, match="Invalid request"):
+        _client(handler, monkeypatch).complete(_request())
+
+
 def test_a_clear_refusal_isnt_retried(monkeypatch: pytest.MonkeyPatch) -> None:
     calls: list[int] = []
 

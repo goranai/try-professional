@@ -1,7 +1,7 @@
 """The Org Architect: one narrow model step that adapts a template to a business.
 
 It's a setup step, not a pipeline run, because the pipeline needs a company before it can run. It uses
-the CEO's fixed prompt, and its own token ceiling. It sees the description and the template, and never
+the CEO's fixed prompt, and at most three attempts. It sees the description and the template, and never
 any skill text or web content, so nothing it reads can write instructions into the company.
 """
 
@@ -25,7 +25,8 @@ from .templates import Template, TemplateDepartment, load_template, template_ids
 
 SUBMIT = "submit_org_proposal"
 MAX_ATTEMPTS = 3
-TOKEN_CEILING = 60_000
+# No token ceiling by default: MAX_ATTEMPTS is what stops it.
+TOKEN_CEILING: int | None = None
 MAX_OUTPUT_TOKENS = 8000
 
 _TASK = """
@@ -44,6 +45,14 @@ adds no layer of management.
 - Each role is a full agent on a computer: it can use a shell, git, GitHub's CLI, files, and the web. Design roles \
 for the work itself, and leave tools out of their names.
 - It can't spend money, and anything that publishes or changes something outside needs a person's approval first.
+- If the business puts work out where others answer, such as issues, pull requests, posts, or emails, give one role \
+the job of putting it out the way each place asks, and one the job of following up on replies: answering only when an \
+answer is needed. The company tracks what it put out, and checks GitHub links itself. What happens to them becomes a \
+lesson for every role that worked on them, and a reply becomes a follow-up command. Commands can also run on a \
+schedule, unattended.
+- Where a mistake would be public or costly, give finding, checking, and putting out to different roles, so no one \
+approves their own work. QA reviews everything anyway, so add checking roles only for a trade's own kind of check, \
+such as reproducing a bug or confirming something isn't a duplicate.
 - skill_needs are short English phrases naming a capability, such as "write a video hook". They're used to find \
 skills, so be concrete, and don't include anything private about the business.
 - Keep a template department's id and name when they fit this business. Only rename what this trade really calls \
@@ -179,10 +188,10 @@ def run_architect(
     *,
     previous: OrgProposal | None = None,
     feedback: str = "",
-    ceiling: int = TOKEN_CEILING,
+    ceiling: int | None = TOKEN_CEILING,
     note: Callable[[str, dict[str, Any]], None] | None = None,
 ) -> ArchitectResult:
-    """Up to three attempts, each told why the last one failed, and stopping at the token ceiling."""
+    """Up to three attempts, each told why the last one failed, and stopping at a token ceiling if one is given."""
     record = note or (lambda kind, data: None)
     messages = [client.user_message(user_prompt(description, template, previous, feedback))]
     system = system_prompt()
@@ -191,7 +200,7 @@ def run_architect(
     attempts: list[str] = []
     for attempt in range(MAX_ATTEMPTS):
         spent = usage["input"] + usage["output"]
-        if spent >= ceiling:
+        if ceiling is not None and spent >= ceiling:
             raise ArchitectFailed(f"Stopped at the token ceiling, after {spent} tokens.")
         try:
             response: ChatResponse = client.complete(

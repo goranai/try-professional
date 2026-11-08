@@ -139,6 +139,28 @@ trypro cancel <run-id>                        Stop it. Its records stay
 trypro agents claude-code                     Rewrite the roles for Claude Code, after the company changes
 ```
 
+### When it works on its own
+
+What a company puts out, such as an issue, a pull request, a post, or an email, is tracked. What happens to it becomes a lesson for every role that worked on it, and a reply becomes a follow-up command. Commands can run on a timer, and while nobody is watching, anything that changes something outside waits for your approval.
+
+```text
+trypro schedule add daily "<what to do each time>" --every 1d    Run a command on a timer
+trypro schedule install --apply                                Let your system's scheduler run the rounds
+trypro schedule run                                            Or run one round now: --watch keeps going
+trypro held                                                    What waits for your approval
+trypro held approve <number>                                   Run it. Or: trypro held deny <number>
+trypro outcomes                                                What it put out, and what came of it
+trypro outcomes check                                          Check GitHub links now, with gh
+trypro outcomes set <number> accepted --note "<why>"           Say what happened, where no check can
+```
+
+- **Tracked by itself:** a link printed by an outside command you approved, such as the issue `gh issue create` opened. In Claude Code, a role gives its link to `outcome_track`.
+- **Checked by itself:** GitHub issues and pull requests, through `gh`, with no model. Merged or closed as completed counts as accepted. Closed as not planned counts as rejected, and a duplicate as a duplicate. No reply in 30 days counts as ignored. A maintainer's words are kept with it. Anything else, you settle with `trypro outcomes set`.
+- **Learned from:** each role that worked on it gets the lesson in its own memory, and each department head decides whether the department keeps it. Roles that plan, assign, do, or check work see the company's track record.
+- **Followed up:** a new reply from someone else queues a command to read the thread, and answer only if an answer is needed. Posting that answer needs your approval, like any other.
+- **From chat:** `/held`, `/approve 3`, `/deny 3`, `/outcomes`, and `/schedules` work in `trypro chat` and on Telegram. With a Telegram bot set up, each round's summary is sent there.
+- **Scheduled rounds use the company's own engine,** with the model `trypro.yaml` names. Claude Code isn't run unattended.
+
 ## Build on Try Professional
 
 A company can be a part of your own agent. The Python API is **stable** across 0.x minor versions; the MCP tools and the adapter interface are **experimental**. [What's stable, the Claude Code path, custom roles, and extending it](https://github.com/goranai/try-professional/blob/main/docs/building-on.md).
@@ -170,6 +192,7 @@ Each piece of work has one owner, gets reviewed, and leaves an audit log you can
 - **Reviews that can't be skipped.** QA reviews everything. A Legal department is optional, and off unless the business needs one: then its review is triggered by what the work is, whatever a model declares.
 - **Rules held by code.** Work must report on every item of its brief. Reviews can't approve with blockers. Unmet criteria and unverified claims reach you even if a final report leaves them out. There's no token limit unless you set one: a company works until the job is done. It does stop, and say why, when a role keeps going in circles: 24 model calls with nothing moving, or 3 hand-ins refused in a row. To cap spending, set `max_tokens_per_small_command` and `max_tokens_per_run` under `pipeline.budget` in `org/org.yaml`, and a command stops at them and asks you. [Tests play a misbehaving model](https://github.com/goranai/try-professional/blob/main/packages/try-professional/tests/test_misbehaving_model.py) against these.
 - **Real separation over MCP.** Each role's server shows it only its own assignment, memory, and skills, and the session's server can't do a role's work.
+- **It learns from what happened.** What the company puts out is tracked, and what came of it, accepted, rejected, a duplicate, or ignored, becomes a lesson for every role that worked on it. [How](#when-it-works-on-its-own)
 
 ## How it works
 
@@ -279,7 +302,8 @@ On DeepSeek through the API runner, the one small command that finished took 25,
 - **It's only been proven on Claude.** On a cheap model, expect blocked commands and wasted tokens.
 - **Skill coverage is thin.** In real generations, 14% to 29% of what roles need had a matching skill, and the review screen says so. Roles without a skill rely on their instructions. Judged on a labelled set, skill matching found 33 of 44 right skills, and 19 of its 52 suggestions were wrong, so read what you approve.
 - **Cost per command is high** for small jobs. See above. Since 0.1.2, a small command that one role does goes through intake, the work, QA, and Legal if its triggers apply, and no longer a final report and its review.
-- **Real tools need care.** In Claude Code, roles can run commands and use the web, so a role can see the folder it runs in. Claude Code asks you before commands unless you allow them. The experimental API runner still gives roles only the company's own tools, with no shell.
+- **Real tools need care.** Roles can run commands and use the web, so a role can see the folder it runs in. In Claude Code, Claude Code asks you before commands unless you allow them. On the API runner, a command that changes something outside, such as `git push` or `gh issue create`, runs only once a person approves it, and anything else runs without asking. `computer_tools: false` in `trypro.yaml` takes the shell and the web away.
+- **A follow-up is only as good as the model.** It's told to answer only when an answer is needed, and every answer waits for your approval, so read what it would post.
 - **It can't check facts without sources.** With no web access, it marks claims as unverified, and leaves placeholders such as `[Bakery name]` or `[ISI PROMO]` for you to fill in.
 - **Reviews aren't proof.** [The test above](https://github.com/goranai/try-professional/blob/main/docs/research/qa_gates/README.md) is small, and a weak reviewer can still approve weak work. They can also be too strict, and send back good work.
 - **With no token limit, a long job spends what it needs.** Rework costs tokens, and a reasoning model's thinking counts as output. Loop protection stops a role going in circles, but not honest work that's slow. If that matters to you, set limits in `org/org.yaml`. A command that stops at one tells you the exact lines to run: `trypro decide`, and then `/company continue <run-id>`.
@@ -303,15 +327,15 @@ On DeepSeek through the API runner, the one small command that finished took 25,
 
 **How is it different from a flat swarm?** In a swarm, agents work side by side. Here work flows through a hierarchy, each piece has one owner, and a role can't see another role's memory or assignments, because its server won't show them. We haven't measured whether that gives better results. That benchmark is on the roadmap.
 
-**What does a command cost?** On a Claude plan, it comes out of your plan's usage. At API list prices, the small commands we measured came to about $0.13 to $0.66, and the largest to $1.67. Rework makes it cost more. See [the tables](#what-it-costs). A command stops and asks you at 150,000 tokens if small, or 500,000 if large, over MCP, and at 60,000 and 200,000 on the API runner.
+**What does a command cost?** On a Claude plan, it comes out of your plan's usage. At API list prices, the small commands we measured came to about $0.13 to $0.66, and the largest to $1.67. Rework makes it cost more. See [the tables](#what-it-costs). There's no token limit unless you set one in `org/org.yaml`.
 
-**Which models work?** It has been proven on `claude-sonnet-5-5` through Claude Code, with `claude-haiku-5-5` matching skills. **With every role on Haiku, it finished none of 6 commands.** Its rules held, and its reviewers caught every seeded flaw, but its writers couldn't get work past those reviewers. [Details](https://github.com/goranai/try-professional/blob/main/docs/research/haiku/README.md). On `deepseek-v4.1-flash-1017`, the same small command finished in one run of three. No other model has been tried. See [what was tested](#what-was-tested-and-how).
+**Which models work?** It has been proven on `claude-sonnet-5-5` through Claude Code, with `claude-haiku-5-5` matching skills. **With every role on Haiku, it finished none of 6 commands.** Its rules held, and its reviewers caught every seeded flaw, but its writers couldn't get work past those reviewers. [Details](https://github.com/goranai/try-professional/blob/main/docs/research/haiku/README.md). On `deepseek-v4.1-flash-1017`, the same small command finished in one run of three. On `step-5-preview`, 4 of 5 real jobs finished. See [what was tested](#what-was-tested-and-how).
 
 ## Experimental
 
 Available, not promised. These exist and have tests, and they aren't what this release stands behind.
 
-**The API runner,** for any OpenAI-compatible model: `deepseek-v4.1-flash-1017` is the only one tried, and the table above shows how that went. Grok and others should work the same way, and haven't been tried. Copy `.env.example` to `.env`, set `TRYPRO_LLM_BASE_URL`, `TRYPRO_LLM_API_KEY`, `TRYPRO_LLM_MODEL`, and `GITHUB_TOKEN`, and **check the model first:**
+**The API runner,** for any OpenAI-compatible model: `deepseek-v4.1-flash-1017` and `step-5-preview` have been tried, and the table above shows how that went. Grok and others should work the same way, and haven't been tried. Copy `.env.example` to `.env`, set `TRYPRO_LLM_BASE_URL`, `TRYPRO_LLM_API_KEY`, `TRYPRO_LLM_MODEL`, and `GITHUB_TOKEN`, and **check the model first:**
 
 ```bash
 trypro check-model

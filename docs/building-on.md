@@ -24,7 +24,9 @@ How to use a company as a part of your own agent, with Claude Code as the best-s
 | Terminal | its own engine, any OpenAI-compatible model | `trypro chat` |
 | Telegram | its own engine | `trypro telegram`, with `TELEGRAM_BOT_TOKEN` and `TELEGRAM_ALLOWED_CHAT_IDS` in `.env` |
 
-In both engines, roles that do or check work have a computer. On Claude Code, that's Claude Code's own tools. On its own engine, it's `shell`, in the run's workspace, and `web_fetch`. A command that changes something outside, such as a push or a new issue, needs a person's approval. With no person to ask, it doesn't run. `computer_tools: false` in `trypro.yaml`, or `trypro agents claude-code --sandboxed`, keeps a company to documents.
+In both engines, roles that do or check work have a computer. On Claude Code, that's Claude Code's own tools. On its own engine, it's `shell`, in the run's workspace, and `web_fetch`. A command that changes something outside, such as a push or a new issue, needs a person's approval. With no person to ask, it's held until one approves it: `trypro held`, or `/held` in chat. `computer_tools: false` in `trypro.yaml`, or `trypro agents claude-code --sandboxed`, keeps a company to documents.
+
+What a company puts out is tracked, what comes of it becomes a lesson for the roles that worked on it, and commands can run on a timer: see [When it works on its own](../README.md#when-it-works-on-its-own). The CLI commands for these are stable; `try_professional.core.outside` and `try_professional.outcomes` are internal.
 
 `try_professional.chat.Conversation` is the core every front door shares: `Conversation(root, ask_person=..., approve=...).handle(message)`. It's experimental, and a good start for your own front door.
 

@@ -38,7 +38,9 @@ ROLE_TOOLS = ("Read", "Write", "Edit", "Glob", "Grep", "Bash", "WebSearch", "Web
 _FULL_TOOLS = (
     "Do the work with your own tools as well: the shell, git and gh, files, and the web. The company's tools, listed "
     "under may_use, are for your assignment, memory, skills, and the workspace. Hand in what you made in your "
-    "submission, and files through workspace_write, because only those reach whoever reviews your work."
+    "submission, and files through workspace_write, because only those reach whoever reviews your work. When you "
+    "put something out, such as an issue, a pull request, or a post, give its link to outcome_track, so the company "
+    "learns from what happens to it."
 )
 _SANDBOXED_TOOLS = "Use only the tools it lists under may_use."
 _COMMAND = """---
@@ -115,11 +117,13 @@ def _command() -> tuple[str, list[str]]:
     return sys.executable.replace("\\", "/"), ["-m", "try_professional.cli"]
 
 
-def server_config(root: Path, role: str | None = None) -> dict[str, Any]:
+def server_config(root: Path, role: str | None = None, *, sandboxed: bool = False) -> dict[str, Any]:
     """A role's server, or with no role, a coordinator's."""
     command, prefix = _command()
     args = [*prefix, "mcp", "--dir", str(root.resolve()).replace("\\", "/")]
     args += ["--role", role] if role else ["--coordinator"]
+    if role and sandboxed:
+        args.append("--sandboxed")
     return {"type": "stdio", "command": command, "args": args}
 
 
@@ -130,7 +134,7 @@ def role_agent(root: Path, org: Org, role: Role, model: str | None = None, sandb
         "description": f"{role.display_name} at {org.company_name}. {role.mission}"[:300],
         "tools": tools,
         "model": model or _MODELS.get(role.model_tier, "sonnet"),
-        "mcpServers": [{ROLE_SERVER: server_config(root, role.ref)}],
+        "mcpServers": [{ROLE_SERVER: server_config(root, role.ref, sandboxed=sandboxed)}],
     }
     header = yaml.safe_dump(front, sort_keys=False, allow_unicode=True).strip()
     tools_line = _SANDBOXED_TOOLS if sandboxed else _FULL_TOOLS

@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import time
 from dataclasses import dataclass, field
 from typing import Any, Protocol
@@ -215,6 +216,16 @@ def _vague_refusal(response: httpx.Response) -> bool:
     return "unknown_provider_failure" in text or _VAGUE in text.replace(" ", "")
 
 
+def _vague_error(error: ClientError) -> bool:
+    detail = str(error).lower()
+    return "http 400" in detail and ("unknown_provider_failure" in detail or _VAGUE in detail.replace(" ", ""))
+
+
+def _plain(text: str) -> str:
+    """Markdown headings as plain "Heading:" lines. Nothing else changes."""
+    return re.sub(r"(?m)^#{1,6} +(.+?)\s*$", r"\1:", text)
+
+
 class OpenAICompatibleClient:
     """Any /chat/completions API, using plain HTTP."""
 
@@ -246,6 +257,7 @@ class OpenAICompatibleClient:
         self._temperature_refused = False
         # Some gateways refuse a long system message beside some user text, and take the same words in one message.
         self._fold_system = False
+        self._plain_headings = False
         self.max_retries = max_retries
         self._sleep = sleep
 
@@ -256,6 +268,12 @@ class OpenAICompatibleClient:
         return [{"role": "tool", "tool_call_id": r.call_id, "content": r.content} for r in results]
 
     def _messages(self, request: ChatRequest) -> list[Any]:
+        shaped = self._shape(request)
+        if not self._plain_headings:
+            return shaped
+        return [{**m, "content": _plain(m["content"])} if isinstance(m.get("content"), str) else m for m in shaped]
+
+    def _shape(self, request: ChatRequest) -> list[Any]:
         messages = list(request.messages)
         if not self._fold_system:
             return [{"role": "system", "content": request.system}, *messages]
@@ -263,6 +281,24 @@ class OpenAICompatibleClient:
             first = {**messages[0], "content": f"{request.system}\n\n{messages[0]['content']}"}
             return [first, *messages[1:]]
         return [{"role": "user", "content": request.system}, *messages]
+
+    def _reshape(self, request: ChatRequest, body: dict[str, Any], refused: ClientError) -> dict[str, Any]:
+        """The same content, in shapes a gateway that refuses with no reason has accepted: first the instructions at
+        the top of the first message, then plain headings instead of markdown ones. step-5-preview's gateway refused
+        a real assignment with "## " headings, every time, and took it word for word with "Heading:" lines. A shape
+        that works is kept for the rest of this client's calls."""
+        for flag in ("_fold_system", "_plain_headings"):
+            if getattr(self, flag):
+                continue
+            setattr(self, flag, True)
+            body["messages"] = self._messages(request)
+            try:
+                return self._post(body)
+            except ClientError as again:
+                if not _vague_error(again):
+                    raise
+                refused = again
+        raise refused
 
     def _post(self, body: dict[str, Any]) -> dict[str, Any]:
         for attempt in range(self.max_retries + 1):
@@ -310,11 +346,8 @@ class OpenAICompatibleClient:
             data = self._post(body)
         except ClientError as refused:
             detail = str(refused).lower()
-            if "http 400" in detail and _VAGUE in detail.replace(" ", "") and not self._fold_system:
-                # The same instructions, at the top of the first message, instead of as a system message.
-                self._fold_system = True
-                body["messages"] = self._messages(request)
-                data = self._post(body)
+            if _vague_error(refused) and not (self._fold_system and self._plain_headings):
+                data = self._reshape(request, body, refused)
             elif "temperature" in body and "http 400" in detail and "temperature" in detail:
                 # Some models only accept their default. That's not worth failing the call.
                 self._temperature_refused = True

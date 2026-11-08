@@ -66,6 +66,8 @@ class Briefing:
     pending_lessons: list[dict[str, Any]] = field(default_factory=list)
     # role -> open task count and skill names, so a manager can assign by fit and workload.
     team: dict[str, dict[str, Any]] = field(default_factory=dict)
+    # What happened to the company's earlier work outside: a count, and the newest items.
+    outside: list[str] = field(default_factory=list)
 
 
 def _line(text: str) -> str:

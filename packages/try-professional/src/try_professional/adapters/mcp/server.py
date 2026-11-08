@@ -168,6 +168,12 @@ def build_server(
         return _guard(company_tool("skill_get"), run_id, invocation_id, skill_id)
 
     @server.tool()
+    def outcome_track(run_id: str, invocation_id: str, url: str, title: str = "") -> Any:
+        """After you put something out, such as an issue, a pull request, or a post, give its link here. The company
+        follows what happens to it, and everyone who worked on it learns from that."""
+        return _guard(company_tool("outcome_track"), run_id, invocation_id, url, title)
+
+    @server.tool()
     def audit_tail(run_id: str, count: int = DEFAULT_AUDIT_TAIL) -> Any:
         """The latest records from a run's audit log."""
         return _guard(company_tool("audit_tail"), run_id, count)
