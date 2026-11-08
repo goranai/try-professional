@@ -91,6 +91,27 @@ class TestRolesWorkAtTheSameTime:
         assert "start all of them at once, in one message" in _COMMAND
         assert "one at a time" not in _COMMAND
 
+    def test_the_coordinator_is_told_when_several_roles_are_ready(self, org: Org, harness: Callable[..., Any]) -> None:
+        """Haiku followed the rule in /company only partly, so the server says it at the moment it matters."""
+        from try_professional.adapters.mcp import McpService
+        from try_professional.core.pipeline import InvokeRole
+
+        run = harness(org)
+        run_id, _ = run.orchestrator.start("Goal")
+        coordinator = McpService(run.orchestrator, coordinator=True)
+        assert "start_together" not in coordinator.run_next_action(run_id), "one role ready: nothing to say"
+
+        def ready(*roles: str) -> Any:
+            return lambda _: [InvokeRole(invocation_id=f"i{n}", role=role, purpose=Purpose.EXECUTE, output_type="x")
+                              for n, role in enumerate(roles)]  # fmt: skip
+
+        run.orchestrator.open_actions = ready("marketing/content-writer", "sales/proposal-writer")  # type: ignore[method-assign]
+        answer = coordinator.run_next_action(run_id)
+        assert "2 roles are ready" in answer["start_together"]
+        assert "Start all their subagents now, in one message" in answer["start_together"]
+        run.orchestrator.open_actions = ready("sales/proposal-writer", "sales/proposal-writer")  # type: ignore[method-assign]
+        assert "start_together" not in coordinator.run_next_action(run_id), "one role, two steps: one subagent"
+
 
 class TestEveryRunSaysWhatItCost:
     def test_time_calls_and_extra_rounds(self, tmp_path: Any) -> None:

@@ -225,7 +225,15 @@ class McpService:
         work = [a for a in actions if isinstance(a, InvokeRole)]
         if self.bound_role:
             work = [a for a in work if a.role == self.bound_role]
-        return {"status": "working", "actions": [self._describe(run_id, action) for action in work]}
+        answer: dict[str, Any] = {"status": "working", "actions": [self._describe(run_id, action) for action in work]}
+        roles = sorted({action.role for action in work})
+        if self.coordinator and len(roles) > 1:
+            # Said here, when it matters, because a small model followed the same rule in /company only partly.
+            answer["start_together"] = (
+                f"{len(roles)} roles are ready: {', '.join(roles)}. Start all their subagents now, in one message, so "
+                "they work at the same time. One subagent per role."
+            )
+        return answer
 
     def _how_to_answer(self, run_id: str, question: AskHuman) -> str:
         """Ready to run, so nobody has to work out a command. Only a person at a terminal can answer."""

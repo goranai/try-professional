@@ -72,6 +72,22 @@ class TestShell:
     def test_reading_doesnt(self, command: str) -> None:
         assert not needs_a_person(command)
 
+    def test_a_time_limit_stops_everything_the_command_started(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A real run hung for 90 minutes: the shell was stopped, and a program it started kept its output open."""
+        import time
+
+        import try_professional.adapters.api_runner.tools as tools
+
+        monkeypatch.setattr(tools, "SHELL_TIMEOUT_SECONDS", 3)
+        child = "import time; time.sleep(120)"
+        parent = f"import subprocess, sys, time; subprocess.Popen([sys.executable, '-c', '{child}']); time.sleep(120)"
+        started = time.monotonic()
+        out = run_tool(_context(tmp_path), "shell", {"command": _python(parent.replace('"', "'"))})
+        assert "Stopped after 3 seconds" in out
+        assert time.monotonic() - started < 60
+
     def test_without_a_person_it_refuses(self, tmp_path: Path) -> None:
         with pytest.raises(ToolRefused, match="approve"):
             run_tool(_context(tmp_path), "shell", {"command": "git push origin main"})

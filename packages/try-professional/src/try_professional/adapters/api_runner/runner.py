@@ -548,5 +548,8 @@ class ApiRunner:
         record = {"invocation_id": action.invocation_id, "role": action.role, "reason": reason}
         if handed_in is not None:
             # What was refused, so a person can see why, and the next wording to forgive can be found.
-            record["handed_in"] = json.dumps(handed_in, ensure_ascii=False, default=str)[:4000]
+            # The payload first, since that's what is refused, and then the rest.
+            first = {"payload": handed_in.get("payload")} if isinstance(handed_in, dict) else {}
+            rest = {k: v for k, v in handed_in.items() if k != "payload"} if isinstance(handed_in, dict) else handed_in
+            record["handed_in"] = json.dumps({**first, "rest": rest}, ensure_ascii=False, default=str)[:12000]
         self.orchestrator.record(run_id, "invalid_output", record)

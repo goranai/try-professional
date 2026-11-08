@@ -5,11 +5,13 @@ Permissions are enforced here by the runner, whatever the model was persuaded to
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import re
 import shutil
 import subprocess
+import sys
 import urllib.request
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -37,6 +39,7 @@ class ToolRefused(Exception):
 # A role is a full agent: it can use a computer. These are granted by the runner, not by a role's file.
 COMPUTER_TOOLS = ("shell", "web_fetch")
 SHELL_TIMEOUT_SECONDS = 300
+AFTER_STOP_SECONDS = 10
 MAX_OUTPUT_CHARS = 6_000
 MAX_FETCH_BYTES = 500_000
 # The model's own keys never reach a command it runs. A GitHub token does, so gh works.
@@ -411,22 +414,50 @@ def execute(workspace: Path, command: str) -> str:
     check here: a caller running something outside has already had a person approve it."""
     environment = {k: v for k, v in os.environ.items() if k in _KEPT_SECRETS or not _SECRET_NAME.search(k)}
     workspace.mkdir(parents=True, exist_ok=True)
+    shell = _shell_command(command)
+    # Its own process group, so a time limit stops everything the command started, not only the shell.
+    group: dict[str, Any] = (
+        {"creationflags": getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)}
+        if sys.platform == "win32"
+        else {"start_new_session": True}
+    )
+    process = subprocess.Popen(
+        shell,
+        shell=isinstance(shell, str),
+        cwd=workspace,
+        env=environment,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        stdin=subprocess.DEVNULL,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        **group,
+    )
     try:
-        done = subprocess.run(
-            _shell_command(command),
-            shell=isinstance(_shell_command(command), str),
-            cwd=workspace,
-            env=environment,
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            stdin=subprocess.DEVNULL,
-            timeout=SHELL_TIMEOUT_SECONDS,
-        )
+        out, err = process.communicate(timeout=SHELL_TIMEOUT_SECONDS)
     except subprocess.TimeoutExpired:
-        return f"Stopped after {SHELL_TIMEOUT_SECONDS} seconds."
-    return f"exit code {done.returncode}\n{(done.stdout or '') + (done.stderr or '')}"
+        # A real run hung for 90 minutes here: the shell was stopped, and a program it started kept its output open.
+        _stop_tree(process)
+        try:
+            out, err = process.communicate(timeout=AFTER_STOP_SECONDS)
+        except subprocess.TimeoutExpired:
+            out, err = "", ""
+        return f"Stopped after {SHELL_TIMEOUT_SECONDS} seconds, with everything it started.\n{(out or '')[-2000:]}"
+    return f"exit code {process.returncode}\n{(out or '') + (err or '')}"
+
+
+def _stop_tree(process: subprocess.Popen[str]) -> None:
+    """Stop a command and every process it started. Only ever a process this company started itself."""
+    if sys.platform == "win32":
+        subprocess.run(["taskkill", "/F", "/T", "/PID", str(process.pid)], capture_output=True, check=False)
+    else:
+        import signal
+
+        with contextlib.suppress(ProcessLookupError, PermissionError):
+            os.killpg(process.pid, signal.SIGKILL)
+    with contextlib.suppress(OSError):
+        process.kill()
 
 
 def _fetch(context: ToolContext, url: str) -> str:

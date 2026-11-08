@@ -17,6 +17,12 @@ Specialists, without the group-chat failure. Each role keeps its own job and mem
 - **Roles work at the same time in Claude Code.** `/company` starts the subagents of every role that's ready at once, one per role, instead of one after another. The company's own engine already ran independent work in parallel.
 - **No token budgets asked for in plans.** The CEO was told to give each work package a token budget, which nothing enforced.
 
+### Fixed
+
+- **A command could hang a run for good.** On a real run, a role's shell command started a program and hit its 5-minute limit; the shell was stopped, the program kept its output open, and the run waited 90 minutes with nothing happening. Now the whole process tree a command started is stopped at the limit.
+- **Roles in Claude Code still started one by one with a small model.** With every role on Haiku, the coordinator started each subagent in its own message, so two departments' heads worked one after the other, though their writers and reviewers did overlap. Now, when several roles are ready, `run_next_action` itself tells the coordinator to start them together.
+- **A whole payload sent as JSON text** was refused three times in a row, and a criterion marked `"status": "met"` or `"achieved": "yes"` wasn't understood. Both are now. Anything unclear, like "mostly", is still refused. A refused hand-in is kept in the audit log with its payload first, in full, so the next wording can be seen.
+
 ## 0.6.1 (2026-11-09)
 
 A company learns from what happened to its work, and works on its own. Nothing here is for one kind of business: whatever a company puts out, it can follow.

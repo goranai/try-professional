@@ -406,8 +406,36 @@ class ArtifactError(ValueError):
 # What models often call a field instead. Only names that can't mean anything else here.
 _ALIASES: dict[str, dict[str, tuple[str, ...]]] = {
     "Claim": {"claim": ("text", "statement", "content"), "source": ("sources", "url", "link", "citation")},
-    "CriterionResult": {"criterion": ("text", "item", "name", "criteria"), "met": ("satisfied", "passed", "done")},
-    "DoneCriterion": {"criterion": ("text", "item", "name", "criteria"), "met": ("satisfied", "passed", "done")},
+    "CriterionResult": {
+        "criterion": ("text", "item", "name", "criteria"),
+        "met": (
+            "satisfied",
+            "passed",
+            "done",
+            "is_met",
+            "achieved",
+            "complete",
+            "completed",
+            "fulfilled",
+            "status",
+            "result",
+        ),
+    },
+    "DoneCriterion": {
+        "criterion": ("text", "item", "name", "criteria"),
+        "met": (
+            "satisfied",
+            "passed",
+            "done",
+            "is_met",
+            "achieved",
+            "complete",
+            "completed",
+            "fulfilled",
+            "status",
+            "result",
+        ),
+    },
     "ReviewIssue": {
         "description": (
             "issue",
@@ -445,6 +473,9 @@ _ALIASES: dict[str, dict[str, tuple[str, ...]]] = {
         ),
     },
 }
+# How a model says a criterion was met, or wasn't. Anything else stays as it is, and is refused.
+_SAID_MET = {"met", "yes", "true", "done", "pass", "passed", "complete", "completed", "achieved", "satisfied", "ok"}
+_SAID_NOT_MET = {"not met", "unmet", "no", "false", "fail", "failed", "partial", "partly met", "pending", "not done"}
 # Extra detail on a review issue that's worth keeping, folded into its description.
 _ISSUE_DETAIL = ("where", "location", "fix", "suggestion", "recommendation")
 
@@ -458,6 +489,13 @@ def settle_payload(type_name: str, payload: Any) -> Any:
     still runs afterwards, on everything that matters: missing content, wrong values, and unmet rules.
     """
     model = PAYLOAD_TYPES.get(type_name)
+    if isinstance(payload, str):
+        # The whole payload sent as JSON text, which one model did three times in a row.
+        try:
+            decoded = json.loads(payload)
+        except ValueError:
+            return payload
+        payload = decoded if isinstance(decoded, dict) else payload
     if model is None or not isinstance(payload, dict):
         return payload
     return _settle(model, payload, top=True)
@@ -488,6 +526,12 @@ def _settle(model: type[BaseModel], data: dict[str, Any], *, top: bool = False) 
     if model.__name__ == "WorkPackage" and not out.get("id") and isinstance(out.get("title"), str):
         # A name for it, from its own title. Nothing it says changes.
         out["id"] = re.sub(r"[^a-z0-9]+", "-", out["title"].lower()).strip("-")[:40] or out.get("id")
+    if model.__name__ in ("CriterionResult", "DoneCriterion") and isinstance(out.get("met"), str):
+        said = out["met"].strip().lower().replace("_", " ")
+        if said in _SAID_MET:
+            out["met"] = True
+        elif said in _SAID_NOT_MET:
+            out["met"] = False
     if model.__name__ == "TestRun" and isinstance(out.get("result"), bool):
         out["result"] = "passed" if out["result"] else "failed"
     fields = model.model_fields

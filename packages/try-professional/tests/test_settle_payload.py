@@ -104,6 +104,22 @@ def test_notes_in_other_words_keep_the_work() -> None:
     assert parsed.lesson == "Check main"  # type: ignore[attr-defined]
 
 
+def test_a_payload_sent_as_text_and_met_in_other_words() -> None:
+    """One model sent its whole payload as JSON text three times, and then wrote whether a criterion was met its way."""
+    import json
+
+    payload = _content(done_criteria_met=[{"criterion": "Five posts", "status": "met"},
+                                          {"criterion": "A caption each", "achieved": "yes"},
+                                          {"criterion": "Posting times", "status": "partial"}])  # fmt: skip
+    parsed = parse_payload("PublicContent", settle_payload("PublicContent", json.dumps(payload)))
+    assert [c.met for c in parsed.done_criteria_met] == [True, True, False]  # type: ignore[attr-defined]
+    with pytest.raises(ArtifactError):
+        parse_payload("PublicContent", settle_payload("PublicContent", "not json at all"))
+    unclear = _content(done_criteria_met=[{"criterion": "Five posts", "status": "mostly"}])
+    with pytest.raises(ArtifactError, match="met"):
+        parse_payload("PublicContent", settle_payload("PublicContent", unclear))
+
+
 def test_flags_in_the_wrong_place_are_still_refused() -> None:
     """Flags decide which reviews run, so they're never quietly dropped."""
     with pytest.raises(ArtifactError, match="flags"):
