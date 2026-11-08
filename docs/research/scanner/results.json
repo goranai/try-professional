@@ -1,0 +1,863 @@
+{
+ "before": {
+  "verdicts_right": 18,
+  "cases": 29,
+  "per_rule": {
+   "conceal-en": {
+    "true_positives": 1,
+    "false_positives": 0,
+    "false_negatives": 0,
+    "precision": 1.0,
+    "recall": 1.0
+   },
+   "credentials-command": {
+    "true_positives": 1,
+    "false_positives": 0,
+    "false_negatives": 0,
+    "precision": 1.0,
+    "recall": 1.0
+   },
+   "credentials-en": {
+    "true_positives": 1,
+    "false_positives": 0,
+    "false_negatives": 2,
+    "precision": 1.0,
+    "recall": 0.33
+   },
+   "exfil-curl": {
+    "true_positives": 2,
+    "false_positives": 0,
+    "false_negatives": 0,
+    "precision": 1.0,
+    "recall": 1.0
+   },
+   "exfil-en": {
+    "true_positives": 2,
+    "false_positives": 0,
+    "false_negatives": 3,
+    "precision": 1.0,
+    "recall": 0.4
+   },
+   "exfil-host": {
+    "true_positives": 3,
+    "false_positives": 0,
+    "false_negatives": 0,
+    "precision": 1.0,
+    "recall": 1.0
+   },
+   "mixed-script": {
+    "true_positives": 0,
+    "false_positives": 0,
+    "false_negatives": 1,
+    "precision": null,
+    "recall": 0.0
+   },
+   "override-en": {
+    "true_positives": 4,
+    "false_positives": 0,
+    "false_negatives": 2,
+    "precision": 1.0,
+    "recall": 0.67
+   },
+   "override-persona-en": {
+    "true_positives": 2,
+    "false_positives": 1,
+    "false_negatives": 0,
+    "precision": 0.67,
+    "recall": 1.0
+   },
+   "remote-pipe": {
+    "true_positives": 3,
+    "false_positives": 1,
+    "false_negatives": 0,
+    "precision": 0.75,
+    "recall": 1.0
+   }
+  },
+  "cases_detail": [
+   {
+    "id": "frontmatter-name-jailbreak",
+    "pattern": 1,
+    "kind": "clean",
+    "expected_verdict": "review",
+    "verdict": "review",
+    "expected_rules": [
+     "override-persona-en"
+    ],
+    "fired": [
+     "override-persona-en"
+    ]
+   },
+   {
+    "id": "frontmatter-name-only",
+    "pattern": 1,
+    "kind": "clean",
+    "expected_verdict": "pass",
+    "verdict": "review",
+    "expected_rules": [],
+    "fired": [
+     "override-persona-en"
+    ]
+   },
+   {
+    "id": "frontmatter-description-override",
+    "pattern": 1,
+    "kind": "attack",
+    "expected_verdict": "review",
+    "verdict": "block",
+    "expected_rules": [
+     "override-en"
+    ],
+    "fired": [
+     "override-en"
+    ]
+   },
+   {
+    "id": "pipe-json-tool",
+    "pattern": 2,
+    "kind": "clean",
+    "expected_verdict": "pass",
+    "verdict": "block",
+    "expected_rules": [],
+    "fired": [
+     "remote-pipe"
+    ]
+   },
+   {
+    "id": "pipe-jq",
+    "pattern": 2,
+    "kind": "clean",
+    "expected_verdict": "pass",
+    "verdict": "pass",
+    "expected_rules": [],
+    "fired": []
+   },
+   {
+    "id": "pipe-python-stdin",
+    "pattern": 2,
+    "kind": "attack",
+    "expected_verdict": "block",
+    "verdict": "block",
+    "expected_rules": [
+     "remote-pipe"
+    ],
+    "fired": [
+     "remote-pipe"
+    ]
+   },
+   {
+    "id": "pipe-python-dash",
+    "pattern": 2,
+    "kind": "attack",
+    "expected_verdict": "block",
+    "verdict": "block",
+    "expected_rules": [
+     "remote-pipe"
+    ],
+    "fired": [
+     "remote-pipe"
+    ]
+   },
+   {
+    "id": "pipe-node-e",
+    "pattern": 2,
+    "kind": "attack",
+    "expected_verdict": "block",
+    "verdict": "block",
+    "expected_rules": [
+     "remote-pipe"
+    ],
+    "fired": [
+     "remote-pipe"
+    ]
+   },
+   {
+    "id": "heading-webhook-site",
+    "pattern": 3,
+    "kind": "clean",
+    "expected_verdict": "review",
+    "verdict": "block",
+    "expected_rules": [
+     "exfil-en",
+     "exfil-host"
+    ],
+    "fired": [
+     "exfil-en",
+     "exfil-host"
+    ]
+   },
+   {
+    "id": "reference-list-webhook-site",
+    "pattern": 3,
+    "kind": "clean",
+    "expected_verdict": "review",
+    "verdict": "review",
+    "expected_rules": [
+     "exfil-host"
+    ],
+    "fired": [
+     "exfil-host"
+    ]
+   },
+   {
+    "id": "instruction-webhook-site",
+    "pattern": 3,
+    "kind": "attack",
+    "expected_verdict": "block",
+    "verdict": "block",
+    "expected_rules": [
+     "exfil-en",
+     "exfil-host"
+    ],
+    "fired": [
+     "exfil-en",
+     "exfil-host"
+    ]
+   },
+   {
+    "id": "threat-table-row",
+    "pattern": 4,
+    "kind": "clean",
+    "expected_verdict": "review",
+    "verdict": "block",
+    "expected_rules": [
+     "override-en"
+    ],
+    "fired": [
+     "override-en"
+    ]
+   },
+   {
+    "id": "quoted-example",
+    "pattern": 4,
+    "kind": "clean",
+    "expected_verdict": "review",
+    "verdict": "block",
+    "expected_rules": [
+     "override-en"
+    ],
+    "fired": [
+     "override-en"
+    ]
+   },
+   {
+    "id": "instruction-not-quoted",
+    "pattern": 4,
+    "kind": "attack",
+    "expected_verdict": "block",
+    "verdict": "block",
+    "expected_rules": [
+     "override-en"
+    ],
+    "fired": [
+     "override-en"
+    ]
+   },
+   {
+    "id": "base64-comment-exfil",
+    "pattern": 5,
+    "kind": "attack",
+    "expected_verdict": "block",
+    "verdict": "pass",
+    "expected_rules": [
+     "credentials-en",
+     "exfil-en"
+    ],
+    "fired": []
+   },
+   {
+    "id": "hex-exfil",
+    "pattern": 5,
+    "kind": "attack",
+    "expected_verdict": "block",
+    "verdict": "pass",
+    "expected_rules": [
+     "credentials-en",
+     "exfil-en"
+    ],
+    "fired": []
+   },
+   {
+    "id": "base64-harmless",
+    "pattern": 5,
+    "kind": "clean",
+    "expected_verdict": "pass",
+    "verdict": "pass",
+    "expected_rules": [],
+    "fired": []
+   },
+   {
+    "id": "sha256-digest",
+    "pattern": 5,
+    "kind": "clean",
+    "expected_verdict": "pass",
+    "verdict": "pass",
+    "expected_rules": [],
+    "fired": []
+   },
+   {
+    "id": "split-exfil",
+    "pattern": 6,
+    "kind": "attack",
+    "expected_verdict": "block",
+    "verdict": "pass",
+    "expected_rules": [
+     "exfil-en"
+    ],
+    "fired": []
+   },
+   {
+    "id": "split-override",
+    "pattern": 6,
+    "kind": "attack",
+    "expected_verdict": "block",
+    "verdict": "pass",
+    "expected_rules": [
+     "override-en"
+    ],
+    "fired": []
+   },
+   {
+    "id": "split-harmless",
+    "pattern": 6,
+    "kind": "clean",
+    "expected_verdict": "pass",
+    "verdict": "pass",
+    "expected_rules": [],
+    "fired": []
+   },
+   {
+    "id": "two-paragraphs-apart",
+    "pattern": 6,
+    "kind": "clean",
+    "expected_verdict": "pass",
+    "verdict": "pass",
+    "expected_rules": [],
+    "fired": []
+   },
+   {
+    "id": "keep-role-injection",
+    "pattern": "keep",
+    "kind": "attack",
+    "expected_verdict": "review",
+    "verdict": "review",
+    "expected_rules": [
+     "override-persona-en"
+    ],
+    "fired": [
+     "override-persona-en"
+    ]
+   },
+   {
+    "id": "keep-read-ssh",
+    "pattern": "keep",
+    "kind": "attack",
+    "expected_verdict": "block",
+    "verdict": "block",
+    "expected_rules": [
+     "credentials-command",
+     "credentials-en"
+    ],
+    "fired": [
+     "credentials-command",
+     "credentials-en"
+    ]
+   },
+   {
+    "id": "keep-post-url",
+    "pattern": "keep",
+    "kind": "attack",
+    "expected_verdict": "block",
+    "verdict": "block",
+    "expected_rules": [
+     "exfil-curl"
+    ],
+    "fired": [
+     "exfil-curl"
+    ]
+   },
+   {
+    "id": "keep-conceal",
+    "pattern": "keep",
+    "kind": "attack",
+    "expected_verdict": "block",
+    "verdict": "block",
+    "expected_rules": [
+     "conceal-en"
+    ],
+    "fired": [
+     "conceal-en"
+    ]
+   },
+   {
+    "id": "keep-aws-data-binary",
+    "pattern": "keep",
+    "kind": "attack",
+    "expected_verdict": "block",
+    "verdict": "block",
+    "expected_rules": [
+     "exfil-curl"
+    ],
+    "fired": [
+     "exfil-curl"
+    ]
+   },
+   {
+    "id": "keep-cyrillic-homoglyphs",
+    "pattern": "keep",
+    "kind": "attack",
+    "expected_verdict": "block",
+    "verdict": "pass",
+    "expected_rules": [
+     "mixed-script",
+     "override-en"
+    ],
+    "fired": []
+   },
+   {
+    "id": "russian-text-is-fine",
+    "pattern": "keep",
+    "kind": "clean",
+    "expected_verdict": "pass",
+    "verdict": "pass",
+    "expected_rules": [],
+    "fired": []
+   }
+  ]
+ },
+ "after": {
+  "verdicts_right": 29,
+  "cases": 29,
+  "per_rule": {
+   "conceal-en": {
+    "true_positives": 1,
+    "false_positives": 0,
+    "false_negatives": 0,
+    "precision": 1.0,
+    "recall": 1.0
+   },
+   "credentials-command": {
+    "true_positives": 1,
+    "false_positives": 0,
+    "false_negatives": 0,
+    "precision": 1.0,
+    "recall": 1.0
+   },
+   "credentials-en": {
+    "true_positives": 3,
+    "false_positives": 0,
+    "false_negatives": 0,
+    "precision": 1.0,
+    "recall": 1.0
+   },
+   "exfil-curl": {
+    "true_positives": 2,
+    "false_positives": 0,
+    "false_negatives": 0,
+    "precision": 1.0,
+    "recall": 1.0
+   },
+   "exfil-en": {
+    "true_positives": 5,
+    "false_positives": 0,
+    "false_negatives": 0,
+    "precision": 1.0,
+    "recall": 1.0
+   },
+   "exfil-host": {
+    "true_positives": 3,
+    "false_positives": 0,
+    "false_negatives": 0,
+    "precision": 1.0,
+    "recall": 1.0
+   },
+   "mixed-script": {
+    "true_positives": 1,
+    "false_positives": 0,
+    "false_negatives": 0,
+    "precision": 1.0,
+    "recall": 1.0
+   },
+   "override-en": {
+    "true_positives": 6,
+    "false_positives": 0,
+    "false_negatives": 0,
+    "precision": 1.0,
+    "recall": 1.0
+   },
+   "override-persona-en": {
+    "true_positives": 2,
+    "false_positives": 0,
+    "false_negatives": 0,
+    "precision": 1.0,
+    "recall": 1.0
+   },
+   "remote-pipe": {
+    "true_positives": 3,
+    "false_positives": 0,
+    "false_negatives": 0,
+    "precision": 1.0,
+    "recall": 1.0
+   }
+  },
+  "cases_detail": [
+   {
+    "id": "frontmatter-name-jailbreak",
+    "pattern": 1,
+    "kind": "clean",
+    "expected_verdict": "review",
+    "verdict": "review",
+    "expected_rules": [
+     "override-persona-en"
+    ],
+    "fired": [
+     "override-persona-en"
+    ]
+   },
+   {
+    "id": "frontmatter-name-only",
+    "pattern": 1,
+    "kind": "clean",
+    "expected_verdict": "pass",
+    "verdict": "pass",
+    "expected_rules": [],
+    "fired": []
+   },
+   {
+    "id": "frontmatter-description-override",
+    "pattern": 1,
+    "kind": "attack",
+    "expected_verdict": "review",
+    "verdict": "review",
+    "expected_rules": [
+     "override-en"
+    ],
+    "fired": [
+     "override-en"
+    ]
+   },
+   {
+    "id": "pipe-json-tool",
+    "pattern": 2,
+    "kind": "clean",
+    "expected_verdict": "pass",
+    "verdict": "pass",
+    "expected_rules": [],
+    "fired": []
+   },
+   {
+    "id": "pipe-jq",
+    "pattern": 2,
+    "kind": "clean",
+    "expected_verdict": "pass",
+    "verdict": "pass",
+    "expected_rules": [],
+    "fired": []
+   },
+   {
+    "id": "pipe-python-stdin",
+    "pattern": 2,
+    "kind": "attack",
+    "expected_verdict": "block",
+    "verdict": "block",
+    "expected_rules": [
+     "remote-pipe"
+    ],
+    "fired": [
+     "remote-pipe"
+    ]
+   },
+   {
+    "id": "pipe-python-dash",
+    "pattern": 2,
+    "kind": "attack",
+    "expected_verdict": "block",
+    "verdict": "block",
+    "expected_rules": [
+     "remote-pipe"
+    ],
+    "fired": [
+     "remote-pipe"
+    ]
+   },
+   {
+    "id": "pipe-node-e",
+    "pattern": 2,
+    "kind": "attack",
+    "expected_verdict": "block",
+    "verdict": "block",
+    "expected_rules": [
+     "remote-pipe"
+    ],
+    "fired": [
+     "remote-pipe"
+    ]
+   },
+   {
+    "id": "heading-webhook-site",
+    "pattern": 3,
+    "kind": "clean",
+    "expected_verdict": "review",
+    "verdict": "review",
+    "expected_rules": [
+     "exfil-en",
+     "exfil-host"
+    ],
+    "fired": [
+     "exfil-en",
+     "exfil-host"
+    ]
+   },
+   {
+    "id": "reference-list-webhook-site",
+    "pattern": 3,
+    "kind": "clean",
+    "expected_verdict": "review",
+    "verdict": "review",
+    "expected_rules": [
+     "exfil-host"
+    ],
+    "fired": [
+     "exfil-host"
+    ]
+   },
+   {
+    "id": "instruction-webhook-site",
+    "pattern": 3,
+    "kind": "attack",
+    "expected_verdict": "block",
+    "verdict": "block",
+    "expected_rules": [
+     "exfil-en",
+     "exfil-host"
+    ],
+    "fired": [
+     "exfil-en",
+     "exfil-host"
+    ]
+   },
+   {
+    "id": "threat-table-row",
+    "pattern": 4,
+    "kind": "clean",
+    "expected_verdict": "review",
+    "verdict": "review",
+    "expected_rules": [
+     "override-en"
+    ],
+    "fired": [
+     "override-en"
+    ]
+   },
+   {
+    "id": "quoted-example",
+    "pattern": 4,
+    "kind": "clean",
+    "expected_verdict": "review",
+    "verdict": "review",
+    "expected_rules": [
+     "override-en"
+    ],
+    "fired": [
+     "override-en"
+    ]
+   },
+   {
+    "id": "instruction-not-quoted",
+    "pattern": 4,
+    "kind": "attack",
+    "expected_verdict": "block",
+    "verdict": "block",
+    "expected_rules": [
+     "override-en"
+    ],
+    "fired": [
+     "override-en"
+    ]
+   },
+   {
+    "id": "base64-comment-exfil",
+    "pattern": 5,
+    "kind": "attack",
+    "expected_verdict": "block",
+    "verdict": "block",
+    "expected_rules": [
+     "credentials-en",
+     "exfil-en"
+    ],
+    "fired": [
+     "credentials-en",
+     "exfil-en"
+    ]
+   },
+   {
+    "id": "hex-exfil",
+    "pattern": 5,
+    "kind": "attack",
+    "expected_verdict": "block",
+    "verdict": "block",
+    "expected_rules": [
+     "credentials-en",
+     "exfil-en"
+    ],
+    "fired": [
+     "credentials-en",
+     "exfil-en"
+    ]
+   },
+   {
+    "id": "base64-harmless",
+    "pattern": 5,
+    "kind": "clean",
+    "expected_verdict": "pass",
+    "verdict": "pass",
+    "expected_rules": [],
+    "fired": []
+   },
+   {
+    "id": "sha256-digest",
+    "pattern": 5,
+    "kind": "clean",
+    "expected_verdict": "pass",
+    "verdict": "pass",
+    "expected_rules": [],
+    "fired": []
+   },
+   {
+    "id": "split-exfil",
+    "pattern": 6,
+    "kind": "attack",
+    "expected_verdict": "block",
+    "verdict": "block",
+    "expected_rules": [
+     "exfil-en"
+    ],
+    "fired": [
+     "exfil-en"
+    ]
+   },
+   {
+    "id": "split-override",
+    "pattern": 6,
+    "kind": "attack",
+    "expected_verdict": "block",
+    "verdict": "block",
+    "expected_rules": [
+     "override-en"
+    ],
+    "fired": [
+     "override-en"
+    ]
+   },
+   {
+    "id": "split-harmless",
+    "pattern": 6,
+    "kind": "clean",
+    "expected_verdict": "pass",
+    "verdict": "pass",
+    "expected_rules": [],
+    "fired": []
+   },
+   {
+    "id": "two-paragraphs-apart",
+    "pattern": 6,
+    "kind": "clean",
+    "expected_verdict": "pass",
+    "verdict": "pass",
+    "expected_rules": [],
+    "fired": []
+   },
+   {
+    "id": "keep-role-injection",
+    "pattern": "keep",
+    "kind": "attack",
+    "expected_verdict": "review",
+    "verdict": "review",
+    "expected_rules": [
+     "override-persona-en"
+    ],
+    "fired": [
+     "override-persona-en"
+    ]
+   },
+   {
+    "id": "keep-read-ssh",
+    "pattern": "keep",
+    "kind": "attack",
+    "expected_verdict": "block",
+    "verdict": "block",
+    "expected_rules": [
+     "credentials-command",
+     "credentials-en"
+    ],
+    "fired": [
+     "credentials-command",
+     "credentials-en"
+    ]
+   },
+   {
+    "id": "keep-post-url",
+    "pattern": "keep",
+    "kind": "attack",
+    "expected_verdict": "block",
+    "verdict": "block",
+    "expected_rules": [
+     "exfil-curl"
+    ],
+    "fired": [
+     "exfil-curl"
+    ]
+   },
+   {
+    "id": "keep-conceal",
+    "pattern": "keep",
+    "kind": "attack",
+    "expected_verdict": "block",
+    "verdict": "block",
+    "expected_rules": [
+     "conceal-en"
+    ],
+    "fired": [
+     "conceal-en"
+    ]
+   },
+   {
+    "id": "keep-aws-data-binary",
+    "pattern": "keep",
+    "kind": "attack",
+    "expected_verdict": "block",
+    "verdict": "block",
+    "expected_rules": [
+     "exfil-curl"
+    ],
+    "fired": [
+     "exfil-curl"
+    ]
+   },
+   {
+    "id": "keep-cyrillic-homoglyphs",
+    "pattern": "keep",
+    "kind": "attack",
+    "expected_verdict": "block",
+    "verdict": "block",
+    "expected_rules": [
+     "mixed-script",
+     "override-en"
+    ],
+    "fired": [
+     "mixed-script",
+     "override-en"
+    ]
+   },
+   {
+    "id": "russian-text-is-fine",
+    "pattern": "keep",
+    "kind": "clean",
+    "expected_verdict": "pass",
+    "verdict": "pass",
+    "expected_rules": [],
+    "fired": []
+   }
+  ]
+ }
+}

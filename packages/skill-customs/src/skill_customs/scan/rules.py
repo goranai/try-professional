@@ -12,6 +12,8 @@ from dataclasses import dataclass
 
 BLOCK = "block"
 REVIEW = "review"
+# Recorded and shown, and never changes a verdict.
+NOTE = "note"
 
 
 @dataclass(frozen=True)
@@ -181,7 +183,9 @@ RULES: tuple[Rule, ...] = (
     _rule(
         "remote-pipe",
         BLOCK,
-        r"\b(curl|wget|irm|iwr|invoke-webrequest|invoke-restmethod)\b[^\n]{0,120}(\|\s*(sudo\s+)?(sh|bash|zsh|python3?|node|iex|invoke-expression)\b)",
+        # Into something that runs what it reads. python -m json.tool, jq, and other formatters only print it.
+        r"\b(curl|wget|irm|iwr|invoke-webrequest|invoke-restmethod)\b[^\n]{0,120}\|\s*(sudo\s+)?"
+        r"((sh|bash|zsh|dash|ksh|fish|iex|invoke-expression|perl|ruby|php)\b|python[0-9.]*\b(?!\s+-m\b)|node\b)",
         "Pipes a download into a shell",
     ),
     _rule("remote-iex", BLOCK, r"\biex\s*\(|\binvoke-expression\b", "Runs a downloaded string in PowerShell"),
@@ -211,6 +215,22 @@ _INVISIBLE = {
 }
 _ZERO_WIDTH = (0x200B, 0x200C, 0x200D, 0x2060, 0xFEFF)
 _STRIP = {code: None for code in (*_INVISIBLE, *_ZERO_WIDTH)}
+# Behaviour rules that are also checked across a few lines, because rewording over a line break is an easy dodge.
+WINDOW_RULES = ("override-", "conceal-", "exfil-", "credentials-")
+WINDOW_LINES = 3
+# Shortest encoded runs worth decoding. Shorter ones are mostly ids and hashes.
+MIN_BASE64 = 24
+MIN_HEX = 32
+_BASE64_RUN = re.compile(rf"(?<![A-Za-z0-9+/_-])[A-Za-z0-9+/_-]{{{MIN_BASE64},}}={{0,2}}")
+_HEX_RUN = re.compile(rf"(?<![0-9a-fA-F])(?:[0-9a-fA-F]{{2}}){{{MIN_HEX // 2},}}(?![0-9a-fA-F])")
+# Latin look-alikes from Cyrillic and Greek. They're folded only inside a word that mixes alphabets, so real Russian
+# or Greek text is left alone.
+CONFUSABLES = str.maketrans(
+    "аеорсухіјѕԁԛԝаАВЕКМНОРСТХІЈЅοαεικνρτυχΑΒΕΖΗΙΚΜΝΟΡΤΥΧ",
+    "aeopcyxijsdqwaABEKMHOPCTXIJSoaeiknptuxABEZHIKMNOPTYX",
+)
+_LATIN = re.compile(r"[a-zA-Z]")
+_OTHER_SCRIPT = re.compile(r"[\u0370-\u03ff\u0400-\u04ff]")
 _BLOB = re.compile(r"(?<![A-Za-z0-9+/])[A-Za-z0-9+/]{200,}={0,2}|\b[0-9a-fA-F]{200,}\b")
 _DATA_URI = re.compile(r"data:[a-z]+/[a-z0-9.+-]+;base64,", re.IGNORECASE)
 
