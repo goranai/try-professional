@@ -198,19 +198,23 @@ class Company:
 
     # ---- running -------------------------------------------------------------------------------------------------
 
-    def run(self, goal: str, *, dry_run: bool = False, client: Any = None, model: str = "") -> RunResult:
+    def run(
+        self, goal: str, *, dry_run: bool = False, client: Any = None, model: str = "", approve: Any = None
+    ) -> RunResult:
         """Run one command to the end, or until it needs a person, with the API runner. `dry_run` uses a scripted
         model: free, and not real work. Otherwise it uses the model `trypro.yaml` names, or the `client` and
         `model` given. A question for a person ends the call with status "blocked"; a person answers it with
         `trypro decide`, and `resume` continues it."""
-        runner, orchestrator = self._runner(dry_run, client, model)
+        runner, orchestrator = self._runner(dry_run, client, model, approve)
         try:
             return runner.run(goal)
         finally:
             orchestrator.close()
 
-    def resume(self, run_id: str, *, dry_run: bool = False, client: Any = None, model: str = "") -> RunResult:
-        runner, orchestrator = self._runner(dry_run, client, model)
+    def resume(
+        self, run_id: str, *, dry_run: bool = False, client: Any = None, model: str = "", approve: Any = None
+    ) -> RunResult:
+        runner, orchestrator = self._runner(dry_run, client, model, approve)
         try:
             return runner.resume(run_id)
         finally:
@@ -270,12 +274,14 @@ class Company:
             deliverables_dir=self.root / "deliverables",
         )
 
-    def _runner(self, dry_run: bool, client: Any, model: str) -> tuple[ApiRunner, Orchestrator]:
+    def _runner(self, dry_run: bool, client: Any, model: str, approve: Any = None) -> tuple[ApiRunner, Orchestrator]:
+        computer = load_config(self.root).raw.get("computer_tools", True) is not False
         if dry_run or client is not None:
             orchestrator = self._orchestrator()
             routes = ModelRoutes({"standard": model or "scripted", "executive": model or "scripted",
                                   "fast": model or "scripted"})  # fmt: skip
-            return ApiRunner(orchestrator, client or ScriptedClient(), routes), orchestrator
+            runner = ApiRunner(orchestrator, client or ScriptedClient(), routes, computer=computer, approve=approve)
+            return runner, orchestrator
         import argparse
         import os
 
@@ -284,6 +290,8 @@ class Company:
         previous = Path.cwd()
         os.chdir(self.root)
         try:
-            return _runner(argparse.Namespace(dry_run=False))
+            runner, orchestrator = _runner(argparse.Namespace(dry_run=False))
         finally:
             os.chdir(previous)
+        runner.approve = approve
+        return runner, orchestrator

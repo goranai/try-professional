@@ -29,7 +29,17 @@ from ...resources import stop_if_memory_low
 from ..base import Capabilities, Delivery, Mode, ProvisionReport, VerifyReport
 from .clients import ChatClient, ChatRequest, ClientError, ToolResult
 from .prompts import system_prompt, user_prompt
-from .tools import CONTROL_TOOLS, ESCALATE, HANDOFF, SUBMIT, ToolContext, ToolRefused, run_tool, tools_for
+from .tools import (
+    COMPUTER_TOOLS,
+    CONTROL_TOOLS,
+    ESCALATE,
+    HANDOFF,
+    SUBMIT,
+    ToolContext,
+    ToolRefused,
+    run_tool,
+    tools_for,
+)
 
 HumanHandler = Callable[[AskHuman], "HumanDecided | None"]
 DEFAULT_MAX_TURNS = 12
@@ -50,6 +60,8 @@ TOOLS_BY_PURPOSE: dict[Purpose, frozenset[str]] = {
     Purpose.INTEGRATE: _READ,
     Purpose.RETROSPECTIVE: frozenset(),
 }
+# The roles that do or check work get a computer. Planning and routing don't need one.
+COMPUTER_PURPOSES = frozenset({Purpose.EXECUTE, Purpose.REVIEW, Purpose.INTEGRATE})
 
 
 @dataclass
@@ -106,6 +118,8 @@ class ApiRunner:
         router: Router | None = None,
         max_turns: int = DEFAULT_MAX_TURNS,
         on_human: HumanHandler | None = None,
+        computer: bool = True,
+        approve: Callable[[str, str], bool] | None = None,
     ) -> None:
         self.orchestrator = orchestrator
         self.org: Org = orchestrator.org
@@ -117,6 +131,10 @@ class ApiRunner:
         self.routes = routes
         self.max_turns = max_turns
         self.on_human = on_human
+        # Roles get a shell and the web, unless a company should only write documents.
+        self.computer = computer
+        # Asked before a command that changes something outside. With nobody to ask, those don't run.
+        self.approve = approve
 
     # ---- RuntimeAdapter ---------------------------------------------------------
 
@@ -234,6 +252,9 @@ class ApiRunner:
         may_handoff = self.org.is_head(role.ref) and role.ref != self.org.root_role
         may_handoff = may_handoff and action.purpose in (Purpose.DISPATCH, Purpose.EXECUTE)
         usable = tuple(t for t in role.allowed_tools if t in TOOLS_BY_PURPOSE[action.purpose])
+        if self.computer and action.purpose in COMPUTER_PURPOSES:
+            # Every role that works or checks work can use a computer: the shell, and the web.
+            usable += tuple(t for t in COMPUTER_TOOLS if t not in usable)
         skills = self.orchestrator.skills
         # Every tool offered is resent on every call, so offer skill tools only when they can work.
         if not skills.available(role.ref):
@@ -254,6 +275,7 @@ class ApiRunner:
             skills=self.orchestrator.skills,
             search=search,
             note_source=lambda url, day: self.orchestrator.note_source(run_id, url, day),
+            approve=self.approve,
         )
         system = system_prompt(role, self.org)
         try:

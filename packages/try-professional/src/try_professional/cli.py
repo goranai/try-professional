@@ -380,6 +380,25 @@ def _print_result(result: RunResult, deliverables: Path | None = None) -> int:
     return {"done": 0, "blocked": 3}.get(result.status, 1)
 
 
+def terminal_approver() -> Any:
+    """Asks the person at this terminal before a role runs a command that changes something outside. None if no
+    person is here, and then those commands don't run."""
+    if not _person_at_terminal():
+        return None
+    import threading
+
+    lock = threading.Lock()
+
+    def approve(role: str, command: str) -> bool:
+        with lock:  # Roles can work at the same time, and a person answers one question at a time.
+            _print("")
+            _print(f"{role} wants to run a command that changes something outside:")
+            _print(f"  {command}")
+            return input("Allow it? [y/N]: ").strip().lower().startswith("y")
+
+    return approve
+
+
 def _runner(args: argparse.Namespace) -> tuple[ApiRunner, Orchestrator]:
     config = load_config(Path.cwd())
     org = load_org(config.org_dir)
@@ -403,7 +422,8 @@ def _runner(args: argparse.Namespace) -> tuple[ApiRunner, Orchestrator]:
     )
     if isinstance(orchestrator.skills, LockedSkills):
         orchestrator.feedback = orchestrator.skills
-    return ApiRunner(orchestrator, router=router), orchestrator
+    computer = config.raw.get("computer_tools", True) is not False
+    return ApiRunner(orchestrator, router=router, computer=computer, approve=terminal_approver()), orchestrator
 
 
 def _memory_settings(config: ProjectConfig) -> MemorySettings:
@@ -1123,6 +1143,22 @@ def cmd_start(args: argparse.Namespace) -> int:
     return _setup.launch_claude(root, request)
 
 
+def cmd_chat(args: argparse.Namespace) -> int:
+    from .chat import terminal_chat
+
+    root = Path(args.dir).resolve() if args.dir else Path.cwd()
+    if not (root / "org" / "org.yaml").exists():
+        _print('No company here yet. Make one with: trypro start "<what you want>"')
+        return 2
+    try:
+        return terminal_chat(root, say=_print)
+    except ClientError as error:
+        _print(f"No model to talk to: {error}")
+        _print("Set TRYPRO_LLM_BASE_URL, TRYPRO_LLM_API_KEY, and TRYPRO_LLM_MODEL in .env. Or open Claude Code in")
+        _print("this folder, and just say what you want there.")
+        return 2
+
+
 def cmd_doctor(args: argparse.Namespace) -> int:
     checks = run_checks(Path.cwd())
     if args.report:
@@ -1256,6 +1292,10 @@ def build_parser() -> argparse.ArgumentParser:
         help="Only start and follow work, and hand it to servers bound to each role. It can't do a role's work",
     )
     mcp.set_defaults(func=cmd_mcp)
+
+    chat = sub.add_parser("chat", help="Talk to your company: say what you want, and the CEO answers")
+    chat.add_argument("--dir", help="The company's folder. Default: here")
+    chat.set_defaults(func=cmd_chat)
 
     start = sub.add_parser(
         "start", help="Say what you want made: it designs a company, a person approves it, and it gets to work"

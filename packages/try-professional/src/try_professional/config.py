@@ -27,6 +27,10 @@ CONFIG_TEMPLATE = """\
 org_dir: org
 home: .trypro
 
+# Roles are full agents: they can run commands (git, gh, curl) in their run's workspace, and read the web.
+# Anything that changes something outside, such as a push or a new issue, asks you first. false keeps them to documents.
+computer_tools: true
+
 model:
   provider: openai_compatible
   base_url_env: TRYPRO_LLM_BASE_URL

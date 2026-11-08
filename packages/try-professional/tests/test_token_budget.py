@@ -22,7 +22,8 @@ spec.loader.exec_module(measure_prompts)
 # Raised on 2026-11-07 from 28146 for wake-up briefs, playbooks and fuller task briefs: Phase 4c's cost.
 # Raised the same day from 34000 for what a company can reach. Without it, a real plan required web sources from a
 # company with no web, and a command spent over 50,000 tokens to end blocked. About 200 tokens per large run.
-TOTAL_CHAR_BUDGET = 34700
+# Raised on 2026-11-08 from 34700 for a computer: the shell and web_fetch, given to every step that does or checks work.
+TOTAL_CHAR_BUDGET = 36400
 
 
 def test_a_minimal_run_stays_within_its_prompt_budget() -> None:
