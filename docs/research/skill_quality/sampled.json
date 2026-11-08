@@ -1,0 +1,468 @@
+{
+ "tune": [
+  {
+   "repo": "addyosmani/agent-skills",
+   "commit": "301b02b12bff98e4688e6984af6556802322bbde",
+   "path": "skills/api-and-interface-design",
+   "name": "api-and-interface-design",
+   "description": "Guides stable API and interface design. Use when designing APIs, module boundaries, or any public interface. Use when creating REST or GraphQL endpoints, defining type contracts between modules, or establishing boundaries between frontend and backend."
+  },
+  {
+   "repo": "addyosmani/agent-skills",
+   "commit": "301b02b12bff98e4688e6984af6556802322bbde",
+   "path": "skills/ci-cd-and-automation",
+   "name": "ci-cd-and-automation",
+   "description": "Automates CI/CD pipeline setup. Use when setting up or modifying build and deployment pipelines. Use when you need to automate quality gates, configure test runners in CI, or establish deployment strategies."
+  },
+  {
+   "repo": "addyosmani/agent-skills",
+   "commit": "301b02b12bff98e4688e6984af6556802322bbde",
+   "path": "skills/code-simplification",
+   "name": "code-simplification",
+   "description": "Simplifies code for clarity. Use when refactoring code for clarity without changing behavior. Use when code works but is harder to read, maintain, or extend than it should be. Use when reviewing code that has accumulated unnecessary complexity. Use when asked to simplify, clean up, or reduce the nesting of a function or module that already works, even when the code is pasted inline and nothing else needs to change."
+  },
+  {
+   "repo": "addyosmani/agent-skills",
+   "commit": "301b02b12bff98e4688e6984af6556802322bbde",
+   "path": "skills/context-engineering",
+   "name": "context-engineering",
+   "description": "Optimizes agent context setup. Use when starting a new session, when agent output quality degrades, when switching between tasks, or when you need to configure rules files and context for a project."
+  },
+  {
+   "repo": "addyosmani/agent-skills",
+   "commit": "301b02b12bff98e4688e6984af6556802322bbde",
+   "path": "skills/deprecation-and-migration",
+   "name": "deprecation-and-migration",
+   "description": "Manages deprecation and migration. Use when removing old systems, APIs, or features. Use when migrating users from one implementation to another. Use when migrating a database schema in production, such as renaming or dropping a column without downtime (expand/contract). Use when deciding whether to maintain or sunset existing code."
+  },
+  {
+   "repo": "addyosmani/agent-skills",
+   "commit": "301b02b12bff98e4688e6984af6556802322bbde",
+   "path": "skills/doubt-driven-development",
+   "name": "doubt-driven-development",
+   "description": "Subjects every non-trivial decision to a fresh-context adversarial review before it stands. Use when you want every assumption cross-examined before proceeding, when stress-testing a plan for hidden failure modes, when correctness matters more than speed, when working in unfamiliar code, when stakes are high (production auth, security-sensitive logic, a high-stakes migration, irreversible operations), or any time a confident output would be cheaper to verify now than to debug later."
+  },
+  {
+   "repo": "addyosmani/agent-skills",
+   "commit": "301b02b12bff98e4688e6984af6556802322bbde",
+   "path": "skills/git-workflow-and-versioning",
+   "name": "git-workflow-and-versioning",
+   "description": "Structures git workflow practices. Use when making any code change. Use when committing, branching, resolving conflicts, splitting uncommitted work in a messy working tree into clean atomic commits, opening or reviewing a pull request (PR), pushing to a remote, or when you need to organize work across multiple parallel streams. Use when cutting a release, choosing a semantic version bump, tagging, or writing a changelog. Use when asked to write a commit message or a changelog entry for a change, or to split a change into commits, even when the diff is pasted inline and the message seems easy to write from it."
+  },
+  {
+   "repo": "addyosmani/agent-skills",
+   "commit": "301b02b12bff98e4688e6984af6556802322bbde",
+   "path": "skills/incremental-implementation",
+   "name": "incremental-implementation",
+   "description": "Delivers changes incrementally in thin, verifiable slices. Use when implementing any feature or change that touches more than one file, or when picking up the next task from a plan. Use when rolling a change out behind a feature flag, when you're about to write a large amount of code at once, or when a task feels too big to land in one step."
+  },
+  {
+   "repo": "addyosmani/agent-skills",
+   "commit": "301b02b12bff98e4688e6984af6556802322bbde",
+   "path": "skills/observability-and-instrumentation",
+   "name": "observability-and-instrumentation",
+   "description": "Instruments code so production behavior is visible and diagnosable. Use when adding logging, metrics, tracing, or alerting. Use when shipping any feature that runs in production and you need evidence it works. Use when production issues are reported but you can't tell what happened from the available data."
+  },
+  {
+   "repo": "addyosmani/agent-skills",
+   "commit": "301b02b12bff98e4688e6984af6556802322bbde",
+   "path": "skills/planning-and-task-breakdown",
+   "name": "planning-and-task-breakdown",
+   "description": "Breaks work into ordered tasks. Use when you have a spec or clear requirements and need to break work into implementable tasks. Use when a task feels too large to start, when you need to estimate scope, or when parallel work is possible."
+  },
+  {
+   "repo": "addyosmani/agent-skills",
+   "commit": "301b02b12bff98e4688e6984af6556802322bbde",
+   "path": "skills/shipping-and-launch",
+   "name": "shipping-and-launch",
+   "description": "Prepares production launches. Use when preparing to deploy to production, or when asking what needs to be in place before shipping. Use when you need a pre-launch checklist, when setting up monitoring, when planning a staged rollout, or when you need a rollback strategy."
+  },
+  {
+   "repo": "addyosmani/agent-skills",
+   "commit": "301b02b12bff98e4688e6984af6556802322bbde",
+   "path": "skills/spec-driven-development",
+   "name": "spec-driven-development",
+   "description": "Creates specs before coding. Use when starting a new project, feature, or significant change and no specification exists yet. Use when drafting a PRD or requirements document with objectives and scope, or when requirements are unclear, ambiguous, or only exist as a vague idea. Use when a single requirement spans several independently testable capabilities and needs decomposing into a capability map of modules before specifying."
+  },
+  {
+   "repo": "addyosmani/agent-skills",
+   "commit": "301b02b12bff98e4688e6984af6556802322bbde",
+   "path": "skills/using-agent-skills",
+   "name": "using-agent-skills",
+   "description": "Discovers and invokes agent skills. Use when starting a session, or when you need to decide which skill or workflow applies to the piece of work at hand. This is the meta-skill that governs how all other skills are discovered and invoked."
+  },
+  {
+   "repo": "coreyhaines31/marketingskills",
+   "commit": "96798cf38736ecdba015a1d2b0521b0c8f8f41dd",
+   "path": "skills/ab-testing",
+   "name": "ab-testing",
+   "description": "When the user wants to plan, design, or implement an A/B test or experiment, or build a growth experimentation program. Also use when the user mentions \"A/B test,\" \"split test,\" \"experiment,\" \"test this change,\" \"variant copy,\" \"multivariate test,\" \"hypothesis,\" \"should I test this,\" \"which version is better,\" \"test two versions,\" \"statistical significance,\" \"how long should I run this test,\" \"growth experiments,\" \"experiment velocity,\" \"experiment backlog,\" \"ICE score,\" \"experimentation program,\" or \"experiment playbook.\" Use this whenever someone is comparing two approaches and wants to measure which performs better, or when they want to build a systematic experimentation practice. For tracking implementation, see analytics. For page-level conversion optimization, see cro."
+  },
+  {
+   "repo": "coreyhaines31/marketingskills",
+   "commit": "96798cf38736ecdba015a1d2b0521b0c8f8f41dd",
+   "path": "skills/analytics",
+   "name": "analytics",
+   "description": "When the user wants to set up, improve, or audit analytics tracking and measurement. Also use when the user mentions \"set up tracking,\" \"GA4,\" \"Google Analytics,\" \"event tracking,\" \"UTM parameters,\" \"tag manager,\" \"GTM,\" \"analytics implementation,\" \"tracking plan,\" \"how do I measure this,\" \"Mixpanel,\" \"Segment,\" \"are my events firing,\" or \"analytics isn't working.\" Use this whenever someone asks how to know if something is working or wants to measure marketing results. For getting conversions into ad platforms (pixels, conversion tags, CAPI, server-side) and verifying they arrived, see conversion-tracking. For choosing attribution models, comparing multi-touch/MMM/incrementality, or reconciling conflicting numbers across tools, see attribution. For A/B test measurement, see ab-testing. Rate metrics divide matching closed windows — never full-period spend by partial-period results."
+  },
+  {
+   "repo": "coreyhaines31/marketingskills",
+   "commit": "96798cf38736ecdba015a1d2b0521b0c8f8f41dd",
+   "path": "skills/co-marketing",
+   "name": "co-marketing",
+   "description": "When the user wants to find co-marketing partners, plan joint campaigns, or brainstorm partnership opportunities. Use when the user says 'co-marketing,' 'partner marketing,' 'joint campaign,' 'who should we partner with,' 'integration marketing,' 'cross-promotion,' 'collaborate with another company,' 'partnership ideas,' or 'co-brand.' For customer referral programs, see referrals. For launch-specific partnerships, see launch."
+  },
+  {
+   "repo": "coreyhaines31/marketingskills",
+   "commit": "96798cf38736ecdba015a1d2b0521b0c8f8f41dd",
+   "path": "skills/competitors",
+   "name": "competitors",
+   "description": "When the user wants to create competitor comparison or alternative pages for SEO and buyer-facing use. Also use when the user mentions 'alternative page,' 'vs page,' 'competitor comparison,' 'comparison page,' '[Product] vs [Product],' '[Product] alternative,' 'competitive landing pages,' 'how do we compare to X,' 'competitor teardown,' 'audit our competitor pages,' 'are our comparison pages out of date,' or 'competitive asset audit.' Use this for any content that positions your product against competitors. Covers four formats: singular alternative, plural alternatives, you vs competitor, and competitor vs competitor. For auditing existing claims (not researching competitors from scratch, which is competitor-profiling; not technical SEO on these pages, which is seo-audit), use the asset audit here. For internal battle cards and sales-specific competitor docs, see sales-enablement."
+  },
+  {
+   "repo": "coreyhaines31/marketingskills",
+   "commit": "96798cf38736ecdba015a1d2b0521b0c8f8f41dd",
+   "path": "skills/copywriting",
+   "name": "copywriting",
+   "description": "When the user wants to write, rewrite, or improve marketing copy for any page, including homepage, landing pages, pricing pages, feature pages, about pages, or product pages. Also use when the user says \"write copy for,\" \"improve this copy,\" \"rewrite this page,\" \"marketing copy,\" \"headline help,\" \"CTA copy,\" \"value proposition,\" \"tagline,\" \"hero section copy,\" \"this copy is weak,\" \"this sounds like AI,\" \"AI slop,\" \"make it sound human,\" or \"help me describe my product.\" Drafts never use AI tells like \"it's not X, it's Y\" reveals, \"no X, no Y, no Z\" lists, or sentences that trail into extra comma clauses. For email copy, see emails. For popup copy, see popups. For editing existing copy, see copy-editing. For the offer underneath the copy (bonuses, guarantees, value framing), see offers. Claims must be supportable, and a declined claim names the evidence that would unlock it. Diagnoses the input first (blank brief, real voice, or point edit) and changes only what it calls for."
+  },
+  {
+   "repo": "coreyhaines31/marketingskills",
+   "commit": "96798cf38736ecdba015a1d2b0521b0c8f8f41dd",
+   "path": "skills/emails",
+   "name": "emails",
+   "description": "When the user wants to create or optimize an email sequence, drip campaign, automated email flow, or lifecycle email program. Also use when the user mentions \"email sequence,\" \"drip campaign,\" \"nurture sequence,\" \"onboarding emails,\" \"welcome sequence,\" \"re-engagement emails,\" \"email automation,\" \"lifecycle emails,\" \"trigger-based emails,\" \"email funnel,\" \"email workflow,\" \"what emails should I send,\" \"welcome series,\" or \"email cadence.\" Use this for any multi-email automated flow. Emails avoid AI tells like 'it's not X, it's Y' reveals, 'no X, no Y, no Z' lists, and fake 'Re:' subject lines. For cold outreach and outbound sequences, see cold-email. For in-app onboarding, see onboarding."
+  },
+  {
+   "repo": "coreyhaines31/marketingskills",
+   "commit": "96798cf38736ecdba015a1d2b0521b0c8f8f41dd",
+   "path": "skills/influencer-marketing",
+   "name": "influencer-marketing",
+   "description": "When the user wants to run influencer, creator, or ambassador partnerships to promote their product — finding and vetting partners, structuring deals, briefing creators, disclosure compliance, and measuring ROI. Also use when the user mentions 'influencer marketing,' 'creator partnerships,' 'sponsorships,' 'YouTube sponsorships,' 'podcast sponsorships,' 'newsletter sponsorship,' 'newsletter ad,' 'sponsor a newsletter,' 'brand ambassador,' 'ambassador program,' 'creator program,' 'UGC creators,' 'tech UGC,' 'UGC creator program,' 'creator network,' 'B2B influencers,' 'thought leader ads,' 'gifting,' 'product seeding,' 'whitelisting creator content,' 'Telegram channel ads,' 'buy a post in a Telegram channel,' 'how much to pay an influencer,' or 'FTC disclosure.' For affiliate/referral payout mechanics, see referrals. For community-led advocacy, see community-marketing. For turning creator content into paid ads, see ad-creative."
+  },
+  {
+   "repo": "coreyhaines31/marketingskills",
+   "commit": "96798cf38736ecdba015a1d2b0521b0c8f8f41dd",
+   "path": "skills/marketing-council",
+   "name": "marketing-council",
+   "description": "When the user wants multiple expert perspectives on a marketing question — a simulated board of advisors staffed by legendary marketers (Seth Godin, David Ogilvy, Eugene Schwartz, April Dunford, Rory Sutherland, Alex Hormozi, Byron Sharp, and more). Also use when the user mentions 'marketing council,' 'board of advisors,' 'advisory board,' 'what would Seth Godin say,' 'what would Ogilvy think,' 'channel Hormozi,' 'get multiple perspectives,' 'debate this,' 'have the council review,' 'marketing mentors,' or asks how a famous marketer would approach their problem. The council gives each advisor's take through their documented frameworks, surfaces where they disagree, and synthesizes a recommendation. For executing the winning direction, hand off to positioning, offers, copywriting, ads, or the relevant skill."
+  },
+  {
+   "repo": "coreyhaines31/marketingskills",
+   "commit": "96798cf38736ecdba015a1d2b0521b0c8f8f41dd",
+   "path": "skills/marketing-psychology",
+   "name": "marketing-psychology",
+   "description": "When the user wants to apply psychological principles, mental models, or behavioral science to marketing. Also use when the user mentions 'psychology,' 'mental models,' 'cognitive bias,' 'persuasion,' 'behavioral science,' 'why people buy,' 'decision-making,' 'consumer behavior,' 'anchoring,' 'social proof,' 'scarcity,' 'loss aversion,' 'framing,' or 'nudge.' Use this whenever someone wants to understand or leverage how people think and make decisions in a marketing context. For applying psychology to specific pages, see cro; for pricing tactics, see pricing; for copy framing, see copywriting."
+  },
+  {
+   "repo": "coreyhaines31/marketingskills",
+   "commit": "96798cf38736ecdba015a1d2b0521b0c8f8f41dd",
+   "path": "skills/popups",
+   "name": "popups",
+   "description": "When the user wants to create or optimize popups, modals, overlays, slide-ins, or banners for conversion purposes. Also use when the user mentions \"exit intent,\" \"popup conversions,\" \"modal optimization,\" \"lead capture popup,\" \"email popup,\" \"announcement banner,\" \"overlay,\" \"collect emails with a popup,\" \"exit popup,\" \"scroll trigger,\" \"sticky bar,\" or \"notification bar.\" Use this for any overlay or interrupt-style conversion element. For forms outside of popups, see cro. For general page conversion optimization, see cro."
+  },
+  {
+   "repo": "coreyhaines31/marketingskills",
+   "commit": "96798cf38736ecdba015a1d2b0521b0c8f8f41dd",
+   "path": "skills/prospecting",
+   "name": "prospecting",
+   "description": "When the user wants to find, qualify, and build a list of prospects to reach out to, across B2B SaaS, general B2B, or local small businesses. Also use when the user mentions \"prospecting,\" \"build a prospect list,\" \"find leads,\" \"lead list,\" \"outbound list,\" \"target account list,\" \"ICP-fit accounts,\" \"find local businesses,\" \"find my first customers,\" \"design partners,\" \"signal-based outbound,\" \"gap plays,\" \"buying signals,\" \"intent data,\" \"job change alerts,\" \"waterfall enrichment,\" \"Clay table,\" \"lookalike accounts,\" \"catch-all emails,\" \"account tiering,\" or \"research this account before I reach out.\" Always verify emails before they reach a sequence, and never scrape LinkedIn. Define audiences in Sales Navigator and pull contacts from licensed data. Covers list building, signals, enrichment, verification, and account research. For the outreach itself (copy, sending setup, LinkedIn, cadences, replies), see cold-email. For researching competitors, see competitor-profiling."
+  },
+  {
+   "repo": "coreyhaines31/marketingskills",
+   "commit": "96798cf38736ecdba015a1d2b0521b0c8f8f41dd",
+   "path": "skills/revops",
+   "name": "revops",
+   "description": "When the user wants help with revenue operations, lead lifecycle management, or marketing-to-sales handoff processes. Also use when the user mentions 'RevOps,' 'revenue operations,' 'lead scoring,' 'outbound pipeline stages,' 'lead routing,' 'MQL,' 'SQL,' 'pipeline stages,' 'deal desk,' 'CRM automation,' 'marketing-to-sales handoff,' 'data hygiene,' 'leads aren't getting to sales,' 'pipeline management,' 'lead qualification,' or 'when should marketing hand off to sales.' Use this for anything involving the systems and processes that connect marketing to revenue. For cold outreach emails, see cold-email. For email drip campaigns, see emails. For pricing decisions, see pricing."
+  },
+  {
+   "repo": "coreyhaines31/marketingskills",
+   "commit": "96798cf38736ecdba015a1d2b0521b0c8f8f41dd",
+   "path": "skills/signup",
+   "name": "signup",
+   "description": "When the user wants to optimize signup, registration, account creation, or trial activation flows. Also use when the user mentions \"signup conversions,\" \"registration friction,\" \"signup form optimization,\" \"free trial signup,\" \"reduce signup dropoff,\" \"account creation flow,\" \"people aren't signing up,\" \"signup abandonment,\" \"trial conversion rate,\" \"nobody completes registration,\" \"too many steps to sign up,\" or \"simplify our signup.\" Use this whenever the user has a signup or registration flow that isn't performing. For post-signup onboarding, see onboarding. For lead capture forms (not account creation), see cro."
+  },
+  {
+   "repo": "coreyhaines31/marketingskills",
+   "commit": "96798cf38736ecdba015a1d2b0521b0c8f8f41dd",
+   "path": "skills/video",
+   "name": "video",
+   "description": "When the user wants to create, generate, or produce video content using AI tools or programmatic frameworks. Also use when the user mentions 'video production,' 'AI video,' 'Remotion,' 'Hyperframes,' 'HeyGen,' 'Synthesia,' 'Veo,' 'Sora,' 'Runway,' 'Kling,' 'Seedance,' 'Hailuo,' 'MiniMax,' 'Pika,' 'Hunyuan,' 'Wan,' 'video generation,' 'AI avatar,' 'talking head video,' 'programmatic video,' 'video template,' 'explainer video,' 'product demo video,' 'record a product demo,' 'feature demo video,' 'in-app demo,' 'video pipeline,' 'copy this edit,' 'match this video style,' 'reverse-engineer this video,' 'edit like this reference,' or 'make me a video.' Use this for video creation, generation, and production workflows. For video content strategy and what to post, see social. For paid video ad creative, see ad-creative."
+  }
+ ],
+ "heldout": [
+  {
+   "repo": "addyosmani/agent-skills",
+   "commit": "301b02b12bff98e4688e6984af6556802322bbde",
+   "path": "skills/browser-testing-with-devtools",
+   "name": "browser-testing-with-devtools",
+   "description": "Tests in real browsers via Chrome DevTools MCP. Use when building or debugging anything that runs in a browser. Use when you need to inspect the DOM, capture console errors, analyze network requests, profile performance, or verify visual output with real runtime data. Requires the chrome-devtools MCP server to be configured."
+  },
+  {
+   "repo": "addyosmani/agent-skills",
+   "commit": "301b02b12bff98e4688e6984af6556802322bbde",
+   "path": "skills/code-review-and-quality",
+   "name": "code-review-and-quality",
+   "description": "Conducts multi-axis code review. Use before merging any change. Use when reviewing code written by yourself, another agent, or a human. Use when you need to assess code quality across multiple dimensions before it enters the main branch. Use when asked to review a diff or a pull request, even when the diff is pasted inline."
+  },
+  {
+   "repo": "addyosmani/agent-skills",
+   "commit": "301b02b12bff98e4688e6984af6556802322bbde",
+   "path": "skills/constraint-driven-development",
+   "name": "constraint-driven-development",
+   "description": "Establishes a project's quality bar as a written contract and stops agents quietly lowering it. Interviews the user on which dimensions matter, supplies sane default thresholds when they have no number in mind, records everything in CONSTRAINTS.md, and watches the diff for a weakened bar — new @ts-ignore or eslint-disable suppressions, skipped or deleted tests, assertions stripped out, unimplemented stubs, thresholds edited down. Use when no quality bar is written down, when the user says \"set up constraints\" or \"define our standards\", when the user wants dimensions they care about — accessibility, web performance, coverage — set up as enforced constraints, when an agent keeps silencing checks or skipping tests to get to green, when you need a coverage or performance threshold and don't know what number to pick, or when an agent writes more code than anyone will read."
+  },
+  {
+   "repo": "addyosmani/agent-skills",
+   "commit": "301b02b12bff98e4688e6984af6556802322bbde",
+   "path": "skills/debugging-and-error-recovery",
+   "name": "debugging-and-error-recovery",
+   "description": "Guides systematic root-cause debugging. Use when tests fail, builds break, something that worked yesterday broke, behavior doesn't match expectations, or you encounter any unexpected error. Use when you need to figure out what broke and why — a systematic approach to finding and fixing the root cause rather than guessing."
+  },
+  {
+   "repo": "addyosmani/agent-skills",
+   "commit": "301b02b12bff98e4688e6984af6556802322bbde",
+   "path": "skills/documentation-and-adrs",
+   "name": "documentation-and-adrs",
+   "description": "Records decisions and documentation. Use when you need to document an architecture decision (ADR) or the reasoning behind a design choice, when changing public APIs, shipping features, or when you need to record context that future engineers and agents will need to understand the codebase."
+  },
+  {
+   "repo": "addyosmani/agent-skills",
+   "commit": "301b02b12bff98e4688e6984af6556802322bbde",
+   "path": "skills/frontend-ui-engineering",
+   "name": "frontend-ui-engineering",
+   "description": "Builds production-quality, accessible, responsive user-facing UIs. Use when building or modifying interfaces and pages, creating components, implementing layouts, meeting WCAG accessibility requirements, managing state, or when the output needs to look and feel production-quality rather than AI-generated."
+  },
+  {
+   "repo": "addyosmani/agent-skills",
+   "commit": "301b02b12bff98e4688e6984af6556802322bbde",
+   "path": "skills/idea-refine",
+   "name": "idea-refine",
+   "description": "Refines raw ideas into sharp, actionable concepts through structured divergent and convergent thinking. Use when an idea is still vague, when you need to stress-test assumptions before committing to a plan, or when you want to expand options before converging on one. Triggers on \"ideate\", \"refine this idea\", or \"stress-test my plan\"."
+  },
+  {
+   "repo": "addyosmani/agent-skills",
+   "commit": "301b02b12bff98e4688e6984af6556802322bbde",
+   "path": "skills/interview-me",
+   "name": "interview-me",
+   "description": "Extracts what the user actually wants instead of what they think they should want. Achieves this through one-question-at-a-time interview until ~95% confidence about the underlying intent. Use when an ask is underspecified (\"build me X\" without \"for whom\" or \"why now\"), when the user explicitly invokes (\"interview me\", \"grill me\", \"are we sure?\", \"stress-test my thinking\"), or when you catch yourself silently filling in ambiguous requirements before any plan, spec, or code exists."
+  },
+  {
+   "repo": "addyosmani/agent-skills",
+   "commit": "301b02b12bff98e4688e6984af6556802322bbde",
+   "path": "skills/performance-optimization",
+   "name": "performance-optimization",
+   "description": "Optimizes application performance across frontend, backend, queries, and databases. Use when performance requirements exist, when you suspect performance regressions, when Core Web Vitals or load times need improvement, when N+1 query patterns need fixing, or when profiling reveals bottlenecks."
+  },
+  {
+   "repo": "addyosmani/agent-skills",
+   "commit": "301b02b12bff98e4688e6984af6556802322bbde",
+   "path": "skills/security-and-hardening",
+   "name": "security-and-hardening",
+   "description": "Hardens code against vulnerabilities. Use when auditing an input handler for vulnerabilities, when handling user input, authentication, data storage, or external integrations, or when checking a login flow is safe against the OWASP Top Ten. Use when building any feature that accepts untrusted data, manages user sessions or session cookies, or interacts with third-party services. Use when auditing dependencies for known vulnerabilities, triaging package-manager audit findings, or assessing supply-chain risk in a new package. Use when personal data or privacy compliance (GDPR, CCPA) is involved."
+  },
+  {
+   "repo": "addyosmani/agent-skills",
+   "commit": "301b02b12bff98e4688e6984af6556802322bbde",
+   "path": "skills/source-driven-development",
+   "name": "source-driven-development",
+   "description": "Grounds every implementation decision in official documentation. Use when you want to verify an approach against the official docs before implementing it, or when you want authoritative, source-cited code free from outdated patterns. Use when building with any framework or library where correctness matters."
+  },
+  {
+   "repo": "addyosmani/agent-skills",
+   "commit": "301b02b12bff98e4688e6984af6556802322bbde",
+   "path": "skills/test-driven-development",
+   "name": "test-driven-development",
+   "description": "Drives development with tests using the red-green-refactor loop. Use when implementing any logic, fixing any bug, or changing any behavior. Use when you need to prove that code works, when a bug report arrives, or when you're about to modify existing functionality. Use when asked to add tests to a function, fix a bug in it or change its behavior, even when the code is pasted inline and the request does not mention tests."
+  },
+  {
+   "repo": "coreyhaines31/marketingskills",
+   "commit": "96798cf38736ecdba015a1d2b0521b0c8f8f41dd",
+   "path": "skills/ads",
+   "name": "ads",
+   "description": "When the user wants help with paid advertising campaigns on Google Ads, Meta (Facebook/Instagram), LinkedIn, Twitter/X, or other ad platforms. Also use when the user mentions 'PPC,' 'paid media,' 'ROAS,' 'CPA,' 'ad campaign,' 'retargeting,' 'audience targeting,' 'Google Ads,' 'Facebook ads,' 'LinkedIn ads,' 'ad budget,' 'cost per click,' 'ad spend,' 'should I run ads,' 'ABM,' 'account-based marketing,' 'B2B ads,' 'lead quality,' 'negative keywords,' 'Performance Max,' 'thought leader ads,' 'when should I kill an ad,' 'search terms report,' 'wasted spend,' or 'is this campaign working.' Use this for campaign strategy, audience targeting, bidding, and optimization. For bulk ad creative generation and iteration, see ad-creative. For landing page optimization, see cro. For outbound to target accounts, see cold-email. For pixels, CAPI, and tracking audits, see conversion-tracking. End every recommendation with facts, hypotheses, and missing data, and label unavailable inputs MISSING instead of estimating them."
+  },
+  {
+   "repo": "coreyhaines31/marketingskills",
+   "commit": "96798cf38736ecdba015a1d2b0521b0c8f8f41dd",
+   "path": "skills/attribution",
+   "name": "attribution",
+   "description": "When the user wants to figure out which marketing actually drives conversions and revenue, choose or interpret an attribution model, or reconcile conflicting numbers across tools. Also use when the user mentions \"attribution,\" \"attribution model,\" \"first-touch vs last-touch,\" \"multi-touch,\" \"which channel drives revenue,\" \"what's my real CAC,\" \"my dashboards disagree,\" \"Google/Meta says X but GA says Y,\" \"media mix model,\" \"MMM,\" \"incrementality,\" \"geo lift,\" \"holdout test,\" \"how did you hear about us,\" \"self-reported attribution,\" \"dark social,\" or wants to instrument attribution themselves — \"stitch my bookings to their source,\" \"SavvyCal/Calendly attribution,\" \"close the identify gap,\" \"track conversions on a third-party domain,\" \"first-party / self-hosted attribution.\" For event tracking setup and UTMs, see analytics. For ad-platform pixels/CAPI and conversion tracking, see conversion-tracking. For pipeline and CRM revenue reporting, see revops. For the AI-search attribution blind spot, see ai-seo."
+  },
+  {
+   "repo": "coreyhaines31/marketingskills",
+   "commit": "96798cf38736ecdba015a1d2b0521b0c8f8f41dd",
+   "path": "skills/community-marketing",
+   "name": "community-marketing",
+   "description": "Build and leverage online communities to drive product growth and brand loyalty. Use when the user wants to create a community strategy, grow a Discord or Slack community, manage a forum or subreddit, build brand advocates, increase word-of-mouth, drive community-led growth, engage users post-signup, or turn customers into evangelists. Trigger phrases: \"build a community,\" \"community strategy,\" \"Discord community,\" \"Slack community,\" \"community-led growth,\" \"brand advocates,\" \"user community,\" \"forum strategy,\" \"community engagement,\" \"grow our community,\" \"ambassador program,\" \"community flywheel.\""
+  },
+  {
+   "repo": "coreyhaines31/marketingskills",
+   "commit": "96798cf38736ecdba015a1d2b0521b0c8f8f41dd",
+   "path": "skills/conversion-tracking",
+   "name": "conversion-tracking",
+   "description": "Set up, audit, verify, or fix website conversion tracking. Use when the conversion is a form submission, booked meeting, chat, phone call, signup, or purchase; when conversions must reach Google Ads, Meta, GA4, LinkedIn, TikTok, or Microsoft Ads; when the work involves GTM tags and dataLayer events, pixels, the Conversions API (CAPI), Enhanced Conversions, server-side tagging, or gclid and fbclid capture; or when the user reports conversion problems like \"conversions stopped\", \"double counting\", \"spend but no conversions\", \"GA4 and Google Ads don't match\", or an Unverified or Inactive status. Covers lead gen and ecommerce. Always fire on confirmed success, never the submit click; verify a test conversion arrives; diagnose before changing anything; offer free and native paths alongside paid ones and disclose partner tools. For tracking plans and UTMs, see analytics. For attribution models, see attribution. For campaigns and bidding, see ads. For CRM lead-stage design, see revops."
+  },
+  {
+   "repo": "coreyhaines31/marketingskills",
+   "commit": "96798cf38736ecdba015a1d2b0521b0c8f8f41dd",
+   "path": "skills/customer-research",
+   "name": "customer-research",
+   "description": "When the user wants to conduct, analyze, or synthesize customer research. Use when the user mentions \"customer research,\" \"ICP research,\" \"talk to customers,\" \"analyze transcripts,\" \"customer interviews,\" \"survey analysis,\" \"support ticket analysis,\" \"voice of customer,\" \"VOC,\" \"build personas,\" \"customer personas,\" \"jobs to be done,\" \"JTBD,\" \"what do customers say,\" \"what are customers struggling with,\" \"Reddit mining,\" \"G2 reviews,\" \"review mining,\" \"digital watering holes,\" \"community research,\" \"forum research,\" \"competitor reviews,\" \"customer sentiment,\" \"PMF survey,\" \"product/market fit survey,\" \"customer interview questions,\" \"interview outreach,\" \"Sales Safari,\" or \"find out why customers churn/convert/buy.\" Use for analyzing existing research assets, mining online sources, AND running primary research (interviews and surveys). For writing copy informed by research, see copywriting. For acting on research to improve pages, see cro."
+  },
+  {
+   "repo": "coreyhaines31/marketingskills",
+   "commit": "96798cf38736ecdba015a1d2b0521b0c8f8f41dd",
+   "path": "skills/free-tools",
+   "name": "free-tools",
+   "description": "When the user wants to plan, evaluate, or build a free tool for marketing purposes — lead generation, SEO value, or brand awareness. Also use when the user mentions \"engineering as marketing,\" \"free tool,\" \"marketing tool,\" \"calculator,\" \"generator,\" \"interactive tool,\" \"lead gen tool,\" \"build a tool for leads,\" \"free resource,\" \"ROI calculator,\" \"grader tool,\" \"audit tool,\" \"should I build a free tool,\" or \"tools for lead gen.\" Use this whenever someone wants to build something useful and give it away to attract leads or earn links. For downloadable content lead magnets (ebooks, checklists, templates), see lead-magnets."
+  },
+  {
+   "repo": "coreyhaines31/marketingskills",
+   "commit": "96798cf38736ecdba015a1d2b0521b0c8f8f41dd",
+   "path": "skills/lead-magnets",
+   "name": "lead-magnets",
+   "description": "When the user wants to create, plan, or optimize a lead magnet for email capture or lead generation. Also use when the user mentions \"lead magnet,\" \"gated content,\" \"content upgrade,\" \"downloadable,\" \"ebook,\" \"cheat sheet,\" \"checklist,\" \"template download,\" \"opt-in,\" \"freebie,\" \"PDF download,\" \"resource library,\" \"content offer,\" \"email capture content,\" \"Notion template,\" \"spreadsheet template,\" \"what should I give away for emails,\" \"course as a skill,\" or \"package our content as an agent skill.\" Use this for planning what to create and how to distribute it. For interactive tools as lead magnets, see free-tools. For writing the actual content, see copywriting. For the email sequence after capture, see emails."
+  },
+  {
+   "repo": "coreyhaines31/marketingskills",
+   "commit": "96798cf38736ecdba015a1d2b0521b0c8f8f41dd",
+   "path": "skills/marketing-loops",
+   "name": "marketing-loops",
+   "description": "When the user wants to set up a recurring, self-running marketing workflow — a repeatable loop an AI agent runs on a cadence (weekly, daily, on a trigger) rather than a one-off task. Also use when the user mentions 'marketing loop,' 'recurring marketing workflow,' 'automate my marketing,' 'marketing on autopilot,' 'weekly marketing review,' 'ad fatigue check,' 'weekly ads check,' 'content refresh loop,' 'churn watch,' 'ranking drop alert,' 'run my SEO,' 'SEO operator,' 'daily SEO agent,' 'run my outbound,' 'AI SDR,' 'reply triage,' 'always-on marketing,' 'marketing automation workflow,' or 'run this every week.' Use this to pick, adapt, and schedule an ongoing marketing loop that orchestrates the other marketing skills. For one-off marketing ideas, see marketing-ideas. For the experimentation loop specifically, see ab-testing."
+  },
+  {
+   "repo": "coreyhaines31/marketingskills",
+   "commit": "96798cf38736ecdba015a1d2b0521b0c8f8f41dd",
+   "path": "skills/onboarding",
+   "name": "onboarding",
+   "description": "When the user wants to optimize post-signup onboarding, user activation, first-run experience, or time-to-value. Also use when the user mentions \"onboarding flow,\" \"activation rate,\" \"user activation,\" \"first-run experience,\" \"empty states,\" \"onboarding checklist,\" \"aha moment,\" \"new user experience,\" \"users aren't activating,\" \"nobody completes setup,\" \"low activation rate,\" \"users sign up but don't use the product,\" \"time to value,\" or \"first session experience.\" Use this whenever users are signing up but not sticking around. For signup/registration optimization, see signup. For ongoing email sequences, see emails."
+  },
+  {
+   "repo": "coreyhaines31/marketingskills",
+   "commit": "96798cf38736ecdba015a1d2b0521b0c8f8f41dd",
+   "path": "skills/product-marketing",
+   "name": "product-marketing",
+   "description": "When the user wants to create or update their product marketing context document. Also use when the user mentions 'product context,' 'marketing context,' 'set up context,' 'positioning,' 'who is my target audience,' 'describe my product,' 'ICP,' 'ideal customer profile,' 'brand voice,' 'tone of voice,' 'brand guidelines,' 'what have we learned,' 'log this learning,' or wants to avoid repeating foundational information across marketing tasks. Use this at the start of any new project before using other marketing skills — it creates `.agents/product-marketing.md` that all other skills reference for product, audience, and positioning context."
+  },
+  {
+   "repo": "coreyhaines31/marketingskills",
+   "commit": "96798cf38736ecdba015a1d2b0521b0c8f8f41dd",
+   "path": "skills/referrals",
+   "name": "referrals",
+   "description": "When the user wants to create, optimize, or analyze a referral program, affiliate program, or word-of-mouth strategy. Also use when the user mentions 'referral,' 'affiliate,' 'ambassador,' 'word of mouth,' 'viral loop,' 'refer a friend,' 'partner program,' 'referral incentive,' 'how to get referrals,' 'customers referring customers,' 'affiliate payout,' 'get more reviews,' 'G2 reviews,' 'review campaign,' or 'respond to a bad review.' Use this whenever someone wants existing users or partners to bring in new customers. For launch-specific virality, see launch."
+  },
+  {
+   "repo": "coreyhaines31/marketingskills",
+   "commit": "96798cf38736ecdba015a1d2b0521b0c8f8f41dd",
+   "path": "skills/schema",
+   "name": "schema",
+   "description": "When the user wants to add, fix, or optimize schema markup and structured data on their site. Also use when the user mentions \"schema markup,\" \"structured data,\" \"JSON-LD,\" \"rich snippets,\" \"schema.org,\" \"FAQ schema,\" \"product schema,\" \"review schema,\" \"breadcrumb schema,\" \"Google rich results,\" \"knowledge panel,\" \"star ratings in search,\" or \"add structured data.\" Use this whenever someone wants their pages to show enhanced results in Google. For broader SEO issues, see seo-audit. For AI search optimization, see ai-seo."
+  },
+  {
+   "repo": "coreyhaines31/marketingskills",
+   "commit": "96798cf38736ecdba015a1d2b0521b0c8f8f41dd",
+   "path": "skills/sms",
+   "name": "sms",
+   "description": "When the user wants to plan, build, or optimize SMS, MMS, or WhatsApp marketing — including welcome flows, abandoned cart texts, post-purchase, win-back, promotional sends, or transactional/auth SMS. Also use when the user mentions \"SMS marketing,\" \"text message campaigns,\" \"SMS sequence,\" \"SMS automation,\" \"abandoned cart text,\" \"post-purchase SMS,\" \"Klaviyo SMS,\" \"Postscript,\" \"Attentive,\" \"Twilio,\" \"A2P 10DLC,\" \"TCPA,\" \"SMS compliance,\" \"short code,\" \"toll-free SMS,\" \"MMS campaign,\" \"should I do SMS,\" \"SMS vs email,\" \"WhatsApp marketing,\" \"WhatsApp Business API,\" \"WhatsApp templates,\" or \"click-to-WhatsApp.\" For email sequences, see emails. For SMS copy framing, see copywriting. For opt-in popups that capture phone numbers, see popups."
+  },
+  {
+   "repo": "minhnv0807/ai-business-skills",
+   "commit": "4ef06ff9aa8bf5b6d065da9547e486991acab54d",
+   "path": "modules/dropshipping/en/29-dropshipping-mastery-global",
+   "name": "29-dropshipping-mastery-global",
+   "description": "Use when the user is launching or running a DROPSHIPPING business end to end — the full 12-phase pipeline: product research with winning criteria, Minea and PiPiAds, supplier sourcing on AliExpress, CJ, Spocket, and Zendrop, Shopify store and app setup, the 10-ads-per-week creative pipeline, interest and lookalike targeting, 3-5x markup and BE-ROAS math, customer service, and scaling. Trigger on 'start dropshipping', 'winning product research', 'Shopify store setup', 'AliExpress supplier', 'scale my dropshipping store', 'my store gets traffic and no sales'. Not for — only the ad copy, see `05-ad-copy-global`; only the product page, see `12-landing-page-brief-global`; only the account audit, see `21-ads-audit-global`; only pricing, see `17-pricing-strategy-global`."
+  },
+  {
+   "repo": "minhnv0807/ai-business-skills",
+   "commit": "4ef06ff9aa8bf5b6d065da9547e486991acab54d",
+   "path": "modules/personal-branding/en/26-thought-leadership-content-global",
+   "name": "26-thought-leadership-content-global",
+   "description": "Use when a PERSONAL brand needs long-form WRITTEN content that builds authority rather than sells — LinkedIn posts, X threads, Substack and Medium essays, using PAS-Insight for founders, Story-Lesson-CTA for coaches, and Hook-List-Reveal for creators, with six hook formulas and a 1-to-5 repurpose. Trigger on 'LinkedIn post', 'thought leadership', 'write a Twitter thread', 'newsletter essay', 'Substack post', 'I want to be known for this topic'. Also use when the user has an opinion and wants it turned into a post. Not for — company brand captions, see `37-social-caption-global`; paid ad copy, see `05-ad-copy-global`; short video scripts, see `04-script-video-global`."
+  },
+  {
+   "repo": "minhnv0807/ai-business-skills",
+   "commit": "4ef06ff9aa8bf5b6d065da9547e486991acab54d",
+   "path": "skills/en/02-campaign-brief-global",
+   "name": "02-campaign-brief-global",
+   "description": "Use when a specific campaign needs a brief the whole team can execute from — context, objective, audience, core message, creative direction, channels, deliverables, week-by-week timeline, approval gates, and risks. Trigger on 'campaign brief', 'creative brief', 'launch brief', 'brief the team on this campaign', 'we are running a promo next month', 'what is the plan for this campaign'. Also use when the user describes a promotion out loud and asks for something the team can actually run. Not for — the whole period plan, see `00-marketing-plan-global`; the list of design files needed, see `41-campaign-asset-list-global`; assigning work to one person, see `64-team-brief-global`; a new product launch sequence, see `59-go-to-market-global`."
+  },
+  {
+   "repo": "minhnv0807/ai-business-skills",
+   "commit": "4ef06ff9aa8bf5b6d065da9547e486991acab54d",
+   "path": "skills/en/07-marketing-report-global",
+   "name": "07-marketing-report-global",
+   "description": "Use when the user needs to WRITE a marketing report someone else will read — a one-page weekly for a CEO, a full monthly, or a quarterly strategy report with TL;DR, results versus target, insight, decisions needed, and next actions with owners. Trigger on 'marketing report', 'monthly report', 'weekly update for my boss', 'report for the client', 'quarterly summary', 'turn these numbers into a report'. Also use when the user says a stakeholder is asking how marketing is doing. Not for — diagnosing why the numbers are bad, see `03-performance-eval-global`; turning a raw export into insight, see `13-data-analysis-global`; a closed campaign retrospective, see `63-campaign-retrospective-global`."
+  },
+  {
+   "repo": "minhnv0807/ai-business-skills",
+   "commit": "4ef06ff9aa8bf5b6d065da9547e486991acab54d",
+   "path": "skills/en/12-landing-page-brief-global",
+   "name": "12-landing-page-brief-global",
+   "description": ""
+  },
+  {
+   "repo": "minhnv0807/ai-business-skills",
+   "commit": "4ef06ff9aa8bf5b6d065da9547e486991acab54d",
+   "path": "skills/en/17-pricing-strategy-global",
+   "name": "17-pricing-strategy-global",
+   "description": "Use when a price has to be set or changed — value-based pricing, anchoring, charm pricing, decoy tiers, good-better-best packaging, discount policy, and margin math, with currency psychology for US, EU, SEA, and LATAM plus dropshipping markup and BE-ROAS. Trigger on 'pricing strategy', 'how much should I charge', 'should I raise prices', 'price tiers', 'customers say it is too expensive', 'dropshipping markup'. Also use when the product is not selling and the user suspects price is the reason. Not for — bonuses, guarantee, and value stack around the price, see `31-offer-design-global`; persuasion beyond price, see `16-marketing-psychology-global`; ad budget math, see `10-reverse-kpi-global`."
+  },
+  {
+   "repo": "minhnv0807/ai-business-skills",
+   "commit": "4ef06ff9aa8bf5b6d065da9547e486991acab54d",
+   "path": "skills/en/30-design-master-global",
+   "name": "30-design-master-global",
+   "description": "Use when the user wants a marketing image GENERATED or an image prompt written — personal brand portraits, logos and monograms, campaign key visuals, day-to-day social graphics, editorial art, infographics, web hero mockups, and quote graphics. Reads brand identity from project context, composes an on-brand prompt, generates via gpt-image-2 when an API key exists, otherwise outputs paste-ready prompts for DALL-E 3, MidJourney, Leonardo, or Ideogram. Trigger on 'design an image', 'make me a logo', 'MidJourney prompt', 'key visual for the campaign', 'generate a graphic for this post', 'I need a visual and have no designer'. Not for — briefing a human designer on a static, see `42-image-brief-global`; a slide sequence, see `43-carousel-brief-global`; the brand rules themselves, see `46-brand-guideline-global`; scoring a finished design, see `47-design-review-global`."
+  },
+  {
+   "repo": "minhnv0807/ai-business-skills",
+   "commit": "4ef06ff9aa8bf5b6d065da9547e486991acab54d",
+   "path": "skills/en/35-brand-voice-global",
+   "name": "35-brand-voice-global",
+   "description": "Use when the user needs to define, document, or enforce how the brand SOUNDS in writing — three personality traits, a five-dimension tone table, vocabulary to use, avoid, and ban, sentence rules, before and after rewrites, platform adaptation, and a copy approval checklist. Every content skill reads it before writing. Trigger on 'brand voice', 'tone of voice', 'voice guidelines', 'banned words list', 'this copy does not sound like us', 'every writer sounds different'. Also use when the user cannot say why a draft feels wrong. Not for — the visual side of brand, see `46-brand-guideline-global`; positioning and the message, see `58-positioning-global`; approving one specific piece, see `62-marketing-review-global`."
+  },
+  {
+   "repo": "minhnv0807/ai-business-skills",
+   "commit": "4ef06ff9aa8bf5b6d065da9547e486991acab54d",
+   "path": "skills/en/40-next-content-plan-global",
+   "name": "40-next-content-plan-global",
+   "description": "Use when the next period content plan must be built from last period DATA — keep and replicate winners, cut losers, at most two new hypotheses, a 70/20/10 mix, a four-week overview, and an owner per slot. Trigger on 'next content plan', 'content plan for next month', 'plan from the audit', 'what should we post next quarter', 'scale what worked', 'plan content using the numbers'. Also use when a report just landed and the user asks what to do with it. Not for — auditing the past period first, see `39-content-audit-global`; turning the plan into a dated calendar, see `01-content-calendar-global`; the next period ADS plan, see `57-next-ads-plan-global`."
+  },
+  {
+   "repo": "minhnv0807/ai-business-skills",
+   "commit": "4ef06ff9aa8bf5b6d065da9547e486991acab54d",
+   "path": "skills/en/45-design-tool-brief-global",
+   "name": "45-design-tool-brief-global",
+   "description": "Use when a designer needs hands-on production direction inside a tool — Canva, Figma, or Adobe Express: which template to start from, the operating order, element-by-element mapping, grid and spacing, brand kit colors and fonts, export checklist, and the dos and do-nots. Trigger on 'Canva brief', 'Figma brief', 'production direction', 'how do I build this in Canva', 'layout direction for the designer', 'the junior designer needs step by step'. Not for — the creative concept for a static, see `42-image-brief-global`; the concept for a slide sequence, see `43-carousel-brief-global`; the brand rules being applied, see `46-brand-guideline-global`; adapting one master into every size, see `50-asset-resize-global`."
+  },
+  {
+   "repo": "minhnv0807/ai-business-skills",
+   "commit": "4ef06ff9aa8bf5b6d065da9547e486991acab54d",
+   "path": "skills/en/50-asset-resize-global",
+   "name": "50-asset-resize-global",
+   "description": "Use when one master design has to become every size a campaign needs — feed, story, reel, cover, and ad placements: the standard size matrix, three strategies of scale-and-crop, re-compose, or rebuild, safe-zone rules, platform crop behavior, and file naming. Trigger on 'resize this design', 'all the sizes', 'adapt to other placements', 'safe zone', 'standard size chart', 'the text gets cut off in stories'. Also use when one visual exists and six placements are waiting on it. Not for — the original concept brief, see `42-image-brief-global`; production steps in Canva or Figma, see `45-design-tool-brief-global`; the full campaign asset list, see `41-campaign-asset-list-global`; an urgent new creative, see `48-quick-visual-brief-global`."
+  },
+  {
+   "repo": "minhnv0807/ai-business-skills",
+   "commit": "4ef06ff9aa8bf5b6d065da9547e486991acab54d",
+   "path": "skills/en/55-scaling-ads-global",
+   "name": "55-scaling-ads-global",
+   "description": "Use when a WINNING ad has to be scaled without breaking it — readiness checks, vertical scaling at plus 20 to 30 percent per step, horizontal scaling into new audiences, creatives, and channels, learning-phase reset risk, how Advantage+ and Performance Max behave when scaled, creative refresh cadence, and the signals that mean stop. Trigger on 'scale ads', 'increase the ad budget', 'scale a winner', 'CPA went up after I scaled', 'how fast can I scale', 'it worked at 50 a day and broke at 200'. Not for — fixing an account that is not working yet, see `03-performance-eval-global`; warm audience plans, see `56-retargeting-plan-global`; proving the winner first, see `19-ab-test-setup-global`."
+  },
+  {
+   "repo": "minhnv0807/ai-business-skills",
+   "commit": "4ef06ff9aa8bf5b6d065da9547e486991acab54d",
+   "path": "skills/en/60-launch-playbook-global",
+   "name": "60-launch-playbook-global",
+   "description": "Use when a launch needs a repeatable EXECUTION playbook — a T-30 to D+7 timeline, per-function checklists for content, design, ads, sales, and engineering, a launch-day war room, an escalation matrix, and roll-back criteria. Trigger on 'launch playbook', 'launch checklist', 'launch day plan', 'launch SOP', 'war room', 'we launch in two weeks and nothing is organized'. Also use when a GTM strategy exists and nobody knows who does what on the day. Not for — the strategy and beachhead choice, see `59-go-to-market-global`; the campaign brief, see `02-campaign-brief-global`; the post-launch review, see `63-campaign-retrospective-global`; a live crisis, see `66-crisis-playbook-global`."
+  },
+  {
+   "repo": "minhnv0807/ai-business-skills",
+   "commit": "4ef06ff9aa8bf5b6d065da9547e486991acab54d",
+   "path": "skills/en/65-team-performance-review-global",
+   "name": "65-team-performance-review-global",
+   "description": "Use when a leader evaluates a marketing TEAM MEMBER using data — a KPI scorecard by role, strengths with real examples, areas to improve stated as observable behavior, a 30 and 90 day development plan, and a 1-5 rating rubric. Trigger on 'performance review for my marketer', 'evaluate a team member', 'monthly 1:1 review', 'feedback for my content writer', 'development plan for an employee', 'is this person underperforming'. Also use when the user is unhappy with someone and cannot articulate why. Not for — evaluating a campaign rather than a person, see `63-campaign-retrospective-global`; reviewing one piece of output, see `62-marketing-review-global`; scoring an external vendor, see `67-agency-vendor-brief-global`."
+  }
+ ]
+}

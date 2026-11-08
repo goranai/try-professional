@@ -253,6 +253,23 @@ class TestOtherTrades:
         record = _record("a/x")
         assert RerankCache.key(role, record, "m", "a clinic") != RerankCache.key(role, record, "m", "a shop")
 
+    def test_the_judge_sees_the_companys_other_roles(self) -> None:
+        """Told to leave a skill to "a neighbouring role", it guessed who that was. Now it's shown them."""
+        from try_professional.skills.rerank import colleagues
+
+        org = _org()
+        role = org.role("scriptwriting/scriptwriter")
+        others = colleagues(org, role)
+        assert role.ref not in others
+        assert all(ref in others for ref in org.roles if ref != role.ref)
+        prompt = judge_prompt(role, [Candidate(_record("a/x"), 0.5, "need")], "", others)
+        assert "## The company's other roles" in prompt
+
+    def test_other_colleagues_arent_served_an_old_judgment(self) -> None:
+        role = _org().role("scriptwriting/scriptwriter")
+        record = _record("a/x")
+        assert RerankCache.key(role, record, "m", "", "- a/writer") != RerankCache.key(role, record, "m", "", "")
+
     def test_rerank_passes_the_business_to_the_judge(self, tmp_path: Path) -> None:
         catalog = self._catalog(tmp_path)
         org = _org("A physiotherapy clinic")

@@ -19,7 +19,7 @@ from ..config import load_env_file
 from ..core.audit import AuditLog
 from ..memory.embedding import Embedder
 from ..org import load_bundle
-from ..skills.rerank import RerankCache, record_judgment
+from ..skills.rerank import RerankCache, colleagues, record_judgment
 from .architect import MAX_ATTEMPTS, _settle, check_proposal, submit_spec, system_prompt, user_prompt
 from .compiler import ProposalError, compile_org
 from .flow import _empty_tokens, _finish, _now, _wait_for_room, load_proposal, proposals_dir
@@ -238,7 +238,9 @@ def submit_judgment(
     cache = RerankCache(path / "rerank.sqlite")
     try:
         candidates = pending[role_ref]["candidates"]
-        answered = record_judgment(org.role(role_ref), candidates, decisions, CLIENT_MODEL, org.business.text, cache)
+        role = org.role(role_ref)
+        others = colleagues(org, role)
+        answered = record_judgment(role, candidates, decisions, CLIENT_MODEL, org.business.text, cache, others)
     finally:
         cache.close()
     attempts = meta.setdefault("judgment_attempts", {})

@@ -31,7 +31,7 @@ from .loadouts import RESPONSIBILITY_WEIGHT, Decisions, exclusion_reason
 from .trade import off_trade_reason
 
 # Change this when the prompt changes, so old judgments aren't reused.
-PROMPT_VERSION = "6"
+PROMPT_VERSION = "7"
 # A shortlist limits recall, whatever the judge does. On 29 real skills, 12 kept 38 of 50 labelled
 # matches, and 20 kept 48. See docs/research/loadouts/.
 SHORTLIST_SIZE = 20
@@ -50,7 +50,8 @@ From the candidates, choose the skills this role would use in its own work, even
 Standard practice in this role's profession counts, even if its needs don't name it. Leave out:
 - General-purpose skills that anyone in a company could use, such as generic writing or coordination, unless the \
 role's needs name that work.
-- Skills that belong to a neighbouring role, or that this role only sees the output of.
+- Skills that another of the company's roles, listed below the role, is the one to use, or whose output this \
+role only sees.
 - Tooling for one product this role has no reason to use.
 {trade_rule}Choosing none is a fine answer.
 
@@ -133,6 +134,20 @@ class RerankReport:
 def clean_line(text: str, limit: int = MAX_REASON) -> str:
     """One printable line. Model and skill text reaches a terminal, so control characters can't."""
     return " ".join("".join(c if c.isprintable() else " " for c in str(text)).split())[:limit]
+
+
+MAX_COLLEAGUE = 220
+
+
+def colleagues(org: Org, role: Role) -> str:
+    """The company's other roles, one line each, so "a neighbouring role" means one that exists."""
+    lines = []
+    for other in sorted(org.roles.values(), key=lambda r: r.ref):
+        if other.ref == role.ref:
+            continue
+        line = f"- {other.ref}: {other.mission} Needs: {'; '.join(other.skill_needs)}"
+        lines.append(clean_line(line, MAX_COLLEAGUE))
+    return "\n".join(lines)
 
 
 def role_profile(role: Role) -> str:
@@ -227,13 +242,16 @@ class RerankCache:
             file.write(line + "\n")
 
     @staticmethod
-    def key(role: Role, record: SkillRecord, model: str, business: str = "") -> str:
-        return RerankCache.key_for(role, record.skill_id, record.content_sha256, model, business)
+    def key(role: Role, record: SkillRecord, model: str, business: str = "", others: str = "") -> str:
+        return RerankCache.key_for(role, record.skill_id, record.content_sha256, model, business, others)
 
     @staticmethod
-    def key_for(role: Role, skill_id: str, content_sha256: str, model: str, business: str = "") -> str:
+    def key_for(
+        role: Role, skill_id: str, content_sha256: str, model: str, business: str = "", others: str = ""
+    ) -> str:
         profile = role_profile(role)
-        identity = "\0".join((PROMPT_VERSION, model, profile, business, skill_id, content_sha256))
+        # The other roles are part of the question: the same skill can fit a role alone, and not beside a specialist.
+        identity = "\0".join((PROMPT_VERSION, model, profile, business, others, skill_id, content_sha256))
         return hashlib.sha256(identity.encode("utf-8")).hexdigest()
 
     def get(self, key: str) -> Verdict | None:
@@ -253,28 +271,35 @@ def judge_system(business: str = "") -> str:
     return _SYSTEM.format(trade_rule=_TRADE_RULE if business else "")
 
 
-def judge_prompt(role: Role, candidates: list[Candidate], business: str = "") -> str:
+def judge_prompt(role: Role, candidates: list[Candidate], business: str = "", others: str = "") -> str:
     rows = [
         {"number": number, "name": c.record.name, "description": c.record.description[:MAX_DESCRIPTION]}
         for number, c in enumerate(candidates, start=1)
     ]
     company = f"## This business\n{untrusted('business', business[:MAX_BUSINESS])}\n\n" if business else ""
+    team = f"## The company's other roles\n{others}\n\n" if others else ""
     return (
-        f"{company}## Role\n{role_profile(role)}\n\n"
+        f"{company}## Role\n{role_profile(role)}\n\n{team}"
         f"## Candidate skills\n{untrusted('skill-list', json.dumps(rows, ensure_ascii=False))}\n\n"
         f"Call {SUBMIT_FIT} with one decision for each of the {len(rows)} candidates."
     )
 
 
 def record_judgment(
-    role: Role, candidates: list[dict[str, str]], answer: list[Any], model: str, business: str, cache: RerankCache
+    role: Role,
+    candidates: list[dict[str, str]],
+    answer: list[Any],
+    model: str,
+    business: str,
+    cache: RerankCache,
+    others: str = "",
 ) -> int:
     """Save a judgment a client's model made, by the same rules as one made here. Returns how many were decided."""
     skill_ids = [candidate["skill_id"] for candidate in candidates]
     fingerprints = {candidate["skill_id"]: candidate["content_sha256"] for candidate in candidates}
     verdicts = _read_decisions(answer, skill_ids, set(role.allowed_skill_categories))
     for skill_id, verdict in verdicts.items():
-        cache.put(RerankCache.key_for(role, skill_id, fingerprints[skill_id], model, business), verdict)
+        cache.put(RerankCache.key_for(role, skill_id, fingerprints[skill_id], model, business, others), verdict)
     return len(verdicts)
 
 
@@ -304,11 +329,12 @@ def _judge_role(
     report: RerankReport,
     cache: RerankCache,
     business: str = "",
+    others: str = "",
 ) -> dict[str, Verdict] | None:
     """One call for one role, with one retry if it doesn't answer. None if there's still no answer."""
     known = {c.record.skill_id for c in candidates}
     allowed = set(role.allowed_skill_categories)
-    messages = [client.user_message(judge_prompt(role, candidates, business))]
+    messages = [client.user_message(judge_prompt(role, candidates, business, others))]
     logged = {
         "role": role.ref,
         "model": model,
@@ -381,9 +407,10 @@ def rerank(
     business = org.business.text
     for ref, candidates in sorted(shortlists.items()):
         role = org.role(ref)
+        others = colleagues(org, role)
         unjudged = []
         for candidate in candidates:
-            cached = cache.get(RerankCache.key(role, candidate.record, model, business))
+            cached = cache.get(RerankCache.key(role, candidate.record, model, business, others))
             if cached is None:
                 unjudged.append(candidate)
             else:
@@ -392,7 +419,7 @@ def rerank(
         if not unjudged:
             continue
         try:
-            judged = _judge_role(role, unjudged, client, model, report, cache, business)
+            judged = _judge_role(role, unjudged, client, model, report, cache, business, others)
         except ClientError:
             judged = None
         if judged is None:
@@ -407,6 +434,6 @@ def rerank(
                 report.unanswered += 1
                 continue
             verdicts[(ref, candidate.record.skill_id)] = verdict
-            cache.put(RerankCache.key(role, candidate.record, model, business), verdict)
+            cache.put(RerankCache.key(role, candidate.record, model, business, others), verdict)
             report.judged += 1
     return verdicts, report
