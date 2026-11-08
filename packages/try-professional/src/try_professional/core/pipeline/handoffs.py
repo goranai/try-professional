@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from ..artifacts import (
     ArtifactError,
@@ -21,6 +21,28 @@ from .state import (
 
 if TYPE_CHECKING:
     from .step import _Step
+
+
+# A handoff of a handoff is sometimes right. One more, and work is being passed around instead of done.
+MAX_HANDOFF_DEPTH = 2
+
+
+def _asked_by(state: Any, invocation: Any) -> list[str]:
+    """The departments that handed this work down to here, nearest first."""
+    chain: list[str] = []
+    package_id = invocation.work_package_id
+    while package_id and package_id in state.packages:
+        package = state.packages[package_id]
+        if package.origin != "handoff" or not package.resumes_invocation_id:
+            break
+        asker = state.suspended.get(package.resumes_invocation_id) or state.invocations.get(
+            package.resumes_invocation_id
+        )
+        if asker is None or asker.role.split("/", 1)[0] in chain:
+            break
+        chain.append(asker.role.split("/", 1)[0])
+        package_id = asker.work_package_id
+    return chain
 
 
 def _on_handoff(step: _Step, event: HandoffRaised) -> None:
@@ -51,6 +73,21 @@ def _on_handoff(step: _Step, event: HandoffRaised) -> None:
         return
     if parsed.to_department not in org.departments:
         step.reject(invocation, f"department '{parsed.to_department}' is not installed")
+        return
+    chain = _asked_by(state, invocation)
+    if parsed.to_department in chain:
+        step.reject(
+            invocation,
+            f"{parsed.to_department} asked for this work, so it can't go back there. Do it with your own roles, or "
+            "escalate if you can't.",
+        )
+        return
+    if len(chain) >= MAX_HANDOFF_DEPTH:
+        step.reject(
+            invocation,
+            f"This work was already handed on {len(chain)} times ({' -> '.join([*reversed(chain), own_department])}). "
+            "Do it with your own roles, or escalate if you can't.",
+        )
         return
     stored = step.store(
         make_artifact(

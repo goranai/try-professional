@@ -291,7 +291,13 @@ class TestToolPermissions:
             [
                 tool_response(
                     "request_handoff",
-                    {"from_department": "engineering", "to_department": "sales", "request": "x", "acceptance": ["y"]},
+                    {
+                        "from_department": "engineering",
+                        "to_department": "sales",
+                        "request": "x",
+                        "acceptance": ["y"],
+                        "because": "z",
+                    },
                 ),
                 tool_response("escalate", {"reason": "Need sales"}),
             ]

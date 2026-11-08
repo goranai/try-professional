@@ -197,7 +197,7 @@ _ESCALATE_SPEC = ToolSpec(
 
 _HANDOFF_SPEC = ToolSpec(
     HANDOFF,
-    "Ask another department for work. Your work resumes when it is approved.",
+    "Ask another department for what your own roles can't do. Your work resumes when theirs is approved.",
     {
         "type": "object",
         "properties": {
@@ -205,9 +205,10 @@ _HANDOFF_SPEC = ToolSpec(
             "to_department": {"type": "string"},
             "request": {"type": "string"},
             "acceptance": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+            "because": {"type": "string", "description": "What that department has that yours doesn't"},
             "artifact_refs": {"type": "array", "items": {"type": "string"}},
         },
-        "required": ["from_department", "to_department", "request", "acceptance"],
+        "required": ["from_department", "to_department", "request", "acceptance", "because"],
         "additionalProperties": False,
     },
 )

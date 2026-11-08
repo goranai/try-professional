@@ -258,6 +258,9 @@ class Handoff(_Strict):
     to_department: str = NonEmpty
     request: str = NonEmpty
     acceptance: list[str] = Field(min_length=1)
+    # What the other department has that this one doesn't: a role, a skill, an access. Handing work across for no
+    # reason is the slowest thing a company does.
+    because: str = NonEmpty
     artifact_refs: list[str] = []
 
 
@@ -425,6 +428,7 @@ _ALIASES: dict[str, dict[str, tuple[str, ...]]] = {
         "command": ("cmd", "test", "check", "name", "how", "step"),
         "result": ("output", "outcome", "status", "evidence", "passed"),
     },
+    "Handoff": {"because": ("reason", "why", "justification", "rationale", "needs")},
     "DepartmentActivation": {"id": ("department", "department_id", "dept", "name"), "reason": ("why", "rationale")},
     "WorkPackage": {
         "id": ("package_id", "work_package_id", "key"),

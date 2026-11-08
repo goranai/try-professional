@@ -2,6 +2,21 @@
 
 Each version of `try-professional`. `skill-customs` is listed only when it changes.
 
+## 0.6.2 (2026-11-09)
+
+Specialists, without the group-chat failure. Each role keeps its own job and memory, a person talks only to the CEO, and work isn't passed around for nothing.
+
+### Added
+
+- **Every run says what it cost in time.** After each command, and in `trypro status <run-id>`: minutes of work, apart from minutes waiting for a person, model calls and tokens by step and by role, and the extra rounds: rework, refused hand-ins, failed steps, escalations, and handoffs. `Company.efficiency(run_id)` returns it. It's measured from the audit log alone, so runs by earlier versions can be measured too. [Before and after, on real jobs](docs/research/efficiency/README.md).
+
+### Changed
+
+- **The fewest roles that can do it well.** The CEO now sends a command to one department, with one role or several of its own, unless departments must each do part of it; when unsure, to one department. It used to send anything unclear through the whole company. A department head gives one role one task when it can do it all, and the CEO doesn't split what one department can do, or activate a department that would only pass work on.
+- **A handoff says why.** A head asking another department for work must say what that department has that its own doesn't, in a new `because` field. Work can't be handed back to a department that asked for it, and a handoff of a handoff is the last: past that, the work is done or escalated.
+- **Roles work at the same time in Claude Code.** `/company` starts the subagents of every role that's ready at once, one per role, instead of one after another. The company's own engine already ran independent work in parallel.
+- **No token budgets asked for in plans.** The CEO was told to give each work package a token budget, which nothing enforced.
+
 ## 0.6.1 (2026-11-09)
 
 A company learns from what happened to its work, and works on its own. Nothing here is for one kind of business: whatever a company puts out, it can follow.

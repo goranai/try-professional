@@ -253,6 +253,17 @@ class Company:
             return folder / "draft"
         return None
 
+    def efficiency(self, run_id: str) -> dict[str, Any]:
+        """How a run spent its time: minutes of work and of waiting for a person, model calls and tokens by step and
+        by role, and the extra rounds: rework, refused hand-ins, escalations, handoffs. From its audit log alone."""
+        from .core.efficiency import measure
+
+        orchestrator = self._orchestrator()
+        try:
+            return measure(orchestrator.audit_path(run_id), run_id).to_dict()
+        finally:
+            orchestrator.close()
+
     def final_report(self, run_id: str) -> dict[str, Any] | None:
         """The final report's content, once a run is done."""
         orchestrator = self._orchestrator()

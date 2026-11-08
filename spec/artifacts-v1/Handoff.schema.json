@@ -18,6 +18,11 @@
       "title": "Artifact Refs",
       "type": "array"
     },
+    "because": {
+      "minLength": 1,
+      "title": "Because",
+      "type": "string"
+    },
     "from_department": {
       "minLength": 1,
       "title": "From Department",
@@ -38,7 +43,8 @@
     "from_department",
     "to_department",
     "request",
-    "acceptance"
+    "acceptance",
+    "because"
   ],
   "title": "Handoff",
   "type": "object"

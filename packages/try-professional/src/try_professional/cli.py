@@ -805,10 +805,20 @@ def _finish_command(orchestrator: Orchestrator) -> None:
         _print(f"{len(waiting)} queued. Run the next one with: trypro next")
 
 
+def _print_efficiency(orchestrator: Orchestrator, run_id: str) -> None:
+    from .core.efficiency import measure
+
+    audit = orchestrator.audit_path(run_id)
+    if audit.is_file():
+        for line in measure(audit, run_id).lines():
+            _print(line)
+
+
 def _run_goal(orchestrator: Orchestrator, runner: ApiRunner, goal: str) -> int:
     wait_for_memory(COMMAND_PEAK_MB, say=_print)
     result = runner.run(goal)
     code = _print_result(result, orchestrator.deliverables_path(result.run_id))
+    _print_efficiency(orchestrator, result.run_id)
     _finish_command(orchestrator)
     return code
 
@@ -856,7 +866,9 @@ def cmd_resume(args: argparse.Namespace) -> int:
                 _print("Another command is running. Nothing was resumed.")
                 return 1
             wait_for_memory(COMMAND_PEAK_MB, say=_print)
-            return _print_result(runner.resume(args.run_id), orchestrator.deliverables_path(args.run_id))
+            code = _print_result(runner.resume(args.run_id), orchestrator.deliverables_path(args.run_id))
+            _print_efficiency(orchestrator, args.run_id)
+            return code
     finally:
         orchestrator.close()
 
@@ -1087,6 +1099,7 @@ def cmd_status(args: argparse.Namespace) -> int:
         for purpose, usage in sorted(state.usage_by_purpose.items(), key=lambda item: -item[1].total):
             _print(f"  {purpose}: {usage.total} tokens, {usage.calls} calls")
         _print(f"Counters: {state.counters.model_dump()}")
+        _print_efficiency(orchestrator, args.run_id)
         return 0
     finally:
         orchestrator.close()

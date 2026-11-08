@@ -28,7 +28,9 @@ spec.loader.exec_module(measure_prompts)
 # Then to 37600, telling planners that a held step counts as done: without it, a real run looped, reviewers asking for
 # an issue to exist that only a person could post.
 # And to 37800 for the same rule at intake, where a real CEO still wrote "the issue is opened" as a criterion.
-TOTAL_CHAR_BUDGET = 37800
+# And to 38500 in 0.6.2, for rules against passing work around: the fewest roles, no handing work back, and saying
+# what another department has before asking it. One avoided step costs far more than this.
+TOTAL_CHAR_BUDGET = 38500
 
 
 def test_a_minimal_run_stays_within_its_prompt_budget() -> None:

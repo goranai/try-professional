@@ -56,7 +56,8 @@ you what a role was asked. Use them like this:
 1. If the command is "continue" and a run_id, don't start anything: call run_next_action with that run_id. \
 Otherwise, call run_start with the command as written. It returns a run_id, and the first actions.
 2. For each action, start the subagent named trypro-<department>-<role> for its role (a role of marketing/seo is \
-trypro-marketing-seo). Give it only the run_id. Run them one at a time. Never add what another role did.
+trypro-marketing-seo). Give it only the run_id. When there are actions for several roles, start all of them at once, \
+in one message, so they work at the same time, one subagent per role. Never add what another role did.
 3. Call run_next_action, and repeat until its status isn't "working".
 4. If its status is "blocked", show me each tell_the_person under needs_a_person, word for word. Only I can answer \
 them.

@@ -119,7 +119,9 @@ def build_server(
 
     @server.tool()
     def handoff_request(run_id: str, invocation_id: str, payload: dict[str, Any]) -> Any:
-        """Ask another department for work. Only department heads can."""
+        """Ask another department for what your own roles can't do. Only department heads can. The payload has
+        from_department, to_department, request, acceptance, and because: what that department has that yours
+        doesn't."""
         return _guard(company_tool("handoff_request"), run_id, invocation_id, payload)
 
     @server.tool()
