@@ -67,6 +67,20 @@ dan kurir yang dipilih. ...
 
 For Claude Code. You need Python 3.10 or newer, and Claude Code signed in. It uses your own Claude plan, with no API key, and each role runs as its own subagent.
 
+```bash
+pip install "try-professional[mcp]"
+mkdir my-company && cd my-company
+trypro start "a weekly newsletter for my yoga studio's members"
+```
+
+Say what you want made, in your own words. `trypro start` checks your setup, has Claude Code design a company that can do it, and shows you that company to approve: type `a`, then `approve`. A person has to, and no model can. Then it opens Claude Code on your request. When Claude Code asks whether you trust this folder, say yes. Results are files, in `deliverables/<run-id>/`. Start with `index.md`.
+
+**After that, start Claude Code in this folder, and say what you want.** You don't need `/company`: the folder's front desk hands every request to the company, and the company remembers its earlier work.
+
+### Step by step
+
+The same, one step at a time.
+
 **1. Install it, and make a folder for your company.**
 
 ```bash

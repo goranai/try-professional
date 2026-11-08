@@ -71,7 +71,10 @@ def add_server(root: Path) -> tuple[bool, str]:
 
 
 def setup_claude_code(
-    root: Path, say: Callable[[str], None], add: Callable[[Path], tuple[bool, str]] = add_server
+    root: Path,
+    say: Callable[[str], None],
+    add: Callable[[Path], tuple[bool, str]] = add_server,
+    next_steps: bool = True,
 ) -> int:
     root.mkdir(parents=True, exist_ok=True)
     load_env_file(root)
@@ -103,6 +106,8 @@ def setup_claude_code(
     if not added:
         return 1
     _remember(root)
+    if not next_steps:
+        return 0
     say("")
     say("Next:")
     step = 1
@@ -113,3 +118,92 @@ def setup_claude_code(
     say(f"  {step + 1}. trypro init --review <proposal-id>    Read it, and approve it. Only a person can.")
     say(f"  {step + 2}. Start Claude Code here again, and run: /company <a command>")
     return 0
+
+
+# ---- trypro start ------------------------------------------------------------------------------------------------
+
+DESIGN_ROUNDS = 4
+_DESIGN = (
+    "Use the trypro tools to design a company that can do this, for the business it's for: {request}\n\n"
+    "Call org_propose with a short description of that business, and do what each answer asks: submit the design "
+    "with org_proposal_submit, and judge each role's skills with org_skill_judgment_submit. When the status is "
+    "ready_for_a_person, reply with only the proposal id."
+)
+_CONTINUE = (
+    "Use the trypro tools to finish designing proposal {proposal}. Call org_proposal_get with it, and do what each "
+    "answer asks, until the status is ready_for_a_person. Then reply with only the proposal id."
+)
+
+
+def borrow_github_token(say: Callable[[str], None]) -> None:
+    """Skills need a GitHub token. If none is set, the GitHub CLI's is used for this command only. It's never saved
+    or printed."""
+    if github_token_is_set():
+        return
+    gh = shutil.which("gh")
+    if gh is None:
+        return
+    token = subprocess.run([gh, "auth", "token"], capture_output=True, text=True, timeout=_TIMEOUT_SECONDS).stdout
+    if token.strip():
+        import os
+
+        os.environ["GITHUB_TOKEN"] = token.strip()
+        say("[ok] Using your GitHub CLI's token for skills, for this command only")
+
+
+def ask_claude(root: Path, prompt: str) -> str:
+    """One headless Claude Code call in this folder, with only the trypro tools. On the person's own plan."""
+    claude = shutil.which("claude")
+    if claude is None:
+        raise RuntimeError("Claude Code isn't on the PATH.")
+    done = subprocess.run(
+        [claude, "-p", prompt, "--tools", "", "--allowedTools", f"mcp__{SERVER_NAME}__*", "--output-format", "text"],
+        cwd=root,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        stdin=subprocess.DEVNULL,
+        timeout=3600,
+    )
+    return (done.stdout or "") + (done.stderr or "")
+
+
+def proposal_status(root: Path, proposal: str) -> str:
+    try:
+        meta = json.loads((root / ".trypro" / "proposals" / proposal / "meta.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return "missing"
+    return str(meta.get("status", "missing"))
+
+
+def design_with_claude(
+    root: Path, request: str, say: Callable[[str], None], ask: Callable[[Path, str], str] = ask_claude
+) -> str | None:
+    """Claude Code designs a company for the request, and keeps going until it's ready for a person. Returns its id."""
+    import re
+
+    say("Designing a company for this. It takes a few minutes, on your Claude plan.")
+    answer = ask(root, _DESIGN.format(request=request))
+    found = re.search(r"prop-[0-9a-f]+", answer)
+    if found is None:
+        say(f"Claude Code didn't design a company. What it said: {answer.strip()[:400]}")
+        return None
+    proposal = found.group()
+    for _ in range(DESIGN_ROUNDS):
+        if proposal_status(root, proposal) in ("proposed", "approved"):
+            return proposal
+        say("The design isn't finished yet, so Claude Code carries on with it.")
+        ask(root, _CONTINUE.format(proposal=proposal))
+    if proposal_status(root, proposal) in ("proposed", "approved"):
+        return proposal
+    say(f"The design didn't finish. To try again: trypro start, or trypro init --review {proposal}")
+    return None
+
+
+def launch_claude(root: Path, request: str) -> int:
+    """Open Claude Code here, on the request. Interactive, so it can ask a person to trust this folder."""
+    claude = shutil.which("claude")
+    if claude is None:
+        return 2
+    return subprocess.call([claude, f"/company {request}"], cwd=root)

@@ -16,6 +16,7 @@ from typing import Any
 from skill_customs import Lockfile, SkillCustomsError, discover, verify
 
 from . import __version__
+from . import setup as _setup
 from .adapters.api_runner.clients import ClientError
 from .adapters.api_runner.runner import ApiRunner, ModelRoutes, RunResult
 from .adapters.api_runner.scripted import ScriptedClient
@@ -1087,6 +1088,41 @@ def cmd_setup(args: argparse.Namespace) -> int:
     return setup_claude_code(Path(args.dir).resolve() if args.dir else Path.cwd(), _print)
 
 
+def cmd_start(args: argparse.Namespace) -> int:
+    """From an empty folder to a company at work: setup, a design, a person's approval, and the first job."""
+    root = Path(args.dir).resolve() if args.dir else Path.cwd()
+    request = " ".join(args.request).strip()
+    if not request:
+        _print('Say what you want made: trypro start "<what you want>"')
+        return 2
+    _setup.borrow_github_token(_print)
+    code = setup_claude_code(root, _print, next_steps=False)
+    if code:
+        return code
+    if (root / "org" / "org.yaml").exists():
+        _print("This folder already has a company, so it gets your request.")
+        write_claude_code_files(root, load_org(root / "org"))
+    else:
+        proposal = _setup.design_with_claude(root, request, _print)
+        if proposal is None:
+            return 1
+        load_env_file(root)
+        _write_project_files(root)
+        config = load_config(root)
+        embedder = FastEmbedEmbedder(config.memory.embedding_model)
+        bundle = load_proposal(root, proposal)
+        code = _review(bundle, root, embedder, by=getpass.getuser(), client=None, model="", discovery=True)
+        if code or not (root / "org" / "org.yaml").exists():
+            return code or 1
+    if args.no_launch or not _person_at_terminal():
+        _print("Ready. Start Claude Code here, and say what you want, in your own words:")
+        _print(f"  claude    then: {request}")
+        return 0
+    _print("Opening Claude Code on your request. If it asks whether you trust this folder, say yes.")
+    _print("Later, just start Claude Code here, and say what you want. The company remembers its earlier work.")
+    return _setup.launch_claude(root, request)
+
+
 def cmd_doctor(args: argparse.Namespace) -> int:
     checks = run_checks(Path.cwd())
     if args.report:
@@ -1220,6 +1256,14 @@ def build_parser() -> argparse.ArgumentParser:
         help="Only start and follow work, and hand it to servers bound to each role. It can't do a role's work",
     )
     mcp.set_defaults(func=cmd_mcp)
+
+    start = sub.add_parser(
+        "start", help="Say what you want made: it designs a company, a person approves it, and it gets to work"
+    )
+    start.add_argument("request", nargs="+", help='What you want made, such as "a launch plan for my bakery"')
+    start.add_argument("--dir", help="The company's folder. Default: here")
+    start.add_argument("--no-launch", action="store_true", help="Stop once it's ready, without opening Claude Code")
+    start.set_defaults(func=cmd_start)
 
     setup = sub.add_parser("setup", help="Get ready to design a company in a runtime: checks, then adds trypro to it")
     setup.add_argument("runtime", choices=["claude-code"])

@@ -2,6 +2,19 @@
 
 Each version of `try-professional`. `skill-customs` is listed only when it changes.
 
+## 0.3.0 (2026-11-08)
+
+Say what you want, and a company gets to work.
+
+### Added
+
+- **`trypro start "<what you want>"`.** From an empty folder, one command checks your setup, has Claude Code design a company that can do what you asked, shows it to you to approve, and opens Claude Code on your request. If `GITHUB_TOKEN` isn't set, it uses your GitHub CLI's token for that command only, so the company gets skills. A person still approves the company, and no model can.
+- **A front desk.** The company's Claude Code files now include a part of `CLAUDE.md` that hands any request for work, in plain words, to the company, as `/company` does. Anything else you keep in `CLAUDE.md` stays. Rerun `trypro agents claude-code` in an existing company to get it.
+
+### Before you upgrade
+
+- **Existing companies keep working.** `/company` is unchanged.
+
 ## 0.2.1 (2026-11-08)
 
 - **The README says who it's for:** people sending client-facing or public documents that need a review nobody can skip, and an audit trail. And that for an everyday one-off task, a single agent is cheaper and faster.

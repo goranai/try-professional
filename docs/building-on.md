@@ -16,6 +16,10 @@ How to use a company as a part of your own agent, with Claude Code as the best-s
 
 **Two things stay with a person, by design, and no API does them:** approving a company the AI designed (`trypro init --review`), and answering a run's questions (`trypro decide`, at a terminal). An agent can show a person the question, and can't answer it for them.
 
+## The quickest start
+
+`trypro start "<what you want>"` in an empty folder does the steps below in one go: setup, a design, a person's approval, and the first job, in Claude Code. Afterwards, plain requests in Claude Code go to the company, through the front desk in `CLAUDE.md`.
+
 ## The Claude Code path, in four steps
 
 1. **Install:** `pip install "try-professional[mcp]"`.

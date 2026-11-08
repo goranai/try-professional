@@ -58,6 +58,38 @@ under deliverables.
 """
 
 
+FRONT_DESK_START = "<!-- trypro:front-desk:start -->"
+FRONT_DESK_END = "<!-- trypro:front-desk:end -->"
+_FRONT_DESK = """{start}
+# This folder is a company: {company}
+
+It's run by Try Professional, and you're its front desk.
+
+- **When I ask for work, in any words, it's a command for the company.** Follow `.claude/commands/company.md`, with my \
+words as the command, exactly as if I'd typed `/company <my words>`. Don't do the work yourself, with any tool.
+- When I ask about earlier work, read `deliverables/`, and answer from it.
+- When I'm only chatting, or asking how something works, answer briefly yourself.
+- When a run stops for a person, show me its question word for word. Only I can answer it, with `trypro decide` in a \
+terminal. Never run that yourself.
+{end}
+"""
+
+
+def write_front_desk(root: Path, org: Org) -> Path:
+    """CLAUDE.md tells the session that plain requests are work for the company. Anything else in it is kept."""
+    path = root / "CLAUDE.md"
+    block = _FRONT_DESK.format(start=FRONT_DESK_START, end=FRONT_DESK_END, company=org.company_name).strip()
+    text = path.read_text(encoding="utf-8") if path.is_file() else ""
+    if FRONT_DESK_START in text and FRONT_DESK_END in text:
+        before, rest = text.split(FRONT_DESK_START, 1)
+        after = rest.split(FRONT_DESK_END, 1)[1]
+        text = f"{before}{block}{after}"
+    else:
+        text = f"{block}\n\n{text}" if text.strip() else f"{block}\n"
+    path.write_text(text, encoding="utf-8", newline="\n")
+    return path
+
+
 _FOR_A_PERSON = tuple(
     f"{tool}(trypro {command} *)" for tool in ("Bash", "PowerShell") for command in ("decide", "init --review")
 )
@@ -98,7 +130,8 @@ def role_agent(root: Path, org: Org, role: Role, model: str | None = None) -> st
 
 
 def write_claude_code_files(root: Path, org: Org, model: str | None = None) -> list[Path]:
-    """Files only under .claude/ and .mcp.json. Run it again after the company changes."""
+    """Files under .claude/, .mcp.json, and the front desk's part of CLAUDE.md. Run it again after the company
+    changes."""
     agents = root / ".claude" / "agents"
     agents.mkdir(parents=True, exist_ok=True)
     written = []
@@ -132,4 +165,5 @@ def write_claude_code_files(root: Path, org: Org, model: str | None = None) -> l
             deny.append(rule)
     settings.write_text(json.dumps(existing_settings, indent=2) + "\n", encoding="utf-8", newline="\n")
     written.append(settings)
+    written.append(write_front_desk(root, org))
     return written
