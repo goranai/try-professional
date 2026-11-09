@@ -63,6 +63,12 @@ REVIEW_MAX_TURNS = 16
 # Tool outputs kept whole in a step's conversation. Older ones are cut to their start, because every call sends the
 # whole conversation again: a real analyst reading web pages sent 2.8 million input tokens in 22 calls.
 KEPT_TOOL_OUTPUTS = 6
+# Turns at which a role is reminded to finish. Nothing is cut off: it's told where it stands.
+WRAP_UP_AT = (15, 30)
+_WRAP_UP = (
+    "You've taken {turn} turns on this step. If the definition of done is met, submit now. If it isn't, do only "
+    "what's still missing: no new directions, and no re-checking what you've already checked."
+)
 CUT_OUTPUT_CHARS = 400
 # What a role does on a computer that's new for its step counts as work. Reading its own files and notes doesn't.
 WORK_TOOLS = ("shell", "web_fetch", "web_search")
@@ -382,7 +388,7 @@ class ApiRunner:
         done_before: set[str] = set()
         room = output_tokens()
 
-        for _ in range(turns):
+        for turn in range(1, turns + 1):
             # Stop spending as soon as the run is blocked. The invocation stays open and
             # is delivered again if a human lets the run continue.
             if self.orchestrator.state(run_id).phase == RunPhase.BLOCKED:
@@ -507,6 +513,9 @@ class ApiRunner:
                 return [control_event]
             messages.extend(client.tool_results_messages(results))
             _cut_old_outputs(messages)
+            if turn in WRAP_UP_AT and turn < turns:
+                # Room to work, and a reminder to finish: a real worker given 40 turns spent them on tangents.
+                messages.append(client.user_message(_WRAP_UP.format(turn=turn)))
 
         return [
             InvocationFailed(

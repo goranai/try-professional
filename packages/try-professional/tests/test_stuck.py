@@ -180,6 +180,21 @@ class TestWorkOnAComputer:
         assert '"what": "echo step 3"' in audit, "what a role ran is on the record"
         assert "function=shell" not in audit, "a prefixed tool name is the same tool"
 
+    def test_a_long_step_is_reminded_to_finish(self, company: Orchestrator) -> None:
+        """A real worker given 40 turns spent them on tangents. At 15 and 30 it's told where it stands."""
+        seen: list[str] = []
+
+        class Watching(BadModel):
+            def complete(self, request: ChatRequest) -> Any:
+                last = request.messages[-1]
+                if last.get("role") == "user" and "turns on this step" in str(last.get("content")):
+                    seen.append(str(last["content"]))
+                return super().complete(request)
+
+        client = Watching(self._explores(lambda n: f"echo step {n}", hand_in_after=32))
+        assert ApiRunner(company, client, ROUTES).run("Look through the repository").status == "done"
+        assert [s.split(" turns")[0] for s in seen] == ["You've taken 15", "You've taken 30"]
+
     def test_the_same_command_again_and_again_is_still_stuck(self, company: Orchestrator) -> None:
         client = BadModel(self._explores(lambda n: "echo same", hand_in_after=100))
         result = ApiRunner(company, client, ROUTES).run("Look through the repository")
