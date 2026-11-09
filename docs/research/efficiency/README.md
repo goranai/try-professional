@@ -35,6 +35,31 @@ Each of these was found by a run above, and fixed before the final round:
 - A shell command that started a program hung a run for 90 minutes. A time limit now stops everything the command started.
 - Hand-ins refused over wording: a payload sent as JSON text, a criterion's "met" in other words, a task inside a `brief`, a role named for its department, flags inside the payload, and confidence as "moderate" or 0.8. Each is understood now. Whether a criterion was met is never guessed: with no "met" at all, it's still refused.
 
+## 0.6.3 on Haiku, through Claude Code: 21 runs, 21 finished
+
+The same seven jobs, three times each, the way a person uses it: `/company <job>` in Claude Code, with the session and every role on `claude-haiku-5-5`, one run at a time. Roles could use the shell and the web without asking, and the company's deny rules stopped anything that changes something outside, so nothing was posted. Time, cost, and tokens are Claude Code's own account of each whole session, subagents included; cost is its list-price figure. `measure_claude_code.py` reproduces it, and `results_haiku.json` has every run, including the two earlier rounds below.
+
+| Job | Finished | Minutes, average (range) | Cost, USD, average (range) | Fresh tokens, thousands | Read from cache, thousands |
+|---|---|---|---|---|---|
+| A two-sentence customer reply | 3 of 3 | 1.3 (1.3 to 1.3) | 0.014 (0.014 to 0.015) | 48 | 494 |
+| A week's Instagram plan, five posts | 3 of 3 | 2.4 (1.6 to 3.2) | 0.023 (0.016 to 0.028) | 73 | 701 |
+| Fix one sentence on a menu | 3 of 3 | 1.4 (1.3 to 1.5) | 0.014 (0.013 to 0.015) | 45 | 513 |
+| Find a GitHub repository with `gh`, and report on it | 3 of 3 | 1.6 (1.5 to 1.6) | 0.015 (0.015 to 0.016) | 50 | 565 |
+| A two-sentence reply, in Indonesian | 3 of 3 | 1.5 (1.4 to 1.5) | 0.015 (0.015 to 0.016) | 50 | 514 |
+| Make content for a new product, ready to post: research, a post, a posting time | 3 of 3 | 5.2 (3.2 to 8.1) | 0.108 (0.077 to 0.146) | 315 | 1,667 |
+| Find a real mistake in a popular repository's README, check it, and prepare an issue | 3 of 3 | 2.6 (2.1 to 3.2) | 0.025 (0.020 to 0.031) | 77 | 864 |
+
+Minutes are wall-clock, from start to the answer, including setup. The content job, the only one that uses three departments and the web, varies the most.
+
+**How it got here.** Two earlier rounds of the same jobs, on earlier builds, are in `results_haiku.json`. The first finished 16 of 19 runs, and the second 19 of 21. Every run that didn't finish was read, and its cause fixed before the next round:
+
+- Reviewers sent back [placeholders] and phrases like "made with care" as unsourced facts, while asking for captions written out in full: no answer could pass. Now only specific, checkable claims need a source or a placeholder, and a placeholder for a fact the brief didn't give is the right answer.
+- Each review of reworked work started over and found a new list of issues, round after round, until the rework limit. A reviewer now sees its own earlier verdict, lists everything the first time, and checks that list after.
+- A check a workspace can't do, such as how a page prints, was sent back again and again. It now passes when marked unverified for a person.
+- Haiku restated criteria in its own words, added fields of its own, wrapped an answer in another layer, and mistyped a 24-character id six times. Each is understood or filled in by code now.
+
+**Read this before quoting it.** Three runs per job, one model, one machine. Nothing was posted, so these runs measure the work up to the point a person approves it.
+
 ## Roles at the same time, in Claude Code
 
 `/company` with every role on `claude-haiku-5-5`, and Haiku for the session, on a command with two independent jobs for two departments. On the first try, Haiku started each subagent in its own message: the two writers and the two reviewers overlapped, and the two department heads worked one after the other. `run_next_action` now tells the coordinator to start ready roles together when there are several.

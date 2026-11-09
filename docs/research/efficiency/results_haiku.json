@@ -1,0 +1,1607 @@
+{
+ "first:hk-r1": {
+  "version": "0.6.2",
+  "model": "haiku",
+  "engine": "claude-code",
+  "runs": {
+   "reply": {
+    "status": "done",
+    "run_id": "run-6190f94c896b",
+    "reason": "",
+    "seconds": 84,
+    "cc_cost_usd": 0.0157,
+    "cc_input": 50,
+    "cc_cache_write": 52712,
+    "cc_cache_read": 511060,
+    "cc_output": 4597,
+    "cc_results": 4,
+    "company_record": {
+     "working_seconds": 59.901,
+     "steps": {
+      "intake": 1,
+      "execute": 1,
+      "review": 1
+     },
+     "rework": 0,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   },
+   "plan": {
+    "status": "done",
+    "run_id": "run-738f5adb6197",
+    "reason": "",
+    "seconds": 398,
+    "cc_cost_usd": 0.0761,
+    "cc_input": 204,
+    "cc_cache_write": 167780,
+    "cc_cache_read": 2348536,
+    "cc_output": 57909,
+    "cc_results": 14,
+    "company_record": {
+     "working_seconds": 381.703,
+     "steps": {
+      "intake": 1,
+      "execute": 7,
+      "review": 5,
+      "escalation": 2
+     },
+     "rework": 4,
+     "refused": 2,
+     "failed": 0,
+     "escalations": 2,
+     "handoffs": []
+    }
+   },
+   "fix": {
+    "status": "done",
+    "run_id": "run-bfcc73f7d3bc",
+    "reason": "",
+    "seconds": 76,
+    "cc_cost_usd": 0.0137,
+    "cc_input": 48,
+    "cc_cache_write": 39807,
+    "cc_cache_read": 497363,
+    "cc_output": 4471,
+    "cc_results": 4,
+    "company_record": {
+     "working_seconds": 54.531,
+     "steps": {
+      "intake": 1,
+      "execute": 1,
+      "review": 1
+     },
+     "rework": 0,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   },
+   "github": {
+    "status": "done",
+    "run_id": "run-2afe83c66df2",
+    "reason": "",
+    "seconds": 98,
+    "cc_cost_usd": 0.0169,
+    "cc_input": 60,
+    "cc_cache_write": 45870,
+    "cc_cache_read": 617991,
+    "cc_output": 6877,
+    "cc_results": 4,
+    "company_record": {
+     "working_seconds": 74.436,
+     "steps": {
+      "intake": 1,
+      "execute": 2,
+      "review": 1
+     },
+     "rework": 0,
+     "refused": 1,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   },
+   "indonesian": {
+    "status": "done",
+    "run_id": "run-1b105073b5a2",
+    "reason": "",
+    "seconds": 93,
+    "cc_cost_usd": 0.0157,
+    "cc_input": 54,
+    "cc_cache_write": 43245,
+    "cc_cache_read": 559976,
+    "cc_output": 6452,
+    "cc_results": 4,
+    "company_record": {
+     "working_seconds": 68.402,
+     "steps": {
+      "intake": 1,
+      "execute": 1,
+      "review": 1
+     },
+     "rework": 0,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   },
+   "content": {
+    "status": "blocked",
+    "run_id": "run-df24e7bdce65",
+    "reason": "",
+    "seconds": 494,
+    "cc_cost_usd": 0.2036,
+    "cc_input": 349749,
+    "cc_cache_write": 183425,
+    "cc_cache_read": 2490046,
+    "cc_output": 96624,
+    "cc_results": 13,
+    "company_record": {
+     "working_seconds": 475.685,
+     "steps": {
+      "intake": 1,
+      "execute": 8,
+      "review": 5,
+      "escalation": 3
+     },
+     "rework": 5,
+     "refused": 4,
+     "failed": 0,
+     "escalations": 3,
+     "handoffs": []
+    }
+   },
+   "contribution": {
+    "status": "done",
+    "run_id": "run-2c1b1c55487a",
+    "reason": "",
+    "seconds": 126,
+    "cc_cost_usd": 0.0187,
+    "cc_input": 64,
+    "cc_cache_write": 50132,
+    "cc_cache_read": 657988,
+    "cc_output": 8592,
+    "cc_results": 4,
+    "company_record": {
+     "working_seconds": 99.248,
+     "steps": {
+      "intake": 1,
+      "execute": 1,
+      "review": 2
+     },
+     "rework": 0,
+     "refused": 1,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   }
+  }
+ },
+ "first:hk-r2": {
+  "version": "0.6.2",
+  "model": "haiku",
+  "engine": "claude-code",
+  "runs": {
+   "reply": {
+    "status": "done",
+    "run_id": "run-0b51338c1be7",
+    "reason": "",
+    "seconds": 80,
+    "cc_cost_usd": 0.013,
+    "cc_input": 40,
+    "cc_cache_write": 39631,
+    "cc_cache_read": 417578,
+    "cc_output": 5037,
+    "cc_results": 2,
+    "company_record": {
+     "working_seconds": 58.725,
+     "steps": {
+      "intake": 1,
+      "execute": 1,
+      "review": 1
+     },
+     "rework": 0,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   },
+   "plan": {
+    "status": "blocked",
+    "run_id": "run-626edeaf8a03",
+    "reason": "",
+    "seconds": 301,
+    "cc_cost_usd": 0.0891,
+    "cc_input": 29052,
+    "cc_cache_write": 141684,
+    "cc_cache_read": 2153424,
+    "cc_output": 48879,
+    "cc_results": 13,
+    "company_record": {
+     "working_seconds": 285.323,
+     "steps": {
+      "intake": 1,
+      "execute": 8,
+      "review": 5,
+      "escalation": 2
+     },
+     "rework": 5,
+     "refused": 3,
+     "failed": 0,
+     "escalations": 2,
+     "handoffs": []
+    }
+   },
+   "fix": {
+    "status": "done",
+    "run_id": "run-0fcf0cabf75d",
+    "reason": "",
+    "seconds": 80,
+    "cc_cost_usd": 0.0138,
+    "cc_input": 46,
+    "cc_cache_write": 39787,
+    "cc_cache_read": 491998,
+    "cc_output": 4782,
+    "cc_results": 4,
+    "company_record": {
+     "working_seconds": 58.819,
+     "steps": {
+      "intake": 1,
+      "execute": 1,
+      "review": 1
+     },
+     "rework": 0,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   },
+   "github": {
+    "status": "done",
+    "run_id": "run-6058a7a63bc6",
+    "reason": "",
+    "seconds": 96,
+    "cc_cost_usd": 0.016,
+    "cc_input": 56,
+    "cc_cache_write": 45246,
+    "cc_cache_read": 558794,
+    "cc_output": 6628,
+    "cc_results": 4,
+    "company_record": {
+     "working_seconds": 74.013,
+     "steps": {
+      "intake": 1,
+      "execute": 1,
+      "review": 1
+     },
+     "rework": 0,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   },
+   "indonesian": {
+    "status": "done",
+    "run_id": "run-9c0b66beb20f",
+    "reason": "",
+    "seconds": 85,
+    "cc_cost_usd": 0.0149,
+    "cc_input": 50,
+    "cc_cache_write": 42256,
+    "cc_cache_read": 524087,
+    "cc_output": 5856,
+    "cc_results": 4,
+    "company_record": {
+     "working_seconds": 61.379,
+     "steps": {
+      "intake": 1,
+      "execute": 1,
+      "review": 1
+     },
+     "rework": 0,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   }
+  }
+ },
+ "first:hk-r3": {
+  "version": "0.6.2",
+  "model": "haiku",
+  "engine": "claude-code",
+  "runs": {
+   "reply": {
+    "status": "done",
+    "run_id": "run-f8ad71335e82",
+    "reason": "",
+    "seconds": 80,
+    "cc_cost_usd": 0.0135,
+    "cc_input": 48,
+    "cc_cache_write": 38759,
+    "cc_cache_read": 491010,
+    "cc_output": 4595,
+    "cc_results": 4,
+    "company_record": {
+     "working_seconds": 56.963,
+     "steps": {
+      "intake": 1,
+      "execute": 1,
+      "review": 1
+     },
+     "rework": 0,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   },
+   "plan": {
+    "status": "blocked",
+    "run_id": "run-4affd149919c",
+    "reason": "",
+    "seconds": 376,
+    "cc_cost_usd": 0.0698,
+    "cc_input": 188,
+    "cc_cache_write": 147835,
+    "cc_cache_read": 2151072,
+    "cc_output": 54756,
+    "cc_results": 13,
+    "company_record": {
+     "working_seconds": 356.917,
+     "steps": {
+      "intake": 1,
+      "execute": 7,
+      "review": 5,
+      "escalation": 2
+     },
+     "rework": 5,
+     "refused": 2,
+     "failed": 0,
+     "escalations": 2,
+     "handoffs": []
+    }
+   },
+   "fix": {
+    "status": "done",
+    "run_id": "run-67ed815f375a",
+    "reason": "",
+    "seconds": 89,
+    "cc_cost_usd": 0.0141,
+    "cc_input": 52,
+    "cc_cache_write": 40337,
+    "cc_cache_read": 523726,
+    "cc_output": 4806,
+    "cc_results": 4,
+    "company_record": {
+     "working_seconds": 65.899,
+     "steps": {
+      "intake": 1,
+      "execute": 1,
+      "review": 1
+     },
+     "rework": 0,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   },
+   "github": {
+    "status": "done",
+    "run_id": "run-55a238f8deac",
+    "reason": "",
+    "seconds": 95,
+    "cc_cost_usd": 0.0151,
+    "cc_input": 56,
+    "cc_cache_write": 43452,
+    "cc_cache_read": 561771,
+    "cc_output": 5165,
+    "cc_results": 4,
+    "company_record": {
+     "working_seconds": 71.556,
+     "steps": {
+      "intake": 1,
+      "execute": 1,
+      "review": 1
+     },
+     "rework": 0,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   },
+   "indonesian": {
+    "status": "done",
+    "run_id": "run-d4ed24fc38d6",
+    "reason": "",
+    "seconds": 89,
+    "cc_cost_usd": 0.0128,
+    "cc_input": 36,
+    "cc_cache_write": 40280,
+    "cc_cache_read": 388009,
+    "cc_output": 5137,
+    "cc_results": 1,
+    "company_record": {
+     "working_seconds": 64.077,
+     "steps": {
+      "intake": 1,
+      "execute": 1,
+      "review": 1
+     },
+     "rework": 0,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   },
+   "content": {
+    "status": "done",
+    "run_id": "run-809928de0648",
+    "reason": "",
+    "seconds": 256,
+    "cc_cost_usd": 0.1005,
+    "cc_input": 167306,
+    "cc_cache_write": 96012,
+    "cc_cache_read": 1257423,
+    "cc_output": 34436,
+    "cc_results": 8,
+    "company_record": {
+     "working_seconds": 234.871,
+     "steps": {
+      "intake": 1,
+      "dispatch": 1,
+      "execute": 2,
+      "review": 2,
+      "integrate": 1
+     },
+     "rework": 0,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   },
+   "contribution": {
+    "status": "done",
+    "run_id": "run-8a3b0c4541c4",
+    "reason": "",
+    "seconds": 224,
+    "cc_cost_usd": 0.0291,
+    "cc_input": 100,
+    "cc_cache_write": 73944,
+    "cc_cache_read": 1046562,
+    "cc_output": 15132,
+    "cc_results": 6,
+    "company_record": {
+     "working_seconds": 198.504,
+     "steps": {
+      "intake": 1,
+      "execute": 2,
+      "review": 2
+     },
+     "rework": 1,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   }
+  }
+ },
+ "second:hkf-r1": {
+  "version": "0.6.2",
+  "model": "haiku",
+  "engine": "claude-code",
+  "runs": {
+   "reply": {
+    "status": "done",
+    "run_id": "run-673c42d7d3e9",
+    "reason": "",
+    "seconds": 85,
+    "cc_cost_usd": 0.0153,
+    "cc_input": 48,
+    "cc_cache_write": 51024,
+    "cc_cache_read": 481596,
+    "cc_output": 5255,
+    "cc_results": 4,
+    "company_record": {
+     "working_seconds": 62.212,
+     "steps": {
+      "intake": 1,
+      "execute": 1,
+      "review": 1
+     },
+     "rework": 0,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   },
+   "plan": {
+    "status": "done",
+    "run_id": "run-2277d801bfc3",
+    "reason": "",
+    "seconds": 116,
+    "cc_cost_usd": 0.0227,
+    "cc_input": 76,
+    "cc_cache_write": 58575,
+    "cc_cache_read": 785343,
+    "cc_output": 11686,
+    "cc_results": 6,
+    "company_record": {
+     "working_seconds": 98.857,
+     "steps": {
+      "intake": 1,
+      "execute": 2,
+      "review": 2
+     },
+     "rework": 0,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   },
+   "fix": {
+    "status": "done",
+    "run_id": "run-b448edc33d40",
+    "reason": "",
+    "seconds": 68,
+    "cc_cost_usd": 0.0136,
+    "cc_input": 50,
+    "cc_cache_write": 39258,
+    "cc_cache_read": 522169,
+    "cc_output": 4009,
+    "cc_results": 4,
+    "company_record": {
+     "working_seconds": 54.064,
+     "steps": {
+      "intake": 1,
+      "execute": 1,
+      "review": 1
+     },
+     "rework": 0,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   },
+   "github": {
+    "status": "done",
+    "run_id": "run-2fd77d34746f",
+    "reason": "",
+    "seconds": 92,
+    "cc_cost_usd": 0.0156,
+    "cc_input": 58,
+    "cc_cache_write": 43672,
+    "cc_cache_read": 572291,
+    "cc_output": 6019,
+    "cc_results": 4,
+    "company_record": {
+     "working_seconds": 71.109,
+     "steps": {
+      "intake": 1,
+      "execute": 1,
+      "review": 1
+     },
+     "rework": 0,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   },
+   "indonesian": {
+    "status": "done",
+    "run_id": "run-d827f0605f44",
+    "reason": "",
+    "seconds": 81,
+    "cc_cost_usd": 0.0146,
+    "cc_input": 48,
+    "cc_cache_write": 42220,
+    "cc_cache_read": 488899,
+    "cc_output": 5861,
+    "cc_results": 4,
+    "company_record": {
+     "working_seconds": 59.53,
+     "steps": {
+      "intake": 1,
+      "execute": 1,
+      "review": 1
+     },
+     "rework": 0,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   },
+   "content": {
+    "status": "done",
+    "run_id": "run-f428bd2bbc07",
+    "reason": "",
+    "seconds": 355,
+    "cc_cost_usd": 0.1607,
+    "cc_input": 287523,
+    "cc_cache_write": 137445,
+    "cc_cache_read": 1761276,
+    "cc_output": 69957,
+    "cc_results": 10,
+    "company_record": {
+     "working_seconds": 339.996,
+     "steps": {
+      "intake": 1,
+      "dispatch": 1,
+      "execute": 4,
+      "review": 3,
+      "integrate": 1
+     },
+     "rework": 2,
+     "refused": 1,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   },
+   "contribution": {
+    "status": "done",
+    "run_id": "run-beafdbf2d4ef",
+    "reason": "",
+    "seconds": 176,
+    "cc_cost_usd": 0.0218,
+    "cc_input": 70,
+    "cc_cache_write": 59103,
+    "cc_cache_read": 740818,
+    "cc_output": 10662,
+    "cc_results": 4,
+    "company_record": {
+     "working_seconds": 140.431,
+     "steps": {
+      "intake": 1,
+      "execute": 1,
+      "review": 1
+     },
+     "rework": 0,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   }
+  }
+ },
+ "second:hkf-r2": {
+  "version": "0.6.2",
+  "model": "haiku",
+  "engine": "claude-code",
+  "runs": {
+   "reply": {
+    "status": "done",
+    "run_id": "run-d89ac3a20661",
+    "reason": "",
+    "seconds": 81,
+    "cc_cost_usd": 0.0136,
+    "cc_input": 48,
+    "cc_cache_write": 38677,
+    "cc_cache_read": 486709,
+    "cc_output": 4875,
+    "cc_results": 4,
+    "company_record": {
+     "working_seconds": 58.896,
+     "steps": {
+      "intake": 1,
+      "execute": 1,
+      "review": 1
+     },
+     "rework": 0,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   },
+   "plan": {
+    "status": "blocked",
+    "run_id": "run-de30f703f1e9",
+    "reason": "",
+    "seconds": 544,
+    "cc_cost_usd": 0.1145,
+    "cc_input": 278,
+    "cc_cache_write": 237289,
+    "cc_cache_read": 3418423,
+    "cc_output": 96133,
+    "cc_results": 14,
+    "company_record": {
+     "working_seconds": 529.211,
+     "steps": {
+      "intake": 1,
+      "execute": 7,
+      "review": 5,
+      "escalation": 2
+     },
+     "rework": 5,
+     "refused": 2,
+     "failed": 0,
+     "escalations": 2,
+     "handoffs": []
+    }
+   },
+   "fix": {
+    "status": "done",
+    "run_id": "run-e6824aa23fc9",
+    "reason": "",
+    "seconds": 75,
+    "cc_cost_usd": 0.0141,
+    "cc_input": 50,
+    "cc_cache_write": 39158,
+    "cc_cache_read": 521460,
+    "cc_output": 5034,
+    "cc_results": 4,
+    "company_record": {
+     "working_seconds": 60.576,
+     "steps": {
+      "intake": 1,
+      "execute": 1,
+      "review": 1
+     },
+     "rework": 0,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   },
+   "github": {
+    "status": "done",
+    "run_id": "run-47de646472c8",
+    "reason": "",
+    "seconds": 89,
+    "cc_cost_usd": 0.0159,
+    "cc_input": 58,
+    "cc_cache_write": 45183,
+    "cc_cache_read": 574512,
+    "cc_output": 6205,
+    "cc_results": 4,
+    "company_record": {
+     "working_seconds": 75.863,
+     "steps": {
+      "intake": 1,
+      "execute": 1,
+      "review": 1
+     },
+     "rework": 0,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   },
+   "indonesian": {
+    "status": "done",
+    "run_id": "run-f8872e29b4bf",
+    "reason": "",
+    "seconds": 81,
+    "cc_cost_usd": 0.0144,
+    "cc_input": 48,
+    "cc_cache_write": 41638,
+    "cc_cache_read": 488793,
+    "cc_output": 5780,
+    "cc_results": 4,
+    "company_record": {
+     "working_seconds": 58.693,
+     "steps": {
+      "intake": 1,
+      "execute": 1,
+      "review": 1
+     },
+     "rework": 0,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   },
+   "content": {
+    "status": "done",
+    "run_id": "run-c9646ff95213",
+    "reason": "",
+    "seconds": 269,
+    "cc_cost_usd": 0.0803,
+    "cc_input": 60267,
+    "cc_cache_write": 95752,
+    "cc_cache_read": 1193079,
+    "cc_output": 37353,
+    "cc_results": 2,
+    "company_record": {
+     "working_seconds": 245.979,
+     "steps": {
+      "intake": 1,
+      "dispatch": 1,
+      "execute": 4,
+      "review": 3
+     },
+     "rework": 2,
+     "refused": 1,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   },
+   "contribution": {
+    "status": "done",
+    "run_id": "run-602d4c5a57c1",
+    "reason": "",
+    "seconds": 159,
+    "cc_cost_usd": 0.0225,
+    "cc_input": 66,
+    "cc_cache_write": 60259,
+    "cc_cache_read": 701894,
+    "cc_output": 12749,
+    "cc_results": 4,
+    "company_record": {
+     "working_seconds": 142.957,
+     "steps": {
+      "intake": 1,
+      "execute": 1,
+      "review": 1
+     },
+     "rework": 0,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   }
+  }
+ },
+ "second:hkf-r3": {
+  "version": "0.6.2",
+  "model": "haiku",
+  "engine": "claude-code",
+  "runs": {
+   "reply": {
+    "status": "done",
+    "run_id": "run-6251acf8a8c2",
+    "reason": "",
+    "seconds": 82,
+    "cc_cost_usd": 0.0139,
+    "cc_input": 48,
+    "cc_cache_write": 40673,
+    "cc_cache_read": 484693,
+    "cc_output": 5194,
+    "cc_results": 4,
+    "company_record": {
+     "working_seconds": 60.837,
+     "steps": {
+      "intake": 1,
+      "execute": 1,
+      "review": 1
+     },
+     "rework": 0,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   },
+   "plan": {
+    "status": "done",
+    "run_id": "run-1243a5b6b63d",
+    "reason": "",
+    "seconds": 129,
+    "cc_cost_usd": 0.0242,
+    "cc_input": 76,
+    "cc_cache_write": 61903,
+    "cc_cache_read": 787365,
+    "cc_output": 13689,
+    "cc_results": 6,
+    "company_record": {
+     "working_seconds": 107.541,
+     "steps": {
+      "intake": 1,
+      "execute": 2,
+      "review": 2
+     },
+     "rework": 1,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   },
+   "fix": {
+    "status": "done",
+    "run_id": "run-3a84d6162a70",
+    "reason": "",
+    "seconds": 81,
+    "cc_cost_usd": 0.0136,
+    "cc_input": 48,
+    "cc_cache_write": 39334,
+    "cc_cache_read": 489381,
+    "cc_output": 4762,
+    "cc_results": 4,
+    "company_record": {
+     "working_seconds": 58.344,
+     "steps": {
+      "intake": 1,
+      "execute": 1,
+      "review": 1
+     },
+     "rework": 0,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   },
+   "github": {
+    "status": "done",
+    "run_id": "run-ff7cb1144fea",
+    "reason": "",
+    "seconds": 93,
+    "cc_cost_usd": 0.0152,
+    "cc_input": 54,
+    "cc_cache_write": 43623,
+    "cc_cache_read": 538095,
+    "cc_output": 5883,
+    "cc_results": 4,
+    "company_record": {
+     "working_seconds": 70.73,
+     "steps": {
+      "intake": 1,
+      "execute": 1,
+      "review": 1
+     },
+     "rework": 0,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   },
+   "indonesian": {
+    "status": "done",
+    "run_id": "run-ac47a27dbe86",
+    "reason": "",
+    "seconds": 83,
+    "cc_cost_usd": 0.0141,
+    "cc_input": 48,
+    "cc_cache_write": 41463,
+    "cc_cache_read": 488818,
+    "cc_output": 5227,
+    "cc_results": 4,
+    "company_record": {
+     "working_seconds": 61.553,
+     "steps": {
+      "intake": 1,
+      "execute": 1,
+      "review": 1
+     },
+     "rework": 0,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   },
+   "content": {
+    "status": "blocked",
+    "run_id": "run-d0330510cffb",
+    "reason": "",
+    "seconds": 425,
+    "cc_cost_usd": 0.144,
+    "cc_input": 142616,
+    "cc_cache_write": 157677,
+    "cc_cache_read": 1972307,
+    "cc_output": 76903,
+    "cc_results": 2,
+    "company_record": {
+     "working_seconds": 408.387,
+     "steps": {
+      "intake": 1,
+      "dispatch": 1,
+      "execute": 7,
+      "review": 4,
+      "escalation": 2
+     },
+     "rework": 4,
+     "refused": 2,
+     "failed": 0,
+     "escalations": 2,
+     "handoffs": []
+    }
+   },
+   "contribution": {
+    "status": "done",
+    "run_id": "run-8a0d87a20c3a",
+    "reason": "",
+    "seconds": 205,
+    "cc_cost_usd": 0.0291,
+    "cc_input": 90,
+    "cc_cache_write": 72950,
+    "cc_cache_read": 990914,
+    "cc_output": 16587,
+    "cc_results": 2,
+    "company_record": {
+     "working_seconds": 174.356,
+     "steps": {
+      "intake": 1,
+      "execute": 2,
+      "review": 2
+     },
+     "rework": 1,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   }
+  }
+ },
+ "released:v063-r1": {
+  "version": "0.6.2",
+  "model": "haiku",
+  "engine": "claude-code",
+  "runs": {
+   "reply": {
+    "status": "done",
+    "run_id": "run-5021f6f461b3",
+    "reason": "",
+    "seconds": 76,
+    "cc_cost_usd": 0.0148,
+    "cc_input": 48,
+    "cc_cache_write": 49850,
+    "cc_cache_read": 477510,
+    "cc_output": 4647,
+    "cc_results": 4,
+    "company_record": {
+     "working_seconds": 55.253,
+     "steps": {
+      "intake": 1,
+      "execute": 1,
+      "review": 1
+     },
+     "rework": 0,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   },
+   "plan": {
+    "status": "done",
+    "run_id": "run-c159a5afb967",
+    "reason": "",
+    "seconds": 195,
+    "cc_cost_usd": 0.0282,
+    "cc_input": 80,
+    "cc_cache_write": 67178,
+    "cc_cache_read": 827444,
+    "cc_output": 19525,
+    "cc_results": 6,
+    "company_record": {
+     "working_seconds": 168.106,
+     "steps": {
+      "intake": 1,
+      "execute": 2,
+      "review": 2
+     },
+     "rework": 1,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   },
+   "fix": {
+    "status": "done",
+    "run_id": "run-2577502725a9",
+    "reason": "",
+    "seconds": 89,
+    "cc_cost_usd": 0.0134,
+    "cc_input": 48,
+    "cc_cache_write": 39254,
+    "cc_cache_read": 488113,
+    "cc_output": 4336,
+    "cc_results": 4,
+    "company_record": {
+     "working_seconds": 65.733,
+     "steps": {
+      "intake": 1,
+      "execute": 1,
+      "review": 1
+     },
+     "rework": 0,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   },
+   "github": {
+    "status": "done",
+    "run_id": "run-3fb256e37106",
+    "reason": "",
+    "seconds": 92,
+    "cc_cost_usd": 0.0151,
+    "cc_input": 56,
+    "cc_cache_write": 43638,
+    "cc_cache_read": 556297,
+    "cc_output": 5301,
+    "cc_results": 4,
+    "company_record": {
+     "working_seconds": 69.618,
+     "steps": {
+      "intake": 1,
+      "execute": 1,
+      "review": 1
+     },
+     "rework": 0,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   },
+   "indonesian": {
+    "status": "done",
+    "run_id": "run-868b8778b26e",
+    "reason": "",
+    "seconds": 86,
+    "cc_cost_usd": 0.0146,
+    "cc_input": 50,
+    "cc_cache_write": 41886,
+    "cc_cache_read": 503333,
+    "cc_output": 5801,
+    "cc_results": 4,
+    "company_record": {
+     "working_seconds": 63.397,
+     "steps": {
+      "intake": 1,
+      "execute": 1,
+      "review": 1
+     },
+     "rework": 0,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   },
+   "content": {
+    "status": "done",
+    "run_id": "run-b92af2807b5c",
+    "reason": "",
+    "seconds": 250,
+    "cc_cost_usd": 0.0999,
+    "cc_input": 115562,
+    "cc_cache_write": 113028,
+    "cc_cache_read": 1251035,
+    "cc_output": 39440,
+    "cc_results": 8,
+    "company_record": {
+     "working_seconds": 235.086,
+     "steps": {
+      "intake": 1,
+      "dispatch": 1,
+      "execute": 2,
+      "review": 2,
+      "integrate": 1
+     },
+     "rework": 1,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   },
+   "contribution": {
+    "status": "done",
+    "run_id": "run-cc4756be6b0d",
+    "reason": "",
+    "seconds": 193,
+    "cc_cost_usd": 0.0314,
+    "cc_input": 106,
+    "cc_cache_write": 77336,
+    "cc_cache_read": 1123365,
+    "cc_output": 17120,
+    "cc_results": 6,
+    "company_record": {
+     "working_seconds": 166.182,
+     "steps": {
+      "intake": 1,
+      "execute": 2,
+      "review": 2
+     },
+     "rework": 1,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   }
+  }
+ },
+ "released:v063-r2": {
+  "version": "0.6.2",
+  "model": "haiku",
+  "engine": "claude-code",
+  "runs": {
+   "reply": {
+    "status": "done",
+    "run_id": "run-9dafaf28534c",
+    "reason": "",
+    "seconds": 80,
+    "cc_cost_usd": 0.014,
+    "cc_input": 50,
+    "cc_cache_write": 40351,
+    "cc_cache_read": 519142,
+    "cc_output": 4695,
+    "cc_results": 4,
+    "company_record": {
+     "working_seconds": 58.977,
+     "steps": {
+      "intake": 1,
+      "execute": 1,
+      "review": 1
+     },
+     "rework": 0,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   },
+   "plan": {
+    "status": "done",
+    "run_id": "run-2105c5dd73f7",
+    "reason": "",
+    "seconds": 133,
+    "cc_cost_usd": 0.0247,
+    "cc_input": 76,
+    "cc_cache_write": 62843,
+    "cc_cache_read": 789390,
+    "cc_output": 14466,
+    "cc_results": 6,
+    "company_record": {
+     "working_seconds": 110.887,
+     "steps": {
+      "intake": 1,
+      "execute": 2,
+      "review": 2
+     },
+     "rework": 1,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   },
+   "fix": {
+    "status": "done",
+    "run_id": "run-dcc4512a5c14",
+    "reason": "",
+    "seconds": 89,
+    "cc_cost_usd": 0.0139,
+    "cc_input": 50,
+    "cc_cache_write": 39653,
+    "cc_cache_read": 523220,
+    "cc_output": 4428,
+    "cc_results": 4,
+    "company_record": {
+     "working_seconds": 67.642,
+     "steps": {
+      "intake": 1,
+      "execute": 1,
+      "review": 1
+     },
+     "rework": 0,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   },
+   "github": {
+    "status": "done",
+    "run_id": "run-4ab0f694caf5",
+    "reason": "",
+    "seconds": 93,
+    "cc_cost_usd": 0.0157,
+    "cc_input": 58,
+    "cc_cache_write": 44657,
+    "cc_cache_read": 580433,
+    "cc_output": 5619,
+    "cc_results": 4,
+    "company_record": {
+     "working_seconds": 71.308,
+     "steps": {
+      "intake": 1,
+      "execute": 1,
+      "review": 1
+     },
+     "rework": 0,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   },
+   "indonesian": {
+    "status": "done",
+    "run_id": "run-f252b2e8d65a",
+    "reason": "",
+    "seconds": 89,
+    "cc_cost_usd": 0.0153,
+    "cc_input": 50,
+    "cc_cache_write": 43343,
+    "cc_cache_read": 513456,
+    "cc_output": 6561,
+    "cc_results": 4,
+    "company_record": {
+     "working_seconds": 65.675,
+     "steps": {
+      "intake": 1,
+      "execute": 1,
+      "review": 1
+     },
+     "rework": 0,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   },
+   "content": {
+    "status": "done",
+    "run_id": "run-8c771d0cb439",
+    "reason": "",
+    "seconds": 488,
+    "cc_cost_usd": 0.1462,
+    "cc_input": 190879,
+    "cc_cache_write": 185306,
+    "cc_cache_read": 2709244,
+    "cc_output": 88231,
+    "cc_results": 15,
+    "company_record": {
+     "working_seconds": 471.952,
+     "steps": {
+      "intake": 1,
+      "dispatch": 1,
+      "execute": 7,
+      "review": 5,
+      "escalation": 2,
+      "integrate": 1
+     },
+     "rework": 4,
+     "refused": 2,
+     "failed": 0,
+     "escalations": 2,
+     "handoffs": []
+    }
+   },
+   "contribution": {
+    "status": "done",
+    "run_id": "run-05cb8ae9caa7",
+    "reason": "",
+    "seconds": 156,
+    "cc_cost_usd": 0.0231,
+    "cc_input": 68,
+    "cc_cache_write": 62590,
+    "cc_cache_read": 756036,
+    "cc_output": 11967,
+    "cc_results": 4,
+    "company_record": {
+     "working_seconds": 126.239,
+     "steps": {
+      "intake": 1,
+      "execute": 1,
+      "review": 1
+     },
+     "rework": 0,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   }
+  }
+ },
+ "released:v063-r3": {
+  "version": "0.6.2",
+  "model": "haiku",
+  "engine": "claude-code",
+  "runs": {
+   "reply": {
+    "status": "done",
+    "run_id": "run-482468361b9c",
+    "reason": "",
+    "seconds": 80,
+    "cc_cost_usd": 0.0138,
+    "cc_input": 48,
+    "cc_cache_write": 40523,
+    "cc_cache_read": 486737,
+    "cc_output": 4913,
+    "cc_results": 4,
+    "company_record": {
+     "working_seconds": 58.23,
+     "steps": {
+      "intake": 1,
+      "execute": 1,
+      "review": 1
+     },
+     "rework": 0,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   },
+   "plan": {
+    "status": "done",
+    "run_id": "run-c36c406ac935",
+    "reason": "",
+    "seconds": 95,
+    "cc_cost_usd": 0.0161,
+    "cc_input": 48,
+    "cc_cache_write": 45257,
+    "cc_cache_read": 485942,
+    "cc_output": 8082,
+    "cc_results": 4,
+    "company_record": {
+     "working_seconds": 73.456,
+     "steps": {
+      "intake": 1,
+      "execute": 1,
+      "review": 1
+     },
+     "rework": 0,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   },
+   "fix": {
+    "status": "done",
+    "run_id": "run-9aa6f0107488",
+    "reason": "",
+    "seconds": 80,
+    "cc_cost_usd": 0.0147,
+    "cc_input": 50,
+    "cc_cache_write": 41065,
+    "cc_cache_read": 526744,
+    "cc_output": 5564,
+    "cc_results": 4,
+    "company_record": {
+     "working_seconds": 57.817,
+     "steps": {
+      "intake": 1,
+      "execute": 1,
+      "review": 1
+     },
+     "rework": 0,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   },
+   "github": {
+    "status": "done",
+    "run_id": "run-c7291c7249d6",
+    "reason": "",
+    "seconds": 94,
+    "cc_cost_usd": 0.0156,
+    "cc_input": 56,
+    "cc_cache_write": 44163,
+    "cc_cache_read": 559708,
+    "cc_output": 6125,
+    "cc_results": 4,
+    "company_record": {
+     "working_seconds": 72.583,
+     "steps": {
+      "intake": 1,
+      "execute": 1,
+      "review": 1
+     },
+     "rework": 0,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   },
+   "indonesian": {
+    "status": "done",
+    "run_id": "run-970033a62478",
+    "reason": "",
+    "seconds": 89,
+    "cc_cost_usd": 0.0159,
+    "cc_input": 50,
+    "cc_cache_write": 44258,
+    "cc_cache_read": 526027,
+    "cc_output": 7154,
+    "cc_results": 4,
+    "company_record": {
+     "working_seconds": 66.367,
+     "steps": {
+      "intake": 1,
+      "execute": 1,
+      "review": 1
+     },
+     "rework": 0,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   },
+   "content": {
+    "status": "done",
+    "run_id": "run-4c15d9c50980",
+    "reason": "",
+    "seconds": 195,
+    "cc_cost_usd": 0.0769,
+    "cc_input": 102068,
+    "cc_cache_write": 82057,
+    "cc_cache_read": 1041651,
+    "cc_output": 28660,
+    "cc_results": 6,
+    "company_record": {
+     "working_seconds": 171.846,
+     "steps": {
+      "intake": 1,
+      "execute": 2,
+      "review": 2
+     },
+     "rework": 1,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   },
+   "contribution": {
+    "status": "done",
+    "run_id": "run-72c9ff0afdd4",
+    "reason": "",
+    "seconds": 125,
+    "cc_cost_usd": 0.0198,
+    "cc_input": 66,
+    "cc_cache_write": 51246,
+    "cc_cache_read": 712957,
+    "cc_output": 9298,
+    "cc_results": 4,
+    "company_record": {
+     "working_seconds": 97.981,
+     "steps": {
+      "intake": 1,
+      "execute": 1,
+      "review": 1
+     },
+     "rework": 0,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": []
+    }
+   }
+  }
+ }
+}

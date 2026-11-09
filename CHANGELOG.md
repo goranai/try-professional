@@ -2,6 +2,22 @@
 
 Each version of `try-professional`. `skill-customs` is listed only when it changes.
 
+## 0.6.3 (2026-11-10)
+
+Haiku runs a company. Seven everyday jobs, three times each, through Claude Code with every role on `claude-haiku-5-5`: **21 of 21 finished**, from 1.3 minutes and $0.014 for a customer reply to 5.2 minutes and $0.11 for content that needs research, at list price. Two earlier rounds finished 16 of 19 and 19 of 21; every run that didn't finish was read, and its cause fixed. [Every run](docs/research/efficiency/README.md#063-on-haiku-through-claude-code-21-runs-21-finished).
+
+### Fixed
+
+- **Reviews didn't converge.** Each review of reworked work started over and found a new list of issues, round after round, until the rework limit. A reviewer now sees its own earlier verdict, lists everything the first time, and adds only new major issues after.
+- **Reviewers asked for what no answer could give.** They sent back [placeholders] and phrases like "made with care" as unsourced facts, while asking for captions written out in full. Now only specific, checkable claims, such as a number, date, price, name, or award, need a source or a placeholder; ordinary description isn't a claim; and a placeholder for a fact the brief didn't give is the right answer.
+- **Checks a workspace can't do,** such as how a page prints, were sent back again and again. They pass when marked unverified for a person.
+- **A reviewer mistyped what it was reviewing,** a 24-character id, six times, and the run stopped. Code fills in what a review is about, so a verdict only ever applies to the work the reviewer was shown.
+- **A small model's own wording:** criteria restated in its own words now count when they're clearly the same, or in the same place in a full list; fields of its own, such as `notes_placeholder` or a reviewer's `checked`, are dropped, so they still can't take effect; a hand-in wrapped in another `payload` is unwrapped; a severity of "note" is minor; and an escalation answer that activates no department in particular asks for nothing.
+- **A tool that broke took the whole command down.** A URL with a search query in it crashed a real run. A broken tool call now costs that one call, and such a URL is refused with a reason the role can act on.
+- **The gateway's vague 400 ended steps** it would have let through a little later. It's waited out, and the step can be retried.
+- **A worker drifted.** A real one given 40 turns spent them on another repository's branches and the same check four times. At turns 15 and 30, a role is reminded to finish what's missing, with no new directions. Nothing is cut off.
+- **A duplicate went unnoticed.** A held issue about a broken link duplicated an open pull request worded differently. Before anything new is posted on GitHub, the search now also looks for the exact link, path, or code it's about, in issues and pull requests.
+
 ## 0.6.2 (2026-11-09)
 
 Specialists, without the group-chat failure. Each role keeps its own job and memory, a person talks only to the CEO, and work isn't passed around for nothing.
