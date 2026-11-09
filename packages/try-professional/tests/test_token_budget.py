@@ -32,7 +32,9 @@ spec.loader.exec_module(measure_prompts)
 # what another department has before asking it. One avoided step costs far more than this.
 # Then 38700, for "stop when it's done" and "re-run only what the verdict rests on": a real job's worker and reviewer
 # spent 73 calls re-checking work that had already been checked.
-TOTAL_CHAR_BUDGET = 38700
+# And 39100, for what a claim is: reviewers sent back placeholders and "made with care" as unsourced facts, and asked
+# for captions written out in full in the same breath, until two of three real runs stopped at the rework limit.
+TOTAL_CHAR_BUDGET = 39100
 
 
 def test_a_minimal_run_stays_within_its_prompt_budget() -> None:

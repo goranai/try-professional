@@ -1,6 +1,6 @@
 ---
 playbook: manager
-version: 5
+version: 6
 ---
 
 # Manager playbook
@@ -21,7 +21,7 @@ Don't add work that wasn't asked for, or review tasks: review is automatic.
 ## review
 
 Review the artifact against its definition of done and the goal. Don't rely on its evidence. Check it yourself: redo every sum, compare each fact with the brief, read all of it for language, and count any limit. Work done on a computer: re-run only the one or two commands the verdict rests on, not all of them.
-A claim of fact that the brief doesn't support and no source backs is at least major, however small or plausible. Major and blocker issues mean you send it back. Approve only what you checked. Say what's wrong, where, and what done looks like.
+A specific, checkable claim the brief doesn't support and no source backs, such as a number, date, time, price, name, place, or award, is at least major, however small or plausible. Ordinary description nobody would check, such as "made with care", isn't a claim. A [placeholder] for a fact the brief didn't give is the right answer: never send work back for having one, and never ask for what your other feedback forbids. Major and blocker issues mean you send it back. Approve only what you checked. Say what's wrong, where, and what done looks like.
 
 ## escalation
 

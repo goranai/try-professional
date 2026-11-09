@@ -69,23 +69,29 @@ def _stop_embedding(folder: Path) -> None:
 
 
 def _read_stream(text: str) -> dict[str, Any]:
-    final: dict[str, Any] = {}
+    """Claude Code's own account of a session. It writes a result each time a background subagent reports back; the
+    per-model usage in the last one covers the whole session, subagents included, with its list-price cost."""
+    results = []
     for line in text.splitlines():
         try:
             message = json.loads(line)
         except ValueError:
             continue
         if message.get("type") == "result":
-            final = message
-    usage = final.get("usage") or {}
+            results.append(message)
+    final = results[-1] if results else {}
+    models = (final.get("modelUsage") or {}).values()
+    total = {
+        key: sum(int(m.get(key) or 0) for m in models)
+        for key in ("inputTokens", "outputTokens", "cacheReadInputTokens", "cacheCreationInputTokens")
+    }
     return {
-        "cc_seconds": round((final.get("duration_ms") or 0) / 1000),
-        "cc_cost_usd": final.get("total_cost_usd"),
-        "cc_input": usage.get("input_tokens"),
-        "cc_cache_write": usage.get("cache_creation_input_tokens"),
-        "cc_cache_read": usage.get("cache_read_input_tokens"),
-        "cc_output": usage.get("output_tokens"),
-        "cc_turns": final.get("num_turns"),
+        "cc_cost_usd": round(sum(float(m.get("costUSD") or 0) for m in models), 4),
+        "cc_input": total["inputTokens"],
+        "cc_cache_write": total["cacheCreationInputTokens"],
+        "cc_cache_read": total["cacheReadInputTokens"],
+        "cc_output": total["outputTokens"],
+        "cc_results": len(results),
         "said": str(final.get("result") or "")[-600:],
     }
 
