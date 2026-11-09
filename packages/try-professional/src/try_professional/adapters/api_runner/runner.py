@@ -509,6 +509,12 @@ class ApiRunner:
                         {"code": "TOOL_REFUSED", "role": role.ref, "tool": call.name, "message": str(error)},
                     )
                     results.append(ToolResult(call.id, str(error), is_error=True))
+                except Exception as error:  # A tool that breaks costs one call, never the command.
+                    reason = f"{type(error).__name__}: {str(error)[:300]}"
+                    self.orchestrator.record(
+                        run_id, "tool_error", {"role": role.ref, "tool": call.name, "error": reason}
+                    )
+                    results.append(ToolResult(call.id, f"That failed: {reason}. Try another way.", is_error=True))
             if control_event is not None:
                 return [control_event]
             messages.extend(client.tool_results_messages(results))

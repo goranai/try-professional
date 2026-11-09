@@ -195,6 +195,22 @@ class TestWorkOnAComputer:
         assert ApiRunner(company, client, ROUTES).run("Look through the repository").status == "done"
         assert [s.split(" turns")[0] for s in seen] == ["You've taken 15", "You've taken 30"]
 
+    def test_a_tool_that_breaks_costs_one_call_not_the_command(
+        self, company: Orchestrator, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        import try_professional.adapters.api_runner.runner as runner_module
+
+        real = runner_module.run_tool
+
+        def breaks_once(context: Any, name: str, arguments: Any) -> str:
+            if name == "shell" and arguments.get("command") == "echo step 1":
+                raise RuntimeError("something nobody expected")
+            return real(context, name, arguments)
+
+        monkeypatch.setattr(runner_module, "run_tool", breaks_once)
+        client = BadModel(self._explores(lambda n: f"echo step {n}", hand_in_after=3))
+        assert ApiRunner(company, client, ROUTES).run("Look through the repository").status == "done"
+
     def test_the_same_command_again_and_again_is_still_stuck(self, company: Orchestrator) -> None:
         client = BadModel(self._explores(lambda n: "echo same", hand_in_after=100))
         result = ApiRunner(company, client, ROUTES).run("Look through the repository")

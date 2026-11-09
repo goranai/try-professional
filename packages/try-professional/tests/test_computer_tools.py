@@ -88,6 +88,11 @@ class TestShell:
         assert "Stopped after 3 seconds" in out
         assert time.monotonic() - started < 60
 
+    def test_a_url_with_spaces_is_refused_clearly(self, tmp_path: Path) -> None:
+        """A real role passed a URL with a search query and quotes in it, which once took a whole run down."""
+        with pytest.raises(ToolRefused, match="can't contain spaces"):
+            run_tool(_context(tmp_path), "web_fetch", {"url": 'https://x.example/sproutsocial "best times to post"'})
+
     def test_without_a_person_it_refuses(self, tmp_path: Path) -> None:
         with pytest.raises(ToolRefused, match="approve"):
             run_tool(_context(tmp_path), "shell", {"command": "git push origin main"})

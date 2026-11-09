@@ -461,15 +461,19 @@ def _stop_tree(process: subprocess.Popen[str]) -> None:
 
 
 def _fetch(context: ToolContext, url: str) -> str:
+    url = url.strip()
     if not re.match(r"https?://", url):
         raise ToolRefused("only http and https URLs can be fetched")
+    if re.search(r"[\s\x00-\x1f\x7f]", url):
+        # A real role passed a URL with a search query and quotes in it, which once took a whole run down.
+        raise ToolRefused("a URL can't contain spaces, quotes around words, or line breaks. Encode it, or use search")
     request = urllib.request.Request(url, headers={"User-Agent": "try-professional"})
     try:
         with urllib.request.urlopen(request, timeout=60) as response:
             body = response.read(MAX_FETCH_BYTES).decode("utf-8", errors="replace")
             status = response.status
-    except (OSError, ValueError) as error:
-        return f"Couldn't fetch {url}: {error}"
+    except Exception as error:  # Anything the web does is the role's to read, never the run's to crash on.
+        return f"Couldn't fetch {url}: {type(error).__name__}: {error}"
     if context.note_source is not None:
         context.note_source(url, "")
     text = re.sub(r"(?s)<(script|style)\b.*?</\1>", " ", body)
