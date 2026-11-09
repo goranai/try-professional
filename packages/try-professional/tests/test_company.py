@@ -513,7 +513,7 @@ class TestWorkState:
             return None
 
         _run(company, override=override)
-        assert self._state(company).counters.invalid_outputs >= 1
+        assert all("invented" not in a.payload for a in self._state(company).artifacts.values())
 
 
 class TestBrief:

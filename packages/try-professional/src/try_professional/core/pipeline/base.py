@@ -161,10 +161,31 @@ def _same_words(text: str) -> str:
     return " ".join(text.split()).casefold()
 
 
+# How close a reworded criterion must be to count as the same one. Small models restate criteria in their own words:
+# "The plan covers five posts" for "The plan fits on one page and covers exactly five posts" is far below this.
+SAME_CRITERION = 0.8
+
+
 def _unreported(wanted: list[str], reported: Any) -> list[str]:
-    """Which criteria an output doesn't report on, so a brief can't simply be ignored."""
-    said = {_same_words(item["criterion"]) for item in reported or []}
-    return [criterion for criterion in wanted if _same_words(criterion) not in said]
+    """Which criteria an output doesn't report on, so a brief can't simply be ignored. A criterion copied with small
+    changes, such as a word or punctuation, still counts; each reported one counts for one criterion at most."""
+    from difflib import SequenceMatcher
+
+    said = [_same_words(item["criterion"]) for item in reported or []]
+    unused = list(said)
+    missing = []
+    for criterion in wanted:
+        exact = _same_words(criterion)
+        if exact in unused:
+            unused.remove(exact)
+            continue
+        scored = [(SequenceMatcher(None, exact, other).ratio(), other) for other in unused]
+        best = max(scored, default=(0.0, ""))
+        if best[0] >= SAME_CRITERION:
+            unused.remove(best[1])
+        else:
+            missing.append(criterion)
+    return missing
 
 
 def _not_done(state: RunState) -> list[str]:

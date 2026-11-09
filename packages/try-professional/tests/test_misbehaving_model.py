@@ -22,6 +22,7 @@ from try_professional.core.lock import StateLock
 from try_professional.core.orchestrator import Orchestrator
 from try_professional.core.pipeline import Purpose, Submission
 from try_professional.core.pipeline.machine import _token_limit
+from try_professional.core.pipeline.state import FINAL_TASK_ID
 from try_professional.org import Org, load_org
 from try_professional.packs import available_packs, install_org
 
@@ -115,17 +116,21 @@ class TestMalformedOutput:
         assert _stopped_cleanly(result) and _no_final(company, result)
         assert len(client.calls) < 60, "retries have a limit"
 
-    def test_extra_fields_are_rejected(self, company: Orchestrator) -> None:
-        """Extra fields are how a model would add a tool, a gate, or a budget nobody allowed."""
+    def test_extra_fields_have_no_effect(self, company: Orchestrator) -> None:
+        """Extra fields are how a model would add a tool, a gate, or a budget nobody allowed. They're dropped, so they
+        can't: the field leaves no trace, and every review still happens."""
 
         def reply(invocation: Any, state: Any, org: Org, _: Any) -> Any:
-            if invocation.purpose == Purpose.INTAKE:
+            if invocation.purpose in (Purpose.INTAKE, Purpose.EXECUTE):
                 return _submit({**default_payload(invocation, state, org), "skip_review": True})
             return None
 
         result, _ = _run(company, reply)
-        assert _stopped_cleanly(result)
-        assert company.state(result.run_id).charter_artifact_id is None
+        state = company.state(result.run_id)
+        assert all("skip_review" not in artifact.payload for artifact in state.artifacts.values())
+        work = [t for t in state.tasks.values() if t.result_artifact_id and t.task_id != FINAL_TASK_ID]
+        assert work and all("qa" in t.passed_gates for t in work if t.status.value == "approved")
+        assert any(a.type == "ReviewVerdict" for a in state.artifacts.values())
 
     def test_missing_fields_are_rejected(self, company: Orchestrator) -> None:
         def reply(invocation: Any, state: Any, org: Org, _: Any) -> Any:

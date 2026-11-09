@@ -208,7 +208,7 @@ class TestItHasToFinishARealCommand:
         def slips_once(invocation: Any, state: Any, org: Any) -> dict[str, Any] | None:
             if invocation.purpose == Purpose.INTAKE and not seen["rejected"]:
                 seen["rejected"] = True
-                return {**default_payload(invocation, state, org), "made_up_field": 1}
+                return {k: v for k, v in default_payload(invocation, state, org).items() if k != "restated_goal"}
             return None
 
         report = check_model(Fake(on_command=slips_once), "m")

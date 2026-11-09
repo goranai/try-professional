@@ -37,7 +37,7 @@ def _span(values: list[float], unit: str = "", scale: float = 1) -> str:
     if not values:
         return "-"
     shown = [v / scale for v in values]
-    return f"{mean(shown):.1f}{unit} ({min(shown):.1f}–{max(shown):.1f})"
+    return f"{mean(shown):.1f}{unit} ({min(shown):.1f} to {max(shown):.1f})"
 
 
 def table(jobs: dict[str, list[dict[str, Any]]]) -> str:

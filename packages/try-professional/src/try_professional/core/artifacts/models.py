@@ -549,6 +549,10 @@ def settle_payload(type_name: str, payload: Any) -> Any:
         payload = decoded if isinstance(decoded, dict) else payload
     if model is None or not isinstance(payload, dict):
         return payload
+    inner = payload.get("payload")
+    if isinstance(inner, dict) and "payload" not in model.model_fields:
+        # The whole hand-in wrapped once more, as {"payload": {...}}. A real CEO did this answering an escalation.
+        payload = {**{k: v for k, v in payload.items() if k != "payload"}, **inner}
     return _settle(model, payload, top=True)
 
 
@@ -614,10 +618,14 @@ def _settle(model: type[BaseModel], data: dict[str, Any], *, top: bool = False) 
         for wrapper in ("notes", "language"):
             if wrapper not in fields:
                 out.pop(wrapper, None)
-        if model.__name__ == "ReviewVerdict":
-            # Everything a verdict decides is in its own fields. Anything else a reviewer adds is commentary: real
-            # reviewers added "checked", "uncertainty", "decision_rationale", "not_verified", and more.
-            out = {key: value for key, value in out.items() if key in fields}
+        # A flag named on its own is moved to the flags, never dropped: flags decide which reviews run.
+        loose = {name: out.pop(name) for name in list(out) if name in Flags.model_fields and name not in fields}
+        if loose:
+            existing = out.get("flags")
+            out["flags"] = {**(existing if isinstance(existing, dict) else {}), **loose}
+        # Anything else unknown at the top is commentary, such as "notes_placeholder" or a reviewer's "checked". A
+        # hand-in of the wrong kind is still refused, for the fields it's missing.
+        out = {key: value for key, value in out.items() if key in fields or key == "flags"}
     for name, info in fields.items():
         # One item where a list of text belongs: "acceptance": "It works", for ["It works"].
         if isinstance(out.get(name), str) and _is_text_list(info.annotation):

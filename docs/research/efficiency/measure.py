@@ -28,8 +28,8 @@ GOALS = {
     "editors. Report its name, its star count, and the first heading in its README. Don't open issues or PRs.",
     "indonesian": "Tulis balasan dua kalimat untuk pelanggan yang bertanya apakah kami buka hari Minggu. Fakta: kami "
     "buka Senin sampai Sabtu, pukul 08.00 sampai 17.00.",
-    "content": "Make content for our bakery's new sourdough and get it ready to post on Instagram: find out what people "
-    "like about sourdough, write one post with a caption and hashtags, and say the best time to post it.",
+    "content": "Make content for our bakery's new sourdough and get it ready to post on Instagram: find out what "
+    "people like about sourdough, write one post with a caption and hashtags, and say the best time to post it.",
     "contribution": "Find one real typo or broken link in the README of the GitHub repository charmbracelet/glow (read "
     "it with gh or git), check it's really wrong on the main branch and not already reported in its issues, then "
     "open a GitHub issue about it with gh issue create.",
@@ -60,7 +60,11 @@ def run(out: Path, label: str, model: str) -> None:
         started = time.time()
         try:
             result = company.run(goal, client=client, model=model)
-            row: dict[str, Any] = {"status": result.status, "run_id": result.run_id, "reason": (result.reason or "")[:300]}
+            row: dict[str, Any] = {
+                "status": result.status,
+                "run_id": result.run_id,
+                "reason": (result.reason or "")[:300],
+            }
         except Exception as error:  # A command that errors out is a result too.
             row = {"status": "error", "run_id": "", "reason": f"{type(error).__name__}: {str(error)[:300]}"}
         row.update(seconds=round(time.time() - started), folder=str(folder / "co"))
@@ -76,8 +80,8 @@ def report(out: Path) -> None:
     from try_professional.core.efficiency import measure
 
     data = json.loads(out.read_text(encoding="utf-8"))
-    for label, block in data.items():
-        for name, row in block["runs"].items():
+    for block in data.values():
+        for row in block["runs"].values():
             audit = Path(row["folder"]) / ".trypro" / "runs" / row["run_id"] / "audit.jsonl"
             if row.get("run_id") and audit.is_file():
                 row["efficiency"] = measure(audit, row["run_id"]).to_dict()

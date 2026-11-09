@@ -186,7 +186,16 @@ def test_flags_in_the_wrong_place_are_still_refused() -> None:
         parse_payload("PublicContent", settle_payload("PublicContent", _content(flags={"public_facing": True})))
 
 
-def test_a_wrong_top_level_field_is_still_refused() -> None:
-    """At the top, an unknown field usually means the wrong type of hand-in altogether."""
-    with pytest.raises(ArtifactError, match="title"):
-        parse_payload("PublicContent", settle_payload("PublicContent", _content(title="Week one")))
+def test_extra_fields_are_dropped_and_a_wrong_kind_of_hand_in_is_still_refused() -> None:
+    """Small models add fields of their own, such as "notes_placeholder". A hand-in of the wrong kind still lacks what
+    its kind needs, so it's still refused, and a flag named on its own is kept as a flag."""
+    parsed = parse_payload("PublicContent", settle_payload("PublicContent", _content(notes_placeholder="x", title="W")))
+    assert parsed.body == CONTENT["body"]  # type: ignore[attr-defined]
+    with pytest.raises(ArtifactError, match="audience"):
+        parse_payload("PublicContent", settle_payload("PublicContent", {"summary": "A code change", "files": []}))
+    assert settle_payload("PublicContent", _content(public_facing=True))["flags"] == {"public_facing": True}
+
+
+def test_a_hand_in_wrapped_once_more_is_unwrapped() -> None:
+    answer = {"payload": {"decision": "resume", "guidance": "Resubmit it"}}
+    assert parse_payload("EscalationResolution", settle_payload("EscalationResolution", answer)).decision == "resume"  # type: ignore[attr-defined]
