@@ -24,7 +24,7 @@ import json
 import re
 from typing import Any
 
-from ...core.artifacts import Flags
+from ...core.artifacts import PAYLOAD_TYPES, Flags, settle_flags
 from ...core.audit import read_records
 from ...core.orchestrator import Orchestrator
 from ...core.pipeline import (
@@ -331,6 +331,8 @@ class McpService:
         invocation = state.invocations[invocation_id]
         sent = system_prompt(self.org.role(role), self.org) + self._assignment(state, invocation)
         self._charge(run_id, invocation_id, role, sent, json.dumps(payload, ensure_ascii=False))
+        if "flags" not in PAYLOAD_TYPES[invocation.output_type].model_fields:
+            payload, flags = settle_flags(payload, flags)
         try:
             parsed_flags = Flags.model_validate(flags or {})
         except ValueError as error:

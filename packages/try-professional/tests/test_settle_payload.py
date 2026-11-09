@@ -134,6 +134,38 @@ def test_a_task_without_an_id_and_a_review_in_its_own_words() -> None:
     assert [i.severity for i in parsed.issues] == ["minor", "blocker"]  # type: ignore[attr-defined]
 
 
+def test_a_large_jobs_wording() -> None:
+    """From a real three-department job on step-5-preview, each of which refused work."""
+    from try_professional.core.artifacts import settle_flags
+
+    tasks = {"work_package_id": "wp1", "tasks": [
+        {"id": "t1", "owner_role": "marketing/social", "output_type": "PublicContent",
+         "brief": {"title": "Write the post", "goal": "One post", "expected_output": "A post",
+                   "definition_of_done": ["One post"]}},
+        {"owner_role": "marketing/social", "output_type": "PublicContent", "goal": "Pick the time. Use the research.",
+         "expected_output": "A time", "definition_of_done": ["A time"], "memory": [], "skills": []},
+    ]}  # fmt: skip
+    parsed = parse_payload("TaskPlan", settle_payload("TaskPlan", tasks))
+    assert [(t.id, t.title) for t in parsed.tasks] == [("t1", "Write the post"), ("pick-the-time", "Pick the time")]  # type: ignore[attr-defined]
+    answer = {"decision": "amend_plan", "activate_departments": [{"id": "research/research-lead", "reason": "facts"}],
+              "added_work_packages": [{"id": "p2", "title": "Find what people like", "department": "research",
+                                       "description": "Five reasons people like sourdough, with sources"}]}  # fmt: skip
+    resolved = parse_payload("EscalationResolution", settle_payload("EscalationResolution", answer))
+    assert resolved.activate_departments[0].id == "research"  # type: ignore[attr-defined]
+    assert resolved.added_work_packages[0].acceptance == [  # type: ignore[attr-defined]
+        "Done as described: Five reasons people like sourdough, with sources"
+    ]
+    finding = {"statement": "People like the tang", "sources": ["https://x.example"], "confidence": "moderate"}
+    assert (
+        settle_payload("ResearchReport", {"question": "q", "findings": [finding, {**finding, "confidence": 0.9}]})[
+            "findings"
+        ][1]["confidence"]
+        == "high"
+    )
+    payload, flags = settle_flags(_content(flags={"public_facing": True}), {"touches_license": False})
+    assert "flags" not in payload and flags == {"touches_license": False, "public_facing": True}, "moved, not lost"
+
+
 def test_flags_in_the_wrong_place_are_still_refused() -> None:
     """Flags decide which reviews run, so they're never quietly dropped."""
     with pytest.raises(ArtifactError, match="flags"):

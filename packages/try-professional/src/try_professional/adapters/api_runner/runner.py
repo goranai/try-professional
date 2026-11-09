@@ -12,7 +12,15 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Protocol
 
-from ...core.artifacts import ArtifactError, Flags, parse_payload, settle_notes, settle_payload
+from ...core.artifacts import (
+    PAYLOAD_TYPES,
+    ArtifactError,
+    Flags,
+    parse_payload,
+    settle_flags,
+    settle_notes,
+    settle_payload,
+)
 from ...core.orchestrator import Orchestrator
 from ...core.pipeline import (
     AskHuman,
@@ -554,9 +562,12 @@ class ApiRunner:
             if action.purpose == Purpose.EXECUTE:
                 payload, notes = settle_notes(payload, notes)
             payload = settle_payload(action.output_type, payload)
+            raw_flags = arguments.get("flags")
+            if "flags" not in PAYLOAD_TYPES[action.output_type].model_fields:
+                payload, raw_flags = settle_flags(payload, raw_flags)
             try:
                 parse_payload(action.output_type, payload)
-                flags = Flags.model_validate(arguments.get("flags") or {})
+                flags = Flags.model_validate(raw_flags or {})
                 if notes is not None:
                     parse_payload("WorkNotes", notes)
             except (ArtifactError, ValueError) as error:

@@ -458,8 +458,19 @@ _ALIASES: dict[str, dict[str, tuple[str, ...]]] = {
     },
     "Handoff": {"because": ("reason", "why", "justification", "rationale", "needs")},
     "DepartmentActivation": {"id": ("department", "department_id", "dept", "name"), "reason": ("why", "rationale")},
+    "TaskSpec": {
+        "title": ("name", "task", "summary"),
+        "goal": ("description", "objective", "instructions"),
+        "expected_output": ("output", "deliverable"),
+        "definition_of_done": ("acceptance", "acceptance_criteria", "done_when", "criteria"),
+        "relevant_memory": ("memory",),
+        "relevant_skills": ("skills",),
+        "depends_on": ("dependencies",),
+    },
+    "Finding": {"confidence": ("certainty", "confidence_level")},
     "WorkPackage": {
         "id": ("package_id", "work_package_id", "key"),
+        "depends_on": ("dependencies",),
         "owner_department": ("department", "owner", "owner_dept", "department_id"),
         "acceptance": (
             "acceptance_criteria",
@@ -482,6 +493,37 @@ _SEVERITY = {
     "low": "minor", "info": "minor", "informational": "minor", "nit": "minor", "nitpick": "minor",
     "suggestion": "minor", "trivial": "minor", "cosmetic": "minor",
 }  # fmt: skip
+
+
+def _confidence(value: Any) -> Any:
+    """'moderate', 'very high', or 0.8, as low, medium, or high. Anything else stays, and is refused."""
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, int | float):
+        return "high" if value >= 0.7 else "medium" if value >= 0.4 else "low"
+    if not isinstance(value, str):
+        return value
+    said = value.strip().lower()
+    for level, words in (("high", ("high", "strong", "certain")), ("medium", ("medium", "moderate", "mid", "fair")),
+                         ("low", ("low", "weak", "uncertain", "tentative"))):  # fmt: skip
+        if any(word in said for word in words):
+            return level
+    return value
+
+
+def settle_flags(payload: Any, flags: Any) -> tuple[Any, Any]:
+    """Flags put inside the payload are moved to where they belong, never dropped: they decide which reviews run.
+    A flag set in either place stays set."""
+    if not isinstance(payload, dict) or not isinstance(payload.get("flags"), dict):
+        return payload, flags
+    inside = payload["flags"]
+    payload = {key: value for key, value in payload.items() if key != "flags"}
+    merged = dict(flags) if isinstance(flags, dict) else {}
+    for name, value in inside.items():
+        merged[name] = bool(merged.get(name)) or value is True
+    return payload, merged
+
+
 # A reviewer's own account of how it checked. Kept nowhere, and never a reason to refuse its verdict.
 _REVIEW_NARRATIVE = ("summary", "checks_performed", "checks", "verification", "evidence", "comments", "rationale")
 # Extra detail on a review issue that's worth keeping, folded into its description.
@@ -529,6 +571,21 @@ def _settle(model: type[BaseModel], data: dict[str, Any], *, top: bool = False) 
             out["unverified"] = True
         if not out.get("source") and not out.get("unverified"):
             out["unverified"] = True
+    if model.__name__ == "TaskSpec" and isinstance(out.get("brief"), dict):
+        # A task written as {"brief": {...}}: the brief is the task.
+        out = {**out.pop("brief"), **out}
+    if model.__name__ == "TaskSpec" and not out.get("title") and isinstance(out.get("goal"), str):
+        out["title"] = out["goal"].split(".")[0][:80]
+    if model.__name__ == "WorkPackage" and not out.get("acceptance") and isinstance(out.get("description"), str):
+        # Checkable as written: a reviewer holds the work to exactly what was asked.
+        out["acceptance"] = [f"Done as described: {out['description']}"]
+    if model.__name__ in ("WorkPackage", "DepartmentActivation", "Handoff"):
+        for name in ("owner_department", "id", "from_department", "to_department"):
+            role_for_department = isinstance(out.get(name), str) and "/" in out[name]
+            if role_for_department and (name != "id" or model.__name__ == "DepartmentActivation"):
+                out[name] = out[name].split("/", 1)[0]  # A role given for its department.
+    if model.__name__ == "Finding":
+        out["confidence"] = _confidence(out.get("confidence"))
     if model.__name__ in ("WorkPackage", "TaskSpec") and not out.get("id") and isinstance(out.get("title"), str):
         # A name for it, from its own title. Nothing it says changes.
         out["id"] = re.sub(r"[^a-z0-9]+", "-", out["title"].lower()).strip("-")[:40] or out.get("id")

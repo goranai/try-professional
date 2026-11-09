@@ -29,6 +29,7 @@ from .models import (
     artifact_schemas,
     make_artifact,
     parse_payload,
+    settle_flags,
     settle_notes,
     settle_payload,
 )
@@ -62,6 +63,7 @@ __all__ = [
     "artifact_schemas",
     "make_artifact",
     "parse_payload",
+    "settle_flags",
     "settle_notes",
     "settle_payload",
 ]
