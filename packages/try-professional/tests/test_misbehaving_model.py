@@ -397,6 +397,27 @@ class TestDishonestReviews:
         assert result.status != "done"
         assert company.state(result.run_id).counters.rework_loops == 0
 
+    def test_a_second_review_sees_the_first(self, company: Orchestrator) -> None:
+        """Reworked work drew a new list of issues each round, until real runs stopped at the rework limit. A reviewer
+        now sees its earlier verdict, and checks that list."""
+        prompts: list[str] = []
+        sent_back: list[bool] = []
+
+        def reply(invocation: Any, state: Any, org: Org, request: Any) -> Any:
+            if invocation.purpose == Purpose.REVIEW and invocation.task_id != FINAL_TASK_ID:
+                prompts.append(str(request.messages[0]["content"]))
+                if not sent_back:
+                    sent_back.append(True)
+                    issues = [{"severity": "major", "description": "The total is wrong"}]
+                    return _submit({**default_payload(invocation, state, org), "decision": "changes_requested",
+                                    "issues": issues})  # fmt: skip
+            return None
+
+        _run(company, reply)
+        assert len(prompts) >= 2
+        assert "ReviewVerdict" not in prompts[0].split("## Goal")[1] or "The total is wrong" not in prompts[0]
+        assert "The total is wrong" in prompts[1], "the second review is shown the first one's issues"
+
     def test_a_verdict_only_ever_applies_to_what_the_reviewer_was_shown(self, company: Orchestrator) -> None:
         """Code fills in what a review is about. A real reviewer mistyped the id six times; one naming another
         artifact on purpose can't move its verdict there either."""

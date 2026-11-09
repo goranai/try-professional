@@ -139,3 +139,19 @@ class TestEveryRunSaysWhatItCost:
         report = measure(audit, "r")
         assert report.waiting_seconds == 3600 and report.working_seconds == 300
         assert report.lines()[0].startswith("Took 5.0 min of work, plus 60.0 waiting for a person")
+
+
+class TestReviewsConverge:
+    """Reworked work drew a new list of issues each round, until real runs stopped at the rework limit."""
+
+    def test_criteria_reworded_in_place_still_count(self) -> None:
+        from try_professional.core.pipeline.base import _unreported
+
+        wanted = [
+            "The plan contains exactly five Instagram posts for the bakery's first week.",
+            "Each post has a caption.",
+        ]
+        said = [{"criterion": "The plan has five posts for week one"}, {"criterion": "Every post has its caption"}]
+        assert _unreported(wanted, said) == []
+        assert _unreported(wanted, said[:1]) == wanted, "with one left out, nothing can be paired by place"
+        assert _unreported(wanted, [said[0], {"criterion": "The logo is blue"}]) == ["Each post has a caption."]

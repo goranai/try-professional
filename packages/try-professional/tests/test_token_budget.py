@@ -34,7 +34,9 @@ spec.loader.exec_module(measure_prompts)
 # spent 73 calls re-checking work that had already been checked.
 # And 39100, for what a claim is: reviewers sent back placeholders and "made with care" as unsourced facts, and asked
 # for captions written out in full in the same breath, until two of three real runs stopped at the rework limit.
-TOTAL_CHAR_BUDGET = 39100
+# And 39200: a reviewer checks its own earlier verdict instead of starting over. Real reworked work drew a new list
+# of issues each round until it stopped at the rework limit.
+TOTAL_CHAR_BUDGET = 39200
 
 
 def test_a_minimal_run_stays_within_its_prompt_budget() -> None:

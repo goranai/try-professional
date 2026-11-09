@@ -40,6 +40,18 @@ def _claude() -> str:
 
 
 def _trypro(folder: Path, *args: str) -> None:
+    """With retries: on a busy machine, Windows sometimes fails to start a process (0xC0000142), which isn't ours."""
+    for attempt in range(4):
+        try:
+            _trypro_once(folder, *args)
+            return
+        except subprocess.CalledProcessError:
+            if attempt == 3:
+                raise
+            time.sleep(30 * (attempt + 1))
+
+
+def _trypro_once(folder: Path, *args: str) -> None:
     subprocess.run(
         [sys.executable, "-m", "try_professional.cli", *args],
         cwd=folder,

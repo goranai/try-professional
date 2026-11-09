@@ -164,6 +164,8 @@ def _same_words(text: str) -> str:
 # How close a reworded criterion must be to count as the same one. Small models restate criteria in their own words:
 # "The plan covers five posts" for "The plan fits on one page and covers exactly five posts" is far below this.
 SAME_CRITERION = 0.8
+# Looser, for a criterion in the same place in a list of the same length.
+SAME_IN_PLACE = 0.5
 
 
 def _unreported(wanted: list[str], reported: Any) -> list[str]:
@@ -185,6 +187,11 @@ def _unreported(wanted: list[str], reported: Any) -> list[str]:
             unused.remove(best[1])
         else:
             missing.append(criterion)
+    if missing and len(said) == len(wanted):
+        # Every criterion reported, in order, each in its own words: pair them by place, if each is still the same
+        # thing. A real worker wrote "The plan has five posts" for "The plan contains exactly five Instagram posts".
+        paired = dict(zip(wanted, said, strict=True))
+        missing = [c for c in missing if SequenceMatcher(None, _same_words(c), paired[c]).ratio() < SAME_IN_PLACE]
     return missing
 
 

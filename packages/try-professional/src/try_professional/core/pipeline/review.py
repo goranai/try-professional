@@ -59,10 +59,21 @@ class StepReview(StepEscalation):
                     result_id,
                     *([task.brief_artifact_id] if task.brief_artifact_id else []),
                     *self.work_behind(task),
+                    *self.earlier_verdicts(task, gate),
                 ],
             )
             return
         self.approve(task)
+
+    def earlier_verdicts(self, task: TaskState, gate: str) -> list[str]:
+        """This gate's earlier verdicts on the same task. Without them, each review of reworked work started over and
+        found new things, round after round, until real runs stopped at the rework limit."""
+        return [
+            artifact.artifact_id
+            for artifact in self.state.artifacts.values()
+            if artifact.type == "ReviewVerdict" and artifact.task_id == task.task_id
+            and artifact.payload.get("gate") == gate
+        ]  # fmt: skip
 
     def work_behind(self, task: TaskState) -> list[str]:
         """A final report summarizes other work. A reviewer given only the summary can't check it, and said so."""
