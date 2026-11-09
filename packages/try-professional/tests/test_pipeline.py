@@ -409,10 +409,11 @@ class TestReview:
         review = next(a for a in actions if a.kind == "invoke_role")
         assert review.role == "engineering/qa" and review.gate == "qa"
 
-        wrong = {"gate": "qa", "subject_artifact_id": "art-wrong", "decision": "approve"}
+        wrong = {"gate": "qa", "subject_artifact_id": "x", "decision": "approve",
+                 "issues": [{"severity": "blocker", "description": "It doesn't build"}]}  # fmt: skip
         state, _ = advance(state, Submission(invocation_id=review.invocation_id, actor=review.role, payload=wrong), org)
         assert state.tasks["wp1/t1"].status == TaskStatus.IN_REVIEW
-        assert "subject_artifact_id" in state.invocations[review.invocation_id].feedback[0]
+        assert "can't list major or blocker issues" in state.invocations[review.invocation_id].feedback[0]
 
         with pytest.raises(IllegalEvent, match="WRONG_ACTOR"):
             advance(

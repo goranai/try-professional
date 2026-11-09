@@ -392,14 +392,20 @@ class TestDishonestReviews:
         assert result.status != "done"
         assert company.state(result.run_id).counters.rework_loops == 0
 
-    def test_a_review_of_the_wrong_thing_is_rejected(self, company: Orchestrator) -> None:
+    def test_a_verdict_only_ever_applies_to_what_the_reviewer_was_shown(self, company: Orchestrator) -> None:
+        """Code fills in what a review is about. A real reviewer mistyped the id six times; one naming another
+        artifact on purpose can't move its verdict there either."""
+
         def reply(invocation: Any, state: Any, org: Org, _: Any) -> Any:
             if invocation.purpose == Purpose.REVIEW:
                 return _submit({**default_payload(invocation, state, org), "subject_artifact_id": "art-nope"})
             return None
 
         result, _ = _run(company, reply)
-        assert result.status != "done"
+        state = company.state(result.run_id)
+        verdicts = [a for a in state.artifacts.values() if a.type == "ReviewVerdict"]
+        assert verdicts and all(v.payload["subject_artifact_id"] in state.artifacts for v in verdicts)
+        assert all(v.payload["subject_artifact_id"] != "art-nope" for v in verdicts)
 
     def test_declaring_no_flags_doesnt_avoid_legal(self, company: Orchestrator) -> None:
         def reply(invocation: Any, state: Any, org: Org, _: Any) -> Any:

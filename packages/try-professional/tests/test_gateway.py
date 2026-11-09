@@ -70,8 +70,19 @@ def test_a_vague_refusal_that_no_shape_gets_past_is_reported(monkeypatch: pytest
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(400, json=VAGUE)
 
-    with pytest.raises(ClientError, match="Invalid request"):
+    with pytest.raises(ClientError, match="Invalid request") as refused:
         _client(handler, monkeypatch).complete(_request())
+    assert refused.value.retryable, "a passing upstream failure: the step can be tried again"
+
+
+def test_a_vague_refusal_is_waited_out_after_every_shape(monkeypatch: pytest.MonkeyPatch) -> None:
+    """In measured runs, the same request went through a little later."""
+    replies = iter([httpx.Response(400, json=VAGUE)] * 5)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return next(replies, httpx.Response(200, json=OK))
+
+    assert _client(handler, monkeypatch).complete(_request()).text == "hi"
 
 
 def test_a_clear_refusal_isnt_retried(monkeypatch: pytest.MonkeyPatch) -> None:

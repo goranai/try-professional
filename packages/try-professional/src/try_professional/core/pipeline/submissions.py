@@ -53,6 +53,10 @@ def _on_submission(step: _Step, event: Submission) -> None:
     if invocation.purpose == Purpose.EXECUTE:
         submitted, submitted_notes = settle_notes(submitted, submitted_notes)
     submitted = settle_payload(invocation.output_type, submitted)
+    if invocation.purpose == Purpose.REVIEW and isinstance(submitted, dict):
+        # Which work and which review this is, code already knows. A real reviewer mistyped the 24-character id six
+        # times, and the run stopped over it.
+        submitted = {**submitted, "subject_artifact_id": invocation.subject_artifact_id, "gate": invocation.gate}
     try:
         parsed = parse_payload(invocation.output_type, submitted)
     except ArtifactError as error:

@@ -166,6 +166,20 @@ def test_a_large_jobs_wording() -> None:
     assert "flags" not in payload and flags == {"touches_license": False, "public_facing": True}, "moved, not lost"
 
 
+def test_a_reviews_commentary_and_an_activation_of_nothing() -> None:
+    """From repeated real runs: reviewers added their own fields, and a CEO asked to activate no department."""
+    verdict = {"gate": "qa", "subject_artifact_id": "a", "decision": "approve", "checked": ["wc -w"],
+               "uncertainty": "none", "decision_rationale": "fine", "not_verified": [],
+               "issues": [{"severity": "note", "description": "Verified the word count independently"}]}  # fmt: skip
+    parsed = parse_payload("ReviewVerdict", settle_payload("ReviewVerdict", verdict))
+    assert parsed.decision == "approve" and parsed.issues[0].severity == "minor"  # type: ignore[attr-defined]
+    answer = {"decision": "resume", "guidance": "Resubmit the review",
+              "activate_departments": [{"reason": "Only Marketing must act"}]}  # fmt: skip
+    assert (
+        parse_payload("EscalationResolution", settle_payload("EscalationResolution", answer)).activate_departments == []
+    )  # type: ignore[attr-defined]
+
+
 def test_flags_in_the_wrong_place_are_still_refused() -> None:
     """Flags decide which reviews run, so they're never quietly dropped."""
     with pytest.raises(ArtifactError, match="flags"):

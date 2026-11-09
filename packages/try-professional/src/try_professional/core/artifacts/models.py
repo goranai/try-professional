@@ -491,7 +491,8 @@ _SEVERITY = {
     "critical": "blocker", "severe": "blocker", "blocking": "blocker",
     "high": "major", "medium": "major", "moderate": "major", "important": "major", "serious": "major",
     "low": "minor", "info": "minor", "informational": "minor", "nit": "minor", "nitpick": "minor",
-    "suggestion": "minor", "trivial": "minor", "cosmetic": "minor",
+    "suggestion": "minor", "trivial": "minor", "cosmetic": "minor", "note": "minor", "observation": "minor",
+    "fyi": "minor", "none": "minor", "positive": "minor", "praise": "minor",
 }  # fmt: skip
 
 
@@ -586,6 +587,14 @@ def _settle(model: type[BaseModel], data: dict[str, Any], *, top: bool = False) 
                 out[name] = out[name].split("/", 1)[0]  # A role given for its department.
     if model.__name__ == "Finding":
         out["confidence"] = _confidence(out.get("confidence"))
+    if model.__name__ == "EscalationResolution" and isinstance(out.get("activate_departments"), list):
+        # Asking to activate no department in particular asks for nothing. A real one wrote only a reason.
+        named = ("id", "department", "department_id", "dept", "name")
+        out["activate_departments"] = [
+            item
+            for item in out["activate_departments"]
+            if not isinstance(item, dict) or any(item.get(n) for n in named)
+        ]
     if model.__name__ in ("WorkPackage", "TaskSpec") and not out.get("id") and isinstance(out.get("title"), str):
         # A name for it, from its own title. Nothing it says changes.
         out["id"] = re.sub(r"[^a-z0-9]+", "-", out["title"].lower()).strip("-")[:40] or out.get("id")
@@ -606,8 +615,9 @@ def _settle(model: type[BaseModel], data: dict[str, Any], *, top: bool = False) 
             if wrapper not in fields:
                 out.pop(wrapper, None)
         if model.__name__ == "ReviewVerdict":
-            for narrative in _REVIEW_NARRATIVE:
-                out.pop(narrative, None)
+            # Everything a verdict decides is in its own fields. Anything else a reviewer adds is commentary: real
+            # reviewers added "checked", "uncertainty", "decision_rationale", "not_verified", and more.
+            out = {key: value for key, value in out.items() if key in fields}
     for name, info in fields.items():
         # One item where a list of text belongs: "acceptance": "It works", for ["It works"].
         if isinstance(out.get(name), str) and _is_text_list(info.annotation):

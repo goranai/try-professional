@@ -45,9 +45,16 @@ def run(out: Path, label: str, model: str) -> None:
     rows = data.setdefault(label, {"version": __version__, "model": model, "runs": {}})["runs"]
     client = build_client(ModelConfig(provider="openai_compatible", tiers={}, api_key_env="TRYPRO_LLM_API_KEY",
                                       base_url=os.environ["TRYPRO_LLM_BASE_URL"]))  # fmt: skip
+    try:  # Every version this measures has it.
+        from try_professional.resources import COMMAND_PEAK_MB, wait_for_memory
+    except ImportError:
+        wait_for_memory, COMMAND_PEAK_MB = None, 0
     for name, goal in GOALS.items():
         if name in rows:
             continue
+        if wait_for_memory is not None:
+            # A shared machine: wait for room instead of measuring a run the memory safeguard stops.
+            wait_for_memory(COMMAND_PEAK_MB, say=lambda text: print(text, flush=True))
         folder = Path(tempfile.mkdtemp(prefix=f"trypro-eff-{label}-{name}-"))
         company = Company.create(folder / "co", name="Test Co")
         started = time.time()
@@ -57,6 +64,9 @@ def run(out: Path, label: str, model: str) -> None:
         except Exception as error:  # A command that errors out is a result too.
             row = {"status": "error", "run_id": "", "reason": f"{type(error).__name__}: {str(error)[:300]}"}
         row.update(seconds=round(time.time() - started), folder=str(folder / "co"))
+        if row["reason"].startswith("LowMemory"):
+            print(f"{label} {name:14} stopped by the memory safeguard: not a measurement, run it again", flush=True)
+            continue
         rows[name] = row
         out.write_text(json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8")
         print(f"{label} {name:14} {row['status']:8} {row['seconds']}s {row['reason'][:80]}", flush=True)

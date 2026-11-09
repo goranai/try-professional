@@ -228,6 +228,9 @@ def _vague_refusal(response: httpx.Response) -> bool:
     return "unknown_provider_failure" in text or _VAGUE in text.replace(" ", "")
 
 
+VAGUE_WAITS = (10, 30, 60)
+
+
 def _vague_error(error: ClientError) -> bool:
     detail = str(error).lower()
     return "http 400" in detail and ("unknown_provider_failure" in detail or _VAGUE in detail.replace(" ", ""))
@@ -312,7 +315,17 @@ class OpenAICompatibleClient:
                 if not _vague_error(again):
                     raise
                 refused = again
-        raise refused
+        # Every shape refused, with no reason given: most often the provider behind the gateway failing for a while.
+        # Wait, and try again; in measured runs, one more try a little later usually went through.
+        for wait in VAGUE_WAITS:
+            self._sleep(wait)
+            try:
+                return self._post(body)
+            except ClientError as again:
+                if not _vague_error(again):
+                    raise
+                refused = again
+        raise ClientError(str(refused), retryable=True)
 
     def _post(self, body: dict[str, Any]) -> dict[str, Any]:
         for attempt in range(self.max_retries + 1):
@@ -360,7 +373,7 @@ class OpenAICompatibleClient:
             data = self._post(body)
         except ClientError as refused:
             detail = str(refused).lower()
-            if _vague_error(refused) and not (self._fold_system and self._plain_headings):
+            if _vague_error(refused):
                 data = self._reshape(request, body, refused)
             elif "http 400" in detail and self.max_tokens_param.replace("_", " ") in detail.replace("_", " "):
                 # Asked for more room than this model has. Its own maximum, if it says one, and half if it doesn't.

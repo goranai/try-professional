@@ -577,6 +577,14 @@ class ApiRunner:
             if action.purpose == Purpose.EXECUTE:
                 payload, notes = settle_notes(payload, notes)
             payload = settle_payload(action.output_type, payload)
+            if action.purpose == Purpose.REVIEW and isinstance(payload, dict):
+                invocation = self.orchestrator.state(run_id).invocations.get(action.invocation_id)
+                if invocation is not None:
+                    payload = {
+                        **payload,
+                        "subject_artifact_id": invocation.subject_artifact_id,
+                        "gate": invocation.gate,
+                    }
             raw_flags = arguments.get("flags")
             if "flags" not in PAYLOAD_TYPES[action.output_type].model_fields:
                 payload, raw_flags = settle_flags(payload, raw_flags)
