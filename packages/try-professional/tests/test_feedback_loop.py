@@ -142,9 +142,29 @@ class TestBeforePosting:
 
         command = 'gh issue create --repo acme/widget --title \'Typo in README: "you" for "your"\' --body-file b.md'
         found = possible_duplicates(command, gh=gh)
-        assert found.startswith("Already in acme/widget, found by its title:")
-        assert f"#12 [open] Typo in README {REPO}/issues/12" in found
+        assert found.startswith("Already in acme/widget, maybe the same thing:")
+        assert f"#12 [open] Typo in README {REPO}/issues/12 (found by its title)" in found
         assert seen[0][:2] == ["search", "issues"] and "acme/widget" in seen[0]
+
+    def test_the_exact_link_finds_a_fix_worded_differently(self) -> None:
+        """A real held issue about a broken license link duplicated an open pull request titled "docs: fix dead links
+        in README". Searching the title's words missed it; searching the link itself found it."""
+        queries: list[str] = []
+
+        def gh(args: list[str]) -> str:
+            queries.append(args[2])
+            if args[2] == '"raw/master/LICENSE"':
+                return json.dumps([{"number": 1081, "title": "docs: fix dead links in README", "state": "OPEN",
+                                    "url": f"{REPO}/pull/1081"}])  # fmt: skip
+            return "[]"
+
+        command = (
+            "gh issue create --repo acme/widget --title 'README: the MIT license link is broken' --body "
+            "'The link https://github.com/acme/widget/raw/master/LICENSE returns 404. See `README.md` line 234.'"
+        )
+        found = possible_duplicates(command, gh=gh)
+        assert '"raw/master/LICENSE"' in queries
+        assert f"#1081 [open] docs: fix dead links in README {REPO}/pull/1081 (found by raw/master/LICENSE)" in found
 
     def test_only_a_new_issue_with_a_repository_and_title(self) -> None:
         def gh(args: list[str]) -> str:

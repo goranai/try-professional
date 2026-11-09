@@ -136,14 +136,40 @@ def possible_duplicates(command: str, *, gh: Gh = run_gh) -> str:
     if not _CREATE.search(command) or repo is None or title is None:
         return ""
     words = " ".join(re.findall(r"[\w'-]{3,}", next(g for g in title.groups() if g)))[:200]
-    try:
-        found = json.loads(gh(["search", "issues", words, "--repo", repo.group(1), "--include-prs", "--limit",
-                               str(SIMILAR_SHOWN), "--json", "number,title,state,url"]))  # fmt: skip
-    except (GhUnavailable, json.JSONDecodeError, ValueError):
-        return ""
-    lines = [f"#{i.get('number')} [{str(i.get('state', '')).lower()}] {i.get('title', '')} {i.get('url', '')}"
-             for i in found if isinstance(i, dict)]  # fmt: skip
-    return ("Already in " + repo.group(1) + ", found by its title:\n" + "\n".join(lines)) if lines else ""
+    # A title is worded one way, and an earlier report or fix another: "docs: fix dead links in README" for a broken
+    # license link. The exact link, path, or code the issue is about finds those, so they're searched as well.
+    queries = [(words, "its title"), *((f'"{term}"', term) for term in _exact_terms(command, repo.group(1)))]
+    found: dict[int, tuple[dict[str, Any], str]] = {}
+    for query, why in queries:
+        try:
+            items = json.loads(gh(["search", "issues", query, "--repo", repo.group(1), "--include-prs", "--limit",
+                                   str(SIMILAR_SHOWN), "--json", "number,title,state,url"]))  # fmt: skip
+        except (GhUnavailable, json.JSONDecodeError, ValueError):
+            continue
+        for item in items if isinstance(items, list) else []:
+            if isinstance(item, dict) and isinstance(item.get("number"), int):
+                found.setdefault(item["number"], (item, why))
+    lines = [f"#{i.get('number')} [{str(i.get('state', '')).lower()}] {i.get('title', '')} {i.get('url', '')} "
+             f"(found by {why})" for i, why in found.values()]  # fmt: skip
+    return ("Already in " + repo.group(1) + ", maybe the same thing:\n" + "\n".join(lines)) if lines else ""
+
+
+EXACT_TERMS = 3
+
+
+def _exact_terms(command: str, repo: str) -> list[str]:
+    """What an issue is precisely about, from its text: the links it names, without the repository's own address,
+    and code in backticks. Short or generic ones are left out."""
+    terms: dict[str, None] = {}
+    for url in re.findall(r"https?://[^\s'\"<>)\]]+", command):
+        path = re.sub(r"^https?://(www\.)?", "", url).rstrip(".,;:")
+        path = re.sub(rf"^github\.com/{re.escape(repo)}/?", "", path, flags=re.IGNORECASE)
+        if len(path) >= 8 and "/" in path:
+            terms.setdefault("/".join(path.split("/")[-3:]), None)
+    for code in re.findall(r"`([^`\n]{6,60})`", command):
+        if not code.isalpha():
+            terms.setdefault(code.strip(), None)
+    return list(terms)[:EXACT_TERMS]
 
 
 _MAINTAINER = {"OWNER", "MEMBER", "COLLABORATOR"}
