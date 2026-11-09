@@ -8,6 +8,7 @@ Specialists, without the group-chat failure. Each role keeps its own job and mem
 
 ### Added
 
+- **Measured on real jobs.** On `step-5-preview`, five everyday commands took 4.1 minutes and 134k tokens in all, against 8.6 minutes and 316k on 0.6.1: faster on every one. A three-department content job finished, where 0.6.1 was blocked. One repository job was slower. One run each, so read [the write-up](docs/research/efficiency/README.md) before quoting it.
 - **Every run says what it cost in time.** After each command, and in `trypro status <run-id>`: minutes of work, apart from minutes waiting for a person, model calls and tokens by step and by role, and the extra rounds: rework, refused hand-ins, failed steps, escalations, and handoffs. `Company.efficiency(run_id)` returns it. It's measured from the audit log alone, so runs by earlier versions can be measured too. [Before and after, on real jobs](docs/research/efficiency/README.md).
 
 ### Changed

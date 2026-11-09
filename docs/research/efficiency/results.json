@@ -1,0 +1,877 @@
+{
+ "before": {
+  "version": "0.6.1",
+  "model": "step-5-preview",
+  "runs": {
+   "reply": {
+    "status": "done",
+    "run_id": "run-795f625e6255",
+    "reason": "",
+    "seconds": 44,
+    "efficiency": {
+     "status": "done",
+     "working_seconds": 44.005,
+     "waiting_seconds": 0.0,
+     "calls": 6,
+     "tokens": 22472,
+     "calls_by_purpose": {
+      "intake": 1,
+      "execute": 2,
+      "review": 3
+     },
+     "tokens_by_purpose": {
+      "intake": 2318,
+      "execute": 7102,
+      "review": 13052
+     },
+     "calls_by_role": {
+      "executive/ceo": 1,
+      "operations/support": 2,
+      "operations/ops-lead": 3
+     },
+     "rework": 0,
+     "refused": 1,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": [],
+     "tool_calls": 2,
+     "review_share": 0.581
+    }
+   },
+   "plan": {
+    "status": "done",
+    "run_id": "run-064fb044dd13",
+    "reason": "",
+    "seconds": 277,
+    "efficiency": {
+     "status": "done",
+     "working_seconds": 276.202,
+     "waiting_seconds": 0.0,
+     "calls": 24,
+     "tokens": 176523,
+     "calls_by_purpose": {
+      "intake": 1,
+      "execute": 14,
+      "review": 9
+     },
+     "tokens_by_purpose": {
+      "intake": 3856,
+      "execute": 87273,
+      "review": 85394
+     },
+     "calls_by_role": {
+      "executive/ceo": 1,
+      "marketing/social": 14,
+      "marketing/marketing-lead": 9
+     },
+     "rework": 1,
+     "refused": 4,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": [],
+     "tool_calls": 19,
+     "review_share": 0.484
+    }
+   },
+   "fix": {
+    "status": "done",
+    "run_id": "run-400ba56b55b8",
+    "reason": "",
+    "seconds": 56,
+    "efficiency": {
+     "status": "done",
+     "working_seconds": 55.456,
+     "waiting_seconds": 0.0,
+     "calls": 9,
+     "tokens": 36122,
+     "calls_by_purpose": {
+      "intake": 1,
+      "execute": 4,
+      "review": 4
+     },
+     "tokens_by_purpose": {
+      "intake": 2026,
+      "execute": 19054,
+      "review": 15042
+     },
+     "calls_by_role": {
+      "executive/ceo": 1,
+      "marketing/content-writer": 4,
+      "marketing/marketing-lead": 4
+     },
+     "rework": 0,
+     "refused": 1,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": [],
+     "tool_calls": 5,
+     "review_share": 0.416
+    }
+   },
+   "github": {
+    "status": "done",
+    "run_id": "run-54f14fda0891",
+    "reason": "",
+    "seconds": 77,
+    "efficiency": {
+     "status": "done",
+     "working_seconds": 77.115,
+     "waiting_seconds": 0.0,
+     "calls": 12,
+     "tokens": 52712,
+     "calls_by_purpose": {
+      "intake": 1,
+      "execute": 6,
+      "review": 5
+     },
+     "tokens_by_purpose": {
+      "intake": 3098,
+      "execute": 31115,
+      "review": 18499
+     },
+     "calls_by_role": {
+      "executive/ceo": 1,
+      "engineering/tech-lead": 6,
+      "engineering/qa": 5
+     },
+     "rework": 0,
+     "refused": 1,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": [],
+     "tool_calls": 12,
+     "review_share": 0.351
+    }
+   },
+   "indonesian": {
+    "status": "done",
+    "run_id": "run-fb8ed5bea701",
+    "reason": "",
+    "seconds": 65,
+    "efficiency": {
+     "status": "done",
+     "working_seconds": 65.118,
+     "waiting_seconds": 0.0,
+     "calls": 7,
+     "tokens": 28402,
+     "calls_by_purpose": {
+      "intake": 1,
+      "escalation": 2,
+      "execute": 3,
+      "review": 1
+     },
+     "tokens_by_purpose": {
+      "intake": 2324,
+      "escalation": 3821,
+      "execute": 18246,
+      "review": 4011
+     },
+     "calls_by_role": {
+      "executive/ceo": 1,
+      "operations/ops-lead": 3,
+      "operations/support": 3
+     },
+     "rework": 0,
+     "refused": 2,
+     "failed": 1,
+     "escalations": 1,
+     "handoffs": [],
+     "tool_calls": 2,
+     "review_share": 0.141
+    }
+   },
+   "content": {
+    "status": "blocked",
+    "run_id": "run-4d9fb324c574",
+    "reason": "",
+    "seconds": 187,
+    "efficiency": {
+     "status": "blocked",
+     "working_seconds": 180.557,
+     "waiting_seconds": 0.0,
+     "calls": 12,
+     "tokens": 112109,
+     "calls_by_purpose": {
+      "intake": 1,
+      "escalation": 3,
+      "dispatch": 3,
+      "execute": 5
+     },
+     "tokens_by_purpose": {
+      "intake": 6403,
+      "escalation": 10529,
+      "dispatch": 42216,
+      "execute": 52961
+     },
+     "calls_by_role": {
+      "executive/ceo": 4,
+      "marketing/marketing-lead": 3,
+      "marketing/seo": 2,
+      "marketing/social": 3
+     },
+     "rework": 0,
+     "refused": 4,
+     "failed": 3,
+     "escalations": 2,
+     "handoffs": [],
+     "tool_calls": 7,
+     "review_share": 0.0
+    }
+   },
+   "contribution": {
+    "status": "done",
+    "run_id": "run-c16e311c475b",
+    "reason": "",
+    "seconds": 166,
+    "efficiency": {
+     "status": "done",
+     "working_seconds": 165.987,
+     "waiting_seconds": 0.0,
+     "calls": 19,
+     "tokens": 166650,
+     "calls_by_purpose": {
+      "intake": 1,
+      "execute": 12,
+      "review": 6
+     },
+     "tokens_by_purpose": {
+      "intake": 4568,
+      "execute": 107897,
+      "review": 54185
+     },
+     "calls_by_role": {
+      "executive/ceo": 1,
+      "engineering/backend": 12,
+      "engineering/qa": 6
+     },
+     "rework": 0,
+     "refused": 1,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": [],
+     "tool_calls": 28,
+     "review_share": 0.325
+    }
+   }
+  }
+ },
+ "after": {
+  "version": "0.6.1",
+  "model": "step-5-preview",
+  "runs": {
+   "reply": {
+    "status": "done",
+    "run_id": "run-789e987fb7dc",
+    "reason": "",
+    "seconds": 27,
+    "efficiency": {
+     "status": "done",
+     "working_seconds": 26.405,
+     "waiting_seconds": 0.0,
+     "calls": 4,
+     "tokens": 13199,
+     "calls_by_purpose": {
+      "intake": 1,
+      "execute": 2,
+      "review": 1
+     },
+     "tokens_by_purpose": {
+      "intake": 1850,
+      "execute": 8260,
+      "review": 3089
+     },
+     "calls_by_role": {
+      "executive/ceo": 1,
+      "operations/support": 2,
+      "operations/ops-lead": 1
+     },
+     "rework": 0,
+     "refused": 1,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": [],
+     "tool_calls": 0,
+     "review_share": 0.234
+    }
+   },
+   "fix": {
+    "status": "done",
+    "run_id": "run-dc02cac4dd72",
+    "reason": "",
+    "seconds": 48,
+    "efficiency": {
+     "status": "done",
+     "working_seconds": 47.158,
+     "waiting_seconds": 0.0,
+     "calls": 9,
+     "tokens": 28480,
+     "calls_by_purpose": {
+      "intake": 1,
+      "execute": 3,
+      "review": 5
+     },
+     "tokens_by_purpose": {
+      "intake": 2365,
+      "execute": 10953,
+      "review": 15162
+     },
+     "calls_by_role": {
+      "executive/ceo": 1,
+      "marketing/content-writer": 3,
+      "marketing/marketing-lead": 5
+     },
+     "rework": 0,
+     "refused": 1,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": [],
+     "tool_calls": 4,
+     "review_share": 0.532
+    }
+   },
+   "github": {
+    "status": "done",
+    "run_id": "run-13815919852f",
+    "reason": "",
+    "seconds": 112,
+    "efficiency": {
+     "status": "done",
+     "working_seconds": 111.764,
+     "waiting_seconds": 0.0,
+     "calls": 16,
+     "tokens": 90861,
+     "calls_by_purpose": {
+      "intake": 1,
+      "execute": 10,
+      "review": 5
+     },
+     "tokens_by_purpose": {
+      "intake": 3347,
+      "execute": 64375,
+      "review": 23139
+     },
+     "calls_by_role": {
+      "executive/ceo": 1,
+      "engineering/backend": 10,
+      "engineering/qa": 5
+     },
+     "rework": 0,
+     "refused": 1,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": [],
+     "tool_calls": 19,
+     "review_share": 0.255
+    }
+   },
+   "indonesian": {
+    "status": "done",
+    "run_id": "run-a2f79ed4c3df",
+    "reason": "",
+    "seconds": 38,
+    "efficiency": {
+     "status": "done",
+     "working_seconds": 37.699,
+     "waiting_seconds": 0.0,
+     "calls": 4,
+     "tokens": 14898,
+     "calls_by_purpose": {
+      "intake": 1,
+      "execute": 2,
+      "review": 1
+     },
+     "tokens_by_purpose": {
+      "intake": 3063,
+      "execute": 7358,
+      "review": 4477
+     },
+     "calls_by_role": {
+      "executive/ceo": 1,
+      "operations/support": 2,
+      "operations/ops-lead": 1
+     },
+     "rework": 0,
+     "refused": 1,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": [],
+     "tool_calls": 0,
+     "review_share": 0.301
+    }
+   },
+   "content": {
+    "status": "done",
+    "run_id": "run-9f6ca3c1a2c6",
+    "reason": "",
+    "seconds": 166,
+    "efficiency": {
+     "status": "done",
+     "working_seconds": 165.248,
+     "waiting_seconds": 0.0,
+     "calls": 15,
+     "tokens": 138227,
+     "calls_by_purpose": {
+      "intake": 1,
+      "execute": 10,
+      "review": 4
+     },
+     "tokens_by_purpose": {
+      "intake": 2102,
+      "execute": 85133,
+      "review": 50992
+     },
+     "calls_by_role": {
+      "executive/ceo": 1,
+      "marketing/marketing-lead": 10,
+      "executive/chief-of-staff": 4
+     },
+     "rework": 0,
+     "refused": 1,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": [],
+     "tool_calls": 19,
+     "review_share": 0.369
+    }
+   },
+   "contribution": {
+    "status": "done",
+    "run_id": "run-62b5cd0a157e",
+    "reason": "",
+    "seconds": 1175,
+    "efficiency": {
+     "status": "done",
+     "working_seconds": 1174.52,
+     "waiting_seconds": 0.0,
+     "calls": 88,
+     "tokens": 1482786,
+     "calls_by_purpose": {
+      "intake": 1,
+      "execute": 47,
+      "review": 40
+     },
+     "tokens_by_purpose": {
+      "intake": 3093,
+      "execute": 797105,
+      "review": 682588
+     },
+     "calls_by_role": {
+      "executive/ceo": 1,
+      "engineering/tech-lead": 47,
+      "engineering/qa": 40
+     },
+     "rework": 1,
+     "refused": 3,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": [],
+     "tool_calls": 116,
+     "review_share": 0.46
+    }
+   },
+   "plan_first_try": {
+    "status": "blocked",
+    "run_id": "run-c5f2dd1e8bba",
+    "reason": "",
+    "seconds": 93,
+    "efficiency": {
+     "status": "blocked",
+     "working_seconds": 92.359,
+     "waiting_seconds": 0.0,
+     "calls": 6,
+     "tokens": 53175,
+     "calls_by_purpose": {
+      "intake": 1,
+      "execute": 5
+     },
+     "tokens_by_purpose": {
+      "intake": 1670,
+      "execute": 51505
+     },
+     "calls_by_role": {
+      "executive/ceo": 1,
+      "marketing/social": 5
+     },
+     "rework": 0,
+     "refused": 3,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": [],
+     "tool_calls": 2,
+     "review_share": 0.0
+    }
+   },
+   "plan": {
+    "status": "done",
+    "run_id": "run-5d88a1f700b5",
+    "reason": "",
+    "seconds": 170,
+    "efficiency": {
+     "status": "done",
+     "working_seconds": 169.439,
+     "waiting_seconds": 0.0,
+     "calls": 8,
+     "tokens": 58914,
+     "calls_by_purpose": {
+      "intake": 1,
+      "execute": 5,
+      "review": 2
+     },
+     "tokens_by_purpose": {
+      "intake": 1728,
+      "execute": 37478,
+      "review": 19708
+     },
+     "calls_by_role": {
+      "executive/ceo": 1,
+      "marketing/social": 5,
+      "marketing/marketing-lead": 2
+     },
+     "rework": 1,
+     "refused": 1,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": [],
+     "tool_calls": 4,
+     "review_share": 0.335
+    }
+   }
+  }
+ },
+ "final": {
+  "version": "0.6.2",
+  "model": "step-5-preview",
+  "runs": {
+   "reply": {
+    "status": "done",
+    "run_id": "run-f5b09b122e16",
+    "reason": "",
+    "seconds": 21,
+    "efficiency": {
+     "status": "done",
+     "working_seconds": 20.28,
+     "waiting_seconds": 0.0,
+     "calls": 3,
+     "tokens": 8451,
+     "calls_by_purpose": {
+      "intake": 1,
+      "execute": 1,
+      "review": 1
+     },
+     "tokens_by_purpose": {
+      "intake": 2246,
+      "execute": 3205,
+      "review": 3000
+     },
+     "calls_by_role": {
+      "executive/ceo": 1,
+      "operations/support": 1,
+      "operations/ops-lead": 1
+     },
+     "rework": 0,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": [],
+     "tool_calls": 0,
+     "review_share": 0.355
+    }
+   },
+   "plan": {
+    "status": "done",
+    "run_id": "run-daba8e950f7c",
+    "reason": "",
+    "seconds": 109,
+    "efficiency": {
+     "status": "done",
+     "working_seconds": 108.7,
+     "waiting_seconds": 0.0,
+     "calls": 10,
+     "tokens": 47489,
+     "calls_by_purpose": {
+      "intake": 1,
+      "execute": 6,
+      "review": 3
+     },
+     "tokens_by_purpose": {
+      "intake": 2111,
+      "execute": 30012,
+      "review": 15366
+     },
+     "calls_by_role": {
+      "executive/ceo": 1,
+      "marketing/social": 6,
+      "marketing/marketing-lead": 3
+     },
+     "rework": 1,
+     "refused": 1,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": [],
+     "tool_calls": 7,
+     "review_share": 0.324
+    }
+   },
+   "fix": {
+    "status": "done",
+    "run_id": "run-f5c21faf0590",
+    "reason": "",
+    "seconds": 28,
+    "efficiency": {
+     "status": "done",
+     "working_seconds": 27.349,
+     "waiting_seconds": 0.0,
+     "calls": 6,
+     "tokens": 20688,
+     "calls_by_purpose": {
+      "intake": 1,
+      "execute": 1,
+      "review": 4
+     },
+     "tokens_by_purpose": {
+      "intake": 1890,
+      "execute": 3099,
+      "review": 15699
+     },
+     "calls_by_role": {
+      "executive/ceo": 1,
+      "marketing/content-writer": 1,
+      "marketing/marketing-lead": 4
+     },
+     "rework": 0,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": [],
+     "tool_calls": 3,
+     "review_share": 0.759
+    }
+   },
+   "github": {
+    "status": "done",
+    "run_id": "run-864d5cce7bf7",
+    "reason": "",
+    "seconds": 43,
+    "efficiency": {
+     "status": "done",
+     "working_seconds": 42.741,
+     "waiting_seconds": 0.0,
+     "calls": 9,
+     "tokens": 33761,
+     "calls_by_purpose": {
+      "intake": 1,
+      "execute": 5,
+      "review": 3
+     },
+     "tokens_by_purpose": {
+      "intake": 1758,
+      "execute": 20288,
+      "review": 11715
+     },
+     "calls_by_role": {
+      "executive/ceo": 1,
+      "engineering/tech-lead": 5,
+      "engineering/qa": 3
+     },
+     "rework": 0,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": [],
+     "tool_calls": 8,
+     "review_share": 0.347
+    }
+   },
+   "indonesian": {
+    "status": "done",
+    "run_id": "run-0f8ab1f91b5c",
+    "reason": "",
+    "seconds": 46,
+    "efficiency": {
+     "status": "done",
+     "working_seconds": 45.524,
+     "waiting_seconds": 0.0,
+     "calls": 6,
+     "tokens": 22696,
+     "calls_by_purpose": {
+      "intake": 1,
+      "execute": 1,
+      "review": 4
+     },
+     "tokens_by_purpose": {
+      "intake": 1788,
+      "execute": 6537,
+      "review": 14371
+     },
+     "calls_by_role": {
+      "executive/ceo": 1,
+      "marketing/content-writer": 1,
+      "marketing/marketing-lead": 4
+     },
+     "rework": 0,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": [],
+     "tool_calls": 3,
+     "review_share": 0.633
+    }
+   },
+   "content_before_trim": {
+    "status": "blocked",
+    "run_id": "run-bac034f2a29b",
+    "reason": "",
+    "seconds": 1032,
+    "efficiency": {
+     "status": "blocked",
+     "working_seconds": 1028.499,
+     "waiting_seconds": 0.0,
+     "calls": 157,
+     "tokens": 5335656,
+     "calls_by_purpose": {
+      "intake": 1,
+      "plan": 3,
+      "dispatch": 7,
+      "execute": 130,
+      "review": 14,
+      "escalation": 2
+     },
+     "tokens_by_purpose": {
+      "intake": 3279,
+      "plan": 9962,
+      "dispatch": 55345,
+      "execute": 4986862,
+      "review": 269957,
+      "escalation": 10251
+     },
+     "calls_by_role": {
+      "executive/ceo": 4,
+      "marketing/marketing-lead": 18,
+      "research/research-lead": 5,
+      "research/analyst": 62,
+      "marketing/social": 68
+     },
+     "rework": 3,
+     "refused": 6,
+     "failed": 2,
+     "escalations": 2,
+     "handoffs": [],
+     "tool_calls": 194,
+     "review_share": 0.051
+    }
+   },
+   "contribution": {
+    "status": "done",
+    "run_id": "run-bf14e2205774",
+    "reason": "",
+    "seconds": 685,
+    "efficiency": {
+     "status": "done",
+     "working_seconds": 685.039,
+     "waiting_seconds": 0.0,
+     "calls": 35,
+     "tokens": 366700,
+     "calls_by_purpose": {
+      "intake": 1,
+      "execute": 24,
+      "review": 10
+     },
+     "tokens_by_purpose": {
+      "intake": 3813,
+      "execute": 262237,
+      "review": 100650
+     },
+     "calls_by_role": {
+      "executive/ceo": 1,
+      "engineering/tech-lead": 24,
+      "engineering/qa": 10
+     },
+     "rework": 0,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": [],
+     "tool_calls": 49,
+     "review_share": 0.274
+    }
+   },
+   "content_try2": {
+    "status": "blocked",
+    "run_id": "run-690c7a888d3e",
+    "reason": "",
+    "seconds": 755,
+    "efficiency": {
+     "status": "blocked",
+     "working_seconds": 738.263,
+     "waiting_seconds": 0.0,
+     "calls": 68,
+     "tokens": 954593,
+     "calls_by_purpose": {
+      "intake": 1,
+      "dispatch": 9,
+      "execute": 33,
+      "review": 16,
+      "escalation": 9
+     },
+     "tokens_by_purpose": {
+      "intake": 2572,
+      "dispatch": 115762,
+      "execute": 456086,
+      "review": 340785,
+      "escalation": 39388
+     },
+     "calls_by_role": {
+      "executive/ceo": 10,
+      "marketing/marketing-lead": 23,
+      "marketing/content-writer": 15,
+      "research/research-lead": 2,
+      "research/analyst": 15,
+      "marketing/social": 3
+     },
+     "rework": 0,
+     "refused": 8,
+     "failed": 2,
+     "escalations": 3,
+     "handoffs": [],
+     "tool_calls": 76,
+     "review_share": 0.357
+    }
+   },
+   "content": {
+    "status": "done",
+    "run_id": "run-d4788d00717b",
+    "reason": "",
+    "seconds": 483,
+    "efficiency": {
+     "status": "done",
+     "working_seconds": 482.965,
+     "waiting_seconds": 0.0,
+     "calls": 57,
+     "tokens": 588063,
+     "calls_by_purpose": {
+      "intake": 1,
+      "execute": 35,
+      "review": 21
+     },
+     "tokens_by_purpose": {
+      "intake": 5585,
+      "execute": 356099,
+      "review": 226379
+     },
+     "calls_by_role": {
+      "executive/ceo": 1,
+      "marketing/social": 35,
+      "marketing/marketing-lead": 21
+     },
+     "rework": 1,
+     "refused": 0,
+     "failed": 0,
+     "escalations": 0,
+     "handoffs": [],
+     "tool_calls": 71,
+     "review_share": 0.385
+    }
+   }
+  }
+ }
+}
