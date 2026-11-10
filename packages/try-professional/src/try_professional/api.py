@@ -55,12 +55,6 @@ ROLE_DEFAULTS: dict[str, Any] = {
 }
 
 
-def _was_sandboxed(root: Path) -> bool:
-    """Whether this company's Claude Code roles were set up without a shell, so a rewrite keeps them that way."""
-    agents = sorted((root / ".claude" / "agents").glob("trypro-*.md"))
-    return bool(agents) and all("Bash" not in path.read_text(encoding="utf-8").split("---")[1] for path in agents)
-
-
 class CompanyError(Exception):
     """Something about the company stopped the request. The message says what, and nothing was changed."""
 
@@ -243,7 +237,9 @@ class Company:
         finally:
             store.close()
         if (self.root / ".claude" / "agents").is_dir():
-            self.setup_claude_code(sandboxed=_was_sandboxed(self.root))
+            from .adapters.mcp.claude_code import was_sandboxed
+
+            self.setup_claude_code(sandboxed=was_sandboxed(self.root))
         return added
 
     def validate(self) -> list[str]:

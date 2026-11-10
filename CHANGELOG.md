@@ -8,13 +8,16 @@ From a real company's first day: a contribution company, six hunts on Claude Cod
 
 ### Added
 
-- **A company grows when its work shows it should.** The CEO proposes a role, or a new department and its head, at intake when part of a command fits no role, and at the end of every large command and of any small one that was sent back, escalated, or handed on. It sees every department, and the record: work sent back and why, departments with no work across recent commands, and work put out by someone who isn't one of its roles. It proposes only on that evidence. A person decides with `trypro org review`, or `trypro org decide <number> add`; `trypro org proposals` lists them. An added role is checked like any other, and undone if it would break the company. Claude Code shows the proposals at the end of a command, and can't decide them.
+- **A company grows when its work shows it should.** The CEO proposes a role, or a new department and its head, at intake when part of a command fits no role, and at the end of every large command and of any small one that was sent back, escalated, or handed on. It sees every department, and the record: work sent back and why, departments with no work across recent commands, and work put out by someone who isn't one of its roles. It proposes only on that evidence. A person decides, in Claude Code's chat, or with `trypro org review`; `trypro org proposals` lists them. An added role is checked like any other, and undone if it would break the company.
+
+- **You answer in the chat.** When a command stops for you, or the CEO proposes a role, Claude Code asks you there, and records what you say with a new tool that it asks you to confirm on every call, in every permission mode, bypass included: an `ask` rule in `.claude/settings.json`. Only the coordinator's server has these tools; a role's server, or another client acting as every role, doesn't. `trypro decide` and `trypro org review` still work at a terminal.
+- **Claude Code's files catch up after an upgrade by themselves,** the next time it starts, keeping each role's model. No `trypro agents claude-code` to remember.
 
 ### Fixed
 
 - **A command that needs a second department was sent to one.** When a small command's own criteria name a role of another department, such as "confirmed by the validator", it's planned instead, with a constraint saying why. Replayed on the real company's charters, five of its six hunts would have been.
 - **A reviewer sent work back for what its author couldn't fix:** another role's check, or facts that don't exist. It blocks instead, which takes it to whoever can arrange it.
-- **What a person posts from Claude Code wasn't tracked.** The front desk now records it with `trypro outcomes add`, so maintainers' verdicts still reach the roles.
+- **What a person posts from Claude Code wasn't tracked.** The front desk now records it with `outcome_record`, credited to the role whose work it was, so maintainers' verdicts still reach that role.
 - **Rewriting Claude Code's roles reset each role's model.** A role a person put on Opus by hand keeps it. `--model` still sets every role.
 - **Roles in Claude Code ran test suites with 8 workers at once** on a machine with 1.6 GB free. They're told the machine is shared: one heavy command at a time, at most 2 workers, with a time limit.
 - **Designing a company over MCP waited for memory in silence,** for half an hour once. It says how much memory it needs instead, and nothing has started.

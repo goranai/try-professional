@@ -130,15 +130,14 @@ Your session only coordinates. Results are files, in `deliverables/<run-id>/`. S
 
 ```text
 /company <a command>                          Give it more work. It remembers earlier work
+/company continue <run-id>                    Carry on with one that stopped, in a new chat
 trypro doctor                                 Check your setup, and how to fix what's wrong
 trypro status                                 Memory size, and tokens by month and command
 trypro audit <run-id>                         Verify a run's audit log
-trypro decide <run-id> <request-id> resume    Answer a command that stopped to ask you
-/company continue <run-id>                    Then carry on with it
 trypro cancel <run-id>                        Stop it. Its records stay
-trypro agents claude-code                     Rewrite the roles for Claude Code, after the company changes
-trypro org review                             Decide the roles and departments the CEO proposed
 ```
+
+**Everything it needs you for, it asks in the chat.** When a command stops for you, or the CEO proposes a new role, Claude Code shows you the question, you answer in your own words, and it asks you to confirm before your answer is recorded. It asks every time, whatever permission mode you're in, and no role can answer for you. If you post something yourself through the chat, it's recorded for the role whose work it was. After an upgrade, its files in `.claude/` catch up by themselves the next time Claude Code starts, keeping the model you gave each role. In a terminal, `trypro decide` and `trypro org review` do the same.
 
 ### When it works on its own
 
@@ -167,12 +166,7 @@ trypro outcomes add "<link or reference>" --run <id> --role <role> --target "<cl
 
 ### When it needs someone new
 
-A company starts with the roles you approved. When its work shows one is missing, the CEO proposes it, and you decide. Nothing changes until you do.
-
-```text
-trypro org proposals          Roles and departments the CEO proposed, and why
-trypro org review             Add or reject each one, at a terminal
-```
+A company starts with the roles you approved. When its work shows one is missing, the CEO proposes it, and you decide: in Claude Code, it asks you at the end of the command. Nothing changes until you do. From a terminal, `trypro org proposals` lists them, and `trypro org review` decides them.
 
 - **When it proposes:** at intake, when part of a command fits no role, and at the end of any command that was sent back, escalated, or handed between departments, and of every large one. It sees every department, and the record: work sent back and why, departments left with no work across recent commands, and work put out by a person by hand. It proposes only on that evidence, never for one-off work, and never a role that exists. An idle department isn't a missing role: if it should have worked, that's a lesson about planning instead.
 - **What it can propose:** a role in the department whose work it is, or a new department with its role as the head, when no department fits. A new department's work passes the same review as the others'.

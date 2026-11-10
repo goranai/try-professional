@@ -16,6 +16,7 @@ from typing import Any
 
 import yaml
 
+from ... import __version__
 from ...org import Org, Role
 
 SERVER = "trypro"
@@ -62,13 +63,14 @@ Otherwise, call run_start with the command as written. It returns a run_id, and 
 trypro-marketing-seo). Give it only the run_id. When there are actions for several roles, start all of them at once, \
 in one message, so they work at the same time, one subagent per role. Never add what another role did.
 3. Call run_next_action, and repeat until its status isn't "working".
-4. If its status is "blocked", show me each tell_the_person under needs_a_person, word for word. Only I can answer \
-them.
+4. If its status is "blocked", show me each question under needs_a_person, word for word, with its options, and ask \
+me which. Never choose for me. When I've answered in my own words, record it with person_answer, then carry on from \
+step 3.
 5. If a role's subagent won't start, stop, and tell me that this folder may need to be trusted in Claude Code. Never \
 do a role's work yourself.
 6. If its status is "done", tell me what came back, including everything under known_limits, and give me the path \
-under deliverables. If there's company_changes, show me each one word for word: only I decide them, with \
-`trypro org review` in a terminal.
+under deliverables. If there's company_changes, show me each one word for word, and ask me: add it, or not? Only when \
+I've said, record it with person_decide_company_change.
 """
 
 
@@ -83,11 +85,11 @@ It's run by Try Professional, and you're its front desk.
 words as the command, exactly as if I'd typed `/company <my words>`. Don't do the work yourself, with any tool.
 - When I ask about earlier work, read `deliverables/`, and answer from it.
 - When I'm only chatting, or asking how something works, answer briefly yourself.
-- When a run stops for a person, show me its question word for word. Only I can answer it, with `trypro decide` in a \
-terminal. Never run that yourself.
-- If I ask you to post, send, or open something yourself, such as an issue or a pull request, afterwards record it \
-with `trypro outcomes add <link> --run <run_id> --role <the role that made it>`, so the company learns what happens \
-to it.
+- When a run stops for a person, or the CEO proposes a new role, show me the question word for word and ask me. Only \
+I decide: never choose for me. When I've answered, record it with person_answer or person_decide_company_change. \
+Claude Code asks me to confirm each one.
+- If I ask you to post, send, or open something yourself, such as an issue or a pull request, record it afterwards \
+with outcome_record, naming the role whose work it was, so the company learns what happens to it.
 {end}
 """
 
@@ -107,11 +109,18 @@ def write_front_desk(root: Path, org: Org) -> Path:
     return path
 
 
-_FOR_A_PERSON = tuple(
-    f"{tool}(trypro {command} *)"
-    for tool in ("Bash", "PowerShell")
-    for command in ("decide", "init --review", "org review", "org decide")
+_FOR_A_PERSON = (
+    *(
+        f"{tool}(trypro {command} *)"
+        for tool in ("Bash", "PowerShell")
+        for command in ("decide", "init --review", "org review", "org decide")
+    ),
+    f"mcp__{ROLE_SERVER}__person_*",
 )
+# Claude Code asks the person before every one of these, in every mode, bypass included: an ask rule wins over the
+# allow rule for the server's other tools. That confirmation is the person deciding, in the chat they're already in.
+_ASK_THE_PERSON = (f"mcp__{SERVER}__person_*",)
+VERSION_STAMP = "trypro-version"
 
 
 def agent_name(role_ref: str) -> str:
@@ -202,7 +211,36 @@ def write_claude_code_files(root: Path, org: Org, model: str | None = None, sand
     for rule in _FOR_A_PERSON:
         if rule not in deny:
             deny.append(rule)
+    ask = existing_settings["permissions"].setdefault("ask", [])
+    for rule in _ASK_THE_PERSON:
+        if rule not in ask:
+            ask.append(rule)
     settings.write_text(json.dumps(existing_settings, indent=2) + "\n", encoding="utf-8", newline="\n")
     written.append(settings)
     written.append(write_front_desk(root, org))
+    stamp = root / ".claude" / VERSION_STAMP
+    stamp.write_text(f"{__version__}\n", encoding="utf-8", newline="\n")
+    written.append(stamp)
     return written
+
+
+def was_sandboxed(root: Path) -> bool:
+    """Whether this company's roles were set up without a shell, so a rewrite keeps them that way."""
+    agents = sorted((root / ".claude" / "agents").glob("trypro-*.md"))
+    return bool(agents) and all("Bash" not in path.read_text(encoding="utf-8").split("---")[1] for path in agents)
+
+
+def refresh_claude_code_files(root: Path, org: Org) -> bool:
+    """Rewrite Claude Code's files if a different version of trypro wrote them, keeping each role's model and whether
+    roles have a shell. Returns whether it did. A folder never set up for Claude Code is left alone."""
+    if not (root / ".claude" / "agents").is_dir():
+        return False
+    stamp = root / ".claude" / VERSION_STAMP
+    written = stamp.read_text(encoding="utf-8").strip() if stamp.is_file() else ""
+    if written == __version__:
+        return False
+    try:
+        write_claude_code_files(root, org, sandboxed=was_sandboxed(root))
+    except OSError:
+        return False  # A file in use is rewritten next time. The server still starts.
+    return True

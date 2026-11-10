@@ -426,7 +426,7 @@ class TestAStoppedCommand:
     def test_company_tells_the_session_how_to_continue(self) -> None:
         text = claude_code._COMMAND
         assert text.index("don't start anything") < text.index("call run_start")
-        assert "tell_the_person" in text
+        assert "needs_a_person" in text and "Never choose for me" in text
 
     def test_company_says_what_to_do_when_a_role_wont_start(self) -> None:
         """In a folder Claude Code doesn't trust yet, a role's own server doesn't start, and it has no tools."""

@@ -206,12 +206,14 @@ class TestAStoppedCommandSaysWhatToDo:
         asked = McpService(orchestrator, coordinator=coordinator).run_next_action(run_id)
         return run_id, asked["needs_a_person"][0]["tell_the_person"]
 
-    def test_it_gives_the_lines_to_run(self, make_org: Callable[..., Org], tmp_path: Path) -> None:
+    def test_it_asks_the_person_in_chat(self, make_org: Callable[..., Org], tmp_path: Path) -> None:
+        """A terminal command for every answer was too much to ask. Claude Code asks the person to confirm instead."""
         run_id, message = self._stopped(make_org, tmp_path, True)
+        assert "Tell me which, here" in message and "person_answer (request hum-" in message
+        assert "Claude Code will ask you to confirm" in message
+        assert "resume" in message and "abandon" in message
         assert f"/company continue {run_id}" in message
-        assert f"trypro decide {run_id} " in message
-        assert " resume" in message and " abandon" in message
-        assert "<option>" not in message
+        assert "trypro decide" not in message and "<option>" not in message
 
     def test_it_says_exactly_what_happened(self, make_org: Callable[..., Org], tmp_path: Path) -> None:
         _, message = self._stopped(make_org, tmp_path, True)

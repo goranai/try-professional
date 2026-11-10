@@ -21,7 +21,7 @@ from .adapters.api_runner.clients import ClientError
 from .adapters.api_runner.runner import ApiRunner, ModelRoutes, RunResult
 from .adapters.api_runner.scripted import ScriptedClient
 from .adapters.mcp import McpService, ToolError
-from .adapters.mcp.claude_code import write_claude_code_files
+from .adapters.mcp.claude_code import refresh_claude_code_files, write_claude_code_files
 from .adapters.mcp.service import MCP_ESTIMATE_FACTOR
 from .check_model import NOT_RECOMMENDED, ModelUnreachable, ScriptedModel, check_model, render_check
 from .config import (
@@ -779,7 +779,16 @@ def cmd_mcp(args: argparse.Namespace) -> int:
         )
         if isinstance(orchestrator.skills, LockedSkills):
             orchestrator.feedback = orchestrator.skills
-        return McpService(orchestrator, bound_role=args.role, coordinator=args.coordinator, computer=not args.sandboxed)
+        if args.coordinator:
+            # After an upgrade, Claude Code's files catch up by themselves: nobody has to know to rewrite them.
+            refresh_claude_code_files(config.root, org)
+        return McpService(
+            orchestrator,
+            bound_role=args.role,
+            coordinator=args.coordinator,
+            computer=not args.sandboxed,
+            root=config.root,
+        )
 
     if args.role and args.coordinator:
         print("A server is bound to a role, or coordinates. It can't be both.", file=sys.stderr)

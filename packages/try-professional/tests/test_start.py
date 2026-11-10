@@ -24,7 +24,7 @@ class TestFrontDesk:
         text = (company.root / "CLAUDE.md").read_text(encoding="utf-8")
         assert "Acme" in text
         assert ".claude/commands/company.md" in text
-        assert "trypro decide" in text and "Never run that yourself" in text
+        assert "Only I decide: never choose for me" in text and "Claude Code asks me to confirm" in text
 
     def test_whats_already_in_claude_md_is_kept(self, company: Company) -> None:
         (company.root / "CLAUDE.md").write_text("# My notes\n\nKeep this.\n", encoding="utf-8")

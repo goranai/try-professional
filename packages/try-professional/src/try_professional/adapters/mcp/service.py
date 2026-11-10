@@ -8,8 +8,9 @@ still enforces order, schemas, and gates. Two identity modes:
               Order, schemas, and gates still hold, but separation between roles is only procedural.
 
 A role is never a tool argument. It comes from how the server started, or from the open
-invocation. Nothing here lets a client approve a skill, admit one, change company memory, or
-answer for a person.
+invocation. Nothing here lets a client approve a skill, admit one, or change company memory. A
+person's answer, and a change to who works here, come through the person_ tools, which Claude
+Code asks the person to confirm on every call, and which a role's own server refuses.
 
 Three identity modes, really: a coordinator is a client that starts work and hands it to bound roles. It can't read an
 assignment or submit anything, so it can't quietly do a role's work, however it's asked to or tries to.
@@ -20,8 +21,10 @@ received, and budgets run on that. What a client reports is kept beside it, mark
 
 from __future__ import annotations
 
+import getpass
 import json
 import re
+from pathlib import Path
 from typing import Any
 
 from ...core.artifacts import PAYLOAD_TYPES, Flags, settle_flags
@@ -32,6 +35,7 @@ from ...core.pipeline import (
     EscalationRaised,
     Finish,
     HandoffRaised,
+    HumanDecided,
     IllegalEvent,
     InvokeRole,
     Purpose,
@@ -65,8 +69,10 @@ MCP_TOOLS = (
     "outcome_track",
     "audit_tail",
 )
+# What records a person's decisions, on the coordinator's server only. Claude Code asks the person to confirm each.
+PERSON_TOOLS = ("person_answer", "person_decide_company_change", "outcome_record")
 # All a coordinator may do. Anything else is a role's work.
-COORDINATOR_TOOLS = ("org_get", "run_start", "run_status", "run_next_action", "audit_tail")
+COORDINATOR_TOOLS = ("org_get", "run_start", "run_status", "run_next_action", "audit_tail", *PERSON_TOOLS)
 DEFAULT_AUDIT_TAIL = 20
 MAX_AUDIT_TAIL = 200
 CHARS_PER_TOKEN = 3.5
@@ -90,7 +96,10 @@ class McpService:
         bound_role: str | None = None,
         coordinator: bool = False,
         computer: bool = True,
+        root: Path | None = None,
     ) -> None:
+        # The company's folder, where org/ is. Its records are usually in .trypro beside it.
+        self.root = root or orchestrator.home.parent
         if bound_role is not None and not orchestrator.org.has_role(bound_role):
             raise ValueError(f"'{bound_role}' isn't a role in this company")
         if bound_role is not None and coordinator:
@@ -210,7 +219,8 @@ class McpService:
             proposed = [] if self.bound_role else self.orchestrator.company.org_proposals("pending", source_run=run_id)
             if proposed:
                 finished["company_changes"] = [p.line() for p in proposed] + [
-                    "The CEO proposes these from what this command showed. Only a person decides: trypro org review"
+                    "The CEO proposes these from what this command showed. Ask the person about each, and record "
+                    "what they say with person_decide_company_change. Or, at a terminal: trypro org review"
                 ]
             return finished
         questions = [a for a in actions if isinstance(a, AskHuman)]
@@ -243,9 +253,20 @@ class McpService:
 
     def _how_to_answer(self, run_id: str, question: AskHuman) -> str:
         """Ready to run, so nobody has to work out a command. Only a person at a terminal can answer."""
-        answers = "\n".join(f"  trypro decide {run_id} {question.request_id} {o}" for o in question.options)
-        carry_on = f"/company continue {run_id}" if self.coordinator else f"Call run_next_action with run_id {run_id}"
-        text = f"{question.question}\n\nIn a terminal, run one of these:\n{answers}\n\nThen, to carry on:\n  {carry_on}"
+        if self.coordinator:
+            options = ", ".join(question.options)
+            text = (
+                f"{question.question}\n\nYour options: {options}. Tell me which, here, and I'll record it with "
+                f"person_answer (request {question.request_id}). Claude Code will ask you to confirm. To come back to "
+                f"it later in a new chat: /company continue {run_id}"
+            )
+        else:
+            answers = "\n".join(f"  trypro decide {run_id} {question.request_id} {o}" for o in question.options)
+            carry_on = f"Call run_next_action with run_id {run_id}"
+            text = (
+                f"{question.question}\n\nIn a terminal, run one of these:\n{answers}\n\nThen, to carry on:\n"
+                f"  {carry_on}"
+            )
         drafts = self.orchestrator.drafts_path(run_id)
         if drafts is not None and (drafts / "index.md").is_file():
             text += f"\n\nWhat it made so far, not approved: {(drafts / 'index.md').as_posix()}"
@@ -387,6 +408,63 @@ class McpService:
     ) -> dict[str, Any]:
         """A role put something out. Any role may ask; code records it, and a check or a person says what came of it."""
         role = self._role_for(run_id, invocation_id)
+        item = self.orchestrator.track_outcome(run_id, role, ref, title=title, target=target, kind=kind)
+        if item is None:
+            raise ToolError("Give a link, or a reference a person would know it by, such as 'quote 12 to Acme'.")
+        return {"tracked": True, "id": item.id, "kind": item.kind, "target": item.target}
+
+    # ---- what only a person decides, answered in chat ----------------------------------------------
+    # Claude Code asks the person to confirm each of these calls, in every permission mode, because
+    # write_claude_code_files gives them an "ask" rule. That prompt is the person's decision, where a terminal was.
+
+    def _for_a_person(self, what: str) -> str:
+        if not self.coordinator:
+            raise ToolError(
+                f"Only the person decides this, through Claude Code's coordinator. This server can't {what}."
+            )
+        return f"{getpass.getuser()}, confirmed in chat"
+
+    def person_answer(self, run_id: str, request_id: str, option: str, note: str = "") -> dict[str, Any]:
+        """Record the person's answer to a run's question, exactly as they gave it."""
+        by = self._for_a_person("answer a run's question")
+        try:
+            self.orchestrator.handle(
+                run_id, HumanDecided(request_id=request_id, decision=option, note=note, decided_by=by)
+            )
+        except IllegalEvent as error:
+            raise ToolError(str(error)) from error
+        return {"recorded": True, "decided_by": by, "next": f"Call run_next_action with run_id {run_id}"}
+
+    def person_decide_company_change(self, proposal_id: int, decision: str) -> dict[str, Any]:
+        """Add or reject a role or department the CEO proposed, as the person said."""
+        from ...api import Company, CompanyError
+
+        by = self._for_a_person("change who works here")
+        if decision not in ("add", "reject"):
+            raise ToolError("decision is add or reject.")
+        company = Company(self.root)
+        try:
+            added = company.decide_org_change(proposal_id, decision == "add", by=by)
+        except CompanyError as error:
+            raise ToolError(str(error)) from error
+        if added is None:
+            return {"rejected": proposal_id, "note": "It won't be proposed again."}
+        return {
+            "added": added.ref,
+            "title": added.title,
+            "tell_the_person": "Restart Claude Code in this folder, so it loads the new role. It works from the next "
+            "command.",
+        }
+
+    def outcome_record(
+        self, run_id: str, ref: str, role: str, title: str = "", target: str = "", kind: str = ""
+    ) -> dict[str, Any]:
+        """Something was put out outside a role's own step, such as a post the person asked for in chat. It's
+        tracked like any other, and credited to the role that made it, so its verdict still reaches that role."""
+        if not self.coordinator:
+            raise ToolError("A role records what it put out with outcome_track.")
+        if not self.org.has_role(role):
+            raise ToolError(f"'{role}' isn't a role here. Name the role whose work it was, such as research/analyst.")
         item = self.orchestrator.track_outcome(run_id, role, ref, title=title, target=target, kind=kind)
         if item is None:
             raise ToolError("Give a link, or a reference a person would know it by, such as 'quote 12 to Acme'.")

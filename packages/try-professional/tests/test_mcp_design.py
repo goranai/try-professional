@@ -199,4 +199,5 @@ class TestClaudeCodeFiles:
     def test_the_command_never_answers_for_the_person(self, tmp_path: Path, org: Any) -> None:
         write_claude_code_files(tmp_path, org)
         text = (tmp_path / ".claude" / "commands" / "company.md").read_text(encoding="utf-8")
-        assert "Only I can answer" in text and "known_limits" in text
+        assert "Never choose for me" in text and "known_limits" in text
+        assert "When I've answered in my own words, record it with person_answer" in text

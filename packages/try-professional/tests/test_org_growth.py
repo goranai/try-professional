@@ -286,12 +286,158 @@ class TestClaudeCodeAfterTheCompanyChanges:
         company = Company.create(tmp_path / "acme", name="Acme")
         company.setup_claude_code()
         front_desk = (company.root / "CLAUDE.md").read_text(encoding="utf-8")
-        assert "trypro outcomes add <link> --run <run_id> --role" in front_desk
+        assert "record it afterwards with outcome_record, naming the role" in front_desk
         command = (company.root / ".claude" / "commands" / "company.md").read_text(encoding="utf-8")
-        assert "company_changes" in command and "trypro org review" in command
+        assert "company_changes" in command and "person_decide_company_change" in command
 
     def test_roles_are_told_the_machine_is_shared(self, tmp_path: Path) -> None:
         company = Company.create(tmp_path / "acme", name="Acme")
         company.setup_claude_code()
         agent = (company.root / ".claude" / "agents" / "trypro-research-analyst.md").read_text(encoding="utf-8")
         assert "at most 2 parallel workers and a time limit" in agent
+
+
+def _blocked(tmp_path: Path) -> tuple[Company, Orchestrator, str]:
+    """A command stopped for a person, over a token limit."""
+    import yaml
+
+    from try_professional.adapters.mcp import McpService
+
+    company = Company.create(tmp_path / "acme", name="Acme")
+    path = company.root / "org" / "org.yaml"
+    doc = yaml.safe_load(path.read_text(encoding="utf-8"))
+    doc["pipeline"].setdefault("budget", {})["mcp_max_tokens_per_run"] = 3000
+    path.write_text(yaml.safe_dump(doc), encoding="utf-8")
+    orchestrator = company._orchestrator()
+    service = McpService(orchestrator)
+    run_id = (current := service.run_start("Add a health check endpoint"))["run_id"]
+    for _ in range(100):
+        if current["status"] == "blocked":
+            break
+        action = current["actions"][0]
+        state = orchestrator.state(run_id)
+        payload = default_payload(state.invocations[action["invocation_id"]], state, orchestrator.org)
+        current = getattr(service, action["submit_with"])(run_id, action["invocation_id"], payload)
+    assert current["status"] == "blocked"
+    return company, orchestrator, run_id
+
+
+class TestThePersonDecidesInChat:
+    """Typing a trypro command for every answer was too much to ask. The person answers where they already are, and
+    Claude Code asks them to confirm each recorded decision, which no permission mode skips."""
+
+    @pytest.mark.parametrize(
+        ("kind", "has_them"),
+        [({"coordinator": True}, True), ({}, False), ({"bound_role": "research/analyst"}, False)],
+    )
+    def test_only_claude_codes_coordinator_has_the_tools(
+        self, tmp_path: Path, kind: dict[str, Any], has_them: bool
+    ) -> None:
+        import asyncio
+
+        from try_professional.adapters.mcp import McpService
+        from try_professional.adapters.mcp.server import build_server
+        from try_professional.adapters.mcp.service import PERSON_TOOLS
+
+        company = Company.create(tmp_path / "acme", name="Acme")
+        orchestrator = company._orchestrator()
+        try:
+            server = build_server(McpService(orchestrator, **kind), coordinator=bool(kind.get("coordinator")))
+            names = {tool.name for tool in asyncio.run(server.list_tools())}
+        finally:
+            orchestrator.close()
+        assert (set(PERSON_TOOLS) <= names) if has_them else not (set(PERSON_TOOLS) & names)
+
+    def test_claude_code_asks_the_person_to_confirm_every_one(self, tmp_path: Path) -> None:
+        import json
+
+        company = Company.create(tmp_path / "acme", name="Acme")
+        company.setup_claude_code()
+        settings = json.loads((company.root / ".claude" / "settings.json").read_text(encoding="utf-8"))
+        permissions = settings["permissions"]
+        assert permissions["ask"] == ["mcp__trypro__person_*"], "an ask rule prompts even where allow matches"
+        assert "mcp__trypro__*" in permissions["allow"]
+        assert "mcp__trypro_role__person_*" in permissions["deny"]
+
+    def test_an_answer_is_recorded_and_the_run_goes_on(self, tmp_path: Path) -> None:
+        from try_professional.adapters.mcp import McpService
+
+        _, orchestrator, run_id = _blocked(tmp_path)
+        try:
+            request_id = next(iter(orchestrator.state(run_id).human_requests))
+            answer = McpService(orchestrator, coordinator=True).person_answer(run_id, request_id, "abandon", "costly")
+            assert answer["recorded"] and "confirmed in chat" in answer["decided_by"]
+            assert orchestrator.state(run_id).phase.value == "failed"
+        finally:
+            orchestrator.close()
+
+    def test_no_other_server_can_answer(self, tmp_path: Path) -> None:
+        from try_professional.adapters.mcp import McpService
+        from try_professional.adapters.mcp.service import ToolError
+
+        _, orchestrator, run_id = _blocked(tmp_path)
+        try:
+            request_id = next(iter(orchestrator.state(run_id).human_requests))
+            for server in (McpService(orchestrator), McpService(orchestrator, bound_role="engineering/backend")):
+                with pytest.raises(ToolError, match="Only the person decides"):
+                    server.person_answer(run_id, request_id, "abandon")
+            assert orchestrator.state(run_id).phase.value == "blocked"
+        finally:
+            orchestrator.close()
+
+    def test_a_proposed_role_is_added_from_chat(self, tmp_path: Path) -> None:
+        from try_professional.adapters.mcp import McpService
+
+        company = Company.create(tmp_path / "acme", name="Acme")
+        company.setup_claude_code()
+        company.run("Make a launch video", client=ScriptedClient(TestAProposal()._retrospective(VIDEO_EDITOR)))
+        [proposal] = company.org_proposals()
+        orchestrator = company._orchestrator()
+        try:
+            coordinator = McpService(orchestrator, coordinator=True, root=company.root)
+            added = coordinator.person_decide_company_change(proposal.id, "add")
+        finally:
+            orchestrator.close()
+        assert added["added"] == "marketing/video-editor" and "Restart Claude Code" in added["tell_the_person"]
+        assert (company.root / ".claude" / "agents" / "trypro-marketing-video-editor.md").is_file()
+
+    def test_a_post_made_in_chat_is_followed_for_its_role(self, tmp_path: Path) -> None:
+        from try_professional.adapters.mcp import McpService
+        from try_professional.adapters.mcp.service import ToolError
+
+        company = Company.create(tmp_path / "acme", name="Acme")
+        run_id = company.run("Find a bug", dry_run=True).run_id
+        orchestrator = company._orchestrator()
+        try:
+            coordinator = McpService(orchestrator, coordinator=True)
+            coordinator.outcome_record(run_id, "https://github.com/a/b/issues/5", "research/analyst", target="a/b")
+            with pytest.raises(ToolError, match="isn't a role here"):
+                coordinator.outcome_record(run_id, "https://github.com/a/b/issues/6", "front-desk")
+            [item] = orchestrator.outside.outcomes()
+            assert item.role == "research/analyst" and item.target == "a/b"
+        finally:
+            orchestrator.close()
+
+
+class TestAfterAnUpgrade:
+    def test_claude_codes_files_catch_up_by_themselves(self, tmp_path: Path) -> None:
+        from try_professional.adapters.mcp.claude_code import VERSION_STAMP, refresh_claude_code_files
+
+        company = Company.create(tmp_path / "acme", name="Acme")
+        company.setup_claude_code()
+        assert refresh_claude_code_files(company.root, company.org) is False, "already this version"
+        agent = company.root / ".claude" / "agents" / "trypro-research-analyst.md"
+        agent.write_text(agent.read_text(encoding="utf-8").replace("model: sonnet", "model: opus"), encoding="utf-8")
+        (company.root / ".claude" / VERSION_STAMP).write_text("0.6.3\n", encoding="utf-8")
+        command = company.root / ".claude" / "commands" / "company.md"
+        command.write_text("old", encoding="utf-8")
+        assert refresh_claude_code_files(company.root, company.org) is True
+        assert "person_answer" in command.read_text(encoding="utf-8")
+        assert "model: opus" in agent.read_text(encoding="utf-8")
+
+    def test_a_folder_without_claude_code_is_left_alone(self, tmp_path: Path) -> None:
+        from try_professional.adapters.mcp.claude_code import refresh_claude_code_files
+
+        company = Company.create(tmp_path / "acme", name="Acme")
+        assert refresh_claude_code_files(company.root, company.org) is False
+        assert not (company.root / ".claude").exists()
