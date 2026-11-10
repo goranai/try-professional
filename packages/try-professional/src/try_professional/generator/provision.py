@@ -324,9 +324,10 @@ def _flagged(org: Org, lock: Lockfile, records: list[SkillRecord], result: Provi
         if entry.trust == "quarantined":
             found = entry.scan.get("findings") or []
             findings = [f for f in found if isinstance(f, dict) and f.get("rule") != "executable-content"]
-            # Scripts alone are a limit of this version. Any other finding is a warning about the skill itself.
+            # Roles have a shell, so a skill's scripts would run on this computer. Someone else's code isn't installed
+            # for that. Any other finding is a warning about the skill itself.
             if not findings and entry.scan.get("executable_files"):
-                reason = "ships scripts, which need a shell, and no role has one"
+                reason = "ships scripts, and someone else's scripts aren't installed, since a role would run them here"
                 result.cannot_run.append({"skill_id": skill_id, "reason": reason})
                 continue
             first = findings[0] if findings else {}

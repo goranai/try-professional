@@ -125,6 +125,21 @@ def wait_for_memory(
         sleep(recheck_seconds)
 
 
+def memory_shortfall(needed_mb: int, free: Callable[[], int | None] = free_memory_mb) -> str | None:
+    """Why this work can't start now, for a caller that can't wait and print, such as a tool call. None: it can."""
+    if not _checking():
+        return None
+    required = needed_mb + margin_mb()
+    available = free()
+    if available is None or available >= required:
+        return None
+    return (
+        f"Only {available} MB of memory is free, and this needs {required} MB: {needed_mb} MB for the work and "
+        f"{margin_mb()} MB as a safety margin. Nothing has started or changed. Close some apps or browser tabs, "
+        "then call this again."
+    )
+
+
 def stop_if_memory_low(free: Callable[[], int | None] = free_memory_mb) -> None:
     """For a safe point in work already under way. Raises LowMemory when free memory is under the margin."""
     if not _checking():

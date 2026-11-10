@@ -66,7 +66,21 @@ company.setup_claude_code()  # gives the new role its subagent
 
 The role joins an existing department, reports to its head, and its head reviews its work. Any field of [the role spec](spec/org-v1.md) can be set with a keyword, such as `model_tier="fast"` or `reviewer="legal/counsel"`. If the company wouldn't validate, nothing is written, and `CompanyError` says why. Editing `org/roles/*.yaml` by hand works too; check it with `company.validate()` or `trypro org validate`.
 
-A new department is a pack: `trypro pack list`, and `trypro pack add <name>`. Writing your own is an edit to `org/org.yaml`, as the spec describes.
+A new department is a pack: `trypro pack list`, and `trypro pack add <name>`. Or one of your own, with its head:
+
+```python
+company.add_department("studio", "studio-lead", title="Studio Lead", mission="Run video production.")
+```
+
+Its head reports to the root role, and its work passes the same QA review as the other departments'.
+
+The CEO also proposes roles and departments a company lacks, from what its runs show. A person decides:
+
+```python
+for proposal in company.org_proposals():  # waiting for a decision
+    print(proposal.line())  # what, where, and the evidence
+company.decide_org_change(proposal.id, True, by="owner")  # adds it, and rewrites Claude Code's files if there are any
+```
 
 ## Running from Python
 

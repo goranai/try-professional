@@ -814,10 +814,10 @@ class TestReviewScreen:
     def test_it_lists_quarantined_and_unusable_skills_apart(self, tmp_path: Path) -> None:
         bundle = self._bundle(tmp_path)
         bundle.provisioned.quarantined.append({"skill_id": "x/bad", "reason": "hidden instruction"})
-        bundle.provisioned.cannot_run.append({"skill_id": "x/cutter", "reason": "needs a shell"})
+        bundle.provisioned.cannot_run.append({"skill_id": "x/cutter", "reason": "ships scripts"})
         screen = render(bundle)
         assert "QUARANTINED  x/bad: hidden instruction" in screen
-        assert "CAN'T RUN IN v0.1  x/cutter" in screen
+        assert "NOT INSTALLED  x/cutter" in screen
         assert screen.index("Not included in approval") < screen.index("QUARANTINED")
 
     def test_it_says_when_no_model_judged(self, tmp_path: Path) -> None:
@@ -827,8 +827,13 @@ class TestReviewScreen:
         bundle = create_proposal(root, FakeEmbedder(), template_id=SHORTS, discovery=False)
         assert "No model was called" in render(bundle)
 
-    def test_it_states_the_v01_scope(self, tmp_path: Path) -> None:
-        assert "produces files" in render(self._bundle(tmp_path))
+    def test_it_says_what_the_company_can_and_cant_do(self, tmp_path: Path) -> None:
+        """It used to say a company only produces files, long after its roles had a shell and the web."""
+        screen = render(self._bundle(tmp_path))
+        assert "produces files" not in screen and "v0.1" not in screen
+        assert "a shell, files, git, and the web" in screen and "for your approval" in screen
+        assert "It can't spend money" in screen
+        assert "trypro org review" in screen
 
 
 class TestEstimate:

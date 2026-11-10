@@ -2,14 +2,16 @@
 
 from __future__ import annotations
 
+import re
 from typing import TYPE_CHECKING, Any
 
-from ...org import Org
+from ...org import Org, Role
 from ..artifacts import (
     WORK_OUTPUT_TYPES,
     Artifact,
     DepartmentActivation,
     GoalCharter,
+    OrgChange,
     Plan,
     TaskBrief,
     TaskPlan,
@@ -218,7 +220,7 @@ class StepPlanning(StepReview):
         final.result_artifact_id = stored.artifact_id
         state.tasks[FINAL_TASK_ID] = final
         state.final_artifact_id = stored.artifact_id
-        self.finish_done()
+        self.finish_or_reflect()
         return True
 
     def update_phase(self) -> None:
@@ -344,6 +346,50 @@ def _route_problem(charter: GoalCharter, org: Org) -> str | None:
     if _work_output(org.role(role).outputs) is None:
         return f"route_role '{role}' doesn't produce work results. Route to the department instead"
     return None
+
+
+def org_change_problem(changes: list[OrgChange], org: Org) -> str | None:
+    """A proposed role or department a person could approve as written. Nothing is changed here."""
+    for change in changes:
+        if change.kind == "add_role":
+            if change.department not in org.departments:
+                known = ", ".join(org.departments)
+                return f"add_role needs an existing department, one of: {known}. For a new one, use add_department"
+            if f"{change.department}/{change.role_id}" in org.roles:
+                return f"{change.department}/{change.role_id} already exists. Propose only what the company lacks"
+        elif change.department in org.departments:
+            return f"Department '{change.department}' already exists. Use add_role to add to it"
+    return None
+
+
+def _role_names(role: Role) -> set[str]:
+    return {name.lower() for name in (role.id.replace("-", " ").replace("_", " "), role.display_name) if len(name) > 3}
+
+
+def named_elsewhere(charter: GoalCharter, org: Org) -> list[str]:
+    """Roles outside the routed department that the command's own criteria name, such as "confirmed by the validator".
+
+    A small command goes to one department, so those roles would never be asked. A real company's CEO sized six hunts
+    small, and its Validator never ran once, while every review asked for its check. A name that's also a role of the
+    routed department, of the root's, or a reviewer's, says nothing about who must do the work.
+    """
+    department = charter.route_department or charter.route_role.split("/", 1)[0]
+    root_department = org.root_role.split("/", 1)[0]
+    reviewers = {d.qa_reviewer for d in org.departments.values() if d.qa_reviewer}
+    reviewers |= {gate.reviewer for gate in org.gates.values()}
+    common: set[str] = set()
+    for ref, role in org.roles.items():
+        if role.department in (department, root_department) or ref in reviewers:
+            common |= _role_names(role)
+    text = " ".join([*charter.success_criteria, *charter.constraints]).lower()
+    named = []
+    for ref, role in org.roles.items():
+        if role.department in (department, root_department) or ref in reviewers:
+            continue
+        names = _role_names(role) - common
+        if any(re.search(rf"\b{re.escape(name)}s?\b", text) for name in names):
+            named.append(f"{role.display_name} ({ref})")
+    return named
 
 
 def _start_small(step: _Step, charter: GoalCharter, stored: Artifact) -> None:

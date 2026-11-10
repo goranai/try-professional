@@ -1,4 +1,73 @@
 {
+  "$defs": {
+    "OrgChange": {
+      "additionalProperties": false,
+      "properties": {
+        "because": {
+          "description": "The evidence no current role covers it",
+          "minLength": 1,
+          "title": "Because",
+          "type": "string"
+        },
+        "department": {
+          "description": "add_role: an existing one. add_department: the new id",
+          "minLength": 1,
+          "title": "Department",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "add_role",
+            "add_department"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "mission": {
+          "minLength": 1,
+          "title": "Mission",
+          "type": "string"
+        },
+        "responsibilities": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Responsibilities",
+          "type": "array"
+        },
+        "role_id": {
+          "description": "The new role's id. add_department: its head",
+          "minLength": 1,
+          "title": "Role Id",
+          "type": "string"
+        },
+        "skill_needs": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Skill Needs",
+          "type": "array"
+        },
+        "title": {
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "department",
+        "role_id",
+        "title",
+        "mission",
+        "because"
+      ],
+      "title": "OrgChange",
+      "type": "object"
+    }
+  },
   "additionalProperties": false,
   "properties": {
     "lessons": {
@@ -7,6 +76,14 @@
         "type": "string"
       },
       "title": "Lessons",
+      "type": "array"
+    },
+    "org_changes": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/OrgChange"
+      },
+      "title": "Org Changes",
       "type": "array"
     },
     "procedures": {

@@ -90,7 +90,14 @@ class StepReview(StepEscalation):
         task.status = TaskStatus.APPROVED
         if task.task_id != FINAL_TASK_ID:
             return
-        if self.state.size == "small":
+        self.finish_or_reflect()
+
+    def finish_or_reflect(self) -> None:
+        """A small command that went smoothly has nothing to teach. One that was sent back or escalated does: it's
+        where a company finds out it lacks a role, and real small commands were where that kept happening."""
+        counters = self.state.counters
+        troubled = counters.rework_loops or counters.escalations or counters.handoffs
+        if self.state.size == "small" and not troubled:
             self.finish_done()
         else:
             self.start_retrospective()

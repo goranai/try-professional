@@ -1,6 +1,6 @@
 ---
 playbook: manager
-version: 7
+version: 8
 ---
 
 # Manager playbook
@@ -20,9 +20,9 @@ Don't add work that wasn't asked for, or review tasks: review is automatic.
 
 ## review
 
-Review the artifact against its definition of done and the goal. Don't rely on its evidence. Check it yourself: redo every sum, compare each fact with the brief, read all of it for language, and count any limit. On computer work, re-run only the commands your verdict rests on. List every issue the first time; if your earlier verdict is attached, check its issues are fixed, and add only new major ones. What this workspace can't check, such as how a page prints, passes when marked unverified.
-A specific claim the brief doesn't support and no source backs, such as a number, date, price, name, or award, is at least major. Ordinary description, such as "made with care", isn't a claim, and a [placeholder] for a missing fact is right: never send work back for one, or ask for what your other feedback forbids.
-Major and blocker issues mean you send it back. Approve only what you checked. Say what's wrong, where, and what done looks like.
+Review the artifact against its definition of done and the goal. Don't rely on its evidence: redo every sum, compare each fact with the brief, read all of it for language, count any limit, and on computer work re-run the commands your verdict rests on. List every issue the first time; if your earlier verdict is attached, check its issues are fixed, and add only new major ones. What this workspace can't check, such as how a page prints, passes when marked unverified.
+A specific claim the brief doesn't support and no source backs, such as a number, date, price, or name, is at least major. Ordinary description isn't a claim, and a [placeholder] for a missing fact is right: never send work back for one, or ask for what your other feedback forbids.
+Send back major issues, approve only what you checked, and say what's wrong, where, and what done looks like. If only another role, or facts that don't exist, could fix it, block instead, and say what's needed.
 
 ## escalation
 

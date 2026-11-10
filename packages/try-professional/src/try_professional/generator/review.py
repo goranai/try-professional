@@ -132,7 +132,7 @@ def render(bundle: Proposal) -> str:
         for item in quarantined:
             lines.append(f"  QUARANTINED  {item['skill_id']}: {item['reason']}")
         for item in cannot_run:
-            lines.append(f"  CAN'T RUN IN v0.1  {item['skill_id']}: {item['reason']}")
+            lines.append(f"  NOT INSTALLED  {item['skill_id']}: {item['reason']}")
         for item in off_trade:
             lines.append(f"  OTHER TRADE  {item['skill_id']}: {item['reason']}")
     unique = {m.skill_id for items in bundle.provisioned.matches.values() for m in items}
@@ -141,7 +141,9 @@ def render(bundle: Proposal) -> str:
         f"Approving activates {len(org.departments)} departments, {len(org.roles)} roles, "
         f"and {len(unique)} skills in {total_skills} role assignments.",
         "Each role starts with its role card, its skills, and an empty personal memory.",
-        "This company produces files. It can't render, upload, publish, or spend.",
+        "Its roles use this computer: a shell, files, git, and the web. They hold anything that posts, sends, or "
+        "opens something outside for your approval, which the API runner enforces. It can't spend money.",
+        "When its work shows a role is missing, the CEO proposes one, and you decide: trypro org review",
     ]
     doubtful = sum(1 for items in bundle.provisioned.matches.values() for m in items if low_confidence(m))
     if doubtful:

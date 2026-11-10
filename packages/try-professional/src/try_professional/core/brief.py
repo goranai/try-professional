@@ -70,6 +70,9 @@ class Briefing:
     outside: list[str] = field(default_factory=list)
     # This run's commands waiting for a person's approval. They count as done for this run, if they're right.
     held: list[str] = field(default_factory=list)
+    # At a retrospective: every role and what it's for, and the record of what didn't fit them. See org_growth.
+    roster: list[str] = field(default_factory=list)
+    org_record: list[str] = field(default_factory=list)
 
 
 def _line(text: str) -> str:

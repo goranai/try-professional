@@ -27,9 +27,11 @@ import yaml
 from .adapters.api_runner.runner import ApiRunner, ModelRoutes, RunResult
 from .adapters.api_runner.scripted import ScriptedClient
 from .config import CONFIG_NAME, CONFIG_TEMPLATE, load_config
+from .core.company import CompanyStore
 from .core.orchestrator import Orchestrator
 from .org import Org, load_org, validate_bundle
 from .org.loader import read_documents
+from .org.policy import check_policy
 from .packs import available_packs, default_packs, install_org
 
 __all__ = ["Company", "CompanyError", "RoleInfo", "RunResult", "RunStatus"]
@@ -51,6 +53,12 @@ ROLE_DEFAULTS: dict[str, Any] = {
     "model_tier": "standard",
     "max_skills": 8,
 }
+
+
+def _was_sandboxed(root: Path) -> bool:
+    """Whether this company's Claude Code roles were set up without a shell, so a rewrite keeps them that way."""
+    agents = sorted((root / ".claude" / "agents").glob("trypro-*.md"))
+    return bool(agents) and all("Bash" not in path.read_text(encoding="utf-8").split("---")[1] for path in agents)
 
 
 class CompanyError(Exception):
@@ -141,8 +149,7 @@ class Company:
         """Add a role to an existing department. It reports to the department's head, who also reviews its work.
         Any role field can be set through `overrides`, as in `docs/spec/role-v1.md`. If the result doesn't
         validate, nothing is written, and CompanyError says why."""
-        org_path = self.root / "org" / "org.yaml"
-        data = yaml.safe_load(org_path.read_text(encoding="utf-8"))
+        data = self._org_data()
         departments = {d["id"]: d for d in data["departments"]}
         if department not in departments:
             raise CompanyError(f"No department '{department}'. There are: {', '.join(departments)}")
@@ -150,7 +157,117 @@ class Company:
         if role_id in dept["roles"]:
             raise CompanyError(f"{department}/{role_id} already exists.")
         head = f"{department}/{dept['head']}"
-        role = {
+        role = self._role_data(department, role_id, title, mission, responsibilities, skill_needs, skill_categories,
+                               instructions, **{"escalation": head, "reviewer": head, **overrides})  # fmt: skip
+        dept["roles"].append(role_id)
+        self._write_org(data, role, "The role wasn't added")
+        added = self.org.role(f"{department}/{role_id}")
+        return RoleInfo(added.ref, added.title, added.mission, False)
+
+    def add_department(
+        self,
+        department: str,
+        head_id: str,
+        *,
+        title: str,
+        mission: str,
+        name: str | None = None,
+        responsibilities: list[str] | None = None,
+        skill_needs: list[str] | None = None,
+        skill_categories: list[str] | None = None,
+        instructions: str = "",
+    ) -> RoleInfo:
+        """Add a department with its head, who reports to the root role. Its work passes the same QA review as the
+        other departments'. If the result doesn't validate, nothing is written, and CompanyError says why."""
+        data = self._org_data()
+        if any(d["id"] == department for d in data["departments"]):
+            raise CompanyError(f"Department '{department}' already exists. Add a role to it instead.")
+        root = str(data["root_role"])
+        root_role = self.org.role(root)
+        # The review the other departments' work passes. A company without one gets none here either.
+        gate = next((d["qa_gate"] for d in data["departments"] if "/" in str((d.get("qa_gate") or {}).get("reviewer"))),
+                    None)  # fmt: skip
+        data["departments"].append(
+            {
+                "id": department,
+                "name": name or department.replace("-", " ").title(),
+                "head": head_id,
+                "activation": "on_demand",
+                **({"qa_gate": dict(gate)} if gate else {}),
+                "roles": [head_id],
+            }
+        )
+        role = self._role_data(department, head_id, title, mission, responsibilities, skill_needs, skill_categories,
+                               instructions, escalation=root, reviewer=root_role.reviewer or root,
+                               outputs=["TaskPlan", *ROLE_DEFAULTS["outputs"], "ReviewVerdict"])  # fmt: skip
+        self._write_org(data, role, "The department wasn't added")
+        added = self.org.role(f"{department}/{head_id}")
+        return RoleInfo(added.ref, added.title, added.mission, True)
+
+    def org_proposals(self, status: str | None = "pending") -> list[Any]:
+        """Roles and departments the CEO proposed, from evidence in its runs. A person decides each one."""
+        store = CompanyStore(self.root / ".trypro" / "company.sqlite")
+        try:
+            return store.org_proposals(status)
+        finally:
+            store.close()
+
+    def decide_org_change(self, proposal_id: int, accept: bool, *, by: str) -> RoleInfo | None:
+        """Accept, which adds the role or department now, or reject. A change that can't be added stays waiting, and
+        CompanyError says why. Claude Code's files are rewritten, if this company has them, keeping each role's model.
+        """
+        from .core.orchestrator import utc_now
+
+        store = CompanyStore(self.root / ".trypro" / "company.sqlite")
+        try:
+            decided = store.decide_org_change(proposal_id, "accepted" if accept else "rejected", by=by, at=utc_now())
+            if decided is None:
+                raise CompanyError(f"There's no change #{proposal_id} waiting for a decision.")
+            if not accept:
+                return None
+            change = decided.change
+            try:
+                if change["kind"] == "add_department":
+                    added = self.add_department(
+                        change["department"], change["role_id"], title=change["title"], mission=change["mission"],
+                        responsibilities=change.get("responsibilities"), skill_needs=change.get("skill_needs"),
+                    )  # fmt: skip
+                else:
+                    added = self.add_role(
+                        change["department"], change["role_id"], title=change["title"], mission=change["mission"],
+                        responsibilities=change.get("responsibilities"), skill_needs=change.get("skill_needs"),
+                    )  # fmt: skip
+            except CompanyError:
+                store.reopen_org_change(proposal_id)
+                raise
+        finally:
+            store.close()
+        if (self.root / ".claude" / "agents").is_dir():
+            self.setup_claude_code(sandboxed=_was_sandboxed(self.root))
+        return added
+
+    def validate(self) -> list[str]:
+        """Every error that would stop the company loading. An empty list means it's valid."""
+        org, roles = read_documents(self.root / "org")
+        return [str(issue) for issue in validate_bundle(org, roles) if issue.severity == "error"]
+
+    def _org_data(self) -> dict[str, Any]:
+        data: dict[str, Any] = yaml.safe_load((self.root / "org" / "org.yaml").read_text(encoding="utf-8"))
+        return data
+
+    @staticmethod
+    def _role_data(
+        department: str,
+        role_id: str,
+        title: str,
+        mission: str,
+        responsibilities: list[str] | None,
+        skill_needs: list[str] | None,
+        skill_categories: list[str] | None,
+        instructions: str,
+        **fields: Any,
+    ) -> dict[str, Any]:
+        return {
             "spec": "role/v1",
             "id": role_id,
             "title": title,
@@ -159,30 +276,28 @@ class Company:
             "responsibilities": responsibilities or [mission],
             **ROLE_DEFAULTS,
             "allowed_skill_categories": skill_categories or [],
-            "escalation": head,
-            "reviewer": head,
             "skill_needs": skill_needs or [],
             "system_prompt": instructions or f"You are the {title}. {mission}",
-            **overrides,
+            **fields,
         }
-        role_path = self.root / "org" / "roles" / department / f"{role_id}.yaml"
+
+    def _write_org(self, data: dict[str, Any], role: dict[str, Any], failed: str) -> None:
+        """Write org.yaml and one new role file, or nothing: what doesn't load, or breaks a rule the company kept
+        until now, is undone."""
+        org_path = self.root / "org" / "org.yaml"
+        role_path = self.root / "org" / "roles" / role["department"] / f"{role['id']}.yaml"
         before = org_path.read_text(encoding="utf-8")
-        dept["roles"].append(role_id)
+        kept = {str(issue) for issue in check_policy(*read_documents(self.root / "org"))}
         role_path.parent.mkdir(parents=True, exist_ok=True)
         role_path.write_text(yaml.safe_dump(role, sort_keys=False, allow_unicode=True), encoding="utf-8")
         org_path.write_text(yaml.safe_dump(data, sort_keys=False, allow_unicode=True), encoding="utf-8")
         problems = self.validate()
+        if not problems:
+            problems = [str(i) for i in check_policy(*read_documents(self.root / "org")) if str(i) not in kept]
         if problems:
             role_path.unlink()
             org_path.write_text(before, encoding="utf-8")
-            raise CompanyError("The role wasn't added: " + "; ".join(problems))
-        added = self.org.role(f"{department}/{role_id}")
-        return RoleInfo(added.ref, added.title, added.mission, False)
-
-    def validate(self) -> list[str]:
-        """Every error that would stop the company loading. An empty list means it's valid."""
-        org, roles = read_documents(self.root / "org")
-        return [str(issue) for issue in validate_bundle(org, roles) if issue.severity == "error"]
+            raise CompanyError(f"{failed}: " + "; ".join(problems))
 
     # ---- Claude Code ---------------------------------------------------------------------------------------------
 

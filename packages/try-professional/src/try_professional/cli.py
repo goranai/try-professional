@@ -75,7 +75,14 @@ from .org import Org, OrgValidationError, load_org, validate_bundle
 from .org.loader import read_documents
 from .org.policy import check_policy
 from .packs import add_pack, available_packs, default_packs, install_org, remove_pack
-from .resources import COMMAND_PEAK_MB, LowMemory, wait_for_memory
+from .resources import (
+    COMMAND_PEAK_MB,
+    GENERATION_AFTER_MODEL_LOADED_MB,
+    GENERATION_PEAK_MB,
+    LowMemory,
+    memory_shortfall,
+    wait_for_memory,
+)
 from .setup import CLAUDE_CODE, runtime_of, setup_claude_code
 from .skills import (
     DEFAULT_UNUSED_RUNS,
@@ -327,6 +334,82 @@ def cmd_org_show(args: argparse.Namespace) -> int:
             marker = " (head)" if role == department.head else ""
             _print(f"    {role}{marker}: {org.role(f'{department.id}/{role}').mission}")
     return 0
+
+
+def _org_change_detail(proposal: Any) -> list[str]:
+    change = proposal.change
+    lines = [proposal.line(), f"   Proposed in {proposal.source_run} by {proposal.proposed_by}."]
+    if change.get("responsibilities"):
+        lines.append("   Does: " + "; ".join(change["responsibilities"]))
+    if change.get("skill_needs"):
+        lines.append("   Skills it needs: " + "; ".join(change["skill_needs"]))
+    return lines
+
+
+def cmd_org_proposals(args: argparse.Namespace) -> int:
+    from .api import Company
+
+    proposals = Company(Path.cwd()).org_proposals(None if args.all else "pending")
+    if not proposals:
+        _print("No changes to the company are waiting." if not args.all else "The CEO hasn't proposed any changes.")
+        return 0
+    for proposal in proposals:
+        for line in _org_change_detail(proposal):
+            _print(line)
+        if args.all:
+            _print(f"   Status: {proposal.status}")
+    if not args.all:
+        _print("To decide them: trypro org review")
+    return 0
+
+
+def _decide_org_change(company: Any, proposal_id: int, accept: bool, by: str) -> int:
+    from .api import CompanyError
+
+    try:
+        added = company.decide_org_change(proposal_id, accept, by=by)
+    except CompanyError as error:
+        _print(str(error))
+        return 1
+    if added is None:
+        _print(f"#{proposal_id} rejected. The CEO won't propose it again.")
+    else:
+        _print(f"#{proposal_id} added: {added.ref}, {added.title}. It works from the next command.")
+        if (company.root / ".claude" / "agents").is_dir():
+            _print("Claude Code's files were updated. Restart Claude Code in this folder so it sees the new role.")
+    return 0
+
+
+def cmd_org_review(args: argparse.Namespace) -> int:
+    """Only a person changes who works here, as only a person approves the company at first."""
+    from .api import Company
+
+    company = Company(Path.cwd())
+    proposals = company.org_proposals("pending")
+    if not proposals:
+        _print("No changes to the company are waiting.")
+        return 0
+    if not _person_at_terminal():
+        _print("Deciding changes to the company needs a person at a terminal. Nothing was changed.")
+        return 3
+    by = args.by or getpass.getuser()
+    for proposal in proposals:
+        for line in _org_change_detail(proposal):
+            _print(line)
+        choice = input("[a]dd it  [r]eject it  [s]kip for now: ").strip().lower()
+        if choice.startswith(("a", "r")):
+            _decide_org_change(company, proposal.id, choice.startswith("a"), by)
+        _print()
+    return 0
+
+
+def cmd_org_decide(args: argparse.Namespace) -> int:
+    from .api import Company
+
+    if not _person_at_terminal():
+        _print("Deciding changes to the company needs a person at a terminal. Nothing was changed.")
+        return 3
+    return _decide_org_change(Company(Path.cwd()), args.id, args.decision == "add", args.by or getpass.getuser())
 
 
 def cmd_pack(args: argparse.Namespace) -> int:
@@ -723,6 +806,12 @@ class _Design:
 
     def _refused_as_tool_errors(self, call: Any, *args: Any, **kwargs: Any) -> dict[str, Any]:
         load_env_file(self.root)
+        if call is not pull.proposal_status:
+            # A tool call can't print while it waits, so a design once sat silent for half an hour. Say it instead.
+            loaded = self._embedder is not None
+            shortfall = memory_shortfall(GENERATION_AFTER_MODEL_LOADED_MB if loaded else GENERATION_PEAK_MB)
+            if shortfall:
+                raise ToolError(shortfall)
         try:
             result: dict[str, Any] = call(self.root, *args, **kwargs)
         except pull.PullError as error:
@@ -812,6 +901,12 @@ def _print_efficiency(orchestrator: Orchestrator, run_id: str) -> None:
     if audit.is_file():
         for line in measure(audit, run_id).lines():
             _print(line)
+    proposed = orchestrator.company.org_proposals("pending", source_run=run_id)
+    if proposed:
+        _print("The CEO proposes changes to the company, from what this command showed:")
+        for proposal in proposed:
+            _print(f"  {proposal.line()}")
+        _print("Only you decide them: trypro org review")
 
 
 def _run_goal(orchestrator: Orchestrator, runner: ApiRunner, goal: str) -> int:
@@ -1381,6 +1476,17 @@ def build_parser() -> argparse.ArgumentParser:
     validate.add_argument("--policy", action="store_true", help="Also apply the rules for generated companies")
     validate.set_defaults(func=cmd_org_validate)
     org.add_parser("show", help="Print the org chart").set_defaults(func=cmd_org_show)
+    proposals = org.add_parser("proposals", help="Roles and departments the CEO proposed, from what its runs showed")
+    proposals.add_argument("--all", action="store_true", help="Also the ones already decided")
+    proposals.set_defaults(func=cmd_org_proposals)
+    review = org.add_parser("review", help="Decide the CEO's proposed roles and departments, at a terminal")
+    review.add_argument("--by", help="Your name, for the record. Default: your username")
+    review.set_defaults(func=cmd_org_review)
+    decide = org.add_parser("decide", help="Add or reject one proposed role or department, at a terminal")
+    decide.add_argument("id", type=int)
+    decide.add_argument("decision", choices=("add", "reject"))
+    decide.add_argument("--by", help="Your name, for the record. Default: your username")
+    decide.set_defaults(func=cmd_org_decide)
 
     sub.add_parser("templates", help="List industry templates").set_defaults(func=cmd_templates)
 

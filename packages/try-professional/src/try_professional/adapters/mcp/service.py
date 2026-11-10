@@ -200,13 +200,19 @@ class McpService:
         actions = self.orchestrator.open_actions(run_id)
         finish = next((a for a in actions if isinstance(a, Finish)), None)
         if finish is not None:
-            return {
+            finished: dict[str, Any] = {
                 "status": finish.status,
                 "reason": finish.reason,
                 "actions": [],
                 "final": None if self.bound_role else self.run_status(run_id)["final"],
                 "deliverables": None if self.bound_role else self._index_of(run_id, finish.status),
             }
+            proposed = [] if self.bound_role else self.orchestrator.company.org_proposals("pending", source_run=run_id)
+            if proposed:
+                finished["company_changes"] = [p.line() for p in proposed] + [
+                    "The CEO proposes these from what this command showed. Only a person decides: trypro org review"
+                ]
+            return finished
         questions = [a for a in actions if isinstance(a, AskHuman)]
         if questions:
             return {

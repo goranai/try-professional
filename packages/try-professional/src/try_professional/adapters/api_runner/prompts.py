@@ -183,6 +183,11 @@ def user_prompt(
         parts.append(_section("Departments and their roles", _routes(org)))
         if computer:
             parts.append(_section("Steps that go outside", _OUTSIDE_CRITERIA))
+    if invocation.purpose == Purpose.RETROSPECTIVE:
+        if briefing.roster:
+            parts.append(_section("Every department and role now", "\n".join(briefing.roster)))
+        record = "\n".join(f"- {line}" for line in briefing.org_record) or "Nothing was sent back, escalated, or idle."
+        parts.append(_section("What didn't go smoothly, from the company's records", untrusted("record", record)))
     if invocation.purpose == Purpose.INTEGRATE:
         # From the pipeline's own record. A real CEO once reported no reviews, because it couldn't see them.
         reviews = {t.task_id: t.passed_gates for t in state.tasks.values() if t.task_id != invocation.task_id}

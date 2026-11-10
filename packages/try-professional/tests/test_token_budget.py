@@ -36,7 +36,12 @@ spec.loader.exec_module(measure_prompts)
 # for captions written out in full in the same breath, until two of three real runs stopped at the rework limit.
 # And 39200: a reviewer checks its own earlier verdict instead of starting over. Real reworked work drew a new list
 # of issues each round until it stopped at the rework limit.
-TOTAL_CHAR_BUDGET = 39200
+# Raised in 0.6.4 to 42600, measured 39810 with no skills and 42508 with full loadouts, from 36461 and 39159, for a
+# company that can grow. Intake can propose a role nobody has (+967), and the retrospective sees every department and
+# what didn't go smoothly, and may propose roles and departments (+2326). A real company's six hunts went to one
+# department, its Validator never ran once, and its reviewer sent the same work back for that check until a person
+# stopped the run. The retrospective runs once per large or troubled command.
+TOTAL_CHAR_BUDGET = 42600
 
 
 def test_a_minimal_run_stays_within_its_prompt_budget() -> None:

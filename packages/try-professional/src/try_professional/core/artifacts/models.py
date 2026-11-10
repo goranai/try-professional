@@ -45,6 +45,27 @@ class Flags(_Strict):
         return [name for name, value in self.model_dump().items() if value]
 
 
+# A role or department the root role finds the company lacks. A person decides, and nothing changes until then. No
+# docstring: it would be sent in the schema of every intake.
+class OrgChange(_Strict):
+    kind: Literal["add_role", "add_department"]
+    department: str = Field(min_length=1, description="add_role: an existing one. add_department: the new id")
+    role_id: str = Field(min_length=1, description="The new role's id. add_department: its head")
+    title: str = NonEmpty
+    mission: str = NonEmpty
+    responsibilities: list[str] = []
+    skill_needs: list[str] = []
+    because: str = Field(min_length=1, description="The evidence no current role covers it")
+
+    @model_validator(mode="after")
+    def _ids(self) -> OrgChange:
+        """An id a person can type, whatever the model wrote: 'Video Editor' is video-editor."""
+        for name in ("department", "role_id"):
+            slug = re.sub(r"[^a-z0-9]+", "-", getattr(self, name).split("/")[-1].lower()).strip("-")
+            object.__setattr__(self, name, slug or getattr(self, name))
+        return self
+
+
 class GoalCharter(_Strict):
     original_goal: str = NonEmpty
     restated_goal: str = NonEmpty
@@ -54,6 +75,7 @@ class GoalCharter(_Strict):
     size: Literal["small", "large"] = "large"
     route_department: str = ""
     route_role: str = Field("", description="department/role")
+    org_changes: list[OrgChange] = []
 
 
 class DepartmentActivation(_Strict):
@@ -359,6 +381,7 @@ class Retrospective(_Strict):
     lessons: list[str] = []
     procedures: list[str] = []
     skill_proposals: list[str] = []
+    org_changes: list[OrgChange] = []
 
 
 PAYLOAD_TYPES: dict[str, type[BaseModel]] = {
@@ -457,6 +480,15 @@ _ALIASES: dict[str, dict[str, tuple[str, ...]]] = {
         "result": ("output", "outcome", "status", "evidence", "passed"),
     },
     "Handoff": {"because": ("reason", "why", "justification", "rationale", "needs")},
+    "OrgChange": {
+        "kind": ("type", "change", "action"),
+        "role_id": ("role", "id", "role_name", "slug"),
+        "title": ("name", "role_title"),
+        "department": ("department_id", "dept"),
+        "because": ("reason", "why", "evidence", "justification", "rationale"),
+    },
+    "GoalCharter": {"org_changes": ("new_roles", "proposed_roles", "org_proposals", "company_changes")},
+    "Retrospective": {"org_changes": ("new_roles", "proposed_roles", "org_proposals", "company_changes")},
     "DepartmentActivation": {"id": ("department", "department_id", "dept", "name"), "reason": ("why", "rationale")},
     "TaskSpec": {
         "title": ("name", "task", "summary"),

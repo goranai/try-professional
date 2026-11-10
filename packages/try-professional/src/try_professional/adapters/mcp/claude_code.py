@@ -1,8 +1,9 @@
 """Set a company up for Claude Code: one subagent per role, each held to one bound MCP server.
 
-A role's subagent gets no shell and no file tools, only the server started for it. So it can't read another role's
-memory, or the rest of the company, whatever it tries. The pipeline decides what each one sees. The session itself gets
-a coordinator's server, which can't read an assignment or submit anything, so it can't do a role's work either.
+A role's subagent acts as its own role only: its server is started for it, so it can't read another role's memory or
+assignment, or submit for one. It's a full agent, with the shell, files, git and the web, unless the company was set
+up sandboxed, when it has only its server. The session itself gets a coordinator's server, which can't read an
+assignment or submit anything, so it can't do a role's work either.
 """
 
 from __future__ import annotations
@@ -40,7 +41,9 @@ _FULL_TOOLS = (
     "under may_use, are for your assignment, memory, skills, and the workspace. Hand in what you made in your "
     "submission, and files through workspace_write, because only those reach whoever reviews your work. When you "
     "put something out, such as a pull request, a post, a quote, or an email, give its link or a reference, and who "
-    "it went to, to outcome_track, so the company learns from what happens to it."
+    "it went to, to outcome_track, so the company learns from what happens to it. The machine is shared: run heavy "
+    "commands, such as a test suite, one at a time, with at most 2 parallel workers and a time limit, and stop what "
+    "you started before you submit."
 )
 _SANDBOXED_TOOLS = "Use only the tools it lists under may_use."
 _COMMAND = """---
@@ -64,7 +67,8 @@ them.
 5. If a role's subagent won't start, stop, and tell me that this folder may need to be trusted in Claude Code. Never \
 do a role's work yourself.
 6. If its status is "done", tell me what came back, including everything under known_limits, and give me the path \
-under deliverables.
+under deliverables. If there's company_changes, show me each one word for word: only I decide them, with \
+`trypro org review` in a terminal.
 """
 
 
@@ -81,6 +85,9 @@ words as the command, exactly as if I'd typed `/company <my words>`. Don't do th
 - When I'm only chatting, or asking how something works, answer briefly yourself.
 - When a run stops for a person, show me its question word for word. Only I can answer it, with `trypro decide` in a \
 terminal. Never run that yourself.
+- If I ask you to post, send, or open something yourself, such as an issue or a pull request, afterwards record it \
+with `trypro outcomes add <link> --run <run_id> --role <the role that made it>`, so the company learns what happens \
+to it.
 {end}
 """
 
@@ -101,7 +108,9 @@ def write_front_desk(root: Path, org: Org) -> Path:
 
 
 _FOR_A_PERSON = tuple(
-    f"{tool}(trypro {command} *)" for tool in ("Bash", "PowerShell") for command in ("decide", "init --review")
+    f"{tool}(trypro {command} *)"
+    for tool in ("Bash", "PowerShell")
+    for command in ("decide", "init --review", "org review", "org decide")
 )
 
 
@@ -128,6 +137,20 @@ def server_config(root: Path, role: str | None = None, *, sandboxed: bool = Fals
     return {"type": "stdio", "command": command, "args": args}
 
 
+def _models_now(agents: Path) -> dict[str, str]:
+    """Each role's model as its file says now. A person may have put one role on another model by hand."""
+    found = {}
+    for path in agents.glob("trypro-*.md"):
+        parts = path.read_text(encoding="utf-8").split("---")
+        try:
+            front = yaml.safe_load(parts[1]) if len(parts) > 2 else None
+        except yaml.YAMLError:
+            continue
+        if isinstance(front, dict) and isinstance(front.get("model"), str):
+            found[path.stem] = front["model"]
+    return found
+
+
 def role_agent(root: Path, org: Org, role: Role, model: str | None = None, sandboxed: bool = False) -> str:
     tools = f"mcp__{ROLE_SERVER}__*" if sandboxed else ", ".join([f"mcp__{ROLE_SERVER}__*", *ROLE_TOOLS])
     front = {
@@ -145,15 +168,17 @@ def role_agent(root: Path, org: Org, role: Role, model: str | None = None, sandb
 
 def write_claude_code_files(root: Path, org: Org, model: str | None = None, sandboxed: bool = False) -> list[Path]:
     """Files under .claude/, .mcp.json, and the front desk's part of CLAUDE.md. Run it again after the company
-    changes."""
+    changes. Without `model`, each role keeps the model its file has now."""
     agents = root / ".claude" / "agents"
     agents.mkdir(parents=True, exist_ok=True)
     written = []
+    kept = _models_now(agents)
     for existing in agents.glob("trypro-*.md"):
         existing.unlink()
     for role in org.roles.values():
         path = agents / f"{agent_name(role.ref)}.md"
-        path.write_text(role_agent(root, org, role, model, sandboxed), encoding="utf-8", newline="\n")
+        chosen = model or kept.get(agent_name(role.ref))
+        path.write_text(role_agent(root, org, role, chosen, sandboxed), encoding="utf-8", newline="\n")
         written.append(path)
     commands = root / ".claude" / "commands"
     commands.mkdir(parents=True, exist_ok=True)

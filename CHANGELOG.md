@@ -2,6 +2,24 @@
 
 Each version of `try-professional`. `skill-customs` is listed only when it changes.
 
+## 0.6.4 (2026-11-10)
+
+From a real company's first day: a contribution company, six hunts on Claude Code, three bug reports posted. Its CEO sized every hunt for one department, so the Validator and the Poster it was designed with never ran, its reviewer sent the same work back for a check only the Validator could make until a person stopped the run, and a person posted every finding by hand, so nothing it put out was tracked.
+
+### Added
+
+- **A company grows when its work shows it should.** The CEO proposes a role, or a new department and its head, at intake when part of a command fits no role, and at the end of every large command and of any small one that was sent back, escalated, or handed on. It sees every department, and the record: work sent back and why, departments with no work across recent commands, and work put out by someone who isn't one of its roles. It proposes only on that evidence. A person decides with `trypro org review`, or `trypro org decide <number> add`; `trypro org proposals` lists them. An added role is checked like any other, and undone if it would break the company. Claude Code shows the proposals at the end of a command, and can't decide them.
+
+### Fixed
+
+- **A command that needs a second department was sent to one.** When a small command's own criteria name a role of another department, such as "confirmed by the validator", it's planned instead, with a constraint saying why. Replayed on the real company's charters, five of its six hunts would have been.
+- **A reviewer sent work back for what its author couldn't fix:** another role's check, or facts that don't exist. It blocks instead, which takes it to whoever can arrange it.
+- **What a person posts from Claude Code wasn't tracked.** The front desk now records it with `trypro outcomes add`, so maintainers' verdicts still reach the roles.
+- **Rewriting Claude Code's roles reset each role's model.** A role a person put on Opus by hand keeps it. `--model` still sets every role.
+- **Roles in Claude Code ran test suites with 8 workers at once** on a machine with 1.6 GB free. They're told the machine is shared: one heavy command at a time, at most 2 workers, with a time limit.
+- **Designing a company over MCP waited for memory in silence,** for half an hour once. It says how much memory it needs instead, and nothing has started.
+- **The review screen said a company only produces files,** and that skills with scripts can't run because "no role has a shell". Roles have had a shell since 0.5.0. It says what roles can do now, and why someone else's scripts aren't installed.
+
 ## 0.6.3 (2026-11-10)
 
 Haiku runs a company. Seven everyday jobs, three times each, through Claude Code with every role on `claude-haiku-5-5`: **21 of 21 finished**, from 1.3 minutes and $0.014 for a customer reply to 5.2 minutes and $0.11 for content that needs research, at list price. Two earlier rounds finished 16 of 19 and 19 of 21; every run that didn't finish was read, and its cause fixed. [Every run](docs/research/efficiency/README.md#063-on-haiku-through-claude-code-21-runs-21-finished).

@@ -18,7 +18,7 @@ from typing import Any
 from ..org import Org
 from .pipeline.state import FINAL_TASK_ID, PackageStatus, RunPhase, RunState, TaskStatus
 
-FORMAT_VERSION = 1
+FORMAT_VERSION = 2  # 2: organization proposals, in 0.6.4
 MAX_LOG_TEXT = 240
 LESSON_KINDS = ("lesson", "team_lesson")
 
@@ -91,6 +91,22 @@ _MIGRATIONS = [
         UNIQUE (tier, owner, text)
     );
     """,
+    """
+    CREATE TABLE org_proposals (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        kind TEXT NOT NULL,
+        department TEXT NOT NULL,
+        role_id TEXT NOT NULL,
+        body TEXT NOT NULL,
+        source_run TEXT NOT NULL,
+        proposed_by TEXT NOT NULL,
+        status TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        decided_at TEXT,
+        decided_by TEXT,
+        UNIQUE (department, role_id)
+    );
+    """,
 ]
 
 
@@ -105,6 +121,29 @@ class WorkEntry:
     role: str
     kind: str
     text: str
+
+
+@dataclass(frozen=True)
+class OrgProposal:
+    """A role, or a department and its head, that the root role proposed. `change` is the OrgChange as proposed."""
+
+    id: int
+    change: dict[str, Any]
+    source_run: str
+    proposed_by: str
+    status: str
+
+    @property
+    def ref(self) -> str:
+        return f"{self.change['department']}/{self.change['role_id']}"
+
+    def line(self) -> str:
+        what = "New department" if self.change["kind"] == "add_department" else "New role"
+        head = ", headed by" if self.change["kind"] == "add_department" else ":"
+        return (
+            f"#{self.id} {what} {self.change['department']}{head} {self.change['title']} ({self.ref}). "
+            f"{_capped(self.change['mission'], 160)} Because: {_capped(self.change['because'], 200)}"
+        )
 
 
 @dataclass(frozen=True)
@@ -505,6 +544,67 @@ class CompanyStore:
                 (proposal_id,),
             ).fetchone()
         return Proposal(*row)
+
+    # ---- organization proposals -------------------------------------------------
+
+    def propose_org_change(self, change: dict[str, Any], *, source_run: str, proposed_by: str, at: str) -> bool:
+        """Repeating a role that's pending or was decided does nothing, so a person isn't asked twice."""
+        with self._lock, self._conn:
+            cursor = self._conn.execute(
+                "INSERT OR IGNORE INTO org_proposals (kind, department, role_id, body, source_run, proposed_by, "
+                "status, created_at) VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)",
+                (change["kind"], change["department"], change["role_id"], json.dumps(change, ensure_ascii=False),
+                 source_run, proposed_by, at),
+            )  # fmt: skip
+            return bool(cursor.rowcount)
+
+    def org_proposals(self, status: str | None = "pending", source_run: str | None = None) -> list[OrgProposal]:
+        query = "SELECT id, body, source_run, proposed_by, status FROM org_proposals WHERE 1 = 1"
+        args: list[Any] = []
+        if status:
+            query += " AND status = ?"
+            args.append(status)
+        if source_run:
+            query += " AND source_run = ?"
+            args.append(source_run)
+        with self._lock:
+            rows = self._conn.execute(f"{query} ORDER BY id", args).fetchall()
+        return [OrgProposal(r[0], json.loads(r[1]), r[2], r[3], r[4]) for r in rows]
+
+    def decide_org_change(self, proposal_id: int, status: str, *, by: str, at: str) -> OrgProposal | None:
+        """Compare-and-swap on 'pending', so a change can't be applied twice. `status` is accepted or rejected."""
+        with self._lock, self._conn:
+            cursor = self._conn.execute(
+                "UPDATE org_proposals SET status = ?, decided_at = ?, decided_by = ? "
+                "WHERE id = ? AND status = 'pending'",
+                (status, at, by, proposal_id),
+            )
+            if not cursor.rowcount:
+                return None
+            row = self._conn.execute(
+                "SELECT id, body, source_run, proposed_by, status FROM org_proposals WHERE id = ?", (proposal_id,)
+            ).fetchone()
+        return OrgProposal(row[0], json.loads(row[1]), row[2], row[3], row[4])
+
+    def reopen_org_change(self, proposal_id: int) -> None:
+        """An accepted change that couldn't be applied goes back to waiting, so it's never lost."""
+        with self._lock, self._conn:
+            self._conn.execute(
+                "UPDATE org_proposals SET status = 'pending', decided_at = NULL, decided_by = NULL WHERE id = ?",
+                (proposal_id,),
+            )
+
+    def departments_used(self, last_commands: int) -> tuple[int, set[str]]:
+        """How many of the latest finished or stopped commands there were, and which departments did work in them."""
+        with self._lock:
+            runs = [r[0] for r in self._conn.execute(
+                "SELECT run_id FROM commands WHERE status IN ('done', 'failed', 'cancelled') "
+                "ORDER BY created_at DESC LIMIT ?", (last_commands,)).fetchall()]  # fmt: skip
+            if not runs:
+                return 0, set()
+            marks = ",".join("?" * len(runs))
+            owners = self._conn.execute(f"SELECT DISTINCT owner_role FROM tasks WHERE run_id IN ({marks})", runs)
+            return len(runs), {row[0].split("/", 1)[0] for row in owners.fetchall()}
 
     # ---- compaction -------------------------------------------------------------
 

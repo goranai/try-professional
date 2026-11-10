@@ -11,6 +11,7 @@ from ..artifacts import (
     FinalDeliverable,
     GoalCharter,
     Plan,
+    Retrospective,
     ReviewVerdict,
     TaskPlan,
     make_artifact,
@@ -30,6 +31,8 @@ from .planning import (
     _start_small,
     _validate_plan,
     _validate_task_plan,
+    named_elsewhere,
+    org_change_problem,
 )
 from .review import _verdict_problem
 from .state import (
@@ -94,12 +97,29 @@ def _on_submission(step: _Step, event: Submission) -> None:
 
     if invocation.purpose == Purpose.INTAKE:
         assert isinstance(parsed, GoalCharter)
+        problem = org_change_problem(parsed.org_changes, org)
+        if problem:
+            step.reject(invocation, problem)
+            return
         if parsed.size == "small":
             parsed = _settled_route(parsed)
             problem = _route_problem(parsed, org)
             if problem:
                 step.reject(invocation, problem)
                 return
+            others = named_elsewhere(parsed, org)
+            if others:
+                # Not refused: the command is sound, and planning is the step that can bring in another department.
+                needs = f"Its criteria need {', '.join(others)}, outside {parsed.route_department or parsed.route_role}"
+                parsed = parsed.model_copy(
+                    update={
+                        "size": "large",
+                        "route_department": "",
+                        "route_role": "",
+                        "constraints": [*parsed.constraints, f"{needs}: plan work for each."],
+                    }
+                )
+                payload = parsed.model_dump(mode="json")
         stored = artifact()
         state.charter_artifact_id = stored.artifact_id
         state.user_language = parsed.user_language
@@ -249,6 +269,10 @@ def _on_submission(step: _Step, event: Submission) -> None:
         step.next_gate(task)
 
     elif invocation.purpose == Purpose.RETROSPECTIVE:
+        problem = org_change_problem(parsed.org_changes, org) if isinstance(parsed, Retrospective) else None
+        if problem:
+            step.reject(invocation, problem)
+            return
         stored = artifact()
         close()
         state.retrospective_artifact_id = stored.artifact_id

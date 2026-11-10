@@ -137,6 +137,7 @@ trypro decide <run-id> <request-id> resume    Answer a command that stopped to a
 /company continue <run-id>                    Then carry on with it
 trypro cancel <run-id>                        Stop it. Its records stay
 trypro agents claude-code                     Rewrite the roles for Claude Code, after the company changes
+trypro org review                             Decide the roles and departments the CEO proposed
 ```
 
 ### When it works on its own
@@ -163,6 +164,20 @@ trypro outcomes add "<link or reference>" --run <id> --role <role> --target "<cl
 - **Followed up:** a new reply from someone else queues a command to read it, and answer only if an answer is needed. That answer needs your approval, like anything else.
 - **From chat:** `/held`, `/approve 3`, `/deny 3`, `/outcomes`, `/outcome`, and `/schedules` work in `trypro chat` and on Telegram. With a Telegram bot set up, each round's summary is sent there.
 - **Scheduled rounds use the company's own engine,** with the model `trypro.yaml` names. Claude Code isn't run unattended.
+
+### When it needs someone new
+
+A company starts with the roles you approved. When its work shows one is missing, the CEO proposes it, and you decide. Nothing changes until you do.
+
+```text
+trypro org proposals          Roles and departments the CEO proposed, and why
+trypro org review             Add or reject each one, at a terminal
+```
+
+- **When it proposes:** at intake, when part of a command fits no role, and at the end of any command that was sent back, escalated, or handed between departments, and of every large one. It sees every department, and the record: work sent back and why, departments left with no work across recent commands, and work put out by a person by hand. It proposes only on that evidence, never for one-off work, and never a role that exists. An idle department isn't a missing role: if it should have worked, that's a lesson about planning instead.
+- **What it can propose:** a role in the department whose work it is, or a new department with its role as the head, when no department fits. A new department's work passes the same review as the others'.
+- **When you add one,** it's checked like any role, and undone if it would break the company. In Claude Code, the roles are rewritten, and each keeps the model you gave it. A rejected one is never proposed again.
+- **A command that names another department's role, such as "confirmed by the validator", is planned for both departments,** even when the CEO sized it for one. A real company's CEO sized six hunts that way, and its Validator never ran.
 
 ## Build on Try Professional
 

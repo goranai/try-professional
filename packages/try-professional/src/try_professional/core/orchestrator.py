@@ -19,6 +19,7 @@ from typing import Any
 
 from .. import playbooks
 from ..org import Org
+from . import org_growth
 from .audit import AuditLog, VerifyResult, archive_log, verify_log
 from .brief import Briefing, build_brief
 from .company import CompanyStore
@@ -256,6 +257,7 @@ class Orchestrator:
             self._log_rejection(state, current, log)
             self._note_qa_verdict(previous, state, current, log)
             self._note_lesson_decisions(previous, state, current, log)
+            self._propose_org_changes(previous, state, log)
             if state.phase != before:
                 log.append(self.clock(), "phase", {"from": before.value, "to": state.phase.value})
                 if state.phase in (RunPhase.BLOCKED, RunPhase.FAILED):
@@ -333,7 +335,23 @@ class Orchestrator:
                 held = [f"#{h.id}, from {h.role}: {h.command[:MAX_HELD_SHOWN]}"
                         + (f"\n{h.checks}" if h.checks else "")
                         for h in self.outside.held() if h.run_id == run_id]  # fmt: skip
-        return Briefing(brief=brief, pending_lessons=lessons, team=team, outside=outside, held=held)
+            roster: list[str] = []
+            record: list[str] = []
+            if invocation.purpose == Purpose.RETROSPECTIVE:
+                roster = org_growth.roster(self.org)
+                try:
+                    record = org_growth.signals(self.org, state, self.company, self.outside)
+                except Exception as error:
+                    self._log(run_id).append(self.clock(), "org_record_error", {"error": type(error).__name__})
+        return Briefing(
+            brief=brief,
+            pending_lessons=lessons,
+            team=team,
+            outside=outside,
+            held=held,
+            roster=roster,
+            org_record=record,
+        )
 
     def cancel(self, run_id: str, reason: str = "Cancelled by a person") -> None:
         self.handle(run_id, RunCancelled(reason=reason))
@@ -425,6 +443,28 @@ class Orchestrator:
             memory_context=memory_context,
             skill_candidates=candidates,
         )
+
+    def _propose_org_changes(self, previous: RunState, state: RunState, log: AuditLog) -> None:
+        """A charter or retrospective was just accepted with roles or departments the company lacks. A person decides
+        each one, with `trypro org review`. Stored the moment they're accepted, so a run stopped later loses none."""
+        for name in ("charter_artifact_id", "retrospective_artifact_id"):
+            artifact_id = getattr(state, name)
+            if not artifact_id or artifact_id == getattr(previous, name):
+                continue
+            artifact = state.artifacts.get(artifact_id)
+            for change in (artifact.payload.get("org_changes") or []) if artifact else []:
+                try:
+                    added = self.company.propose_org_change(
+                        change, source_run=state.run_id, proposed_by=self.org.root_role, at=self.clock()
+                    )
+                except Exception as error:
+                    log.append(self.clock(), "proposal_error", {"error": type(error).__name__})
+                    continue
+                log.append(
+                    self.clock(),
+                    "org_change_proposed",
+                    {"kind": change["kind"], "role": f"{change['department']}/{change['role_id']}", "new": added},
+                )
 
     def _propose_lessons(self, state: RunState) -> None:
         """Retrospective: the root role proposes company memory, and a person decides. Nothing is written here."""
