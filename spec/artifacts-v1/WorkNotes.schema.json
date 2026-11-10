@@ -32,12 +32,6 @@
       "title": "Promised",
       "type": "array"
     },
-    "suggestion": {
-      "default": "",
-      "maxLength": 500,
-      "title": "Suggestion",
-      "type": "string"
-    },
     "team_lesson": {
       "default": "",
       "maxLength": 500,

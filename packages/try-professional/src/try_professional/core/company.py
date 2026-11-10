@@ -20,9 +20,7 @@ from .pipeline.state import FINAL_TASK_ID, PackageStatus, RunPhase, RunState, Ta
 
 FORMAT_VERSION = 3  # 2: organization proposals, in 0.6.4. 3: standing rules, in 0.6.5
 MAX_LOG_TEXT = 240
-# Kept in the work log, and never in a role's own stand-up: lessons go to memory, and a suggestion is for the person
-# who runs the company, and whoever builds what it runs on.
-LESSON_KINDS = ("lesson", "team_lesson", "suggestion")
+LESSON_KINDS = ("lesson", "team_lesson")
 
 _MIGRATIONS = [
     """
@@ -223,18 +221,15 @@ def _entries(state: RunState, org: Org) -> Iterable[WorkEntry]:
             continue
         for number, feedback in enumerate(task.feedback):
             yield entry(f"feedback:{task.task_id}:{number}", task.owner_role, "feedback", f"{task.title}: {feedback}")
-        artifact = state.artifacts.get(task.notes_artifact_id or "")
-        notes = artifact.payload if artifact else {}
-        if notes.get("suggestion"):
-            # Kept whatever came of the task: work that was sent back, or stopped, is where a role most often has one.
-            yield entry(f"suggestion:{task.notes_artifact_id}", task.owner_role, "suggestion", notes["suggestion"])
         if task.status != TaskStatus.APPROVED:
             continue
+        artifact = state.artifacts.get(task.notes_artifact_id or "")
+        notes = artifact.payload if artifact else {}
         yield entry(f"did:{task.task_id}", task.owner_role, "did", notes.get("did") or task.title)
         for kind in ("decided", "promised"):
             for number, text in enumerate(notes.get(kind, [])):
                 yield entry(f"{kind}:{task.task_id}:{number}", task.owner_role, kind, text)
-        for kind in ("lesson", "team_lesson"):
+        for kind in LESSON_KINDS:
             if notes.get(kind):
                 yield entry(f"{kind}:{task.task_id}", task.owner_role, kind, notes[kind])
     if state.final_artifact_id and state.phase == RunPhase.DONE:
@@ -562,7 +557,7 @@ class CompanyStore:
             ).fetchone()
         return Proposal(*row)
 
-    # ---- standing rules and suggestions --------------------------------------------
+    # ---- standing rules -------------------------------------------------------------
 
     def rules(self) -> list[tuple[int, str]]:
         """What the person said should always hold, oldest first, numbered as they'd remove one."""
@@ -597,17 +592,6 @@ class CompanyStore:
                 return None
             self._conn.execute("UPDATE rules SET removed_at = ? WHERE id = ?", (at, number))
         return str(row[0])
-
-    def suggestions(self, run_id: str | None = None, limit: int = 50) -> list[dict[str, str]]:
-        """What roles said got in their way, and what would help. Newest first."""
-        query = "SELECT run_id, role, at, text FROM work_log WHERE kind = 'suggestion'"
-        args: list[Any] = []
-        if run_id:
-            query += " AND run_id = ?"
-            args.append(run_id)
-        with self._lock:
-            rows = self._conn.execute(f"{query} ORDER BY at DESC, rowid DESC LIMIT ?", (*args, limit)).fetchall()
-        return [{"run_id": r[0], "role": r[1], "at": r[2], "text": r[3]} for r in rows]
 
     # ---- organization proposals -------------------------------------------------
 

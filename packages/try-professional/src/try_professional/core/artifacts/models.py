@@ -313,7 +313,7 @@ class FinalDeliverable(_Strict):
     known_limits: list[str] = []
 
 
-_NOTE_TEXT_LIMITS = {"did": 300, "lesson": 500, "team_lesson": 500, "suggestion": 500}
+_NOTE_TEXT_LIMITS = {"did": 300, "lesson": 500, "team_lesson": 500}
 _NOTE_LIST_LIMIT = 5
 
 
@@ -325,9 +325,6 @@ class WorkNotes(_Strict):
     promised: list[str] = Field([], max_length=_NOTE_LIST_LIMIT)
     lesson: str = Field("", max_length=_NOTE_TEXT_LIMITS["lesson"])
     team_lesson: str = Field("", max_length=_NOTE_TEXT_LIMITS["team_lesson"])
-    # What got in the way, in its tools, instructions, or this company, and what would help. For the person who runs
-    # the company, and whoever builds what it runs on: it never reaches another role.
-    suggestion: str = Field("", max_length=_NOTE_TEXT_LIMITS["suggestion"])
 
 
 def settle_notes(payload: Any, notes: Any) -> tuple[Any, Any]:
@@ -377,9 +374,6 @@ _NOTE_ALIASES = {
     "lessons": "lesson",
     "learned": "lesson",
     "team_lessons": "team_lesson",
-    "suggestions": "suggestion",
-    "complaint": "suggestion",
-    "feedback": "suggestion",
 }
 
 

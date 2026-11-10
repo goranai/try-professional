@@ -937,11 +937,6 @@ def _print_efficiency(orchestrator: Orchestrator, run_id: str) -> None:
     if audit.is_file():
         for line in measure(audit, run_id).lines():
             _print(line)
-    said = orchestrator.company.suggestions(run_id)
-    if said:
-        _print("What roles said got in their way:")
-        for item in said:
-            _print(f"  {item['role']}: {item['text']}")
     proposed = orchestrator.company.org_proposals("pending", source_run=run_id)
     if proposed:
         _print("The CEO proposes changes to the company, from what this command showed:")

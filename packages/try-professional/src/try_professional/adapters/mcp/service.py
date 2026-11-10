@@ -256,8 +256,7 @@ class McpService:
         return answer
 
     def _for_the_person(self, run_id: str) -> dict[str, Any]:
-        """What this command left for the person: a role or department to add, things to remember, and what roles
-        said got in their way."""
+        """What this command left for the person to decide: a role or department to add, and what to remember."""
         company = self.orchestrator.company
         found: dict[str, Any] = {}
         proposed = company.org_proposals("pending", source_run=run_id)
@@ -272,9 +271,6 @@ class McpService:
                 "The CEO proposes the whole company remember these. Ask the person which to keep, and record each "
                 "with person_decide_memory."
             ]
-        said = company.suggestions(run_id)
-        if said:
-            found["from_the_roles"] = [f"{s['role']}: {s['text']}" for s in said]
         return found
 
     def _how_to_answer(self, run_id: str, question: AskHuman) -> str:

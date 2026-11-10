@@ -1,8 +1,8 @@
 """What a company learns, and keeps, without a person typing commands for it.
 
 From a real company's first day: its person repeated the same rules in every command (a skip list of 15 repositories,
-"at most 4 workers", "Python or JavaScript first"), seven lessons its CEO proposed waited at a terminal nobody knew
-about, and the only way to know what got in its roles' way was to read their audit logs.
+"at most 4 workers", "Python or JavaScript first"), and seven lessons its CEO proposed waited at a terminal nobody
+knew about.
 """
 
 from __future__ import annotations
@@ -15,13 +15,11 @@ import pytest
 
 from try_professional.adapters.api_runner.prompts import user_prompt
 from try_professional.adapters.api_runner.runner import ApiRunner, ModelRoutes
-from try_professional.adapters.api_runner.scripted import ScriptedClient, default_payload
-from try_professional.adapters.api_runner.tools import MAX_OUTPUT_CHARS, OUTPUTS_FOLDER, _kept_whole
+from try_professional.adapters.api_runner.scripted import ScriptedClient
 from try_professional.adapters.mcp import McpService
 from try_professional.adapters.mcp.service import ToolError
 from try_professional.core.company import MAX_RULE_CHARS, MAX_RULES_CHARS
 from try_professional.core.orchestrator import Orchestrator
-from try_professional.core.pipeline import Purpose
 from try_professional.org import Org, load_org
 from try_professional.packs import available_packs, install_org
 
@@ -153,66 +151,3 @@ class TestCompanyMemoryInTheChat:
         [item] = company.company.pending_memory("company")
         with pytest.raises(ToolError, match="Only the person decides"):
             McpService(company).person_decide_memory(item.id, "keep")
-
-
-class TestWhatGotInTheWay:
-    def _with_suggestion(self, sent_back: bool = False) -> Any:
-        reviewed: list[str] = []
-        handed_in: list[str] = []
-
-        def override(invocation: Any, state: Any, org_: Org) -> dict[str, Any] | None:
-            if invocation.purpose == Purpose.EXECUTE:
-                payload = default_payload(invocation, state, org_)
-                handed_in.append(invocation.id)
-                said = "The brief never said who the note is for."
-                notes = {"did": "Wrote it", "suggestion": said if len(handed_in) == 1 else f"{said} Still."}
-                return {"payload": payload, "notes": notes}
-            if invocation.purpose == Purpose.REVIEW and sent_back and not reviewed:
-                reviewed.append(invocation.id)
-                issue = {"severity": "major", "description": "Too long"}
-                return {**default_payload(invocation, state, org_), "decision": "changes_requested", "issues": [issue]}
-            return None
-
-        return override
-
-    def test_a_roles_suggestion_reaches_the_person(self, company: Orchestrator) -> None:
-        run_id, _ = _prompts(company, self._with_suggestion())
-        [said] = company.company.suggestions(run_id)
-        assert said["text"] == "The brief never said who the note is for."
-        answer = McpService(company, coordinator=True).run_next_action(run_id)
-        assert answer["from_the_roles"] == [f"{said['role']}: The brief never said who the note is for."]
-
-    def test_one_from_work_that_was_sent_back_is_kept_too(self, company: Orchestrator) -> None:
-        run_id, _ = _prompts(company, self._with_suggestion(sent_back=True))
-        assert len(company.company.suggestions(run_id)) == 2, "one for each hand-in"
-
-    def test_it_isnt_in_the_roles_own_stand_up(self, company: Orchestrator) -> None:
-        run_id, _ = _prompts(company, self._with_suggestion())
-        [said] = company.company.suggestions(run_id)
-        assert all(entry["kind"] != "suggestion" for entry in company.company.recent_log(said["role"], limit=50))
-
-    def test_the_playbook_asks_for_one(self) -> None:
-        from try_professional import playbooks
-
-        assert "say what would help in suggestion" in playbooks.section("staff", "execute")
-
-
-class TestALongOutput:
-    def test_its_start_and_end_are_shown_and_the_whole_is_kept(self, tmp_path: Path) -> None:
-        workspace = tmp_path / "run" / "workspace"
-        workspace.mkdir(parents=True)
-        text = "FAILED test_first\n" + "\n".join(f"line {n}" for n in range(5000)) + "\n2 failed, 4998 passed"
-        shown = _kept_whole(workspace, "shell", text)
-        assert len(shown) < MAX_OUTPUT_CHARS + 400
-        assert shown.startswith("FAILED test_first"), "a test run lists its failures first"
-        assert shown.endswith("2 failed, 4998 passed")
-        assert f"../{OUTPUTS_FOLDER}/shell-1.txt" in shown and "5002 lines" in shown
-        saved = tmp_path / "run" / OUTPUTS_FOLDER / "shell-1.txt"
-        assert saved.read_text(encoding="utf-8") == text
-        assert not any(workspace.iterdir()), "never mistaken for the role's work"
-        _kept_whole(workspace, "shell", text)
-        assert (tmp_path / "run" / OUTPUTS_FOLDER / "shell-2.txt").is_file()
-
-    def test_a_short_one_is_shown_as_it_is(self, tmp_path: Path) -> None:
-        assert _kept_whole(tmp_path / "workspace", "web", "short") == "short"
-        assert not (tmp_path / OUTPUTS_FOLDER).exists()

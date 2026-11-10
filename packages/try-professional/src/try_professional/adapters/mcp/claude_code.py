@@ -71,8 +71,7 @@ do a role's work yourself.
 6. If its status is "done", tell me what came back, including everything under known_limits, and give me the path \
 under deliverables. Then go through what it left for me, one kind at a time, and ask me about each item, in my \
 language: company_changes (add this role? record with person_decide_company_change), and company_memory (keep this \
-for the whole company? record with person_decide_memory). Show from_the_roles too: it's what roles said got in \
-their way. Only record what I said.
+for the whole company? record with person_decide_memory). Only record what I said.
 """
 
 
