@@ -675,6 +675,39 @@ class TestMemoryTiers:
         assert backend.banks["dept-engineering"] == ["Always test the login"]
         assert company.company.pending_memory("department", "engineering") == []
 
+    def test_a_teammates_lesson_the_head_drops_goes_to_the_person(self, company: Orchestrator) -> None:
+        """A real head dropped its hunter's lesson about drafts, which it doesn't write, and the same mistake came
+        back in the next command. The person decides instead, and sees who proposed it and who dropped it."""
+        _run(company, override=self._lesson({"team_lesson": "Drafts name every file they cite"}))
+        proposal = company.company.pending_memory("department", "engineering")[0]
+
+        def drop(invocation: Any, state: Any, org_: Org) -> dict[str, Any] | None:
+            if invocation.purpose == Purpose.DISPATCH:
+                return {**default_payload(invocation, state, org_), "drop_lessons": [proposal.id]}
+            return None
+
+        _run(company, override=drop)
+        assert company.company.pending_memory("department", "engineering") == []
+        # The scripted retrospective proposes one of its own, too.
+        waiting = [p for p in company.company.pending_memory("company") if p.text == "Drafts name every file they cite"]
+        assert len(waiting) == 1
+        line = waiting[0].line()
+        assert proposal.proposed_by in line and "dropped by engineering/" in line
+
+    def test_a_head_dropping_its_own_lesson_ends_there(self, company: Orchestrator) -> None:
+        head = f"engineering/{company.org.departments['engineering'].head}"
+        company.company.propose_memory("department", "engineering", "Mine to drop", source_run="r", source="s",
+                                       proposed_by=head, at="2026-11-11T00:00:00+00:00")  # fmt: skip
+        proposal_id = company.company.pending_memory("department", "engineering")[0].id
+
+        def drop(invocation: Any, state: Any, org_: Org) -> dict[str, Any] | None:
+            if invocation.purpose == Purpose.DISPATCH:
+                return {**default_payload(invocation, state, org_), "drop_lessons": [proposal_id]}
+            return None
+
+        _run(company, override=drop)
+        assert "Mine to drop" not in [p.text for p in company.company.pending_memory("company")]
+
     def test_a_head_cant_decide_another_departments_lessons(self, company: Orchestrator, backend: Backend) -> None:
         _run(company, override=self._lesson({"team_lesson": "Always test the login"}))
         number = company.company.pending_memory("department", "engineering")[0].id

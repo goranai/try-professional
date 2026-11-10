@@ -290,6 +290,15 @@ class TestClaudeCodeAfterTheCompanyChanges:
         command = (company.root / ".claude" / "commands" / "company.md").read_text(encoding="utf-8")
         assert "company_changes" in command and "person_decide_company_change" in command
 
+    def test_a_quick_one_off_is_done_alone(self, tmp_path: Path) -> None:
+        """Asking the time somewhere went through three agents. A one-off that stays in the chat and is cheap to get
+        wrong is the front desk's own job, done alone and said so. Anything that goes out is still the company's."""
+        company = Company.create(tmp_path / "acme", name="Acme")
+        company.setup_claude_code()
+        front_desk = (company.root / "CLAUDE.md").read_text(encoding="utf-8")
+        assert "quick one-off whose answer stays here in our chat" in front_desk
+        assert "say you did it alone" in front_desk and "goes out to someone" in front_desk
+
     def test_roles_are_told_the_machine_is_shared(self, tmp_path: Path) -> None:
         company = Company.create(tmp_path / "acme", name="Acme")
         company.setup_claude_code()

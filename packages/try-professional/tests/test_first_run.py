@@ -49,6 +49,19 @@ class TestGitHubToken:
         assert "gh auth token" in output
         assert "no skills" in output
 
+    def test_a_missing_token_never_stops_the_first_run(
+        self, folder: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Skills are optional. Asking about the token was the first thing a new person met, and the default stopped."""
+        monkeypatch.setattr("try_professional.cli._person_at_terminal", lambda: True)
+
+        def no_questions(prompt: str = "") -> str:
+            raise AssertionError(f"asked: {prompt}")
+
+        monkeypatch.setattr("builtins.input", no_questions)
+        main(["init", "a family bakery"])
+        assert "Going on with no skills" in capsys.readouterr().out
+
     def test_doctor_is_happy_once_it_is_set(
         self, folder: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -67,16 +80,6 @@ class TestGitHubToken:
         main(["init", "--template", "marketing-agency"])
         output = capsys.readouterr().out
         assert output.index("gh auth token") < output.index("Approving needs a person")
-
-    def test_a_person_can_stop_and_set_it_first(
-        self, folder: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        monkeypatch.setattr("try_professional.cli._person_at_terminal", lambda: True)
-        monkeypatch.setattr("builtins.input", lambda prompt="": "n")
-        assert main(["init", "--template", "marketing-agency"]) == 2
-        assert "Nothing was changed" in capsys.readouterr().out
-        assert not (folder / "trypro.yaml").exists()
-        assert not (folder / ".trypro").exists()
 
     def test_asking_for_no_skills_needs_no_warning(self, folder: Path, capsys: pytest.CaptureFixture[str]) -> None:
         main(["init", "--template", "marketing-agency", "--no-discover"])

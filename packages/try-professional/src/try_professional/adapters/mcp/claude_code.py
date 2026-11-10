@@ -27,7 +27,8 @@ _MODELS = {"executive": "sonnet", "standard": "sonnet", "fast": "haiku"}
 _ROLE_PROMPT = """You are {title} at {company}. You work on one assignment, then stop.
 
 You'll be given a run_id. Call run_next_action with it. It returns your assignment, its instructions, and the output \
-schema, and it's the only thing to work from. Follow those instructions as your own.
+schema, and it's the only thing to work from. Follow those instructions as your own. If run_next_action isn't one of \
+your tools, don't reach the company any other way: reply only NO_ROLE_TOOLS, and stop.
 
 {tools_line} Finish with the tool it names under submit_with. If a submission is rejected, it says what to fix, \
 so fix that and submit again. If you can't finish, or the decision isn't yours, call escalate.
@@ -40,7 +41,8 @@ ROLE_TOOLS = ("Read", "Write", "Edit", "Glob", "Grep", "Bash", "WebSearch", "Web
 _FULL_TOOLS = (
     "Do the work with your own tools as well: the shell, git and gh, files, and the web. The company's tools, listed "
     "under may_use, are for your assignment, memory, skills, and the workspace. Hand in what you made in your "
-    "submission, and files through workspace_write, because only those reach whoever reviews your work. When you "
+    "submission, and files through workspace_write when your step lists it under may_use, because only those reach "
+    "whoever reviews your work. A review or a final report hands in only its verdict or its report. When you "
     "put something out, such as a pull request, a post, a quote, or an email, give its link or a reference, and who "
     "it went to, to outcome_track, so the company learns from what happens to it. The machine is shared: run heavy "
     "commands, such as a test suite, one at a time, with at most 2 parallel workers and a time limit, and stop what "
@@ -66,8 +68,9 @@ in one message, so they work at the same time, one subagent per role. Never add 
 4. If its status is "blocked", show me each question under needs_a_person, word for word, with its options, and ask \
 me which. Never choose for me. When I've answered in my own words, record it with person_answer, then carry on from \
 step 3.
-5. If a role's subagent won't start, stop, and tell me that this folder may need to be trusted in Claude Code. Never \
-do a role's work yourself.
+5. If a role's subagent won't start, or replies NO_ROLE_TOOLS, stop, and tell me: Claude Code leaves out each role's \
+own tools until this exact folder is trusted, so open Claude Code here once and accept its prompt, and then run it \
+again. That holds for `claude -p` too. Never do a role's work yourself.
 6. If its status is "done", tell me what came back, including everything under known_limits, and give me the path \
 under deliverables. Then go through what it left for me, one kind at a time, and ask me about each item, in my \
 language: company_changes (add this role? record with person_decide_company_change), and company_memory (keep this \
@@ -84,6 +87,9 @@ It's run by Try Professional, and you're its front desk.
 
 - **When I ask for work, in any words, it's a command for the company.** Follow `.claude/commands/company.md`, with my \
 words as the command, exactly as if I'd typed `/company <my words>`. Don't do the work yourself, with any tool.
+- **The one exception: a quick one-off whose answer stays here in our chat, and is cheap to get wrong**, such as a \
+fact to look up, a sum, or the time somewhere. Do that yourself, with your own tools, and say you did it alone. \
+Anything that goes out to someone, I'll rely on, or will ask for again is work for the company.
 - When I ask about earlier work, read `deliverables/`, and answer from it.
 - When I'm only chatting, or asking how something works, answer briefly yourself.
 - When a run stops for a person, or the CEO proposes a new role, show me the question word for word and ask me. Only \

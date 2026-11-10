@@ -197,7 +197,7 @@ def build_server(
 
     @server.tool()
     def person_decide_memory(number: int, decision: str) -> Any:
-        """Keep ("keep") or drop ("drop") something the CEO proposed the whole company remember, as the person
+        """Keep ("keep") or drop ("drop") something proposed for the whole company to remember, as the person
         said. Only after they've said. The person is asked to confirm."""
         return _guard(company_tool("person_decide_memory"), number, decision)
 
@@ -216,7 +216,7 @@ def build_server(
 
     @server.tool()
     def company_rules() -> Any:
-        """The company's standing rules, and what the CEO proposed it remember, waiting for the person."""
+        """The company's standing rules, and what's proposed for it to remember, waiting for the person."""
         return _guard(company_tool("company_rules"))
 
     @server.tool()

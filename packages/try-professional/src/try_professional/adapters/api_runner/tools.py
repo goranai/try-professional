@@ -9,6 +9,7 @@ import contextlib
 import json
 import os
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -46,8 +47,9 @@ MAX_FETCH_BYTES = 500_000
 _KEPT_SECRETS = {"GITHUB_TOKEN", "GH_TOKEN"}
 _SECRET_NAME = re.compile(r"(API_KEY|_TOKEN|SECRET|PASSWORD|AUTH)", re.IGNORECASE)
 # What changes something outside the workspace, or the machine. A person approves each one, or it doesn't run.
+# git pushes are read word by word (_pushes), and everything else by pattern.
 _NEEDS_A_PERSON = re.compile(
-    r"\bgit\s+push\b|\bgh\s+(pr|issue|release|repo|gist)\s+(create|merge|close|delete|edit|comment|review|reopen|fork)"
+    r"\bgh\s+(pr|issue|release|repo|gist)\s+(create|merge|close|delete|edit|comment|review|reopen|fork)"
     r"\b|\bgh\s+api\b[^\n]*(-X|--method)\s*(POST|PUT|PATCH|DELETE)\b|\b(npm|cargo|gem)\s+publish\b|\btwine\s+upload\b"
     r"|\bdocker\s+push\b|\bsudo\b|\brm\s+-[a-z]*r[a-z]*\s+(/|~|\$HOME)(\s|$)|\b(shutdown|reboot|mkfs)\b"
     r"|\b(curl|wget)\b[^\n|]*\|\s*(sudo\s+)?(sh|bash|zsh|python[0-9.]*)\b",
@@ -56,7 +58,106 @@ _NEEDS_A_PERSON = re.compile(
 
 
 def needs_a_person(command: str) -> bool:
-    return bool(_NEEDS_A_PERSON.search(command))
+    return _pushes(command) or bool(_NEEDS_A_PERSON.search(command))
+
+
+# git's own options that take the next word as their value. Others, and --name=value forms, are one word.
+_GIT_OPTIONS_WITH_A_VALUE = {"-C", "-c", "--git-dir", "--work-tree", "--namespace", "--exec-path", "--config-env",
+                             "--super-prefix", "--list-cmds", "--attr-source"}  # fmt: skip
+_GIT_PUSHES = {"push", "send-pack", "http-push"}
+_SHELL_SEPARATORS = {";", "&&", "||", "|", "&", "(", ")", "|&", ";;"}
+# The word before a string that a shell runs as a command: eval, PowerShell's -Command, cmd's /c, and any cluster of
+# a shell's short flags with c in it, such as -c, -lc, -ec or -euxc.
+_RUNS_A_STRING = {"eval", "-command", "/c", "-encodedcommand"}
+_SHELL_FLAGS_WITH_C = re.compile(r"-[a-z]*c[a-z]*")
+# The plain form, anywhere in the text: inside a here-string or a Python one-liner, say. One pass, no backtracking.
+_PLAIN_PUSH = re.compile(r"\bgit(\.exe)?[\"']?\s+[\"']?(push|send-pack|http-push)\b", re.IGNORECASE)
+# Past this, a command isn't split into words: splitting one long word takes time that grows with its square.
+_LONGEST_READ = 50_000
+# Removed before looking for the word push at all, so quoting can't hide it.
+_QUOTING = re.compile(r"[\"'\\`]")
+
+
+def _pushes(command: str, depth: int = 0) -> bool:
+    """Whether a command pushes with git.
+
+    A real role's `git -C <clone> push` ran without asking, because only the plain `git push` was matched. The
+    company that reviews this project then found, over three rounds, pushes that each new check missed, and checks
+    that took seconds on long commands. So:
+    - With no push in it once quotes and escapes are taken out, a command can't be one, and nothing more is read.
+    - The plain form is looked for anywhere, in one pass.
+    - Then the command is split into words as a shell splits it: lines, backticks and $( ) are separate commands,
+      quotes and escapes are resolved, git's own options are skipped, and its subcommand is checked, for every git in
+      it. A string run as a command, as with bash -c or eval, is read the same way. An alias set on the command line,
+      a subcommand in a variable, and git with no subcommand after it (as fed by xargs) could be a push, so they count.
+    - One too long to read counts.
+    A push built up from pieces at run time can still get through: this guards against honest mistakes, and asks a
+    person; it isn't a sandbox."""
+    text = command.replace("\\\r\n", "").replace("\\\n", "")
+    squashed = _QUOTING.sub("", text).lower()
+    if "push" not in squashed and "send-pack" not in squashed and "alias." not in squashed:
+        return False
+    if _PLAIN_PUSH.search(text) or len(text) > _LONGEST_READ:
+        return True
+    separated = text.replace("\r\n", "\n").replace("\n", " ; ").replace("`", " ; ").replace("$(", " ; ")
+    try:
+        lexer = shlex.shlex(separated, posix=True, punctuation_chars=True)
+        lexer.whitespace_split = True
+        words = list(lexer)
+    except ValueError:
+        return "git" in squashed  # unbalanced quotes: it can't be read, and it mentions a push
+    segment: list[str] = []
+    for word in [*words, ";"]:
+        if word in _SHELL_SEPARATORS:
+            if _segment_pushes(segment, depth):
+                return True
+            segment = []
+        else:
+            segment.append(word)
+    return False
+
+
+def _runs_a_string(word: str) -> bool:
+    lowered = word.lower()
+    return lowered in _RUNS_A_STRING or bool(_SHELL_FLAGS_WITH_C.fullmatch(lowered))
+
+
+def _segment_pushes(words: list[str], depth: int) -> bool:
+    last_push = max((at for at, word in enumerate(words) if word.lower() == "push"), default=-1)
+    for at, word in enumerate(words):
+        # A command inside a string that's run as one, or inside $( ) or backticks within quotes, is read too. A
+        # commit message that mentions a push isn't one, unless it says the plain form.
+        nested = (at > 0 and _runs_a_string(words[at - 1])) or " ; " in word
+        if depth < 3 and nested and _pushes(word, depth + 1):
+            return True
+        name = word.replace("\\", "/").rsplit("/", 1)[-1].lower()
+        if name.endswith(".exe"):
+            name = name[:-4]
+        if name == "git" and _git_pushes(words[at + 1 :]):
+            return True
+        if word.startswith("$") and last_push > at:
+            return True  # a command in a variable, used to push
+    return False
+
+
+def _git_pushes(words: list[str]) -> bool:
+    skip = False
+    for at, word in enumerate(words):
+        if skip:
+            skip = False
+            if "alias." in word.lower():
+                return True
+            continue
+        if word.startswith("-"):
+            if "alias." in word.lower():
+                return True
+            skip = word in _GIT_OPTIONS_WITH_A_VALUE
+            continue
+        subcommand = word.lower()
+        if subcommand in _GIT_PUSHES or subcommand.startswith("$"):
+            return True
+        return subcommand == "subtree" and "push" in (w.lower() for w in words[at + 1 :])
+    return True  # git with no subcommand here: it comes from somewhere else, such as xargs
 
 
 def _shell_command(command: str) -> list[str] | str:

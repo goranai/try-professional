@@ -148,7 +148,10 @@ class McpService:
     def _require_tool(self, run_id: str, role: str, tool: str) -> None:
         if tool not in self.org.role(role).allowed_tools:
             self._violation(run_id, "TOOL_REFUSED", f"{role} used {tool}")
-            raise ToolError(f"{role} isn't allowed to use {tool}.")
+            # Real reviewers and a CEO tried to write files five times in one company's runs, and each time had to
+            # guess what to do next. They're told.
+            hint = " Put what you'd write in your submission instead." if tool == "workspace_write" else ""
+            raise ToolError(f"{role} isn't allowed to use {tool}.{hint}")
 
     # ---- reading ---------------------------------------------------------------------------
 
@@ -267,9 +270,9 @@ class McpService:
             ]
         remember = [p for p in company.pending_memory("company") if p.source_run == run_id]
         if remember:
-            found["company_memory"] = [f"#{p.id} {p.text}" for p in remember] + [
-                "The CEO proposes the whole company remember these. Ask the person which to keep, and record each "
-                "with person_decide_memory."
+            found["company_memory"] = [p.line() for p in remember] + [
+                "Proposed for the whole company to remember: by the CEO, or, where a line says so, by a role whose "
+                "head dropped it for its team. Ask the person which to keep, and record each with person_decide_memory."
             ]
         return found
 
@@ -495,7 +498,7 @@ class McpService:
         return {"removed": removed, "rules": self.company_rules()["rules"]}
 
     def person_decide_memory(self, number: int, decision: str) -> dict[str, Any]:
-        """Keep or drop something the CEO proposed the whole company should remember, as the person said."""
+        """Keep or drop something proposed for the whole company to remember, as the person said."""
         by = self._for_a_person("change company memory")
         if decision not in ("keep", "drop"):
             raise ToolError("decision is keep or drop.")
@@ -511,13 +514,13 @@ class McpService:
         return {"kept" if decision == "keep" else "dropped": number}
 
     def company_rules(self) -> dict[str, Any]:
-        """The standing rules, and what the CEO proposed the company remember, waiting for the person."""
+        """The standing rules, and what's proposed for it to remember, waiting for the person."""
         if not self.coordinator:
             raise ToolError("Only the coordinator reads this. Rules reach every role in its assignment.")
         company = self.orchestrator.company
         return {
             "rules": [f"#{number} {text}" for number, text in company.rules()],
-            "memory_waiting": [f"#{p.id} {p.text}" for p in company.pending_memory("company")],
+            "memory_waiting": [p.line() for p in company.pending_memory("company")],
         }
 
     def outcome_record(

@@ -22,7 +22,7 @@ from ..org import Org
 from . import org_growth
 from .audit import AuditLog, VerifyResult, archive_log, verify_log
 from .brief import Briefing, build_brief
-from .company import CompanyStore
+from .company import DROPPED_BY, CompanyStore
 from .deliverables import DRAFT_FOLDER, export_deliverables, export_drafts, read_sources
 from .ledger import Ledger
 from .lock import StateLock
@@ -375,6 +375,24 @@ class Orchestrator:
                 if decided is None:
                     continue
                 log.append(self.clock(), "lesson_decided", {"number": number, "adopted": accepted})
+                if not accepted and decided.proposed_by != invocation.role:
+                    # A real head dropped a lesson about work it doesn't do, its hunter's drafts, and the same
+                    # mistake came back in the next command. A head can't drop a teammate's lesson for good: it
+                    # goes to the person, who decides.
+                    sent = self.company.propose_memory(
+                        "company",
+                        "company",
+                        decided.text,
+                        source_run=state.run_id,
+                        source=f"{DROPPED_BY}{invocation.role}",
+                        proposed_by=decided.proposed_by,
+                        at=self.clock(),
+                    )
+                    # The same words already proposed or decided for the whole company aren't asked about again.
+                    if sent:
+                        log.append(
+                            self.clock(), "lesson_sent_to_person", {"number": number, "dropped_by": invocation.role}
+                        )
                 if accepted:
                     try:
                         self.memory.write_department(invocation.role, decided.text)

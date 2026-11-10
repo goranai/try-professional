@@ -2,6 +2,27 @@
 
 Each version of `try-professional`. `skill-customs` is listed only when it changes.
 
+## 0.7.0 (2026-11-11)
+
+An agent, but a company. The first version built from three sources at once: a real company's runs, a lab where companies of agents work on real bugs with hidden tests, and a long argument about why anyone should use this at all. It's also the first one a company of agents reviewed before release: its review found the first fix for pushes too slow and too easy to get around, before it shipped.
+
+### Added
+
+- **Quick one-offs are done alone.** A question whose answer stays in the chat and is cheap to get wrong, such as a fact to look up, the front desk answers itself, with its own tools, and says so. Anything that goes out to someone is still the company's.
+- **A lesson its head drops goes to you.** A department head can't drop a teammate's lesson for good: it joins the company memory waiting for you, saying who proposed it and who dropped it. Kept, it's remembered by the whole company, not only that team. In a real company, a head dropped a lesson about work it doesn't do, and the same mistake came back.
+
+### Fixed
+
+- **More pushes need a person's approval** on the company's own engine. A real role's `git -C <clone> push` ran without asking, because only the plain `git push` was matched. The plain form is still matched anywhere in a command, and the command is also read word by word, with each line, backtick and `$( )` as a command of its own, and quotes and escapes taken out first, so `git -C <repo> push` on any line, `git -c ... push`, a quoted or partly quoted push, `git.exe`, `send-pack`, `subtree push`, a push inside `bash -c` (with any flags) or `eval`, an alias set on the command line, and a subcommand in a variable are caught too. Checking stays fast on long commands. A push built up from pieces can still get through: this guards against mistakes, and it isn't a sandbox. In Claude Code, a role's shell follows your own Claude Code permissions.
+- **A role with none of its tools made its own.** Claude Code leaves out each role's tools until the folder is trusted, `claude -p` included, and a real CEO wrote its own client for its server instead. A role now stops with `NO_ROLE_TOOLS`, and the coordinator tells you what to do.
+- **A role refused `workspace_write` didn't know what to do next.** It's told to put it in its submission.
+- **A missing GitHub token stopped the first run.** Skills are optional: it says so and goes on.
+
+### Changed
+
+- **Roles run the checks their work touches as they go, and all of them once, at the end.** In the lab, agents ran full test suites again and again. The staff playbook stays about the same size.
+- **One line says what it is:** "An agent, but a company."
+
 ## 0.6.5 (2026-11-10)
 
 What a company keeps, without a person typing commands for it. From the same real company: its person repeated the same rules in every command, a skip list of 15 repositories among them, and seven lessons its CEO proposed waited at a terminal nobody knew about.

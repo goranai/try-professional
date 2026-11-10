@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/github/license/goranai/try-professional)](LICENSE)
 [![Python](https://img.shields.io/pypi/pyversions/try-professional)](https://pypi.org/project/try-professional/)
 
-**An agent harness where your agent is a whole company.** You talk to the CEO. Managers split the work, workers do it with real tools, QA and managers check it, and the CEO answers you. Every role is a full agent, with its own memory and skills.
+**An agent, but a company.** You talk to the CEO. Managers split the work, workers do it with real tools, QA and managers check it, and the CEO answers you. Every role is a full agent, with its own memory and skills.
 
 **Preview: proven on Claude only.** It works, and it has rough edges. [What was tested](#what-was-tested-and-how).
 
@@ -85,7 +85,9 @@ trypro start "a weekly newsletter for my yoga studio's members"
 
 Say what you want made, in your own words. `trypro start` checks your setup, has Claude Code design a company that can do it, and shows you that company to approve: type `a`, then `approve`. A person has to, and no model can. Then it opens Claude Code on your request. When Claude Code asks whether you trust this folder, say yes. Results are files, in `deliverables/<run-id>/`. Start with `index.md`.
 
-**After that, start Claude Code in this folder, and say what you want.** You don't need `/company`: the folder's front desk hands every request to the company, and the company remembers its earlier work.
+**After that, start Claude Code in this folder, and say what you want.** You don't need `/company`: the folder's front desk hands every request to the company, and the company remembers its earlier work. A quick one-off whose answer stays in the chat, such as a fact to look up, the front desk does itself, and says so.
+
+**Running it without the chat, with `claude -p`, as in a script or CI:** open Claude Code in the folder once first, and accept the trust prompt. Until a folder is trusted, Claude Code leaves out each role's own tools, and roles stop with `NO_ROLE_TOOLS`.
 
 ### Step by step
 

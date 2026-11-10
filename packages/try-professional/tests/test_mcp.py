@@ -108,6 +108,17 @@ class TestOperatorMode:
         assert result["status"] == "blocked"
         assert "trypro decide" in result["needs_a_person"][0]["command"]
 
+    def test_a_role_that_cant_write_files_is_told_what_to_do_instead(self, orchestrator: Orchestrator) -> None:
+        """Real reviewers and a CEO tried to write files five times in one company's runs, with no idea what next."""
+        service = McpService(orchestrator)
+        first = service.run_start("Goal")
+        invocation = first["actions"][0]["invocation_id"]
+        role = orchestrator.state(first["run_id"]).invocations[invocation].role
+        if "workspace_write" in orchestrator.org.role(role).allowed_tools:
+            pytest.skip("this company's first role may write files")
+        with pytest.raises(ToolError, match="in your submission instead"):
+            service.workspace_write(first["run_id"], invocation, "notes.md", "x")
+
     def test_closed_work_is_refused(self, orchestrator: Orchestrator) -> None:
         service = McpService(orchestrator)
         run_id = service.run_start("Goal")["run_id"]
@@ -388,6 +399,16 @@ class TestAStoppedCommand:
         settings = json.loads((tmp_path / ".claude" / "settings.json").read_text(encoding="utf-8"))
         assert "Bash(trypro decide *)" in settings["permissions"]["deny"]
         assert "PowerShell(trypro init --review *)" in settings["permissions"]["deny"]
+
+    def test_a_role_without_its_tools_stops_and_says_so(self, org: Org, tmp_path: Path) -> None:
+        """In a folder Claude Code hasn't trusted, it leaves out each role's own server. A real CEO with no tools
+        wrote its own client for the server instead. Each role now stops with NO_ROLE_TOOLS, and the coordinator says
+        what to do."""
+        claude_code.write_claude_code_files(tmp_path, org)
+        for agent in (tmp_path / ".claude" / "agents").glob("trypro-*.md"):
+            assert "reply only NO_ROLE_TOOLS" in agent.read_text(encoding="utf-8")
+        command = (tmp_path / ".claude" / "commands" / "company.md").read_text(encoding="utf-8")
+        assert "NO_ROLE_TOOLS" in command and "trusted" in command and "claude -p" in command
 
     @pytest.mark.parametrize(("chosen", "expected"), [(None, {"sonnet"}), ("haiku", {"haiku"})])
     def test_one_model_can_be_chosen_for_every_role(

@@ -1,6 +1,6 @@
 ---
 playbook: staff
-version: 7
+version: 8
 ---
 
 # Staff playbook
@@ -13,9 +13,9 @@ Do this task and submit the result.
 1. Your brief's goal, expected output and definition of done are the job. Don't add work.
 2. If a listed skill fits, read it first.
 3. Report every item of the definition of done in done_criteria_met, word for word, with met true or false and evidence. Never claim what you didn't check.
-4. Stop when the definition of done is met: check each thing once, and don't redo work to be sure. A reviewer checks it after you.
-5. In notes, record what you did, any decision or promise, and a lesson for next time. Put a lesson for your whole team in team_lesson.
-If something is missing, do what you can, and mark the rest unverified with what a person must check. Where the brief doesn't give a specific fact, such as a price or opening hours, write a [placeholder] for it. Call escalate only if nothing useful can be done, and say what's missing.
+4. Stop once the definition of done is met, checking each thing once: a reviewer checks after you. Run the checks your work touches, then all of them once, at the end.
+5. In notes, record what you did, any decision or promise, and a lesson for next time; one for your whole team goes in team_lesson.
+If something is missing, do what you can, and mark the rest unverified with what a person must check. For a specific fact the brief doesn't give, such as a price, write a [placeholder]. Call escalate only if nothing useful can be done, and say what's missing.
 
 ## review
 

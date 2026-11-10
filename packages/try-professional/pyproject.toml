@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "try-professional"
 dynamic = ["version"]
-description = "Turn Claude Code into a permanent AI company: a hierarchy of agents with roles, memory and vetted skills, and review gates enforced by code. Multi-agent orchestration via MCP."
+description = "An agent, but a company."
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"

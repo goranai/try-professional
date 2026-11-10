@@ -54,6 +54,12 @@ class TestShell:
         "command",
         [
             "git push origin main",
+            # Options before the command: a real role's `git -C <clone> push` ran without asking.
+            "git -C some/repo push origin main",
+            'git -C "my repo" push',
+            "git -c user.name=x push",
+            "git --git-dir=.git push --force",
+            "cd x && git -C y push",
             "gh issue create --title x --body y",
             "gh pr create --fill",
             "gh api -X POST repos/a/b/issues",
@@ -67,7 +73,79 @@ class TestShell:
 
     @pytest.mark.parametrize(
         "command",
-        ["gh search repos --stars '>1800' markdown", "git clone https://github.com/a/b", "gh api repos/a/b", "ls -la"],
+        [
+            # Each of these really pushed to a local repository in the review of 0.7.0's first fix.
+            "git -c alias.p=push p",
+            "git --config-env=alias.p=PUSH_COMMAND p",
+            "git --exec-path=/usr/lib/git push",
+            'git "push"',
+            '"git" push',
+            "git.exe push",
+            "C:/Program\\ Files/Git/bin/git.exe push",
+            "git -C my\\ repo push",
+            'git -C "a \\"b\\"" push',
+            "git -C x \\\n push",
+            "g=git; $g push",
+            "git send-pack origin main",
+            "git subtree push --prefix=docs origin main",
+            "bash -c 'git -C repo push'",
+            'eval "git push"',
+            # And these, from the second review: the plain form inside other text, and what words alone missed.
+            "echo `git push`",
+            'echo "$(git push)"',
+            "bash -ec 'git -C r push'",
+            "bash <<< 'git push'",
+            "python -c \"import os; os.system('git push')\"",
+            "env -C git git push",
+            "p=push; git $p",
+            "echo push | xargs git",
+            "git pu\\\nsh",  # a line continuation inside the word: backslash, then a newline
+            # And these, from the third review: lines, quoting that splits the word, every git in a command, and more.
+            "git status\ngit -C . push",
+            "git add -A\ngit commit -m x\ngit -C . push",
+            'git pu"sh"',
+            'git -C . pu"sh"',
+            "git p\\ush",
+            "env -C git git -C .. push",
+            "HOME=/tmp/git git -C . push",
+            "cd git\ngit -C .. push",
+            "echo `git --no-pager push`",
+            'echo "$(git -C . push)"',
+            "bash -ce 'git -C . push'",
+            "bash -euxc 'git -C . push'",
+            "git --attr-source HEAD push",
+        ],
+    )
+    def test_a_push_hidden_by_quoting_or_options_still_needs_a_person(self, command: str) -> None:
+        assert needs_a_person(command)
+
+    def test_a_long_command_is_checked_quickly(self) -> None:
+        """The first fix used a pattern that took seconds on 20 options, before every shell command."""
+        import time
+
+        command = "git " + " ".join(f'-c "key{i}=a value {i}"' for i in range(2000)) + " status"
+        started = time.perf_counter()
+        assert not needs_a_person(command)
+        # Shapes that grew with their square: many variables before a push, and one very long word.
+        assert needs_a_person("$a " * 30_000 + "push")
+        assert needs_a_person("git push " + "x" * 1_000_000)
+        assert not needs_a_person("echo " + "y" * 1_000_000)
+        assert time.perf_counter() - started < 2
+
+    @pytest.mark.parametrize(
+        "command",
+        [
+            "gh search repos --stars '>1800' markdown",
+            "git clone https://github.com/a/b",
+            "gh api repos/a/b",
+            "ls -la",
+            "git -C some/repo log --oneline",
+            "git -C some/repo status",
+            "git -c core.pager=cat diff",
+            "git pull",
+            "cd /path/to/git && ls",
+            "git subtree split --prefix=docs",
+        ],
     )
     def test_reading_doesnt(self, command: str) -> None:
         assert not needs_a_person(command)

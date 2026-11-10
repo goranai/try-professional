@@ -21,6 +21,8 @@ from .pipeline.state import FINAL_TASK_ID, PackageStatus, RunPhase, RunState, Ta
 FORMAT_VERSION = 3  # 2: organization proposals, in 0.6.4. 3: standing rules, in 0.6.5
 MAX_LOG_TEXT = 240
 LESSON_KINDS = ("lesson", "team_lesson")
+# A teammate's lesson its head dropped goes to the person, with this before the head's name in its source.
+DROPPED_BY = "dropped by "
 
 _MIGRATIONS = [
     """
@@ -168,6 +170,13 @@ class Proposal:
     source: str
     proposed_by: str
     status: str
+
+    def line(self) -> str:
+        """How a person sees it: what to remember, and, for a lesson a head dropped, who proposed it and who didn't
+        want it."""
+        if self.source.startswith(DROPPED_BY):
+            return f"#{self.id} {self.text} (proposed by {self.proposed_by}; {self.source} for its team)"
+        return f"#{self.id} {self.text}"
 
 
 def _capped(text: Any, limit: int = MAX_LOG_TEXT) -> str:
@@ -517,14 +526,15 @@ class CompanyStore:
 
     def propose_memory(
         self, tier: str, owner: str, text: str, *, source_run: str, source: str, proposed_by: str, at: str
-    ) -> None:
-        """Repeating a pending or decided proposal does nothing, so a person isn't asked twice."""
+    ) -> bool:
+        """Repeating a pending or decided proposal does nothing, so a person isn't asked twice. True if it's new."""
         with self._lock, self._conn:
-            self._conn.execute(
+            cursor = self._conn.execute(
                 "INSERT OR IGNORE INTO memory_proposals (tier, owner, text, source_run, source, proposed_by, status, "
                 "created_at) VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)",
                 (tier, owner, text, source_run, source, proposed_by, at),
             )
+        return cursor.rowcount > 0
 
     def pending_memory(self, tier: str, owner: str | None = None, limit: int = 50) -> list[Proposal]:
         query = (

@@ -37,6 +37,7 @@ from .config import (
 )
 from .core.audit import read_records
 from .core.brief import build_brief, role_card
+from .core.company import DROPPED_BY
 from .core.lock import command_lock
 from .core.orchestrator import Orchestrator, utc_now
 from .core.outside import OUTCOME_STATUSES
@@ -223,11 +224,11 @@ def _init_company(args: argparse.Namespace, root: Path) -> int:
         return 1
     load_env_file(root)
     if not args.review and not args.no_discover and not args.dry_run and not github_token_is_set():
+        # Skills are optional, so a missing token never stops the first run: its question was the first thing a new
+        # person had to answer, and the default was to stop. Companies designed with no skills do their work.
         _print(GITHUB_TOKEN_HELP)
+        _print("Going on with no skills: its roles work from their written instructions.")
         _print()
-        if _person_at_terminal() and not input("Go on with no skills? [y/N]: ").strip().lower().startswith("y"):
-            _print("Nothing was changed. Set the token, and run this again.")
-            return 2
     _write_project_files(root)
     config = load_config(root)
     embedder = FastEmbedEmbedder(config.memory.embedding_model)
@@ -1033,7 +1034,8 @@ def cmd_memory_pending(args: argparse.Namespace) -> int:
         if not company and not team:
             _print("No memory changes are waiting.")
         for item in company:
-            _print(f"#{item.id} company, from {item.proposed_by} ({item.source_run}): {item.text}")
+            dropped = f", {item.source} for its team" if item.source.startswith(DROPPED_BY) else ""
+            _print(f"#{item.id} company, from {item.proposed_by}{dropped} ({item.source_run}): {item.text}")
         for item in team:
             _print(f"#{item.id} team lesson for {item.owner}'s head, from {item.proposed_by}: {item.text}")
         if company:
@@ -1053,7 +1055,8 @@ def cmd_memory_review(args: argparse.Namespace) -> int:
     orchestrator = Orchestrator(org, config.home)
     try:
         for item in orchestrator.company.pending_memory("company"):
-            _print(f"#{item.id} from {item.proposed_by} ({item.source_run}):\n  {item.text}")
+            dropped = f", {item.source} for its team" if item.source.startswith(DROPPED_BY) else ""
+            _print(f"#{item.id} from {item.proposed_by}{dropped} ({item.source_run}):\n  {item.text}")
             choice = input("[a]pprove  [r]eject  [s]kip: ").strip().lower()
             if choice.startswith("a"):
                 if memory is None:
