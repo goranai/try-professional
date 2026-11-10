@@ -163,6 +163,9 @@ def user_prompt(
             parts.append(_section("Your stand-up", untrusted("work-state", briefing.brief.state)))
     parts.append(_section("Your assignment", playbooks.section(level, invocation.purpose.value)))
     parts.append(_section("Goal", state.goal))
+    if briefing.rules:
+        rules = "\n".join(f"- {rule}" for rule in briefing.rules)
+        parts.append(_section("The company's standing rules, from the person who runs it. They always apply", rules))
     if briefing.outside:
         lines = "\n".join(briefing.outside)
         parts.append(_section("What happened to this company's earlier work outside", untrusted("outcomes", lines)))

@@ -196,6 +196,30 @@ def build_server(
         return _guard(company_tool("person_decide_company_change"), proposal_id, decision)
 
     @server.tool()
+    def person_decide_memory(number: int, decision: str) -> Any:
+        """Keep ("keep") or drop ("drop") something the CEO proposed the whole company remember, as the person
+        said. Only after they've said. The person is asked to confirm."""
+        return _guard(company_tool("person_decide_memory"), number, decision)
+
+    @server.tool()
+    def person_add_rule(text: str) -> Any:
+        """Add a standing rule the person gave, such as "never post without my approval" or "skip repositories we
+        reported to this week": every role sees it on every step. In their words, only after they asked for it. The
+        person is asked to confirm."""
+        return _guard(company_tool("person_add_rule"), text)
+
+    @server.tool()
+    def person_remove_rule(number: int) -> Any:
+        """Remove a standing rule, by its number, when the person says it no longer applies. They're asked to
+        confirm."""
+        return _guard(company_tool("person_remove_rule"), number)
+
+    @server.tool()
+    def company_rules() -> Any:
+        """The company's standing rules, and what the CEO proposed it remember, waiting for the person."""
+        return _guard(company_tool("company_rules"))
+
+    @server.tool()
     def outcome_record(run_id: str, ref: str, role: str, title: str = "", target: str = "", kind: str = "") -> Any:
         """After you posted, sent, or opened something yourself because the person asked, such as an issue or a pull
         request: its link, the run it came from, and the role whose work it was, so the company follows it."""

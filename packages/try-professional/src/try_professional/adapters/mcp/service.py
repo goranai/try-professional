@@ -29,7 +29,7 @@ from typing import Any
 
 from ...core.artifacts import PAYLOAD_TYPES, Flags, settle_flags
 from ...core.audit import read_records
-from ...core.orchestrator import Orchestrator
+from ...core.orchestrator import Orchestrator, utc_now
 from ...core.pipeline import (
     AskHuman,
     EscalationRaised,
@@ -70,7 +70,15 @@ MCP_TOOLS = (
     "audit_tail",
 )
 # What records a person's decisions, on the coordinator's server only. Claude Code asks the person to confirm each.
-PERSON_TOOLS = ("person_answer", "person_decide_company_change", "outcome_record")
+PERSON_TOOLS = (
+    "person_answer",
+    "person_decide_company_change",
+    "person_decide_memory",
+    "person_add_rule",
+    "person_remove_rule",
+    "outcome_record",
+    "company_rules",
+)
 # All a coordinator may do. Anything else is a role's work.
 COORDINATOR_TOOLS = ("org_get", "run_start", "run_status", "run_next_action", "audit_tail", *PERSON_TOOLS)
 DEFAULT_AUDIT_TAIL = 20
@@ -216,12 +224,8 @@ class McpService:
                 "final": None if self.bound_role else self.run_status(run_id)["final"],
                 "deliverables": None if self.bound_role else self._index_of(run_id, finish.status),
             }
-            proposed = [] if self.bound_role else self.orchestrator.company.org_proposals("pending", source_run=run_id)
-            if proposed:
-                finished["company_changes"] = [p.line() for p in proposed] + [
-                    "The CEO proposes these from what this command showed. Ask the person about each, and record "
-                    "what they say with person_decide_company_change. Or, at a terminal: trypro org review"
-                ]
+            if self.coordinator:
+                finished.update(self._for_the_person(run_id))
             return finished
         questions = [a for a in actions if isinstance(a, AskHuman)]
         if questions:
@@ -250,6 +254,28 @@ class McpService:
                 "they work at the same time. One subagent per role."
             )
         return answer
+
+    def _for_the_person(self, run_id: str) -> dict[str, Any]:
+        """What this command left for the person: a role or department to add, things to remember, and what roles
+        said got in their way."""
+        company = self.orchestrator.company
+        found: dict[str, Any] = {}
+        proposed = company.org_proposals("pending", source_run=run_id)
+        if proposed:
+            found["company_changes"] = [p.line() for p in proposed] + [
+                "The CEO proposes these from what this command showed. Ask the person about each, and record what "
+                "they say with person_decide_company_change."
+            ]
+        remember = [p for p in company.pending_memory("company") if p.source_run == run_id]
+        if remember:
+            found["company_memory"] = [f"#{p.id} {p.text}" for p in remember] + [
+                "The CEO proposes the whole company remember these. Ask the person which to keep, and record each "
+                "with person_decide_memory."
+            ]
+        said = company.suggestions(run_id)
+        if said:
+            found["from_the_roles"] = [f"{s['role']}: {s['text']}" for s in said]
+        return found
 
     def _how_to_answer(self, run_id: str, question: AskHuman) -> str:
         """Ready to run, so nobody has to work out a command. Only a person at a terminal can answer."""
@@ -454,6 +480,48 @@ class McpService:
             "title": added.title,
             "tell_the_person": "Restart Claude Code in this folder, so it loads the new role. It works from the next "
             "command.",
+        }
+
+    def person_add_rule(self, text: str) -> dict[str, Any]:
+        """A standing rule from the person: every role sees it on every step, from the next step on."""
+        by = self._for_a_person("add a company rule")
+        try:
+            number = self.orchestrator.company.add_rule(text, by=by, at=utc_now())
+        except ValueError as error:
+            raise ToolError(str(error)) from error
+        return {"added": number, "rules": self.company_rules()["rules"]}
+
+    def person_remove_rule(self, number: int) -> dict[str, Any]:
+        self._for_a_person("remove a company rule")
+        removed = self.orchestrator.company.remove_rule(number, at=utc_now())
+        if removed is None:
+            raise ToolError(f"There's no rule #{number}. company_rules lists them.")
+        return {"removed": removed, "rules": self.company_rules()["rules"]}
+
+    def person_decide_memory(self, number: int, decision: str) -> dict[str, Any]:
+        """Keep or drop something the CEO proposed the whole company should remember, as the person said."""
+        by = self._for_a_person("change company memory")
+        if decision not in ("keep", "drop"):
+            raise ToolError("decision is keep or drop.")
+        pending = {p.id: p for p in self.orchestrator.company.pending_memory("company")}
+        if number not in pending:
+            raise ToolError(f"#{number} isn't waiting for a decision. company_rules lists what is.")
+        if decision == "keep":
+            # Saved first: a lesson that couldn't be saved stays waiting, rather than marked kept and lost.
+            self.orchestrator.memory.promote(
+                self.org.root_role, pending[number].text, f"{pending[number].source}, kept by {by}"
+            )
+        self.orchestrator.company.decide_memory(number, decision == "keep", by=by, at=utc_now())
+        return {"kept" if decision == "keep" else "dropped": number}
+
+    def company_rules(self) -> dict[str, Any]:
+        """The standing rules, and what the CEO proposed the company remember, waiting for the person."""
+        if not self.coordinator:
+            raise ToolError("Only the coordinator reads this. Rules reach every role in its assignment.")
+        company = self.orchestrator.company
+        return {
+            "rules": [f"#{number} {text}" for number, text in company.rules()],
+            "memory_waiting": [f"#{p.id} {p.text}" for p in company.pending_memory("company")],
         }
 
     def outcome_record(

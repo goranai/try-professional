@@ -412,6 +412,33 @@ def cmd_org_decide(args: argparse.Namespace) -> int:
     return _decide_org_change(Company(Path.cwd()), args.id, args.decision == "add", args.by or getpass.getuser())
 
 
+def cmd_rules(args: argparse.Namespace) -> int:
+    """Standing rules: what should always hold, for every role on every step. In Claude Code, just say it."""
+    orchestrator = _orchestrator()
+    try:
+        company = orchestrator.company
+        if args.rules_command == "add":
+            if not _person_at_terminal():
+                _print("Adding a rule needs a person at a terminal. In Claude Code, just say it in the chat.")
+                return 3
+            try:
+                company.add_rule(args.text, by=args.by or getpass.getuser(), at=utc_now())
+            except ValueError as error:
+                _print(str(error))
+                return 1
+        elif args.rules_command == "remove" and company.remove_rule(args.number, at=utc_now()) is None:
+            _print(f"There's no rule #{args.number}.")
+            return 1
+        rules = company.rules()
+        if not rules:
+            _print('No standing rules. Add one with: trypro rules add "<what should always hold>"')
+        for number, text in rules:
+            _print(f"#{number} {text}")
+        return 0
+    finally:
+        orchestrator.close()
+
+
 def cmd_pack(args: argparse.Namespace) -> int:
     if args.pack_command == "list":
         org_dir = load_config(Path.cwd()).org_dir
@@ -910,6 +937,11 @@ def _print_efficiency(orchestrator: Orchestrator, run_id: str) -> None:
     if audit.is_file():
         for line in measure(audit, run_id).lines():
             _print(line)
+    said = orchestrator.company.suggestions(run_id)
+    if said:
+        _print("What roles said got in their way:")
+        for item in said:
+            _print(f"  {item['role']}: {item['text']}")
     proposed = orchestrator.company.org_proposals("pending", source_run=run_id)
     if proposed:
         _print("The CEO proposes changes to the company, from what this command showed:")
@@ -1496,6 +1528,14 @@ def build_parser() -> argparse.ArgumentParser:
     decide.add_argument("decision", choices=("add", "reject"))
     decide.add_argument("--by", help="Your name, for the record. Default: your username")
     decide.set_defaults(func=cmd_org_decide)
+
+    rules = sub.add_parser("rules", help="Standing rules every role follows on every step")
+    rules.set_defaults(func=cmd_rules, rules_command=None)
+    rules_sub = rules.add_subparsers(dest="rules_command")
+    rules_add = rules_sub.add_parser("add", help="Add one, at a terminal")
+    rules_add.add_argument("text")
+    rules_add.add_argument("--by", help="Your name, for the record. Default: your username")
+    rules_sub.add_parser("remove", help="Remove one by its number").add_argument("number", type=int)
 
     sub.add_parser("templates", help="List industry templates").set_defaults(func=cmd_templates)
 

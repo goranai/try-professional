@@ -256,7 +256,7 @@ class TestAProposal:
             orchestrator.close()
         assert answer["status"] == "done"
         assert "marketing/video-editor" in answer["company_changes"][0]
-        assert "trypro org review" in answer["company_changes"][-1]
+        assert "person_decide_company_change" in answer["company_changes"][-1]
 
 
 class TestClaudeCodeAfterTheCompanyChanges:

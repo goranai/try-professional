@@ -73,6 +73,8 @@ class Briefing:
     # At a retrospective: every role and what it's for, and the record of what didn't fit them. See org_growth.
     roster: list[str] = field(default_factory=list)
     org_record: list[str] = field(default_factory=list)
+    # What the person said should always hold. Every role, every step.
+    rules: list[str] = field(default_factory=list)
 
 
 def _line(text: str) -> str:

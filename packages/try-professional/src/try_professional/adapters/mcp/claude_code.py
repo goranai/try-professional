@@ -69,8 +69,10 @@ step 3.
 5. If a role's subagent won't start, stop, and tell me that this folder may need to be trusted in Claude Code. Never \
 do a role's work yourself.
 6. If its status is "done", tell me what came back, including everything under known_limits, and give me the path \
-under deliverables. If there's company_changes, show me each one word for word, and ask me: add it, or not? Only when \
-I've said, record it with person_decide_company_change.
+under deliverables. Then go through what it left for me, one kind at a time, and ask me about each item, in my \
+language: company_changes (add this role? record with person_decide_company_change), and company_memory (keep this \
+for the whole company? record with person_decide_memory). Show from_the_roles too: it's what roles said got in \
+their way. Only record what I said.
 """
 
 
@@ -90,6 +92,9 @@ I decide: never choose for me. When I've answered, record it with person_answer 
 Claude Code asks me to confirm each one.
 - If I ask you to post, send, or open something yourself, such as an issue or a pull request, record it afterwards \
 with outcome_record, naming the role whose work it was, so the company learns what happens to it.
+- When I say something should always, or never, happen from now on, ask me whether to make it a standing rule for \
+the whole company. If I say yes, add it in my words with person_add_rule. company_rules lists them, and what's \
+waiting for me.
 {end}
 """
 

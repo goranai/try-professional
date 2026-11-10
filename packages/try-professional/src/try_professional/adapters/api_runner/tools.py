@@ -41,6 +41,11 @@ COMPUTER_TOOLS = ("shell", "web_fetch")
 SHELL_TIMEOUT_SECONDS = 300
 AFTER_STOP_SECONDS = 10
 MAX_OUTPUT_CHARS = 6_000
+# Of what a role sees of a long output: its start, where a test run lists failures and a page says what it is. The
+# rest of MAX_OUTPUT_CHARS is its end, where a command says how it finished.
+OUTPUT_HEAD_CHARS = 2_000
+# Beside each run's workspace: whole outputs a role can read in parts.
+OUTPUTS_FOLDER = "outputs"
 MAX_FETCH_BYTES = 500_000
 # The model's own keys never reach a command it runs. A GitHub token does, so gh works.
 _KEPT_SECRETS = {"GITHUB_TOKEN", "GH_TOKEN"}
@@ -404,9 +409,30 @@ def _run_shell(context: ToolContext, command: str) -> str:
         for url in urls_in(result):
             context.track(url, command)
     head, _, output = result.partition("\n")
-    if len(output) > MAX_OUTPUT_CHARS:
-        output = f"...(first {len(output) - MAX_OUTPUT_CHARS} characters cut)\n" + output[-MAX_OUTPUT_CHARS:]
-    return untrusted("shell", f"{head}\n{output}")
+    return untrusted("shell", f"{head}\n{_kept_whole(context.workspace, 'shell', output)}")
+
+
+def _kept_whole(workspace: Path, kind: str, text: str) -> str:
+    """A long output's start and end, and where the whole of it is.
+
+    Only the end used to be kept, so the start of a long output was lost: the list of a test suite's failures, or a
+    page's first section. The whole of it is saved beside the workspace, where a role reads only the part it needs,
+    and where it's never mistaken for the role's work: it isn't in the workspace's listing, or what a person gets.
+    """
+    if len(text) <= MAX_OUTPUT_CHARS:
+        return text
+    folder = workspace.parent / OUTPUTS_FOLDER
+    folder.mkdir(parents=True, exist_ok=True)
+    number = len(list(folder.glob(f"{kind}-*.txt"))) + 1
+    path = folder / f"{kind}-{number}.txt"
+    path.write_text(text, encoding="utf-8", newline="\n")
+    start, end = text[:OUTPUT_HEAD_CHARS], text[-(MAX_OUTPUT_CHARS - OUTPUT_HEAD_CHARS) :]
+    lines = text.count("\n") + 1
+    where = f"../{OUTPUTS_FOLDER}/{path.name}"
+    return (
+        f"{start}\n...({len(text) - len(start) - len(end)} characters left out here. All {lines} lines are in {where}, "
+        f"from the workspace: read what you need from it, such as with grep or sed -n, not all of it.)...\n{end}"
+    )
 
 
 def execute(workspace: Path, command: str) -> str:
@@ -479,4 +505,4 @@ def _fetch(context: ToolContext, url: str) -> str:
     text = re.sub(r"(?s)<(script|style)\b.*?</\1>", " ", body)
     text = re.sub(r"<[^>]+>", " ", text)
     text = re.sub(r"[ \t]+", " ", text)
-    return untrusted("web", f"status {status}\n{text[:MAX_OUTPUT_CHARS]}")
+    return untrusted("web", f"status {status}\n{_kept_whole(context.workspace, 'web', text)}")

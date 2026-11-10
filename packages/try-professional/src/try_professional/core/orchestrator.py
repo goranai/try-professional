@@ -343,6 +343,7 @@ class Orchestrator:
                     record = org_growth.signals(self.org, state, self.company, self.outside)
                 except Exception as error:
                     self._log(run_id).append(self.clock(), "org_record_error", {"error": type(error).__name__})
+            rules = [text for _, text in self.company.rules()]
         return Briefing(
             brief=brief,
             pending_lessons=lessons,
@@ -351,6 +352,7 @@ class Orchestrator:
             held=held,
             roster=roster,
             org_record=record,
+            rules=rules,
         )
 
     def cancel(self, run_id: str, reason: str = "Cancelled by a person") -> None:

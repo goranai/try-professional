@@ -2,6 +2,20 @@
 
 Each version of `try-professional`. `skill-customs` is listed only when it changes.
 
+## 0.6.5 (2026-11-10)
+
+What a company keeps, without a person typing commands for it. From the same real company: its person repeated the same rules in every command, a skip list of 15 repositories among them; seven lessons its CEO proposed waited at a terminal nobody knew about; and what got in its roles' way was only in their audit logs. Two ideas come from projects that company read while it worked: a project's standing principles, from GitHub's spec-kit, and a box for agents' suggestions, from Paperclip. Both are written here from scratch.
+
+### Added
+
+- **Standing rules.** Say in Claude Code that something should always or never happen, and it offers to make it a rule; once you confirm, every role sees it on every step, in the order you gave them. `company_rules` lists them for the session, and `trypro rules`, `trypro rules add`, and `trypro rules remove` work at a terminal. Together they're at most 3,000 characters, because they're sent on every step.
+- **The CEO's lessons are put to you in the chat.** What it proposes the whole company remember is shown at the end of the command, and kept or dropped as you say, with a confirmation, instead of waiting for `trypro memory review`.
+- **Roles say what got in their way.** A role's notes have a `suggestion`: a tool, an instruction, or a way of working that made the job harder, and what would help. It's shown at the end of the command, and after a run at the terminal, and kept with the company's records, including from work that was sent back. It never reaches another role.
+
+### Changed
+
+- **A long output keeps its start.** Only the last 6,000 characters of a command or page used to be kept, so a test run's list of failures, at its start, was lost. A role now sees its start and its end, and the whole of it is saved beside the workspace, for it to read in parts. It's never in the workspace's listing, or what a person gets.
+
 ## 0.6.4 (2026-11-10)
 
 From a real company's first day: a contribution company, six hunts on Claude Code, three bug reports posted. Its CEO sized every hunt for one department, so the Validator and the Poster it was designed with never ran, its reviewer sent the same work back for a check only the Validator could make until a person stopped the run, and a person posted every finding by hand, so nothing it put out was tracked.

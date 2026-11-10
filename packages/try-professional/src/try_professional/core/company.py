@@ -18,9 +18,11 @@ from typing import Any
 from ..org import Org
 from .pipeline.state import FINAL_TASK_ID, PackageStatus, RunPhase, RunState, TaskStatus
 
-FORMAT_VERSION = 2  # 2: organization proposals, in 0.6.4
+FORMAT_VERSION = 3  # 2: organization proposals, in 0.6.4. 3: standing rules, in 0.6.5
 MAX_LOG_TEXT = 240
-LESSON_KINDS = ("lesson", "team_lesson")
+# Kept in the work log, and never in a role's own stand-up: lessons go to memory, and a suggestion is for the person
+# who runs the company, and whoever builds what it runs on.
+LESSON_KINDS = ("lesson", "team_lesson", "suggestion")
 
 _MIGRATIONS = [
     """
@@ -107,7 +109,19 @@ _MIGRATIONS = [
         UNIQUE (department, role_id)
     );
     """,
+    """
+    CREATE TABLE rules (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        text TEXT NOT NULL,
+        added_at TEXT NOT NULL,
+        added_by TEXT NOT NULL,
+        removed_at TEXT
+    );
+    """,
 ]
+# A company's standing rules reach every role on every step, so together they stay short.
+MAX_RULES_CHARS = 3_000
+MAX_RULE_CHARS = 400
 
 
 class CompanyFormatError(RuntimeError):
@@ -209,10 +223,13 @@ def _entries(state: RunState, org: Org) -> Iterable[WorkEntry]:
             continue
         for number, feedback in enumerate(task.feedback):
             yield entry(f"feedback:{task.task_id}:{number}", task.owner_role, "feedback", f"{task.title}: {feedback}")
-        if task.status != TaskStatus.APPROVED:
-            continue
         artifact = state.artifacts.get(task.notes_artifact_id or "")
         notes = artifact.payload if artifact else {}
+        if notes.get("suggestion"):
+            # Kept whatever came of the task: work that was sent back, or stopped, is where a role most often has one.
+            yield entry(f"suggestion:{task.notes_artifact_id}", task.owner_role, "suggestion", notes["suggestion"])
+        if task.status != TaskStatus.APPROVED:
+            continue
         yield entry(f"did:{task.task_id}", task.owner_role, "did", notes.get("did") or task.title)
         for kind in ("decided", "promised"):
             for number, text in enumerate(notes.get(kind, [])):
@@ -544,6 +561,53 @@ class CompanyStore:
                 (proposal_id,),
             ).fetchone()
         return Proposal(*row)
+
+    # ---- standing rules and suggestions --------------------------------------------
+
+    def rules(self) -> list[tuple[int, str]]:
+        """What the person said should always hold, oldest first, numbered as they'd remove one."""
+        with self._lock:
+            rows = self._conn.execute("SELECT id, text FROM rules WHERE removed_at IS NULL ORDER BY id").fetchall()
+        return [(int(r[0]), str(r[1])) for r in rows]
+
+    def add_rule(self, text: str, *, by: str, at: str) -> int:
+        """Only a person adds one. Raises ValueError, saying why, for one that's empty, too long, or a repeat."""
+        text = _capped(text, MAX_RULE_CHARS + 1)
+        if not text:
+            raise ValueError("A rule needs words.")
+        if len(text) > MAX_RULE_CHARS:
+            raise ValueError(f"A rule is at most {MAX_RULE_CHARS} characters. Say it shorter, or as two rules.")
+        current = self.rules()
+        if any(existing.lower() == text.lower() for _, existing in current):
+            raise ValueError("That's already a rule.")
+        if sum(len(existing) for _, existing in current) + len(text) > MAX_RULES_CHARS:
+            raise ValueError(
+                f"Rules reach every role on every step, so together they're at most {MAX_RULES_CHARS} characters. "
+                "Remove one that no longer matters first."
+            )
+        with self._lock, self._conn:
+            cursor = self._conn.execute("INSERT INTO rules (text, added_at, added_by) VALUES (?, ?, ?)", (text, at, by))
+        return int(cursor.lastrowid or 0)
+
+    def remove_rule(self, number: int, *, at: str) -> str | None:
+        """The rule's text, or None if there's no such rule now."""
+        with self._lock, self._conn:
+            row = self._conn.execute("SELECT text FROM rules WHERE id = ? AND removed_at IS NULL", (number,)).fetchone()
+            if row is None:
+                return None
+            self._conn.execute("UPDATE rules SET removed_at = ? WHERE id = ?", (at, number))
+        return str(row[0])
+
+    def suggestions(self, run_id: str | None = None, limit: int = 50) -> list[dict[str, str]]:
+        """What roles said got in their way, and what would help. Newest first."""
+        query = "SELECT run_id, role, at, text FROM work_log WHERE kind = 'suggestion'"
+        args: list[Any] = []
+        if run_id:
+            query += " AND run_id = ?"
+            args.append(run_id)
+        with self._lock:
+            rows = self._conn.execute(f"{query} ORDER BY at DESC, rowid DESC LIMIT ?", (*args, limit)).fetchall()
+        return [{"run_id": r[0], "role": r[1], "at": r[2], "text": r[3]} for r in rows]
 
     # ---- organization proposals -------------------------------------------------
 
