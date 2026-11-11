@@ -816,6 +816,17 @@ def cmd_mcp(args: argparse.Namespace) -> int:
             config = load_config(root)
         except FileNotFoundError:
             return None
+        plan = None
+        if args.coordinator:
+            # Roles default to subagents of the coordinator's Claude Code; runtime in trypro.yaml can send some on.
+            raw = dict(config.raw)
+            if not isinstance(raw.get("runtime"), dict) and "TRYPRO_RUNTIME" not in os.environ:
+                raw["runtime"] = {"default": "claude-code", "roles": {}}
+            try:
+                plan = RuntimePlan.from_config(raw)
+            except ValueError as error:
+                # Said on every call, so a typo can't quietly turn a role into a subagent. Nothing is opened first.
+                raise ToolError(str(error)) from None
         org = load_org(config.org_dir)
         orchestrator = Orchestrator(
             org,
@@ -833,17 +844,6 @@ def cmd_mcp(args: argparse.Namespace) -> int:
         if args.coordinator:
             # After an upgrade, Claude Code's files catch up by themselves: nobody has to know to rewrite them.
             refresh_claude_code_files(config.root, org)
-        plan = None
-        if args.coordinator:
-            # Roles default to subagents of the coordinator's Claude Code; runtime in trypro.yaml can send some on.
-            raw = dict(config.raw)
-            if not isinstance(raw.get("runtime"), dict) and "TRYPRO_RUNTIME" not in os.environ:
-                raw["runtime"] = {"default": "claude-code", "roles": {}}
-            try:
-                plan = RuntimePlan.from_config(raw)
-            except ValueError as error:
-                # Said on every call, so a typo can't quietly turn a role into a subagent.
-                raise ToolError(str(error)) from None
         return McpService(
             orchestrator,
             bound_role=args.role,

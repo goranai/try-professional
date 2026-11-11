@@ -2,9 +2,10 @@
 
 An agent runs a role's commands with nobody to ask, so `gh pr create` or `git push` would just happen. The runner puts
 this in front of gh and git on the step's PATH. It sees the exact words gh or git would get, after the shell is done
-with them, so it reads them as they do. It runs what only reads, such as `gh pr list` or `git log`, and what changes
-only the step's own copy, such as `git commit`. Anything else, and anything it doesn't know, waits for a person, as
-`trypro held` shows. It guards these two programs; it isn't a sandbox for the rest of the machine.
+with them, so it reads them as they do. It runs what only reads, such as `gh pr list` or `git log`, and git's work on
+local files, such as `git commit` or `git clone`. Anything else, such as a change to git's global settings, and
+anything it doesn't know, waits for a person, as `trypro held` shows. It guards these two programs; it isn't a
+sandbox for the rest of the machine.
 
     python -m try_professional.adapters.codex_gate <company> <run_id> <role> <workspace> <real program> [args...]
 """
@@ -35,7 +36,8 @@ _GH_READS: dict[str, set[str] | None] = {
     "version": None,
 }
 _GH_OPTIONS_WITH_A_VALUE = {"-R", "--repo", "--hostname"}
-_GH_FIELDS = ("-f", "-F", "--field", "--raw-field", "--input")
+# gh api's short options that take a value, attached (-ftitle=x) or as the next word; others are switches (-i).
+_GH_API_VALUED = set("XfFHpqt")
 # git's own options that take the next word as their value.
 _GIT_OPTIONS_WITH_A_VALUE = {"-C", "-c", "--git-dir", "--work-tree", "--namespace", "--exec-path", "--config-env",
                              "--super-prefix", "--list-cmds", "--attr-source"}  # fmt: skip
@@ -129,7 +131,9 @@ _GIT_LOCAL = frozenset(
         "write-tree",
     ]
 )
-_GIT_LFS_READS = {"ls-files", "status", "env", "version", "fetch", "pull", "checkout", "install", "track", "untrack"}
+_GIT_LFS_READS = {"ls-files", "status", "env", "version", "fetch", "pull", "checkout", "track", "untrack"}
+# Options that make git config change settings beyond this copy, such as a global alias or credential helper.
+_GIT_CONFIG_BEYOND = ("--global", "--system", "--file", "-f", "--blob", "--worktree")
 
 
 def _words(args: list[str], with_a_value: set[str]) -> tuple[list[str], list[str]]:
@@ -160,27 +164,57 @@ def gh_changes_something(args: list[str]) -> bool:
     if group == "api":
         return _gh_api_writes(args, words)
     if group == "auth":
-        return words[1:2] != ["status"]  # `gh auth token` would print the token for the model to see
+        # `gh auth token`, or status with -t, would print the token for the model to see.
+        shows = any(a in ("-t", "--show-token") or (a.startswith("-") and not a.startswith("--") and "t" in a)
+                    for a in args)  # fmt: skip
+        return words[1:2] != ["status"] or shows
     if group not in _GH_READS:
         return True
     reads = _GH_READS[group]
     return reads is not None and len(words) > 1 and words[1].lower() not in reads
 
 
+def _gh_api_options(args: list[str]) -> tuple[str, list[str], bool]:
+    """(the method, each field's value, whether --input is given), read as gh reads its options."""
+    method, fields, given_input = "", [], False
+    at = 0
+    while at < len(args):
+        arg = args[at]
+        if arg.startswith("--"):
+            name, _, attached = arg.partition("=")
+            if name in ("--method", "--field", "--raw-field", "--input") and not attached and at + 1 < len(args):
+                attached, at = args[at + 1], at + 1
+            if name == "--method":
+                method = attached
+            elif name in ("--field", "--raw-field"):
+                fields.append(attached)
+            elif name == "--input":
+                given_input = True
+        elif arg.startswith("-") and len(arg) > 1:
+            letters = arg[1:]
+            for place, letter in enumerate(letters):
+                if letter in _GH_API_VALUED:
+                    value = letters[place + 1 :]
+                    if not value and at + 1 < len(args):
+                        value, at = args[at + 1], at + 1
+                    if letter == "X":
+                        method = value
+                    elif letter in "fF":
+                        fields.append(value)
+                    break
+        at += 1
+    return method, fields, given_input
+
+
 def _gh_api_writes(args: list[str], words: list[str]) -> bool:
-    method = ""
-    for at, arg in enumerate(args):
-        if arg in ("-X", "--method") and at + 1 < len(args):
-            method = args[at + 1]
-        elif arg.startswith("--method="):
-            method = arg.split("=", 1)[1]
-        elif arg.startswith("-X") and len(arg) > 2:
-            method = arg[2:]
+    method, fields, given_input = _gh_api_options(args)
     if len(words) > 1 and words[1].strip("/").lower() == "graphql":
-        return any("mutation" in arg.lower() for arg in args)
+        # A query read from a file or stdin can't be seen, so it may be a mutation.
+        from_a_file = any(value.partition("=")[2].startswith("@") for value in fields)
+        return given_input or from_a_file or any("mutation" in arg.lower() for arg in args)
     if method:
         return method.upper() != "GET"
-    return any(arg == flag or arg.startswith(flag + "=") for arg in args for flag in _GH_FIELDS)
+    return bool(fields) or given_input
 
 
 def git_changes_something(args: list[str]) -> bool:
@@ -201,6 +235,8 @@ def git_changes_something(args: list[str]) -> bool:
         rest = [w.lower() for w in args[at + 1 :] if not w.startswith("-")]
         if lowered == "lfs":
             return rest[:1] != [] and rest[0] not in _GIT_LFS_READS
+        if lowered == "config":
+            return any(a == o or a.startswith(o + "=") for a in args[at + 1 :] for o in _GIT_CONFIG_BEYOND)
         if lowered == "subtree":
             return "push" in rest
         return lowered not in _GIT_LOCAL
@@ -221,7 +257,7 @@ def held_command(name: str, args: list[str], cwd: Path, workspace: Path) -> str:
     try:
         relative = cwd.resolve().relative_to(workspace.resolve())
     except ValueError:
-        return f"cd {shlex.quote(cwd.as_posix())} && {command}"
+        return command  # typed outside the workspace, such as in the step's own folder, which is gone by then
     return command if str(relative) == "." else f"cd {shlex.quote(relative.as_posix())} && {command}"
 
 

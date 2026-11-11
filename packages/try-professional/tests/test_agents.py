@@ -117,7 +117,7 @@ class TestSteps:
         run, envs = harness(org), []
 
         def capture(argv: list[str], stdin: str, env: dict[str, str], cwd: Path, timeout: int) -> tuple[int, str]:
-            envs.append(("--model" in argv and "agy" in argv[0], env))
+            envs.append(env)
             assert not str(cwd).startswith(str(run.orchestrator.home)), "a step starts outside the company"
             return 0, ""
 
@@ -129,7 +129,14 @@ class TestSteps:
             run_id, _ = run.orchestrator.start("Goal")
             action = next(a for a in run.orchestrator.open_actions(run_id) if a.kind == "invoke_role")
             runner._invoke(action, run_id)
-            assert ("TRYPRO_LLM_API_KEY" in envs[-1][1]) == (runtime == CODEX), runtime
+            assert ("TRYPRO_LLM_API_KEY" in envs[-1]) == (runtime == CODEX), runtime
+
+    def test_a_companys_own_key_name_is_used(self, tmp_path: Path) -> None:
+        settings = AgentSettings.from_environment({"TRYPRO_LLM_BASE_URL": "https://x/v1"}, key_env="DEEPSEEK_API_KEY")
+        argv = codex_argv(settings, tmp_path, ROLE, None)
+        assert json.loads(_value(argv, "model_providers.trypro.env_key")) == "DEEPSEEK_API_KEY"
+        env = step_environment({"DEEPSEEK_API_KEY": "k", "PATH": ""}, settings.key_env, tmp_path)
+        assert env["DEEPSEEK_API_KEY"] == "k"
 
     def test_the_prompt_names_the_run_its_folder_and_what_waits(self, org: Org, tmp_path: Path) -> None:
         text = role_prompt(org, org.role(ROLE), "run-1", tmp_path)
@@ -162,7 +169,8 @@ class TestGate:
             "cd repo && gh pr create --fill"
         )
         assert codex_gate.held_command("git", ["push"], tmp_path, tmp_path) == "git push"
-        assert codex_gate.held_command("git", ["push"], tmp_path / "repo", tmp_path / "x").startswith("cd ")
+        # Typed outside the workspace, it runs later from the workspace.
+        assert codex_gate.held_command("git", ["push"], tmp_path / "repo", tmp_path / "x") == "git push"
 
     @pytest.mark.parametrize(
         "args",
@@ -190,6 +198,19 @@ class TestGate:
             "git -C repo push origin main",
             "git send-email x.patch",
             "git my-alias",
+            # And these, from its second review: options gh reads attached or bundled, and settings beyond this copy.
+            "gh api -ftitle=x repos/o/r/issues",
+            "gh api -Ftitle=x repos/o/r/issues",
+            "gh api -if title=x repos/o/r",
+            "gh api -iXPOST repos/o/r/issues",
+            "gh api graphql -F query=@m.graphql",
+            "gh api graphql --input m.json",
+            "gh api graphql -f query=@m.graphql",
+            "gh auth status -t",
+            "gh auth status --show-token",
+            "git config --global alias.p push",
+            "git config --file /x/config k v",
+            "git lfs install",
         ],
     )
     def test_anything_that_may_change_something_outside_waits(self, args: str) -> None:
@@ -218,6 +239,10 @@ class TestGate:
             "git checkout -b fix",
             "git lfs pull",
             "git --version",
+            "gh api -i repos/o/r",
+            "gh api -XGET search/x",
+            "git config user.name x",
+            "git config --get remote.origin.url",
         ],
     )
     def test_reading_and_local_work_run(self, args: str) -> None:

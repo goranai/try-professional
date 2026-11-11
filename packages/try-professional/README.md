@@ -20,7 +20,7 @@ You say what you want, and a company is designed for it: departments, roles, and
 
 ```yaml
 runtime:
-  default: claude-code          # every role, unless named below (without one: trypro's own engine)
+  default: claude-code          # every role, unless named below (with none: trypro's own engine from a terminal, subagents in /company)
   roles:
     research: antigravity       # a department
     engineering/backend: codex  # one role
@@ -30,7 +30,7 @@ models:
 
 From Claude Code, `/company` hands those roles' steps to their agent, and every other role is a subagent. From a terminal, `trypro run` does. Codex uses the company's own endpoint and key from `.env` when there is one, or its own login; Antigravity and Claude Code use their own. Antigravity runs a role's commands without asking unless `TRYPRO_ANTIGRAVITY_BYPASS=0`.
 
-Whatever the agent, `gh` and `git` run what only reads, or changes only the role's own copy, and anything else, such as a pull request, an issue, a release or a push, waits for you in `trypro held`. Variables named like keys, tokens, secrets or passwords don't reach a role's commands, apart from a GitHub token. On Windows, Codex's and Antigravity's own sandboxes didn't hold in our tests, so a role there can reach the rest of the machine.
+Whatever the agent, `gh` and `git` run what only reads, and git's work on local files, such as a commit or a clone. Anything else, such as a pull request, an issue, a release, a push or a change to git's global settings, waits for you in `trypro held`. Variables named like keys, tokens, secrets or passwords don't reach a role's commands, apart from a GitHub token. On Windows, Codex's and Antigravity's own sandboxes didn't hold in our tests, so a role there can reach the rest of the machine.
 
 | Talk to it | How |
 |---|---|
