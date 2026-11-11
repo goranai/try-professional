@@ -124,6 +124,7 @@ class TestEveryRunSaysWhatItCost:
         assert report["calls_by_purpose"]["review"] >= 1
         assert 0 <= report["review_share"] <= 1
         assert report["handoffs"] == [] and report["rework"] == 0
+        assert report["reviews_skipped"] == 0 and len(report["tokens_per_task_recent"]) == 1
 
     def test_time_waiting_for_a_person_isnt_the_companys(self, tmp_path: Any) -> None:
         import json

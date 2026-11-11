@@ -257,16 +257,17 @@ def _entries(state: RunState, org: Org) -> Iterable[WorkEntry]:
 
 
 def _reviews(state: RunState) -> Iterable[tuple[str, str, str]]:
-    """(key, role whose work it was, outcome) for each QA review in a run, and each one skipped on trust."""
+    """(key, role whose work it was, outcome) for each QA review in a run, and each one skipped on trust, in the order
+    they happened: a skip is placed where the work it skipped was handed in."""
+    skipped = {w.get("task_id", "") for w in state.waivers if w.get("decided_by") == TRUST}
     for artifact in state.artifacts.values():
         task = state.tasks.get(artifact.task_id or "")
-        if artifact.type != "ReviewVerdict" or artifact.payload.get("gate") != QA_GATE or task is None:
+        if task is None:
             continue
-        outcome = "clean" if artifact.payload.get("decision") == "approve" else "changes"
-        yield f"{state.run_id}:review:{artifact.artifact_id}", task.owner_role, outcome
-    for waiver in state.waivers:
-        task = state.tasks.get(waiver.get("task_id", ""))
-        if waiver.get("decided_by") == TRUST and task is not None:
+        if artifact.type == "ReviewVerdict" and artifact.payload.get("gate") == QA_GATE:
+            outcome = "clean" if artifact.payload.get("decision") == "approve" else "changes"
+            yield f"{state.run_id}:review:{artifact.artifact_id}", task.owner_role, outcome
+        elif task.task_id in skipped and artifact.artifact_id == task.result_artifact_id:
             yield f"{state.run_id}:skipped:{task.task_id}", task.owner_role, "skipped"
 
 

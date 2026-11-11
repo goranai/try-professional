@@ -57,8 +57,11 @@ _NEEDS_A_PERSON = re.compile(
 # Two parts on one line: a write to GitHub's API, and a download run by a shell. Each part is found once per line,
 # so a long command takes time in step with its length.
 _IN_ORDER = (
-    (re.compile(r"\bgh\s+api\b", re.I), re.compile(r"(-X|--method)\s*(POST|PUT|PATCH|DELETE)\b", re.I)),
-    (re.compile(r"\b(curl|wget)\b", re.I), re.compile(r"\|\s*(sudo\s+)?(sh|bash|zsh|python[0-9.]*)\b", re.I)),
+    (re.compile(r"\bgh\s+api\b", re.I), re.compile(r"(-X|--method)[\s=]*(POST|PUT|PATCH|DELETE)\b", re.I)),
+    (
+        re.compile(r"\b(curl|wget)\b", re.I),
+        re.compile(r"\|\s*(sudo\s+)?(env\s+)?([\w./-]{0,200}/)?(sh|bash|zsh|python[0-9.]*)\b", re.I),
+    ),
 )
 
 
@@ -97,13 +100,16 @@ _UNREADABLE = re.compile(
     r"|\benv\b[^\n;|&]{0,300}(\s-\w*s|--split-string)"
     r"|\b(bash|sh|zsh|dash|ksh|fish)\b[^\n;|&]{0,300}\s-\w*c"
     r"|\b(python[\d.]*|py|node|deno|perl|ruby|php)\b[^\n;|&]{0,300}\s-\w*(c|e)\w*\b"
-    r"|\|\s*(sudo\s+)?(bash|sh|zsh|dash|ksh|fish|python[\d.]*|py|node|deno|perl|ruby|php)\b"
+    r"|\|\s*(sudo\s+)?(env\s+)?([\w./-]{0,200}/)?(bash|sh|zsh|dash|ksh|fish|python[\d.]*|py|node|deno|perl|ruby|php)\b"
     r"|\{[^{}\n]{0,200},[^{}\n]{0,200}\}",
     re.IGNORECASE,
 )
-# A command given encoded can't be read at all, whatever it says. PowerShell takes any start of -EncodedCommand.
-# Matched on the text with quotes taken out, so p''owershell '-enc' is found too.
-_ENCODED = re.compile(r"(pwsh|powershell)(\.exe)?\b[^\n;|&]{0,300}\s[-/]e(c|n[a-z]*)?(\s|:|$)|[-/]encodedcommand")
+# A command given encoded can't be read at all, whatever it says. PowerShell takes any start of -EncodedCommand,
+# and -ec. Matched on the text with quotes taken out, so p''owershell '-enc' is found too.
+_ENCODED_FLAG = "|".join(["ec", *("encodedcommand"[:n] for n in range(14, 0, -1))])
+_ENCODED = re.compile(
+    rf"(pwsh|powershell)(\.exe)?\b[^\n;|&]{{0,300}}\s[-/]({_ENCODED_FLAG})(\s|:|$)|[-/]encodedcommand"
+)
 # ANSI-C quoting with an escape in it can spell any word, git and push included.
 _ANSI_C_ESCAPE = re.compile(r"\$'[^'\n]{0,300}\\")
 
