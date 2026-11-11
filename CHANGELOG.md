@@ -2,6 +2,19 @@
 
 Each version of `try-professional`. `skill-customs` is listed only when it changes.
 
+## 0.7.1 (2026-11-11)
+
+From the fourth review of 0.7.0's push check, by the company of agents that reviews this project: it confirmed real pushes that still ran without asking, and two inputs that took over a second to check.
+
+### Fixed
+
+- **A push run some way the check can't read asks a person.** With the word push in a command, any of these now needs approval: eval, a string run by a shell or by python, node, perl, ruby or PowerShell, a here-doc, trap, an alias, xargs, env -S, `$( )` or backticks, brace expansion, and ANSI-C quoting. A command given encoded, as to PowerShell, always does. A command that only mentions push, such as `git log --grep=push`, doesn't.
+- **Checking a long command stays fast.** No input up to the 50,000 characters it reads takes a second.
+
+### Changed
+
+- **What 0.7.0 said about pushes, said exactly:** the check guards against mistakes, and asks a person. A push spelled out at run time, such as from a script file, can still get through. It isn't a sandbox, and in Claude Code a role's shell follows your own permissions.
+
 ## 0.7.0 (2026-11-11)
 
 An agent, but a company. The first version built from three sources at once: a real company's runs, a lab where companies of agents work on real bugs with hidden tests, and a long argument about why anyone should use this at all. It's also the first one a company of agents reviewed before release: its review found the first fix for pushes too slow and too easy to get around, before it shipped.

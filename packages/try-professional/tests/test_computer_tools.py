@@ -114,6 +114,24 @@ class TestShell:
             "bash -ce 'git -C . push'",
             "bash -euxc 'git -C . push'",
             "git --attr-source HEAD push",
+            # And these, from the fourth review: ways of running a command this check can't read.
+            "eval git ' push' -q",
+            "bash <<< 'git -C . push'",
+            "python -c \"import os; os.system('git -C . push')\"",
+            "python -c \"import subprocess; subprocess.run(['git', 'push'])\"",
+            'bash -c "bash -c \\"bash -c \'bash -c \\\\\\"git -C . push\\\\\\"\'\\""',
+            "git $'\x70ush'",
+            "git -C . p$'u'sh",
+            "git -C . {push,}",
+            "bash -c -- 'git -C . push'",
+            "bash -c -e 'git -C . push'",
+            "eval -- 'git -C . push'",
+            "eval 'git -C .' push",
+            "env -S 'git -C . push'",
+            "trap 'git -C . push' EXIT",
+            "alias p='git -C . push'; p",
+            '"$(command -v git)" -C . push',
+            "powershell -EncodedCommand ZwBpAHQAIABwAHUAcwBoAA==",
         ],
     )
     def test_a_push_hidden_by_quoting_or_options_still_needs_a_person(self, command: str) -> None:
@@ -131,6 +149,12 @@ class TestShell:
         assert needs_a_person("git push " + "x" * 1_000_000)
         assert not needs_a_person("echo " + "y" * 1_000_000)
         assert time.perf_counter() - started < 2
+        # Shapes from the fourth review, and others that repeat what a pattern looks ahead from, just under the cap.
+        for shape in ("git subtree " * 4_100 + "pushx", "env " * 12_000 + "push", "bash " * 9_000 + "push",
+                      "{" * 45_000 + " push", "python " * 6_000 + "push"):  # fmt: skip
+            started = time.perf_counter()
+            needs_a_person(shape)
+            assert time.perf_counter() - started < 1, shape[:20]
 
     @pytest.mark.parametrize(
         "command",
@@ -145,6 +169,9 @@ class TestShell:
             "git pull",
             "cd /path/to/git && ls",
             "git subtree split --prefix=docs",
+            "python -m pytest -k push",
+            "git log --grep=push",
+            "grep -rn push src/",
         ],
     )
     def test_reading_doesnt(self, command: str) -> None:

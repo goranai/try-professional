@@ -75,7 +75,19 @@ _PLAIN_PUSH = re.compile(r"\bgit(\.exe)?[\"']?\s+[\"']?(push|send-pack|http-push
 # Past this, a command isn't split into words: splitting one long word takes time that grows with its square.
 _LONGEST_READ = 50_000
 # Removed before looking for the word push at all, so quoting can't hide it.
-_QUOTING = re.compile(r"[\"'\\`]")
+_QUOTING = re.compile(r"[\"'\\`$]")
+# Ways of running a command this check can't read: a string run by a shell or another language, eval, a here-doc,
+# trap, an alias, xargs, env -S, command substitution, brace expansion, and ANSI-C quoting. A command that uses one,
+# and has the word push in it, asks a person. Each looks at most a few hundred characters ahead, so this stays linear.
+_UNREADABLE = re.compile(
+    r"\beval\b|<<|\btrap\b|\balias\b|\bxargs\b|`|\$\(|\$'|\benv\b[^\n;|&]{0,300}(\s-\w*s|--split-string)"
+    r"|\b(bash|sh|zsh|dash|ksh|fish)\b[^\n;|&]{0,300}\s-\w*c"
+    r"|\b(python[\d.]*|py|node|deno|perl|ruby|php|pwsh|powershell)\b[^\n;|&]{0,300}\s-\w*(c|e)\w*\b"
+    r"|\{[^{}\n]{0,200},[^{}\n]{0,200}\}",
+    re.IGNORECASE,
+)
+# A command given encoded can't be read at all, whatever it says.
+_ENCODED = re.compile(r"\b(pwsh|powershell)(\.exe)?\b[^\n;|&]{0,300}\s-e(c|nc|ncodedcommand)?\s|-encodedcommand", re.I)
 
 
 def _pushes(command: str, depth: int = 0) -> bool:
@@ -85,7 +97,9 @@ def _pushes(command: str, depth: int = 0) -> bool:
     company that reviews this project then found, over three rounds, pushes that each new check missed, and checks
     that took seconds on long commands. So:
     - With no push in it once quotes and escapes are taken out, a command can't be one, and nothing more is read.
-    - The plain form is looked for anywhere, in one pass.
+    - The plain form is looked for anywhere, in one pass. So is any way of running a command that this can't read,
+      such as eval, a string run by bash -c or python -c, env -S, trap, an alias, $( ) or brace expansion: with push
+      in the command, that asks a person. A command given encoded, as to PowerShell, always does.
     - Then the command is split into words as a shell splits it: lines, backticks and $( ) are separate commands,
       quotes and escapes are resolved, git's own options are skipped, and its subcommand is checked, for every git in
       it. A string run as a command, as with bash -c or eval, is read the same way. An alias set on the command line,
@@ -94,10 +108,14 @@ def _pushes(command: str, depth: int = 0) -> bool:
     A push built up from pieces at run time can still get through: this guards against honest mistakes, and asks a
     person; it isn't a sandbox."""
     text = command.replace("\\\r\n", "").replace("\\\n", "")
+    if depth == 0 and _ENCODED.search(text):
+        return True
     squashed = _QUOTING.sub("", text).lower()
+    if "$'" in text and "git" in squashed:
+        return True  # ANSI-C quoting can spell a word in escapes, such as $'\x70ush'
     if "push" not in squashed and "send-pack" not in squashed and "alias." not in squashed:
         return False
-    if _PLAIN_PUSH.search(text) or len(text) > _LONGEST_READ:
+    if _PLAIN_PUSH.search(text) or len(text) > _LONGEST_READ or _UNREADABLE.search(text):
         return True
     separated = text.replace("\r\n", "\n").replace("\n", " ; ").replace("`", " ; ").replace("$(", " ; ")
     try:
@@ -133,16 +151,18 @@ def _segment_pushes(words: list[str], depth: int) -> bool:
         name = word.replace("\\", "/").rsplit("/", 1)[-1].lower()
         if name.endswith(".exe"):
             name = name[:-4]
-        if name == "git" and _git_pushes(words[at + 1 :]):
+        if name == "git" and _git_pushes(words, at + 1, last_push):
             return True
         if word.startswith("$") and last_push > at:
             return True  # a command in a variable, used to push
     return False
 
 
-def _git_pushes(words: list[str]) -> bool:
+def _git_pushes(words: list[str], start: int, last_push: int) -> bool:
+    """git's words from `start`. `last_push` is the last word push in the command's words, or -1."""
     skip = False
-    for at, word in enumerate(words):
+    for at in range(start, len(words)):
+        word = words[at]
         if skip:
             skip = False
             if "alias." in word.lower():
@@ -156,7 +176,7 @@ def _git_pushes(words: list[str]) -> bool:
         subcommand = word.lower()
         if subcommand in _GIT_PUSHES or subcommand.startswith("$"):
             return True
-        return subcommand == "subtree" and "push" in (w.lower() for w in words[at + 1 :])
+        return subcommand == "subtree" and last_push > at
     return True  # git with no subcommand here: it comes from somewhere else, such as xargs
 
 
