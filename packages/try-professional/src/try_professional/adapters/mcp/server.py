@@ -7,7 +7,15 @@ from typing import Any
 
 from mcp.server.mcpserver import MCPServer
 
-from .service import COORDINATOR_TOOLS, DEFAULT_AUDIT_TAIL, MCP_TOOLS, PERSON_TOOLS, McpService, ToolError
+from .service import (
+    AGENT_STEP_TOOL,
+    COORDINATOR_TOOLS,
+    DEFAULT_AUDIT_TAIL,
+    MCP_TOOLS,
+    PERSON_TOOLS,
+    McpService,
+    ToolError,
+)
 
 _INSTRUCTIONS = (
     "Runs a company of agents as a pipeline. Call run_start with a goal, then repeat: read the actions from "
@@ -226,6 +234,12 @@ def build_server(
         return _guard(company_tool("outcome_record"), run_id, ref, role, title, target, kind)
 
     @server.tool()
+    def run_step(run_id: str, invocation_id: str) -> Any:
+        """Do a step whose action says runs_in, in that agent, such as Antigravity or Codex. Returns when the role has
+        handed in, or after 20 minutes says it's still working: then call it again with the same ids."""
+        return _guard(company_tool("run_step"), run_id, invocation_id)
+
+    @server.tool()
     def audit_tail(run_id: str, count: int = DEFAULT_AUDIT_TAIL) -> Any:
         """The latest records from a run's audit log."""
         return _guard(company_tool("audit_tail"), run_id, count)
@@ -237,6 +251,6 @@ def build_server(
     else:
         # Only the coordinator records a person's decisions: Claude Code, set up by trypro, asks the person to confirm
         # each call. A role's server, or another client acting as every role, never sees these tools.
-        for name in PERSON_TOOLS:
+        for name in (*PERSON_TOOLS, AGENT_STEP_TOOL):
             server.remove_tool(name)
     return server

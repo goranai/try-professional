@@ -24,6 +24,7 @@ from typing import Any
 
 import yaml
 
+from .adapters.agent_runner import AgentRunner
 from .adapters.api_runner.runner import ApiRunner, ModelRoutes, RunResult
 from .adapters.api_runner.scripted import ScriptedClient
 from .config import CONFIG_NAME, CONFIG_TEMPLATE, load_config
@@ -397,7 +398,9 @@ class Company:
             deliverables_dir=self.root / "deliverables",
         )
 
-    def _runner(self, dry_run: bool, client: Any, model: str, approve: Any = None) -> tuple[ApiRunner, Orchestrator]:
+    def _runner(
+        self, dry_run: bool, client: Any, model: str, approve: Any = None
+    ) -> tuple[ApiRunner | AgentRunner, Orchestrator]:
         computer = load_config(self.root).raw.get("computer_tools", True) is not False
         if dry_run or client is not None:
             orchestrator = self._orchestrator()
@@ -420,10 +423,10 @@ class Company:
         previous = Path.cwd()
         os.chdir(self.root)
         try:
-            runner, orchestrator = _runner(argparse.Namespace(dry_run=False))
+            chosen, orchestrator = _runner(argparse.Namespace(dry_run=False))
         finally:
             os.chdir(previous)
-        runner.approve = approve
+        chosen.approve = approve
         # With nobody to ask, a command that changes something outside waits for a person, as `trypro held` shows.
-        runner.hold = approve is None
-        return runner, orchestrator
+        chosen.hold = approve is None
+        return chosen, orchestrator

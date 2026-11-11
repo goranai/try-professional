@@ -63,7 +63,9 @@ you what a role was asked. Use them like this:
 Otherwise, call run_start with the command as written. It returns a run_id, and the first actions.
 2. For each action, start the subagent named trypro-<department>-<role> for its role (a role of marketing/seo is \
 trypro-marketing-seo). Give it only the run_id. When there are actions for several roles, start all of them at once, \
-in one message, so they work at the same time, one subagent per role. Never add what another role did.
+in one message, so they work at the same time, one subagent per role. Never add what another role did. An \
+action that says runs_in works in another agent: don't start a subagent for it. Call run_step with its run_id \
+and invocation_id, at the same time as the subagents, and while it says working, call it again.
 3. Call run_next_action, and repeat until its status isn't "working".
 4. If its status is "blocked", show me each question under needs_a_person, word for word, with its options, and ask \
 me which. Never choose for me. When I've answered in my own words, record it with person_answer, then carry on from \

@@ -21,9 +21,13 @@ received, and budgets run on that. What a client reports is kept beside it, mark
 
 from __future__ import annotations
 
+import contextlib
 import getpass
 import json
 import re
+import threading
+from concurrent.futures import Future, ThreadPoolExecutor
+from concurrent.futures import TimeoutError as StepStillRunning
 from pathlib import Path
 from typing import Any
 
@@ -81,7 +85,12 @@ PERSON_TOOLS = (
     "company_rules",
 )
 # All a coordinator may do. Anything else is a role's work.
-COORDINATOR_TOOLS = ("org_get", "run_start", "run_status", "run_next_action", "audit_tail", *PERSON_TOOLS)
+# Hands a role's step to the agent that role works in, such as Antigravity or Codex.
+AGENT_STEP_TOOL = "run_step"
+COORDINATOR_TOOLS = ("org_get", "run_start", "run_status", "run_next_action", "audit_tail", AGENT_STEP_TOOL,
+                     *PERSON_TOOLS)  # fmt: skip
+# How long run_step waits before saying the step is still working, under Claude Code's 30 minutes of silence.
+RUN_STEP_WAIT_SECONDS = 1200
 DEFAULT_AUDIT_TAIL = 20
 MAX_AUDIT_TAIL = 200
 CHARS_PER_TOKEN = 3.5
@@ -106,6 +115,8 @@ class McpService:
         coordinator: bool = False,
         computer: bool = True,
         root: Path | None = None,
+        runtimes: Any = None,
+        agents: Any = None,
     ) -> None:
         # The company's folder, where org/ is. Its records are usually in .trypro beside it.
         self.root = root or orchestrator.home.parent
@@ -119,6 +130,14 @@ class McpService:
         self.bound_role = bound_role
         # A bound role is a full agent unless its company was set up sandboxed: its prompt must say which.
         self.computer = computer
+        # Which agent each role works in. Coordinating from Claude Code, a role is a subagent unless set otherwise.
+        from ..agent_runner import CLAUDE_CODE, AgentSettings, RuntimePlan
+
+        self.runtimes: RuntimePlan = runtimes or RuntimePlan(default=CLAUDE_CODE)
+        self.agents: AgentSettings = agents or AgentSettings.from_environment()
+        self._steps: dict[str, Future[list[Any]]] = {}
+        self._steps_lock = threading.Lock()
+        self._step_pool: ThreadPoolExecutor | None = None
 
     @property
     def attestation(self) -> Any:
@@ -334,15 +353,73 @@ class McpService:
         root = self.orchestrator.workspace(run_id).resolve()
         return sorted(str(p.relative_to(root)).replace("\\", "/") for p in root.rglob("*") if p.is_file())
 
+    def _works_elsewhere(self, role: str) -> str | None:
+        """The agent a role works in, when that isn't a subagent of the coordinator's Claude Code."""
+        from ..agent_runner import ANTIGRAVITY, CODEX
+
+        runtime = self.runtimes.for_role(role)
+        return runtime if runtime in (ANTIGRAVITY, CODEX) else None
+
+    def run_step(self, run_id: str, invocation_id: str) -> dict[str, Any]:
+        """Do a step whose action says runs_in, in that agent. Waits up to 20 minutes, then says it's still working:
+        call it again with the same ids to keep waiting. Several can run at once."""
+        from ..agent_runner import run_agent_step
+
+        if not self.coordinator:
+            raise ToolError("Only the coordinator hands a step to another agent.")
+        with self._steps_lock:
+            future = self._steps.get(invocation_id)
+            if future is None:
+                action = next((a for a in self.orchestrator.open_actions(run_id)
+                               if isinstance(a, InvokeRole) and a.invocation_id == invocation_id), None)  # fmt: skip
+                if action is None:
+                    raise ToolError(f"No open step {invocation_id} in {run_id}. Call run_next_action.")
+                runtime = self._works_elsewhere(action.role)
+                if runtime is None:
+                    raise ToolError(f"{action.role} works as a subagent here. Start its subagent instead.")
+                if self._step_pool is None:
+                    self._step_pool = ThreadPoolExecutor(max_workers=8, thread_name_prefix="trypro-step")
+                future = self._step_pool.submit(
+                    run_agent_step, self.orchestrator, action, run_id, runtime,
+                    root=self.root, plan=self.runtimes, settings=self.agents,
+                )  # fmt: skip
+                self._steps[invocation_id] = future
+        try:
+            events = future.result(timeout=RUN_STEP_WAIT_SECONDS)
+        except StepStillRunning:
+            return {
+                "status": "working",
+                "tell": "Still working. Call run_step again with the same ids to keep waiting.",
+            }
+        finally:
+            if future.done():
+                with self._steps_lock:
+                    self._steps.pop(invocation_id, None)
+        for event in events:
+            # Already audited: the run moved on without this step.
+            with contextlib.suppress(IllegalEvent):
+                self.orchestrator.handle(run_id, event)
+        if events:
+            return {
+                "status": "not_handed_in",
+                "reason": getattr(events[0], "reason", ""),
+                "next": "Call run_next_action.",
+            }
+        return {"status": "handed_in", "next": "Call run_next_action."}
+
     def _describe(self, run_id: str, action: InvokeRole) -> dict[str, Any]:
         if self.coordinator:
             # Who's next, and nothing of what it was asked. It reaches the role through that role's own server.
-            return {
+            described = {
                 "invocation_id": action.invocation_id,
                 "role": action.role,
                 "purpose": action.purpose.value,
                 "task_id": action.task_id,
             }
+            elsewhere = self._works_elsewhere(action.role)
+            if elsewhere:
+                described["runs_in"] = elsewhere
+            return described
         state = self.orchestrator.state(run_id)
         invocation = state.invocations[action.invocation_id]
         role = self.org.role(action.role)

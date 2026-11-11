@@ -17,6 +17,7 @@ from skill_customs import Lockfile, SkillCustomsError, discover, verify
 
 from . import __version__
 from . import setup as _setup
+from .adapters.agent_runner import AGENT_CLIS, API, AgentRunner, AgentSettings, RuntimePlan
 from .adapters.api_runner.clients import ClientError
 from .adapters.api_runner.runner import ApiRunner, ModelRoutes, RunResult
 from .adapters.api_runner.scripted import ScriptedClient
@@ -511,7 +512,15 @@ def terminal_approver() -> Any:
     return approve
 
 
-def _runner(args: argparse.Namespace) -> tuple[ApiRunner, Orchestrator]:
+def runtime_plan(config: ProjectConfig) -> RuntimePlan:
+    """Which agent does each role's steps: runtime and models in trypro.yaml, or TRYPRO_RUNTIME in .env."""
+    try:
+        return RuntimePlan.from_config(config.raw)
+    except ValueError as error:
+        raise SystemExit(str(error)) from None
+
+
+def _runner(args: argparse.Namespace) -> tuple[ApiRunner | AgentRunner, Orchestrator]:
     config = load_config(Path.cwd())
     org = load_org(config.org_dir)
     inputs, deliverables = config.root / "inputs", config.root / "deliverables"
@@ -519,9 +528,19 @@ def _runner(args: argparse.Namespace) -> tuple[ApiRunner, Orchestrator]:
         orchestrator = Orchestrator(org, config.home, inputs_dir=inputs, deliverables_dir=deliverables)
         _print("Dry run: a scripted model is standing in. No model is called, and nothing here reflects real work.")
         return ApiRunner(orchestrator, ScriptedClient(), ModelRoutes({"standard": "scripted"})), orchestrator
-    router = ClientRouter(config.model, org)
-    # Fail before a run exists if the default key or endpoint is missing, or memory isn't safe.
-    router.route(org.role(org.root_role))
+    plan = runtime_plan(config)
+    router = None
+    if plan.uses(API, org):
+        router = ClientRouter(config.model, org)
+        # Fail before a run exists if the default key or endpoint is missing, or memory isn't safe.
+        router.route(org.role(org.root_role))
+    settings = AgentSettings.from_environment()
+    for runtime in AGENT_CLIS:
+        if plan.uses(runtime, org):
+            try:
+                settings.executable(runtime)
+            except FileNotFoundError as error:
+                raise SystemExit(str(error)) from None
     orchestrator = Orchestrator(
         org,
         config.home,
@@ -537,8 +556,12 @@ def _runner(args: argparse.Namespace) -> tuple[ApiRunner, Orchestrator]:
     computer = config.raw.get("computer_tools", True) is not False
     approve = terminal_approver()
     # With nobody at the terminal, a command that changes something outside waits for a person: trypro held.
-    runner = ApiRunner(orchestrator, router=router, computer=computer, approve=approve, hold=approve is None)
-    return runner, orchestrator
+    api = None
+    if router is not None:
+        api = ApiRunner(orchestrator, router=router, computer=computer, approve=approve, hold=approve is None)
+        if not any(plan.uses(runtime, org) for runtime in AGENT_CLIS):
+            return api, orchestrator
+    return AgentRunner(orchestrator, plan, settings, root=config.root, api=api), orchestrator
 
 
 def _memory_settings(config: ProjectConfig) -> MemorySettings:
@@ -810,12 +833,23 @@ def cmd_mcp(args: argparse.Namespace) -> int:
         if args.coordinator:
             # After an upgrade, Claude Code's files catch up by themselves: nobody has to know to rewrite them.
             refresh_claude_code_files(config.root, org)
+        plan = None
+        if args.coordinator:
+            # Roles default to subagents of the coordinator's Claude Code; runtime in trypro.yaml can send some on.
+            raw = dict(config.raw)
+            if not isinstance(raw.get("runtime"), dict) and "TRYPRO_RUNTIME" not in os.environ:
+                raw["runtime"] = {"default": "claude-code", "roles": {}}
+            try:
+                plan = RuntimePlan.from_config(raw)
+            except ValueError as error:
+                print(error, file=sys.stderr)
         return McpService(
             orchestrator,
             bound_role=args.role,
             coordinator=args.coordinator,
             computer=not args.sandboxed,
             root=config.root,
+            runtimes=plan,
         )
 
     if args.role and args.coordinator:
@@ -949,7 +983,7 @@ def _print_efficiency(orchestrator: Orchestrator, run_id: str) -> None:
         _print("Only you decide them: trypro org review")
 
 
-def _run_goal(orchestrator: Orchestrator, runner: ApiRunner, goal: str) -> int:
+def _run_goal(orchestrator: Orchestrator, runner: ApiRunner | AgentRunner, goal: str) -> int:
     wait_for_memory(COMMAND_PEAK_MB, say=_print)
     result = runner.run(goal)
     code = _print_result(result, orchestrator.deliverables_path(result.run_id))

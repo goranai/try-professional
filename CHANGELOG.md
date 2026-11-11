@@ -2,6 +2,20 @@
 
 Each version of `try-professional`. `skill-customs` is listed only when it changes.
 
+## 0.7.3 (2026-11-11)
+
+A company's roles can work in Codex and Antigravity as well as Claude Code and trypro's own engine, and they can be mixed, role by role.
+
+### Added
+
+- **Roles in Codex and Antigravity.** Each step is one non-interactive run of the agent (`codex exec`, `agy -p`, or `claude -p`) with only that role's trypro tools: the same prompt and server a Claude Code subagent gets. A company's memory, reviews, trust and record stay in one place, whoever does a step. Codex uses the company's own endpoint from `.env` when there is one, or its own settings.
+- **Mixed, role by role.** `runtime` in `trypro.yaml` names a default and any role or department that works elsewhere, and `models` names each agent's model; `TRYPRO_RUNTIME` in `.env` sets the default. From Claude Code, `/company` hands those roles' steps on with a new coordinator tool, `run_step`. From a terminal, `trypro run`, `trypro next` and scheduled rounds do.
+- **Changes outside wait for a person in every agent.** A step's `gh` and `git` go through a gate: reading runs, and a pull request, an issue or a push is held for `trypro held`, as on trypro's own engine. A provider's key reaches the agent and none of its commands; no other secret but a GitHub token reaches either.
+
+### Known limits
+
+- On Windows, Codex's `workspace-write` sandbox didn't start, and Antigravity's `--sandbox` didn't stop a write outside the workspace, in our tests. A role in either can reach the whole machine there. Antigravity's own `permissions.deny` rules didn't stop a `git push` either, which is why the gate is trypro's own.
+
 ## 0.7.2 (2026-11-11)
 
 A company should get lighter the longer it runs, not heavier. That's where it can do what one agent can't, because one agent has no record. This version starts on it, and finishes the push check from its fifth review.

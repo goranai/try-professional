@@ -11,9 +11,24 @@
 
 You say what you want, and a company is designed for it: departments, roles, and skills from GitHub that are checked before they're used. You approve it, and then you talk to it, from the terminal, from Claude Code, or from Telegram. It works when you ask, and it remembers: every role, from the CEO down, keeps its own memory, and lessons from each job carry into the next.
 
-**Two engines:**
+**Where its roles work:**
 - **Claude Code,** on your Claude plan. This is the most tested.
+- **Codex** or **Antigravity,** on their own plans or keys, with each role's step one non-interactive run of it.
 - **Its own engine,** with any OpenAI-compatible key, such as DeepSeek, Grok, or OpenAI: `trypro chat`. Cheap models finish less often today.
+
+**They can be mixed, role by role.** Say a company coordinates in Claude Code, its researchers look for bugs with Gemini in Antigravity, and its engineers fix them with GPT in Codex. One company, one memory, and its reviewers can be a different model from whoever did the work. In `trypro.yaml`:
+
+```yaml
+runtime:
+  default: claude-code          # every role, unless named below
+  roles:
+    research: antigravity       # a department
+    engineering/backend: codex  # one role
+models:
+  antigravity: gemini-3.8-flash-high
+```
+
+From Claude Code, `/company` hands those roles' steps to their agent. From a terminal, `trypro run` does. Whatever the agent, `gh` and `git` changes outside, such as a pull request or a push, wait for you in `trypro held`, and no secret but a GitHub token reaches a role's commands. On Windows, Codex's and Antigravity's own sandboxes may not hold, so a role there can reach the whole machine.
 
 | Talk to it | How |
 |---|---|
