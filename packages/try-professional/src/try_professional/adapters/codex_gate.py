@@ -1,9 +1,10 @@
-"""Stands in for gh and git inside a Codex step. A command that changes something outside waits for a person.
+"""Stands in for gh and git inside an agent's step. Reading runs; anything else waits for a person.
 
-Codex runs a role's commands with nobody to ask, so `gh pr create` or `git push` would just happen. The runner puts
-this in front of gh and git on the step's PATH: reading goes through untouched, and a change outside is held, as
-`trypro held` shows, exactly as on the API runner when nobody is at the terminal. Like that check, it guards against
-mistakes, and isn't a sandbox.
+An agent runs a role's commands with nobody to ask, so `gh pr create` or `git push` would just happen. The runner puts
+this in front of gh and git on the step's PATH. It sees the exact words gh or git would get, after the shell is done
+with them, so it reads them as they do. It runs what only reads, such as `gh pr list` or `git log`, and what changes
+only the step's own copy, such as `git commit`. Anything else, and anything it doesn't know, waits for a person, as
+`trypro held` shows. It guards these two programs; it isn't a sandbox for the rest of the machine.
 
     python -m try_professional.adapters.codex_gate <company> <run_id> <role> <workspace> <real program> [args...]
 """
@@ -16,6 +17,203 @@ import subprocess
 import sys
 from pathlib import Path
 
+# gh commands that only read, by command group. None: every subcommand of the group reads.
+_GH_READS: dict[str, set[str] | None] = {
+    "pr": {"list", "view", "status", "checks", "diff"},
+    "issue": {"list", "view", "status"},
+    "repo": {"view", "list", "clone"},
+    "release": {"list", "view", "download"},
+    "run": {"list", "view", "watch", "download"},
+    "workflow": {"list", "view"},
+    "label": {"list"},
+    "gist": {"list", "view"},
+    "cache": {"list"},
+    "ruleset": {"list", "view", "check"},
+    "search": None,
+    "status": None,
+    "help": None,
+    "version": None,
+}
+_GH_OPTIONS_WITH_A_VALUE = {"-R", "--repo", "--hostname"}
+_GH_FIELDS = ("-f", "-F", "--field", "--raw-field", "--input")
+# git's own options that take the next word as their value.
+_GIT_OPTIONS_WITH_A_VALUE = {"-C", "-c", "--git-dir", "--work-tree", "--namespace", "--exec-path", "--config-env",
+                             "--super-prefix", "--list-cmds", "--attr-source"}  # fmt: skip
+# git commands that change only this copy, or only read. Others, such as push, and any alias, wait for a person.
+_GIT_LOCAL = frozenset(
+    [
+        "add",
+        "am",
+        "annotate",
+        "apply",
+        "archive",
+        "bisect",
+        "blame",
+        "branch",
+        "bundle",
+        "cat-file",
+        "check-attr",
+        "check-ignore",
+        "check-ref-format",
+        "checkout",
+        "cherry",
+        "cherry-pick",
+        "clean",
+        "clone",
+        "commit",
+        "commit-graph",
+        "config",
+        "count-objects",
+        "describe",
+        "diff",
+        "diff-files",
+        "diff-index",
+        "diff-tree",
+        "difftool",
+        "fetch",
+        "for-each-ref",
+        "format-patch",
+        "fsck",
+        "gc",
+        "grep",
+        "hash-object",
+        "help",
+        "init",
+        "log",
+        "ls-files",
+        "ls-remote",
+        "ls-tree",
+        "maintenance",
+        "merge",
+        "merge-base",
+        "merge-file",
+        "mergetool",
+        "mv",
+        "name-rev",
+        "notes",
+        "pull",
+        "range-diff",
+        "read-tree",
+        "rebase",
+        "reflog",
+        "remote",
+        "repack",
+        "replace",
+        "rerere",
+        "reset",
+        "restore",
+        "rev-list",
+        "rev-parse",
+        "revert",
+        "rm",
+        "shortlog",
+        "show",
+        "show-branch",
+        "show-ref",
+        "sparse-checkout",
+        "stash",
+        "status",
+        "stripspace",
+        "submodule",
+        "switch",
+        "symbolic-ref",
+        "tag",
+        "update-index",
+        "update-ref",
+        "var",
+        "verify-commit",
+        "verify-tag",
+        "version",
+        "whatchanged",
+        "worktree",
+        "write-tree",
+    ]
+)
+_GIT_LFS_READS = {"ls-files", "status", "env", "version", "fetch", "pull", "checkout", "install", "track", "untrack"}
+
+
+def _words(args: list[str], with_a_value: set[str]) -> tuple[list[str], list[str]]:
+    """(the command's own words before its arguments, every option seen), skipping options and their values."""
+    words: list[str] = []
+    options: list[str] = []
+    at = 0
+    while at < len(args):
+        word = args[at]
+        if word in with_a_value:
+            options += args[at : at + 2]
+            at += 2
+            continue
+        if word.startswith("-"):
+            options.append(word)
+            at += 1
+            continue
+        words.append(word)
+        at += 1
+    return words, options
+
+
+def gh_changes_something(args: list[str]) -> bool:
+    words, _ = _words(args, _GH_OPTIONS_WITH_A_VALUE)
+    if not words:
+        return False  # gh --version, gh --help
+    group = words[0].lower()
+    if group == "api":
+        return _gh_api_writes(args, words)
+    if group == "auth":
+        return words[1:2] != ["status"]  # `gh auth token` would print the token for the model to see
+    if group not in _GH_READS:
+        return True
+    reads = _GH_READS[group]
+    return reads is not None and len(words) > 1 and words[1].lower() not in reads
+
+
+def _gh_api_writes(args: list[str], words: list[str]) -> bool:
+    method = ""
+    for at, arg in enumerate(args):
+        if arg in ("-X", "--method") and at + 1 < len(args):
+            method = args[at + 1]
+        elif arg.startswith("--method="):
+            method = arg.split("=", 1)[1]
+        elif arg.startswith("-X") and len(arg) > 2:
+            method = arg[2:]
+    if len(words) > 1 and words[1].strip("/").lower() == "graphql":
+        return any("mutation" in arg.lower() for arg in args)
+    if method:
+        return method.upper() != "GET"
+    return any(arg == flag or arg.startswith(flag + "=") for arg in args for flag in _GH_FIELDS)
+
+
+def git_changes_something(args: list[str]) -> bool:
+    at = 0
+    while at < len(args):
+        word = args[at]
+        lowered = word.lower()
+        if "alias." in lowered:
+            return True  # an alias set on the command line could be anything
+        if word in _GIT_OPTIONS_WITH_A_VALUE:
+            if at + 1 < len(args) and "alias." in args[at + 1].lower():
+                return True
+            at += 2
+            continue
+        if word.startswith("-"):
+            at += 1
+            continue
+        rest = [w.lower() for w in args[at + 1 :] if not w.startswith("-")]
+        if lowered == "lfs":
+            return rest[:1] != [] and rest[0] not in _GIT_LFS_READS
+        if lowered == "subtree":
+            return "push" in rest
+        return lowered not in _GIT_LOCAL
+    return False  # git, git --version
+
+
+def changes_something(name: str, args: list[str]) -> bool:
+    if name == "gh":
+        return gh_changes_something(args)
+    if name == "git":
+        return git_changes_something(args)
+    return True
+
 
 def held_command(name: str, args: list[str], cwd: Path, workspace: Path) -> str:
     """The command as a person would run it later, from the run's workspace."""
@@ -23,16 +221,14 @@ def held_command(name: str, args: list[str], cwd: Path, workspace: Path) -> str:
     try:
         relative = cwd.resolve().relative_to(workspace.resolve())
     except ValueError:
-        return command
+        return f"cd {shlex.quote(cwd.as_posix())} && {command}"
     return command if str(relative) == "." else f"cd {shlex.quote(relative.as_posix())} && {command}"
 
 
 def main(argv: list[str]) -> int:
     company, run_id, role, workspace, real, *args = argv
     name = Path(real).stem.lower()
-    from .api_runner.tools import needs_a_person
-
-    if not needs_a_person(shlex.join([name, *args])):
+    if not changes_something(name, args):
         return subprocess.call([real, *args])
     from ..cli import _outside_orchestrator
 
@@ -43,7 +239,7 @@ def main(argv: list[str]) -> int:
     finally:
         orchestrator.close()
     print(
-        f"Not run: this changes something outside, so it waits for a person as #{number} (trypro held). "
+        f"Not run: this may change something outside, so it waits for a person as #{number} (trypro held). "
         "Carry on without it, and say in your submission that it's waiting.",
         file=sys.stderr,
     )

@@ -14,9 +14,12 @@ coordinate in Claude Code, look for bugs with Gemini in Antigravity, and fix the
       antigravity: gemini-3.8-flash-high
 
 What an agent runs, it runs with nobody to ask, so whatever the agent:
-- gh and git go through codex_gate: a change outside, such as a pull request or a push, waits for a person.
-- A model provider's key reaches the agent and no command it runs. Other secrets reach neither, apart from a GitHub
-  token, which gh needs to read, as on the API runner.
+- gh and git go through codex_gate: what only reads runs, and anything else waits for a person.
+- Variables named like keys, tokens, secrets or passwords reach neither the agent nor its commands, apart from a GitHub
+  token, which gh needs to read, as on the API runner, and the company's own provider key, which only Codex is given,
+  when the company has an endpoint, and keeps from the commands it runs.
+- A step starts in a folder of its own outside the company, so the agent loads none of the company's own files, such
+  as the coordinator's .mcp.json or the front desk in CLAUDE.md.
 """
 
 from __future__ import annotations
@@ -28,6 +31,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 from collections.abc import Callable, Mapping
 from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 from dataclasses import dataclass, field
@@ -38,7 +42,7 @@ from ..core.orchestrator import Orchestrator
 from ..core.pipeline import AskHuman, Finish, IllegalEvent, InvocationFailed, InvokeRole
 from ..org import Org, Role
 from .api_runner.runner import RunResult
-from .api_runner.tools import _KEPT_SECRETS, _SECRET_NAME
+from .api_runner.tools import _KEPT_SECRETS, _SECRET_NAME, _stop_tree
 from .mcp.claude_code import _FULL_TOOLS, _MODELS, _ROLE_PROMPT, ROLE_SERVER, ROLE_TOOLS, server_config
 
 API, CLAUDE_CODE, CODEX, ANTIGRAVITY = "api", "claude-code", "codex", "antigravity"
@@ -108,14 +112,18 @@ class AgentSettings:
     antigravity_bypass: bool = True
 
     @classmethod
-    def from_environment(cls, environ: Mapping[str, str] = os.environ) -> AgentSettings:
+    def from_environment(
+        cls, environ: Mapping[str, str] = os.environ, key_env: str = "TRYPRO_LLM_API_KEY"
+    ) -> AgentSettings:
+        """key_env is the variable the company's own provider key is in: model.api_key_env in trypro.yaml."""
         beside = Path(environ.get("LOCALAPPDATA", "")) / "agy" / "bin" / "agy.exe"
         return cls(
             codex=shutil.which("codex"),
             antigravity=shutil.which("agy") or (str(beside) if beside.is_file() else None),
             claude=shutil.which("claude"),
             base_url=environ.get("TRYPRO_LLM_BASE_URL") or None,
-            wire_api=environ.get("TRYPRO_CODEX_WIRE_API") or environ.get("wire_api") or "responses",
+            key_env=key_env,
+            wire_api=environ.get("TRYPRO_CODEX_WIRE_API") or "responses",
             llm_model=environ.get("TRYPRO_LLM_MODEL") or None,
             antigravity_bypass=environ.get("TRYPRO_ANTIGRAVITY_BYPASS", "1").strip().lower() not in ("0", "false"),
         )
@@ -147,9 +155,10 @@ def model_for(plan: RuntimePlan, settings: AgentSettings, runtime: str, role: Ro
     return None  # the agent's own default
 
 
-def role_prompt(org: Org, role: Role, run_id: str) -> str:
+def role_prompt(org: Org, role: Role, run_id: str, workspace: Path | None = None) -> str:
     body = _ROLE_PROMPT.format(title=role.display_name, company=org.company_name, tools_line=_FULL_TOOLS)
-    return f"{body}\n\n{_NOTE.format(server=ROLE_SERVER)}\n\nrun_id: {run_id}\n"
+    where = f"\n\nThis command's folder, for your own files and commands: {workspace}" if workspace else ""
+    return f"{body}\n\n{_NOTE.format(server=ROLE_SERVER)}{where}\n\nrun_id: {run_id}\n"
 
 
 def codex_argv(settings: AgentSettings, root: Path, role: str, model: str | None) -> list[str]:
@@ -184,11 +193,13 @@ def build_step(
 ) -> Step:  # fmt: skip
     """How one agent CLI runs one role's step. `folder` is the step's own, removed afterwards."""
     server = server_config(root, role)
+    folder.mkdir(parents=True, exist_ok=True)
     if runtime == CODEX:
-        return Step(codex_argv(settings, root, role, model), prompt, workspace)
+        argv = codex_argv(settings, root, role, model)
+        return Step([*argv[:-1], "--add-dir", str(workspace), argv[-1]], prompt, folder)
     if runtime == ANTIGRAVITY:
         # Antigravity reads its MCP servers from the folder it starts in, so each step starts in its own.
-        (folder / ".agents").mkdir(parents=True, exist_ok=True)
+        (folder / ".agents").mkdir(exist_ok=True)
         entry = {k: v for k, v in server.items() if k != "type"}
         (folder / ".agents" / "mcp_config.json").write_text(
             json.dumps({"mcpServers": {ROLE_SERVER: entry}}, indent=2), encoding="utf-8"
@@ -204,10 +215,11 @@ def build_step(
         config = json.dumps({"mcpServers": {ROLE_SERVER: server}})
         tools = ",".join([f"mcp__{ROLE_SERVER}__*", *ROLE_TOOLS])
         argv = [settings.executable(CLAUDE_CODE), "-p", "--output-format", "json", "--mcp-config", config,
-                "--strict-mcp-config", "--allowedTools", tools, "--disable-slash-commands"]  # fmt: skip
+                "--strict-mcp-config", "--allowedTools", tools, "--disable-slash-commands",
+                "--add-dir", str(workspace)]  # fmt: skip
         if model:
             argv += ["--model", model]
-        return Step(argv, prompt, workspace)
+        return Step(argv, prompt, folder)
     raise ValueError(f"{runtime} isn't an agent CLI")
 
 
@@ -227,9 +239,10 @@ def tokens_used(runtime: str, output: str) -> int | None:
     return None
 
 
-def step_environment(environ: Mapping[str, str], key_env: str, gate: Path) -> dict[str, str]:
-    """No secrets but a provider's key and a GitHub token, and gh and git behind the gate."""
-    kept = {key_env, *_KEPT_SECRETS}
+def step_environment(environ: Mapping[str, str], key_env: str | None, gate: Path) -> dict[str, str]:
+    """No variable named like a secret but a GitHub token and, for Codex with the company's endpoint, its key. gh and
+    git behind the gate."""
+    kept = {*_KEPT_SECRETS, *([key_env] if key_env else [])}
     env = {name: value for name, value in environ.items() if not _SECRET_NAME.search(name) or name in kept}
     env["PATH"] = str(gate) + os.pathsep + env.get("PATH", "")
     env["GIT_TERMINAL_PROMPT"] = "0"
@@ -256,11 +269,24 @@ def write_gate(folder: Path, company: Path, run_id: str, role: str, workspace: P
 
 
 def _run(argv: list[str], stdin: str, env: dict[str, str], cwd: Path, timeout: int) -> tuple[int, str]:
-    done = subprocess.run(
-        argv, input=stdin, env=env, cwd=cwd, capture_output=True, text=True,
-        encoding="utf-8", errors="replace", timeout=timeout,
+    """In its own process group, so a time limit stops the agent and everything it started, its servers too."""
+    group: dict[str, Any] = (
+        {"creationflags": getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)}
+        if sys.platform == "win32"
+        else {"start_new_session": True}
+    )
+    process = subprocess.Popen(
+        argv, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env, cwd=cwd, text=True,
+        encoding="utf-8", errors="replace", **group,
     )  # fmt: skip
-    return done.returncode, done.stdout + "\n" + done.stderr
+    try:
+        out, err = process.communicate(stdin, timeout=timeout)
+    except subprocess.TimeoutExpired:
+        _stop_tree(process)
+        with contextlib.suppress(subprocess.TimeoutExpired):
+            process.communicate(timeout=10)
+        raise
+    return process.returncode, (out or "") + "\n" + (err or "")
 
 
 def run_agent_step(
@@ -279,13 +305,16 @@ def run_agent_step(
     role = orchestrator.org.role(action.role)
     workspace = orchestrator.workspace(run_id)
     workspace.mkdir(parents=True, exist_ok=True)
-    folder = orchestrator.home / "steps" / action.invocation_id
+    # Outside the company's folder, so the agent loads none of the company's own files.
+    folder = Path(tempfile.mkdtemp(prefix=f"trypro-step-{action.invocation_id}-"))
     environ = dict(environ if environ is not None else os.environ)
+    key_env = settings.key_env if runtime == CODEX and settings.base_url else None
     try:
         gate = write_gate(folder / "bin", root, run_id, action.role, workspace, environ.get("PATH", ""))
         step = build_step(runtime, settings, root, action.role, model_for(plan, settings, runtime, role),
-                          role_prompt(orchestrator.org, role, run_id), workspace, folder / "start")  # fmt: skip
-        code, output = run_process(step.argv, step.stdin, step_environment(environ, settings.key_env, gate),
+                          role_prompt(orchestrator.org, role, run_id, workspace), workspace,
+                          folder / "start")  # fmt: skip
+        code, output = run_process(step.argv, step.stdin, step_environment(environ, key_env, gate),
                                    step.cwd, STEP_TIMEOUT_SECONDS)  # fmt: skip
     except subprocess.TimeoutExpired:
         return [_failed(action, f"{runtime} didn't finish within {STEP_TIMEOUT_SECONDS // 60} minutes.")]

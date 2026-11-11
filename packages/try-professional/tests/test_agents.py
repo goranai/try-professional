@@ -103,18 +103,44 @@ class TestSteps:
         assert tokens_used(CLAUDE_CODE, '{"usage":{"input_tokens":100,"output_tokens":20}}') == 120
         assert tokens_used(ANTIGRAVITY, "no json here") is None
 
-    def test_secrets_stay_out_but_the_key_and_a_github_token(self, tmp_path: Path) -> None:
+    def test_secrets_stay_out_but_a_github_token_and_codexs_own_key(self, tmp_path: Path) -> None:
         environ = {"PATH": "/bin", "TRYPRO_LLM_API_KEY": "k", "GITHUB_TOKEN": "g", "STRIPE_SECRET": "s",
                    "AWS_SECRET_ACCESS_KEY": "a", "HOME": "/home/x"}  # fmt: skip
-        env = step_environment(environ, "TRYPRO_LLM_API_KEY", tmp_path)
-        assert env["TRYPRO_LLM_API_KEY"] == "k" and env["GITHUB_TOKEN"] == "g" and env["HOME"] == "/home/x"
-        assert "STRIPE_SECRET" not in env and "AWS_SECRET_ACCESS_KEY" not in env
-        assert env["PATH"].startswith(str(tmp_path)), "gh and git are the gate's"
+        codex = step_environment(environ, "TRYPRO_LLM_API_KEY", tmp_path)
+        assert codex["TRYPRO_LLM_API_KEY"] == "k" and codex["GITHUB_TOKEN"] == "g" and codex["HOME"] == "/home/x"
+        assert "STRIPE_SECRET" not in codex and "AWS_SECRET_ACCESS_KEY" not in codex
+        assert codex["PATH"].startswith(str(tmp_path)), "gh and git are the gate's"
+        other = step_environment(environ, None, tmp_path)
+        assert "TRYPRO_LLM_API_KEY" not in other, "an agent that doesn't need the key never gets it"
 
-    def test_the_prompt_names_the_run_and_what_waits(self, org: Org) -> None:
-        text = role_prompt(org, org.role(ROLE), "run-1")
-        assert text.rstrip().endswith("run_id: run-1")
+    def test_only_codex_with_the_companys_endpoint_gets_its_key(self, org: Org, harness: Callable[..., Any]) -> None:
+        run, envs = harness(org), []
+
+        def capture(argv: list[str], stdin: str, env: dict[str, str], cwd: Path, timeout: int) -> tuple[int, str]:
+            envs.append(("--model" in argv and "agy" in argv[0], env))
+            assert not str(cwd).startswith(str(run.orchestrator.home)), "a step starts outside the company"
+            return 0, ""
+
+        environ = {"PATH": "", "TRYPRO_LLM_API_KEY": "k"}
+        for runtime in (CODEX, ANTIGRAVITY, CLAUDE_CODE):
+            plan = RuntimePlan(default=runtime, models={ANTIGRAVITY: "gemini-3.8-flash-high"})
+            runner = AgentRunner(run.orchestrator, plan, SETTINGS, root=run.orchestrator.home, run_process=capture,
+                                 environ=environ)  # fmt: skip
+            run_id, _ = run.orchestrator.start("Goal")
+            action = next(a for a in run.orchestrator.open_actions(run_id) if a.kind == "invoke_role")
+            runner._invoke(action, run_id)
+            assert ("TRYPRO_LLM_API_KEY" in envs[-1][1]) == (runtime == CODEX), runtime
+
+    def test_the_prompt_names_the_run_its_folder_and_what_waits(self, org: Org, tmp_path: Path) -> None:
+        text = role_prompt(org, org.role(ROLE), "run-1", tmp_path)
+        assert text.rstrip().endswith("run_id: run-1") and str(tmp_path) in text
         assert "waits for a person" in text and ROLE_SERVER in text
+
+    def test_every_agent_starts_in_its_own_folder_with_the_commands_folder_added(self, tmp_path: Path) -> None:
+        for runtime in (CODEX, ANTIGRAVITY, CLAUDE_CODE):
+            step = build_step(runtime, SETTINGS, tmp_path, ROLE, None, "x", tmp_path / "work", tmp_path / runtime)
+            assert step.cwd == tmp_path / runtime
+            assert step.argv[step.argv.index("--add-dir") + 1] == str(tmp_path / "work")
 
 
 class TestGate:
@@ -136,6 +162,67 @@ class TestGate:
             "cd repo && gh pr create --fill"
         )
         assert codex_gate.held_command("git", ["push"], tmp_path, tmp_path) == "git push"
+        assert codex_gate.held_command("git", ["push"], tmp_path / "repo", tmp_path / "x").startswith("cd ")
+
+    @pytest.mark.parametrize(
+        "args",
+        [
+            # Each of these ran without asking in the review of 0.7.3's first gate.
+            "gh pr -R o/r create --fill",
+            "gh issue --repo o/r comment 1 -b x",
+            "gh api repos/o/r/issues -f title=x",
+            "gh api graphql -f query=mutation{x}",
+            "gh api --input body.json repos/o/r/pulls",
+            "gh workflow run ci",
+            "gh release upload v1 a.zip",
+            "gh secret set X",
+            "gh repo rename y",
+            "gh pr ready 1",
+            "gh label create bug",
+            "gh issue transfer 1 o/s",
+            "gh run rerun 1",
+            "gh alias set x y",
+            "gh auth token",
+            "git lfs push origin main",
+            "git svn dcommit",
+            "git -c alias.p=push p",
+            "git push",
+            "git -C repo push origin main",
+            "git send-email x.patch",
+            "git my-alias",
+        ],
+    )
+    def test_anything_that_may_change_something_outside_waits(self, args: str) -> None:
+        name, *rest = args.split()
+        assert codex_gate.changes_something(name, rest), args
+
+    @pytest.mark.parametrize(
+        "args",
+        [
+            "gh pr list",
+            "gh pr view 1 --json title",
+            "gh -R o/r issue list",
+            "gh api repos/o/r",
+            "gh api -X GET search/issues -f q=x",
+            "gh api graphql -f query={viewer{login}}",
+            "gh search issues bug",
+            "gh repo clone o/r",
+            "gh auth status",
+            "gh --version",
+            "git status",
+            "git log --oneline",
+            "git -C repo diff",
+            "git fetch origin",
+            "git clone https://github.com/o/r",
+            "git commit -m x",
+            "git checkout -b fix",
+            "git lfs pull",
+            "git --version",
+        ],
+    )
+    def test_reading_and_local_work_run(self, args: str) -> None:
+        name, *rest = args.split()
+        assert not codex_gate.changes_something(name, rest), args
 
     def test_reading_runs_and_a_change_outside_is_held(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         ran: list[list[str]] = []
@@ -206,7 +293,7 @@ class TestRunner:
         assert any(s.startswith("codex:") and ":engineering/" not in s for s in seen), seen
         audit = run.orchestrator.audit_path(result.run_id).read_text(encoding="utf-8")
         assert '"agent_step"' in audit and '"runtime": "antigravity"' in audit and '"runtime": "codex"' in audit
-        assert not (run.orchestrator.home / "steps").exists() or not any((run.orchestrator.home / "steps").iterdir())
+        assert not (run.orchestrator.home / "steps").exists(), "steps leave nothing in the company's folder"
 
     def test_roles_on_the_api_runner_go_to_it(self, org: Org, harness: Callable[..., Any]) -> None:
         run, seen = harness(org), []

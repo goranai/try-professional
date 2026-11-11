@@ -534,7 +534,7 @@ def _runner(args: argparse.Namespace) -> tuple[ApiRunner | AgentRunner, Orchestr
         router = ClientRouter(config.model, org)
         # Fail before a run exists if the default key or endpoint is missing, or memory isn't safe.
         router.route(org.role(org.root_role))
-    settings = AgentSettings.from_environment()
+    settings = AgentSettings.from_environment(key_env=config.model.api_key_env or "TRYPRO_LLM_API_KEY")
     for runtime in AGENT_CLIS:
         if plan.uses(runtime, org):
             try:
@@ -842,7 +842,8 @@ def cmd_mcp(args: argparse.Namespace) -> int:
             try:
                 plan = RuntimePlan.from_config(raw)
             except ValueError as error:
-                print(error, file=sys.stderr)
+                # Said on every call, so a typo can't quietly turn a role into a subagent.
+                raise ToolError(str(error)) from None
         return McpService(
             orchestrator,
             bound_role=args.role,
@@ -850,6 +851,7 @@ def cmd_mcp(args: argparse.Namespace) -> int:
             computer=not args.sandboxed,
             root=config.root,
             runtimes=plan,
+            agents=AgentSettings.from_environment(key_env=config.model.api_key_env or "TRYPRO_LLM_API_KEY"),
         )
 
     if args.role and args.coordinator:

@@ -376,7 +376,7 @@ class McpService:
                     raise ToolError(f"No open step {invocation_id} in {run_id}. Call run_next_action.")
                 runtime = self._works_elsewhere(action.role)
                 if runtime is None:
-                    raise ToolError(f"{action.role} works as a subagent here. Start its subagent instead.")
+                    raise ToolError(f"{action.role} isn't set to another agent. Start its subagent instead.")
                 if self._step_pool is None:
                     self._step_pool = ThreadPoolExecutor(max_workers=8, thread_name_prefix="trypro-step")
                 future = self._step_pool.submit(
