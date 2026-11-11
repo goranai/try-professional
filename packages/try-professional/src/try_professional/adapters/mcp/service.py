@@ -29,6 +29,7 @@ from typing import Any
 
 from ...core.artifacts import PAYLOAD_TYPES, Flags, settle_flags
 from ...core.audit import read_records
+from ...core.efficiency import trend_line
 from ...core.orchestrator import Orchestrator, utc_now
 from ...core.pipeline import (
     AskHuman,
@@ -262,6 +263,9 @@ class McpService:
         """What this command left for the person to decide: a role or department to add, and what to remember."""
         company = self.orchestrator.company
         found: dict[str, Any] = {}
+        trend = trend_line(company.tokens_per_task())
+        if trend:
+            found["cost_per_task"] = trend
         proposed = company.org_proposals("pending", source_run=run_id)
         if proposed:
             found["company_changes"] = [p.line() for p in proposed] + [

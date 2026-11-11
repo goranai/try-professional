@@ -33,6 +33,7 @@ class Efficiency:
     escalations: int = 0
     failed: int = 0
     tool_calls: int = 0
+    reviews_skipped: int = 0
 
     @property
     def working_seconds(self) -> float:
@@ -70,7 +71,21 @@ class Efficiency:
         if self.handoffs:
             waste.append(f"{len(self.handoffs)} handoffs ({'; '.join(self.handoffs)})")
         out.append("Extra rounds: " + (", ".join(waste) if waste else "none") + ".")
+        if self.reviews_skipped:
+            out.append(f"Reviews skipped, for roles whose recent work was all approved: {self.reviews_skipped}.")
         return out
+
+
+def trend_line(tokens_per_task: list[int]) -> str | None:
+    """The company's cost per task across its recent commands, oldest first, or None with too few to compare."""
+    if len(tokens_per_task) < 2:
+        return None
+    first, last = tokens_per_task[0], tokens_per_task[-1]
+    shown = ", ".join(f"{t / 1000:.0f}k" if t >= 1000 else str(t) for t in tokens_per_task)
+    line = f"Tokens per task over the last {len(tokens_per_task)} finished commands, oldest first: {shown}"
+    if first and last != first:
+        line += f" ({abs(last - first) / first:.0%} {'lighter' if last < first else 'heavier'})"
+    return line + "."
 
 
 def _when(record: dict[str, Any]) -> datetime:
@@ -119,6 +134,8 @@ def measure(audit_path: Path, run_id: str = "") -> Efficiency:
             report.refused += 1
         elif kind == "tool_call":
             report.tool_calls += 1
+        elif kind == "review_skipped":
+            report.reviews_skipped += 1
         elif kind == "phase":
             if data.get("to") == "blocked":
                 blocked_at = _when(record)

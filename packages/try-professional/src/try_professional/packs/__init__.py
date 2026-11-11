@@ -29,6 +29,8 @@ DEFAULT_GATES: dict[str, Any] = {
 DEFAULT_PIPELINE: dict[str, Any] = {
     "max_parallel_tasks": 4,
     "max_rework": 2,
+    "trust_after": 5,
+    "spot_check_every": 3,
     "max_invalid_outputs": 2,
     "working_language": "auto",
     "budget": {

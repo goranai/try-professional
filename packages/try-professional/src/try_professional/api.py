@@ -371,7 +371,8 @@ class Company:
 
         orchestrator = self._orchestrator()
         try:
-            return measure(orchestrator.audit_path(run_id), run_id).to_dict()
+            report = measure(orchestrator.audit_path(run_id), run_id).to_dict()
+            return {**report, "tokens_per_task_recent": orchestrator.company.tokens_per_task()}
         finally:
             orchestrator.close()
 

@@ -932,12 +932,15 @@ def _finish_command(orchestrator: Orchestrator) -> None:
 
 
 def _print_efficiency(orchestrator: Orchestrator, run_id: str) -> None:
-    from .core.efficiency import measure
+    from .core.efficiency import measure, trend_line
 
     audit = orchestrator.audit_path(run_id)
     if audit.is_file():
         for line in measure(audit, run_id).lines():
             _print(line)
+    trend = trend_line(orchestrator.company.tokens_per_task())
+    if trend:
+        _print(trend)
     proposed = orchestrator.company.org_proposals("pending", source_run=run_id)
     if proposed:
         _print("The CEO proposes changes to the company, from what this command showed:")

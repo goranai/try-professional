@@ -16,9 +16,10 @@ from pathlib import Path
 from typing import Any
 
 from ..org import Org
+from .pipeline.base import QA_GATE, TRUST
 from .pipeline.state import FINAL_TASK_ID, PackageStatus, RunPhase, RunState, TaskStatus
 
-FORMAT_VERSION = 3  # 2: organization proposals, in 0.6.4. 3: standing rules, in 0.6.5
+FORMAT_VERSION = 4  # 2: organization proposals, in 0.6.4. 3: standing rules, in 0.6.5. 4: QA record, in 0.7.2
 MAX_LOG_TEXT = 240
 LESSON_KINDS = ("lesson", "team_lesson")
 # A teammate's lesson its head dropped goes to the person, with this before the head's name in its source.
@@ -117,6 +118,16 @@ _MIGRATIONS = [
         added_by TEXT NOT NULL,
         removed_at TEXT
     );
+    """,
+    """
+    CREATE TABLE reviews (
+        key TEXT PRIMARY KEY,
+        run_id TEXT NOT NULL,
+        role TEXT NOT NULL,
+        at TEXT NOT NULL,
+        outcome TEXT NOT NULL
+    );
+    CREATE INDEX reviews_role ON reviews (role, at);
     """,
 ]
 # A company's standing rules reach every role on every step, so together they stay short.
@@ -245,6 +256,20 @@ def _entries(state: RunState, org: Org) -> Iterable[WorkEntry]:
         yield entry("final", root, "did", f"Delivered: {state.goal}")
 
 
+def _reviews(state: RunState) -> Iterable[tuple[str, str, str]]:
+    """(key, role whose work it was, outcome) for each QA review in a run, and each one skipped on trust."""
+    for artifact in state.artifacts.values():
+        task = state.tasks.get(artifact.task_id or "")
+        if artifact.type != "ReviewVerdict" or artifact.payload.get("gate") != QA_GATE or task is None:
+            continue
+        outcome = "clean" if artifact.payload.get("decision") == "approve" else "changes"
+        yield f"{state.run_id}:review:{artifact.artifact_id}", task.owner_role, outcome
+    for waiver in state.waivers:
+        task = state.tasks.get(waiver.get("task_id", ""))
+        if waiver.get("decided_by") == TRUST and task is not None:
+            yield f"{state.run_id}:skipped:{task.task_id}", task.owner_role, "skipped"
+
+
 class CompanyStore:
     def __init__(self, path: Path) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -329,7 +354,44 @@ class CompanyStore:
                 )
                 if cursor.rowcount:
                     new.append(item)
+            for key, role, outcome in _reviews(state):
+                self._conn.execute(
+                    "INSERT OR IGNORE INTO reviews VALUES (?, ?, ?, ?, ?)", (key, state.run_id, role, at, outcome)
+                )
         return new
+
+    def tokens_per_task(self, limit: int = 10) -> list[int]:
+        """Tokens per task of the newest finished commands that counted tokens, oldest first. A company that learns
+        should see this fall."""
+        with self._lock:
+            rows = self._conn.execute(
+                "SELECT c.input_tokens + c.output_tokens, COUNT(t.task_id) FROM commands c "
+                "JOIN tasks t ON t.run_id = c.run_id WHERE c.status = 'done' AND c.input_tokens + c.output_tokens > 0 "
+                "GROUP BY c.run_id ORDER BY c.created_at DESC, c.rowid DESC LIMIT ?",
+                (limit,),
+            ).fetchall()
+        return [int(tokens) // int(tasks) for tokens, tasks in reversed(rows)]
+
+    def trust(self, after: int) -> dict[str, int]:
+        """Roles whose last `after` reviewed hand-ins were all approved, each with how many QA reviews it has skipped
+        since its last one. A review that asked for changes ends a role's trust until it has `after` clean ones again.
+        """
+        if after <= 0:
+            return {}
+        with self._lock:
+            rows = self._conn.execute("SELECT role, outcome FROM reviews ORDER BY at DESC, rowid DESC").fetchall()
+        newest_first: dict[str, list[str]] = {}
+        for role, outcome in rows:
+            newest_first.setdefault(str(role), []).append(str(outcome))
+        trusted: dict[str, int] = {}
+        for role, outcomes in newest_first.items():
+            reviewed = [o for o in outcomes if o != "skipped"][:after]
+            if len(reviewed) == after and all(o == "clean" for o in reviewed):
+                skipped = 0
+                while skipped < len(outcomes) and outcomes[skipped] == "skipped":
+                    skipped += 1
+                trusted[role] = skipped
+        return trusted
 
     def _sync_handoffs(self, state: RunState, command: str) -> None:
         requests = [a for a in state.artifacts.values() if a.type == "Handoff"]
@@ -356,7 +418,7 @@ class CompanyStore:
     def rebuild(self, states: Iterable[RunState], org: Org, at: str) -> None:
         """Work state is derived, so losing it costs nothing. Proposals and the backlog aren't derived, and stay."""
         with self._lock, self._conn:
-            for table in ("commands", "tasks", "work_log", "handoffs"):
+            for table in ("commands", "tasks", "work_log", "handoffs", "reviews"):
                 self._conn.execute(f"DELETE FROM {table}")
         for state in states:
             self.sync(state, org, at)

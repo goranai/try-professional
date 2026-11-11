@@ -36,6 +36,8 @@ MAX_AMENDMENTS = 5
 
 
 QA_GATE = "qa"
+# Who decided a QA review was skipped for a trusted role, in the run's waivers.
+TRUST = "trust"
 
 
 class IllegalEvent(ValueError):

@@ -177,6 +177,9 @@ class RunState(_Model):
     artifacts: dict[str, Artifact] = {}
     human_requests: dict[str, HumanRequest] = {}
     waivers: list[dict[str, str]] = []
+    # Roles trusted at the start of the run, from the company's record, and how many QA reviews each has skipped in
+    # a row since its last one. A role leaves it the moment a review asks for changes.
+    trust: dict[str, int] = {}
     counters: Counters = Counters()
     usage: Usage = Usage()
     usage_by_role: dict[str, Usage] = {}

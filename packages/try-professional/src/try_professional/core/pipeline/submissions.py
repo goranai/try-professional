@@ -20,7 +20,7 @@ from ..artifacts import (
     settle_payload,
 )
 from ..gates import deterministic_flags, triggered_gates
-from .base import QA_GATE, _check_actor, _not_done, _unreported
+from .base import QA_GATE, TRUST, _check_actor, _not_done, _unreported
 from .budget import _token_limit
 from .decisions import _on_resolution
 from .planning import (
@@ -190,6 +190,19 @@ def _on_submission(step: _Step, event: Submission) -> None:
         task.flags = flags
         task.pending_gates = [QA_GATE, *triggered_gates(org, flags)]
         task.passed_gates = []
+        skipped = state.trust.get(task.owner_role)
+        every = org.pipeline.spot_check_every
+        if skipped is not None and skipped + 1 < every and not task.feedback and not flags.active():
+            # Trust earned by reviewed work, checked again every few hand-ins. Only plain work skips: anything
+            # public, touching a license or personal data, or sent back once, is reviewed.
+            state.trust[task.owner_role] = skipped + 1
+            step.waive(
+                task,
+                QA_GATE,
+                f"{task.owner_role}'s last {org.pipeline.trust_after} reviewed hand-ins were all approved. "
+                f"Every {every} hand-ins, one is still reviewed.",
+                TRUST,
+            )
         step.next_gate(task)
 
     elif invocation.purpose == Purpose.REVIEW:
@@ -206,6 +219,11 @@ def _on_submission(step: _Step, event: Submission) -> None:
             return
         artifact()
         close()
+        if invocation.gate == QA_GATE and task.owner_role in state.trust:
+            if parsed.decision == "approve":
+                state.trust[task.owner_role] = 0
+            else:
+                del state.trust[task.owner_role]
         if parsed.decision == "approve":
             task.pending_gates.remove(invocation.gate or "")
             task.passed_gates.append(invocation.gate or "")

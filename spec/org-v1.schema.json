@@ -209,6 +209,16 @@
           "minimum": 0,
           "default": 2
         },
+        "trust_after": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 5
+        },
+        "spot_check_every": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 3
+        },
         "max_invalid_outputs": {
           "type": "integer",
           "minimum": 0,

@@ -4,7 +4,13 @@ Each version of `try-professional`. `skill-customs` is listed only when it chang
 
 ## 0.7.2 (2026-11-11)
 
-From the fifth review of the push check. It confirmed that 0.7.1 asked for 21 of the 22 pushes the fourth review found, and that some forms 0.7.1's notes listed still pushed without asking.
+A company should get lighter the longer it runs, not heavier. That's where it can do what one agent can't, because one agent has no record. This version starts on it, and finishes the push check from its fifth review.
+
+### Added
+
+- **Trust earned by reviewed work.** A role whose last 5 reviewed hand-ins were all approved skips the QA review of its plain work, except one hand-in in 3, which is still reviewed. Anything public, touching a license or personal data, or sent back once, is always reviewed, and one review that asks for changes ends the trust until it's earned again. Set it in `pipeline.trust_after` and `pipeline.spot_check_every`; `trust_after: 0` turns it off. Reviews took up to 31% of a real company's tokens, on work that kept passing.
+- **Whether it's getting lighter, after every command.** The report shows tokens per task over the company's recent commands, oldest first, and whether that went down or up. Over MCP, the coordinator gets the same line to pass on. Skipped reviews are counted in the report too.
+- **Lessons that save steps.** Roles are asked for the lesson that would have saved them steps (staff playbook 9), so what one task found out, such as where something is or how to check it, is recalled next time instead of found again.
 
 ### Fixed
 

@@ -44,6 +44,7 @@ from .pipeline import (
     initial_state,
     open_actions,
 )
+from .pipeline.base import TRUST
 from .pipeline.state import Invocation
 from .ports import FeedbackPort, MemoryPort, NullMemory, NullSkills, ProposalPort, SearchPort, SkillPort
 
@@ -202,6 +203,12 @@ class Orchestrator:
             log = self._log(run_id)
             log.append(self.clock(), "run_started", {"run_id": run_id, "goal": goal})
             log.append(self.clock(), "playbooks", playbooks.versions())
+            try:
+                state.trust = self.company.trust(self.org.pipeline.trust_after)
+            except Exception as error:  # trust only saves work, so without it every hand-in is reviewed
+                log.append(self.clock(), "trust_error", {"error": type(error).__name__})
+            if state.trust:
+                log.append(self.clock(), "trusted", {"roles": state.trust})
             self._copy_inputs(run_id)
             return run_id, self._apply(state, RunStarted())
 
@@ -254,6 +261,9 @@ class Orchestrator:
                 self.ledger.save(state, log.head, self.clock())
                 raise
             log.append(self.clock(), "event", current.model_dump(mode="json"))
+            for waiver in state.waivers[len(previous.waivers) :]:
+                if waiver.get("decided_by") == TRUST:
+                    log.append(self.clock(), "review_skipped", waiver)
             self._log_rejection(state, current, log)
             self._note_qa_verdict(previous, state, current, log)
             self._note_lesson_decisions(previous, state, current, log)

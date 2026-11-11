@@ -233,6 +233,8 @@ def load_bundle(org: dict[str, Any], roles: dict[str, dict[str, Any]]) -> Org:
             max_parallel_tasks=pipeline.get("max_parallel_tasks", 4),
             max_rework=pipeline.get("max_rework", 2),
             max_invalid_outputs=pipeline.get("max_invalid_outputs", 2),
+            trust_after=pipeline.get("trust_after", 5),
+            spot_check_every=pipeline.get("spot_check_every", 3),
             working_language=pipeline.get("working_language", "auto"),
             # Absent or null: no limit.
             max_tokens_per_run=budget.get("max_tokens_per_run") or DEFAULT_MAX_TOKENS_PER_RUN,

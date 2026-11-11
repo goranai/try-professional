@@ -63,6 +63,8 @@ gates:
 pipeline:
   max_parallel_tasks: 4
   max_rework: 2
+  trust_after: 5
+  spot_check_every: 3
   max_invalid_outputs: 2
   working_language: auto
   budget:
@@ -85,6 +87,8 @@ pipeline:
 | `pipeline.max_parallel_tasks` | No | Upper bound on tasks running at once. Default 4 |
 | `pipeline.max_rework` | No | Change requests allowed per task before escalating. Default 2 |
 | `pipeline.max_invalid_outputs` | No | Retries of an invalid output before escalating. Default 2 |
+| `pipeline.trust_after` | No | A role whose last this many reviewed hand-ins were all approved skips the QA review of plain work. Anything flagged (public, license, personal data), and work sent back once, is always reviewed. `0` turns it off. Default 5 |
+| `pipeline.spot_check_every` | No | A trusted role still has one hand-in reviewed in this many. A review that asks for changes ends its trust. Default 3 |
 | `pipeline.working_language` | No | `auto`, the default, makes each command's work follow that command's language. Otherwise one BCP 47 code, which fixes the language. Generated companies get a code only when the business explicitly asks for one language |
 | `pipeline.budget.max_tokens_per_small_command`, `.max_tokens_per_run` | No | Where a command stops and asks a person, in real tokens, on the API runner. Defaults 60,000 and 200,000. `null` means the default, and there's no way to have no limit |
 | `pipeline.budget.mcp_max_tokens_per_small_command`, `.mcp_max_tokens_per_run` | No | The same over MCP, where usage is the server's estimate times 3.3. Defaults 150,000 and 500,000 |

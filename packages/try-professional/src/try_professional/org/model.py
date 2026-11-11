@@ -98,6 +98,11 @@ class PipelineConfig:
     max_parallel_tasks: int = 4
     max_rework: int = 2
     max_invalid_outputs: int = 2
+    # A role whose last `trust_after` reviewed hand-ins were all approved skips the QA review of plain work, except
+    # every `spot_check_every`th, which is still reviewed. Gates for public, license or personal data never skip.
+    # 0 turns it off.
+    trust_after: int = 5
+    spot_check_every: int = 3
     working_language: str = "auto"
     # A hard stop for every command, so a stuck one can't keep spending. A person decides whether it goes on.
     max_tokens_per_run: int | None = DEFAULT_MAX_TOKENS_PER_RUN
