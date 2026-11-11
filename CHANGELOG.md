@@ -2,6 +2,19 @@
 
 Each version of `try-professional`. `skill-customs` is listed only when it changes.
 
+## 0.7.2 (2026-11-11)
+
+From the fifth review of the push check. It confirmed that 0.7.1 asked for 21 of the 22 pushes the fourth review found, and that some forms 0.7.1's notes listed still pushed without asking.
+
+### Fixed
+
+- **More ways of running a hidden push now ask a person:** a string piped into a shell or python (`echo '…push' | bash`), `bash <( )` and `source <( )`, awk, PowerShell given the command as a plain string, any spelling of PowerShell's `-EncodedCommand` (such as `-en` or `'-enc'`), ANSI-C quoting that spells git in escapes, `p{u,}sh`, and git's own programs run directly, such as `git-subtree push`.
+- **Checking a long command stays fast, all of it.** 0.7.1 made the push check fast, but the check for `gh api` writes and `curl … | sh` still took up to 2 seconds on a 50,000-character command. Now each takes time in step with the command's length.
+
+### Changed
+
+- **What 0.7.1 said, said exactly.** It listed some forms that still got through: a string piped into a shell, the other spellings of `-EncodedCommand`, and escapes that spell git. They're fixed above. A command that only mentions push, such as `git log --grep=push`, still doesn't ask, though a few more read-only commands with push in them now do, such as one that uses awk. A word built at run time, such as `pu${x}sh`, can still get through: this guards against mistakes, and isn't a sandbox.
+
 ## 0.7.1 (2026-11-11)
 
 From the fourth review of 0.7.0's push check, by the company of agents that reviews this project: it confirmed real pushes that still ran without asking, and two inputs that took over a second to check.

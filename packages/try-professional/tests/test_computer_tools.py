@@ -120,7 +120,7 @@ class TestShell:
             "python -c \"import os; os.system('git -C . push')\"",
             "python -c \"import subprocess; subprocess.run(['git', 'push'])\"",
             'bash -c "bash -c \\"bash -c \'bash -c \\\\\\"git -C . push\\\\\\"\'\\""',
-            "git $'\x70ush'",
+            r"git $'\x70ush'",
             "git -C . p$'u'sh",
             "git -C . {push,}",
             "bash -c -- 'git -C . push'",
@@ -132,6 +132,24 @@ class TestShell:
             "alias p='git -C . push'; p",
             '"$(command -v git)" -C . push',
             "powershell -EncodedCommand ZwBpAHQAIABwAHUAcwBoAA==",
+            # And these, from the fifth review: a string piped into a shell, PowerShell's other spellings, and escapes.
+            "echo 'git -C . push' | bash",
+            "printf 'git -C . push' | sh",
+            "echo \"import os; os.system('git -C . push')\" | python",
+            "bash <(echo 'git --no-pager push')",
+            "source <(echo 'git -C . push')",
+            "awk 'BEGIN{system(\"git -C . push\")}'",
+            'powershell "git --no-pager push"',
+            "powershell -en ZwBpAHQAIABwAHUAcwBoAA==",
+            "powershell -enco ZwBpAHQAIABwAHUAcwBoAA==",
+            "powershell -encoded ZwBpAHQAIABwAHUAcwBoAA==",
+            'powershell -e"nc" ZwBpAHQAIABwAHUAcwBoAA==',
+            "powershell '-enc' ZwBpAHQAIABwAHUAcwBoAA==",
+            "p''owershell -enc ZwBpAHQAIABwAHUAcwBoAA==",
+            r"$'\x67'it -C . $'\x70'ush",
+            r"$'\x67\x69\x74' -C . $'\x70\x75\x73\x68'",
+            "git -C . p{u,}sh",
+            "/usr/lib/git-core/git-subtree push --prefix=docs origin gh-pages",
         ],
     )
     def test_a_push_hidden_by_quoting_or_options_still_needs_a_person(self, command: str) -> None:
@@ -151,7 +169,8 @@ class TestShell:
         assert time.perf_counter() - started < 2
         # Shapes from the fourth review, and others that repeat what a pattern looks ahead from, just under the cap.
         for shape in ("git subtree " * 4_100 + "pushx", "env " * 12_000 + "push", "bash " * 9_000 + "push",
-                      "{" * 45_000 + " push", "python " * 6_000 + "push"):  # fmt: skip
+                      "{" * 45_000 + " push", "python " * 6_000 + "push", "curl " * 9_900,
+                      "gh api " * 7_100, "wget " * 9_900 + "push", "py " * 100 + "-" + "a" * 49_000 + " push"):  # fmt: skip
             started = time.perf_counter()
             needs_a_person(shape)
             assert time.perf_counter() - started < 1, shape[:20]
@@ -172,6 +191,10 @@ class TestShell:
             "python -m pytest -k push",
             "git log --grep=push",
             "grep -rn push src/",
+            "git status",
+            "git diff",
+            "gh api repos/a/b/pulls --jq '.[].title' | grep push",
+            "curl -s https://x.example/a.json | jq .push",
         ],
     )
     def test_reading_doesnt(self, command: str) -> None:

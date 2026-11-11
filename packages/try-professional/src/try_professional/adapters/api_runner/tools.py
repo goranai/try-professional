@@ -50,15 +50,27 @@ _SECRET_NAME = re.compile(r"(API_KEY|_TOKEN|SECRET|PASSWORD|AUTH)", re.IGNORECAS
 # git pushes are read word by word (_pushes), and everything else by pattern.
 _NEEDS_A_PERSON = re.compile(
     r"\bgh\s+(pr|issue|release|repo|gist)\s+(create|merge|close|delete|edit|comment|review|reopen|fork)"
-    r"\b|\bgh\s+api\b[^\n]*(-X|--method)\s*(POST|PUT|PATCH|DELETE)\b|\b(npm|cargo|gem)\s+publish\b|\btwine\s+upload\b"
-    r"|\bdocker\s+push\b|\bsudo\b|\brm\s+-[a-z]*r[a-z]*\s+(/|~|\$HOME)(\s|$)|\b(shutdown|reboot|mkfs)\b"
-    r"|\b(curl|wget)\b[^\n|]*\|\s*(sudo\s+)?(sh|bash|zsh|python[0-9.]*)\b",
+    r"\b|\b(npm|cargo|gem)\s+publish\b|\btwine\s+upload\b"
+    r"|\bdocker\s+push\b|\bsudo\b|\brm\s+-[a-z]*r[a-z]*\s+(/|~|\$HOME)(\s|$)|\b(shutdown|reboot|mkfs)\b",
     re.IGNORECASE,
+)
+# Two parts on one line: a write to GitHub's API, and a download run by a shell. Each part is found once per line,
+# so a long command takes time in step with its length.
+_IN_ORDER = (
+    (re.compile(r"\bgh\s+api\b", re.I), re.compile(r"(-X|--method)\s*(POST|PUT|PATCH|DELETE)\b", re.I)),
+    (re.compile(r"\b(curl|wget)\b", re.I), re.compile(r"\|\s*(sudo\s+)?(sh|bash|zsh|python[0-9.]*)\b", re.I)),
 )
 
 
 def needs_a_person(command: str) -> bool:
-    return _pushes(command) or bool(_NEEDS_A_PERSON.search(command))
+    if _pushes(command) or _NEEDS_A_PERSON.search(command):
+        return True
+    for line in command.splitlines():
+        for first, then in _IN_ORDER:
+            found = first.search(line)
+            if found and then.search(line, found.end()):
+                return True
+    return False
 
 
 # git's own options that take the next word as their value. Others, and --name=value forms, are one word.
@@ -74,20 +86,26 @@ _SHELL_FLAGS_WITH_C = re.compile(r"-[a-z]*c[a-z]*")
 _PLAIN_PUSH = re.compile(r"\bgit(\.exe)?[\"']?\s+[\"']?(push|send-pack|http-push)\b", re.IGNORECASE)
 # Past this, a command isn't split into words: splitting one long word takes time that grows with its square.
 _LONGEST_READ = 50_000
-# Removed before looking for the word push at all, so quoting can't hide it.
-_QUOTING = re.compile(r"[\"'\\`$]")
-# Ways of running a command this check can't read: a string run by a shell or another language, eval, a here-doc,
-# trap, an alias, xargs, env -S, command substitution, brace expansion, and ANSI-C quoting. A command that uses one,
-# and has the word push in it, asks a person. Each looks at most a few hundred characters ahead, so this stays linear.
+# Removed before looking for the word push at all, so quoting and brace expansion can't hide it.
+_QUOTING = re.compile(r"[\"'\\`${},]")
+# Ways of running a command this check can't read: a string run by a shell or another language (with -c or -e, piped
+# in, or from <( )), eval, source, a here-doc, trap, an alias, xargs, env -S, command substitution, brace expansion,
+# ANSI-C quoting, awk, and PowerShell. A command that uses one, and has the word push in it, asks a person. Each looks
+# at most a few hundred characters ahead, so this stays linear.
 _UNREADABLE = re.compile(
-    r"\beval\b|<<|\btrap\b|\balias\b|\bxargs\b|`|\$\(|\$'|\benv\b[^\n;|&]{0,300}(\s-\w*s|--split-string)"
+    r"\beval\b|<<|<\(|\bsource\b|\btrap\b|\balias\b|\bxargs\b|`|\$\(|\$'|\b[gm]?awk\b|(pwsh|powershell)(\.exe)?\b"
+    r"|\benv\b[^\n;|&]{0,300}(\s-\w*s|--split-string)"
     r"|\b(bash|sh|zsh|dash|ksh|fish)\b[^\n;|&]{0,300}\s-\w*c"
-    r"|\b(python[\d.]*|py|node|deno|perl|ruby|php|pwsh|powershell)\b[^\n;|&]{0,300}\s-\w*(c|e)\w*\b"
+    r"|\b(python[\d.]*|py|node|deno|perl|ruby|php)\b[^\n;|&]{0,300}\s-\w*(c|e)\w*\b"
+    r"|\|\s*(sudo\s+)?(bash|sh|zsh|dash|ksh|fish|python[\d.]*|py|node|deno|perl|ruby|php)\b"
     r"|\{[^{}\n]{0,200},[^{}\n]{0,200}\}",
     re.IGNORECASE,
 )
-# A command given encoded can't be read at all, whatever it says.
-_ENCODED = re.compile(r"\b(pwsh|powershell)(\.exe)?\b[^\n;|&]{0,300}\s-e(c|nc|ncodedcommand)?\s|-encodedcommand", re.I)
+# A command given encoded can't be read at all, whatever it says. PowerShell takes any start of -EncodedCommand.
+# Matched on the text with quotes taken out, so p''owershell '-enc' is found too.
+_ENCODED = re.compile(r"(pwsh|powershell)(\.exe)?\b[^\n;|&]{0,300}\s[-/]e(c|n[a-z]*)?(\s|:|$)|[-/]encodedcommand")
+# ANSI-C quoting with an escape in it can spell any word, git and push included.
+_ANSI_C_ESCAPE = re.compile(r"\$'[^'\n]{0,300}\\")
 
 
 def _pushes(command: str, depth: int = 0) -> bool:
@@ -96,10 +114,12 @@ def _pushes(command: str, depth: int = 0) -> bool:
     A real role's `git -C <clone> push` ran without asking, because only the plain `git push` was matched. The
     company that reviews this project then found, over three rounds, pushes that each new check missed, and checks
     that took seconds on long commands. So:
-    - With no push in it once quotes and escapes are taken out, a command can't be one, and nothing more is read.
+    - A command given encoded, as to PowerShell, always asks, and so does ANSI-C quoting with an escape in it.
+    - With no push in it once quotes, escapes and braces are taken out, nothing more is read. A word built at run
+      time, such as pu${x}sh, can still hide it.
     - The plain form is looked for anywhere, in one pass. So is any way of running a command that this can't read,
-      such as eval, a string run by bash -c or python -c, env -S, trap, an alias, $( ) or brace expansion: with push
-      in the command, that asks a person. A command given encoded, as to PowerShell, always does.
+      such as eval, a string run by bash -c, piped into a shell or python, env -S, trap, an alias, $( ) or brace
+      expansion: with push in the command, that asks a person.
     - Then the command is split into words as a shell splits it: lines, backticks and $( ) are separate commands,
       quotes and escapes are resolved, git's own options are skipped, and its subcommand is checked, for every git in
       it. A string run as a command, as with bash -c or eval, is read the same way. An alias set on the command line,
@@ -108,14 +128,16 @@ def _pushes(command: str, depth: int = 0) -> bool:
     A push built up from pieces at run time can still get through: this guards against honest mistakes, and asks a
     person; it isn't a sandbox."""
     text = command.replace("\\\r\n", "").replace("\\\n", "")
-    if depth == 0 and _ENCODED.search(text):
-        return True
     squashed = _QUOTING.sub("", text).lower()
-    if "$'" in text and "git" in squashed:
+    if depth == 0 and _ENCODED.search(squashed):
+        return True
+    if _ANSI_C_ESCAPE.search(text) or ("$'" in text and "git" in squashed):
         return True  # ANSI-C quoting can spell a word in escapes, such as $'\x70ush'
     if "push" not in squashed and "send-pack" not in squashed and "alias." not in squashed:
         return False
-    if _PLAIN_PUSH.search(text) or len(text) > _LONGEST_READ or _UNREADABLE.search(text):
+    if _PLAIN_PUSH.search(text) or len(text) > _LONGEST_READ:
+        return True
+    if _UNREADABLE.search(text) or _UNREADABLE.search(squashed):
         return True
     separated = text.replace("\r\n", "\n").replace("\n", " ; ").replace("`", " ; ").replace("$(", " ; ")
     try:
@@ -153,6 +175,8 @@ def _segment_pushes(words: list[str], depth: int) -> bool:
             name = name[:-4]
         if name == "git" and _git_pushes(words, at + 1, last_push):
             return True
+        if name.startswith("git-") and (name[4:] in _GIT_PUSHES or (name == "git-subtree" and last_push > at)):
+            return True  # git's own programs, such as git-core/git-subtree, run directly
         if word.startswith("$") and last_push > at:
             return True  # a command in a variable, used to push
     return False
