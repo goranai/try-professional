@@ -54,14 +54,17 @@ _NEEDS_A_PERSON = re.compile(
     r"|\bdocker\s+push\b|\bsudo\b|\brm\s+-[a-z]*r[a-z]*\s+(/|~|\$HOME)(\s|$)|\b(shutdown|reboot|mkfs)\b",
     re.IGNORECASE,
 )
+# A shell or another language reading a program from a pipe, after any of the words that run the next one (sudo,
+# env with its options and settings, nice, exec, command, nohup, time), each possibly by its path. Bounded, so linear.
+_RUNNER = (
+    r"(([\w./-]{0,200}/)?(sudo|env|nice|exec|command|nohup|time)\s+(-\S{0,100}\s+|\w+=\S{0,200}\s+){0,6}){0,3}"
+    r"([\w./-]{0,200}/)?(sh|bash|zsh|dash|ksh|fish|python[\d.]*|py|node|deno|perl|ruby|php)\b"
+)
 # Two parts on one line: a write to GitHub's API, and a download run by a shell. Each part is found once per line,
 # so a long command takes time in step with its length.
 _IN_ORDER = (
     (re.compile(r"\bgh\s+api\b", re.I), re.compile(r"(-X|--method)[\s=]*(POST|PUT|PATCH|DELETE)\b", re.I)),
-    (
-        re.compile(r"\b(curl|wget)\b", re.I),
-        re.compile(r"\|\s*(sudo\s+)?(env\s+)?([\w./-]{0,200}/)?(sh|bash|zsh|python[0-9.]*)\b", re.I),
-    ),
+    (re.compile(r"\b(curl|wget)\b", re.I), re.compile(r"\|\s*" + _RUNNER, re.I)),
 )
 
 
@@ -100,8 +103,7 @@ _UNREADABLE = re.compile(
     r"|\benv\b[^\n;|&]{0,300}(\s-\w*s|--split-string)"
     r"|\b(bash|sh|zsh|dash|ksh|fish)\b[^\n;|&]{0,300}\s-\w*c"
     r"|\b(python[\d.]*|py|node|deno|perl|ruby|php)\b[^\n;|&]{0,300}\s-\w*(c|e)\w*\b"
-    r"|\|\s*(sudo\s+)?(env\s+)?([\w./-]{0,200}/)?(bash|sh|zsh|dash|ksh|fish|python[\d.]*|py|node|deno|perl|ruby|php)\b"
-    r"|\{[^{}\n]{0,200},[^{}\n]{0,200}\}",
+    r"|\|\s*" + _RUNNER + r"|\{[^{}\n]{0,200},[^{}\n]{0,200}\}",
     re.IGNORECASE,
 )
 # A command given encoded can't be read at all, whatever it says. PowerShell takes any start of -EncodedCommand,

@@ -304,7 +304,7 @@ Those ran before reviews got stricter, which adds rework. The acceptance run on 
 
 The last one has a real round of rework on its work in 0.1.2, so it saved little. One run of each, so expect some spread. [Details](docs/research/small_commands/README.md).
 
-A hierarchy spends more than one agent would. On the first table's small commands, reviews alone took 39% to 46% of the output tokens. No comparison with a flat setup has been measured yet. [The benchmark](docs/research/benchmark/README.md) is designed, reviewed for bias, and frozen, and it will be run in a later version.
+A hierarchy spends more than one agent would. On the small commands measured above, reviews alone took 42% to 59% of the output tokens ([data](docs/research/small_commands/results.json)). No comparison with a flat setup has been measured yet. [The benchmark](docs/research/benchmark/README.md) is designed, reviewed for bias, and frozen, and it will be run in a later version.
 
 On DeepSeek through the API runner, the one small command that finished took 25,020 tokens: [details](docs/research/journey/check_model_deepseek.json).
 
@@ -339,7 +339,7 @@ On DeepSeek through the API runner, the one small command that finished took 25,
 
 ## FAQ
 
-**How is this different from using one agent?** One agent is cheaper and faster, and for a small one-off job it's probably the better choice. Here, reviews alone took 39% to 46% of the output tokens on small commands. What that buys is a reviewer who didn't do the work, memory for each role across commands, and an audit log. And unlike one agent, a company has a record: a role whose last five reviewed hand-ins were approved skips most reviews of plain work, so a company is built to get lighter the longer it runs. Each command's report shows its tokens per task beside the last ones. How much this saves hasn't been measured yet, and no comparison of results has been either.
+**How is this different from using one agent?** One agent is cheaper and faster, and for a small one-off job it's probably the better choice. Here, reviews alone took about half of the output tokens on small commands, 42% to 59%. What that buys is a reviewer who didn't do the work, memory for each role across commands, and an audit log. And unlike one agent, a company has a record: a role whose last five reviewed hand-ins were approved skips most reviews of plain work, so a company is built to get lighter the longer it runs. Each command's report shows its tokens per task beside the last ones. How much this saves hasn't been measured yet, and no comparison of results has been either.
 
 **How is it different from a flat swarm?** In a swarm, agents work side by side. Here work flows through a hierarchy, each piece has one owner, and a role can't see another role's memory or assignments, because its server won't show them. We haven't measured whether that gives better results. That benchmark is on the roadmap.
 

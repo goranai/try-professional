@@ -123,7 +123,8 @@ class TestRecord:
         assert store.trust(5) == {}
 
     def test_a_skip_is_recorded_where_its_work_was_handed_in(self, org: Org) -> None:
-        """Skip, skip, then a spot check that passed: the record ends on the review, so the next run starts at 0."""
+        """A skip goes where its work was handed in, ahead of a later review, so a spot check that passed ends the
+        record and the next run starts counting at 0. One task carries both here, which a real run doesn't."""
         from try_professional.core.company import _reviews
 
         every = org.pipeline.spot_check_every

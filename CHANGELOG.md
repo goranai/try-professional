@@ -8,7 +8,7 @@ A company should get lighter the longer it runs, not heavier. That's where it ca
 
 ### Added
 
-- **Trust earned by reviewed work.** A role whose last 5 reviewed hand-ins were all approved skips the QA review of its plain work, except one hand-in in 3, which is still reviewed. Anything public, touching a license or personal data, or sent back once, is always reviewed, and one review that asks for changes ends the trust until it's earned again. Set it in `pipeline.trust_after` and `pipeline.spot_check_every`; `trust_after: 0` turns it off. Reviews alone took 39% to 46% of the output tokens on small commands.
+- **Trust earned by reviewed work.** A role whose last 5 reviewed hand-ins were all approved skips the QA review of its plain work, except one hand-in in 3, which is still reviewed. Anything public, touching a license or personal data, or sent back once, is always reviewed, and one review that asks for changes ends the trust until it's earned again. Set it in `pipeline.trust_after` and `pipeline.spot_check_every`; `trust_after: 0` turns it off. Reviews alone took about half of the output tokens on the small commands measured, 42% to 59%. This also corrects the README, which said 39% to 46% with no data behind it.
 - **Whether it's getting lighter, after every command.** The report shows tokens per task over the company's recent commands, oldest first, and whether that went down or up. Over MCP, the coordinator gets the same line to pass on. Skipped reviews are counted in the report too.
 - **Lessons that save steps.** Roles are asked for the lesson that would have saved them steps (staff playbook 9), so what one task found out, such as where something is or how to check it, is recalled next time instead of found again.
 
