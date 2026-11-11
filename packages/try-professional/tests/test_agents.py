@@ -132,7 +132,10 @@ class TestSteps:
             assert ("TRYPRO_LLM_API_KEY" in envs[-1]) == (runtime == CODEX), runtime
 
     def test_a_companys_own_key_name_is_used(self, tmp_path: Path) -> None:
-        settings = AgentSettings.from_environment({"TRYPRO_LLM_BASE_URL": "https://x/v1"}, key_env="DEEPSEEK_API_KEY")
+        from dataclasses import replace
+
+        found = AgentSettings.from_environment({"TRYPRO_LLM_BASE_URL": "https://x/v1"}, key_env="DEEPSEEK_API_KEY")
+        settings = replace(found, codex="codex")  # whether Codex is installed here doesn't matter
         argv = codex_argv(settings, tmp_path, ROLE, None)
         assert json.loads(_value(argv, "model_providers.trypro.env_key")) == "DEEPSEEK_API_KEY"
         env = step_environment({"DEEPSEEK_API_KEY": "k", "PATH": ""}, settings.key_env, tmp_path)
@@ -169,8 +172,10 @@ class TestGate:
             "cd repo && gh pr create --fill"
         )
         assert codex_gate.held_command("git", ["push"], tmp_path, tmp_path) == "git push"
-        # Typed outside the workspace, it runs later from the workspace.
-        assert codex_gate.held_command("git", ["push"], tmp_path / "repo", tmp_path / "x") == "git push"
+        # Typed in the step's own folder, which is gone by then, it runs from the workspace; elsewhere, from there.
+        step = tmp_path / "trypro-step-inv-1-abc" / "start"
+        assert codex_gate.held_command("git", ["push"], step, tmp_path / "x") == "git push"
+        assert codex_gate.held_command("git", ["push"], tmp_path / "repo", tmp_path / "x").startswith("cd ")
 
     @pytest.mark.parametrize(
         "args",
@@ -211,6 +216,15 @@ class TestGate:
             "git config --global alias.p push",
             "git config --file /x/config k v",
             "git lfs install",
+            # And these, from its third review: git's abbreviations, the OS scheduler, and a shown token.
+            "git config --glo alias.p push",
+            "git config --gl k v",
+            "git config --fil=/x k v",
+            "git config -f/x/config k v",
+            "git config --sys k v",
+            "git maintenance register",
+            "git maintenance start",
+            "gh auth status --show-token=true",
         ],
     )
     def test_anything_that_may_change_something_outside_waits(self, args: str) -> None:
@@ -243,6 +257,8 @@ class TestGate:
             "gh api -XGET search/x",
             "git config user.name x",
             "git config --get remote.origin.url",
+            "git config --list",
+            "git maintenance run",
         ],
     )
     def test_reading_and_local_work_run(self, args: str) -> None:
@@ -399,3 +415,32 @@ class TestFromClaudeCode:
         run = harness(org)
         with pytest.raises(ToolError, match="Only the coordinator"):
             McpService(run.orchestrator).run_step("run-1", "inv-1")
+
+
+def test_the_coordinator_refuses_an_unknown_runtime_before_opening_anything(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A typo in runtime is said on every call, rather than quietly making a role a subagent, and nothing is opened."""
+    import argparse
+
+    import try_professional.adapters.mcp.server as server
+    import try_professional.cli as cli
+    from try_professional import Company
+
+    root = tmp_path / "acme"
+    Company.create(root, name="Acme")
+    with (root / "trypro.yaml").open("a", encoding="utf-8") as config:
+        config.write("\nruntime:\n  roles:\n    engineering: cursor\n")
+    loaders: list[Any] = []
+
+    class Built:
+        def run(self, transport: str) -> None:
+            pass
+
+    monkeypatch.setattr(server, "build_server", lambda company, design, coordinator: loaders.append(company) or Built())
+    monkeypatch.setattr(cli, "use_embedding_service", lambda home: None)
+    monkeypatch.setattr(cli, "Orchestrator", lambda *a, **k: pytest.fail("opened a company before refusing"))
+    args = argparse.Namespace(dir=str(root), role=None, coordinator=True, sandboxed=False)
+    assert cli.cmd_mcp(args) == 0
+    with pytest.raises(ToolError, match="Unknown runtime"):
+        loaders[0]()

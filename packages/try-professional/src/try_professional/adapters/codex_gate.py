@@ -3,9 +3,9 @@
 An agent runs a role's commands with nobody to ask, so `gh pr create` or `git push` would just happen. The runner puts
 this in front of gh and git on the step's PATH. It sees the exact words gh or git would get, after the shell is done
 with them, so it reads them as they do. It runs what only reads, such as `gh pr list` or `git log`, and git's work on
-local files, such as `git commit` or `git clone`. Anything else, such as a change to git's global settings, and
-anything it doesn't know, waits for a person, as `trypro held` shows. It guards these two programs; it isn't a
-sandbox for the rest of the machine.
+local files anywhere on the machine, such as `git commit` or `git clone`. Anything else, such as a change to git's
+global settings, and anything it doesn't know, waits for a person, as `trypro held` shows. It guards these two
+programs; it isn't a sandbox for the rest of the machine.
 
     python -m try_professional.adapters.codex_gate <company> <run_id> <role> <workspace> <real program> [args...]
 """
@@ -18,6 +18,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+# The start of each step's own folder's name, made by the runner and removed after the step.
+STEP_FOLDER_PREFIX = "trypro-step-"
 # gh commands that only read, by command group. None: every subcommand of the group reads.
 _GH_READS: dict[str, set[str] | None] = {
     "pr": {"list", "view", "status", "checks", "diff"},
@@ -85,7 +87,6 @@ _GIT_LOCAL = frozenset(
         "ls-files",
         "ls-remote",
         "ls-tree",
-        "maintenance",
         "merge",
         "merge-base",
         "merge-file",
@@ -132,8 +133,9 @@ _GIT_LOCAL = frozenset(
     ]
 )
 _GIT_LFS_READS = {"ls-files", "status", "env", "version", "fetch", "pull", "checkout", "track", "untrack"}
-# Options that make git config change settings beyond this copy, such as a global alias or credential helper.
-_GIT_CONFIG_BEYOND = ("--global", "--system", "--file", "-f", "--blob", "--worktree")
+# Options that make git config reach beyond this copy, such as a global alias or credential helper. git takes any
+# unambiguous start of a long option, such as --gl, so a start of two letters or more counts.
+_GIT_CONFIG_BEYOND = ("--global", "--system", "--file", "--blob", "--worktree")
 
 
 def _words(args: list[str], with_a_value: set[str]) -> tuple[list[str], list[str]]:
@@ -165,7 +167,7 @@ def gh_changes_something(args: list[str]) -> bool:
         return _gh_api_writes(args, words)
     if group == "auth":
         # `gh auth token`, or status with -t, would print the token for the model to see.
-        shows = any(a in ("-t", "--show-token") or (a.startswith("-") and not a.startswith("--") and "t" in a)
+        shows = any(a.partition("=")[0] == "--show-token" or (a.startswith("-") and not a.startswith("--") and "t" in a)
                     for a in args)  # fmt: skip
         return words[1:2] != ["status"] or shows
     if group not in _GH_READS:
@@ -236,11 +238,20 @@ def git_changes_something(args: list[str]) -> bool:
         if lowered == "lfs":
             return rest[:1] != [] and rest[0] not in _GIT_LFS_READS
         if lowered == "config":
-            return any(a == o or a.startswith(o + "=") for a in args[at + 1 :] for o in _GIT_CONFIG_BEYOND)
+            return any(_beyond_this_copy(a) for a in args[at + 1 :])
+        if lowered == "maintenance":
+            return rest[:1] != ["run"]  # register, start and stop change global settings and the OS scheduler
         if lowered == "subtree":
             return "push" in rest
         return lowered not in _GIT_LOCAL
     return False  # git, git --version
+
+
+def _beyond_this_copy(option: str) -> bool:
+    if option.startswith("-f") and not option.startswith("--"):
+        return True  # -f <file>, or -f/path
+    name = option.partition("=")[0]
+    return len(name) >= 4 and name.startswith("--") and any(full.startswith(name) for full in _GIT_CONFIG_BEYOND)
 
 
 def changes_something(name: str, args: list[str]) -> bool:
@@ -257,7 +268,9 @@ def held_command(name: str, args: list[str], cwd: Path, workspace: Path) -> str:
     try:
         relative = cwd.resolve().relative_to(workspace.resolve())
     except ValueError:
-        return command  # typed outside the workspace, such as in the step's own folder, which is gone by then
+        if any(part.startswith(STEP_FOLDER_PREFIX) for part in cwd.parts):
+            return command  # typed in the step's own folder, which is gone by then: it runs from the workspace
+        return f"cd {shlex.quote(cwd.as_posix())} && {command}"
     return command if str(relative) == "." else f"cd {shlex.quote(relative.as_posix())} && {command}"
 
 

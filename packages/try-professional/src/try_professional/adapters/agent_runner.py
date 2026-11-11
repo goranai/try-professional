@@ -43,6 +43,7 @@ from ..core.pipeline import AskHuman, Finish, IllegalEvent, InvocationFailed, In
 from ..org import Org, Role
 from .api_runner.runner import RunResult
 from .api_runner.tools import _KEPT_SECRETS, _SECRET_NAME, _stop_tree
+from .codex_gate import STEP_FOLDER_PREFIX
 from .mcp.claude_code import _FULL_TOOLS, _MODELS, _ROLE_PROMPT, ROLE_SERVER, ROLE_TOOLS, server_config
 
 API, CLAUDE_CODE, CODEX, ANTIGRAVITY = "api", "claude-code", "codex", "antigravity"
@@ -306,7 +307,7 @@ def run_agent_step(
     workspace = orchestrator.workspace(run_id)
     workspace.mkdir(parents=True, exist_ok=True)
     # Outside the company's folder, so the agent loads none of the company's own files.
-    folder = Path(tempfile.mkdtemp(prefix=f"trypro-step-{action.invocation_id}-"))
+    folder = Path(tempfile.mkdtemp(prefix=f"{STEP_FOLDER_PREFIX}{action.invocation_id}-"))
     environ = dict(environ if environ is not None else os.environ)
     key_env = settings.key_env if runtime == CODEX and settings.base_url else None
     try:
