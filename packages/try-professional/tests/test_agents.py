@@ -5,6 +5,7 @@ changes something outside unasked."""
 
 from __future__ import annotations
 
+import dataclasses
 import json
 import os
 import shutil
@@ -41,6 +42,11 @@ from try_professional.org import Org
 SETTINGS = AgentSettings(codex="codex", antigravity="agy", claude="claude", base_url="https://router.example/v1",
                          llm_model="gpt-6.1-sol")  # fmt: skip
 ROLE = "engineering/backend"
+
+
+def _with_codex(environ: dict[str, str]) -> AgentSettings:
+    """Settings read from environ, with Codex found: CI machines don't have it installed."""
+    return dataclasses.replace(AgentSettings.from_environment(environ), codex="codex")
 
 
 def _value(argv: list[str], key: str) -> str:
@@ -918,7 +924,7 @@ class TestCodexOnWindows:
 
     def test_the_sandbox_is_a_persons_choice_and_safe_by_default(self, tmp_path: Path) -> None:
         assert AgentSettings.from_environment({}).codex_sandbox == "workspace-write"
-        chosen = AgentSettings.from_environment({"TRYPRO_CODEX_SANDBOX": "danger-full-access"})
+        chosen = _with_codex({"TRYPRO_CODEX_SANDBOX": "danger-full-access"})
         argv = codex_argv(chosen, tmp_path, ROLE, None)
         assert argv[argv.index("--sandbox") + 1] == "danger-full-access"
         assert codex_argv(chosen, tmp_path, ROLE, None, desk=True)[argv.index("--sandbox") + 1] == "read-only"
@@ -960,16 +966,14 @@ class TestCodexOnWindows:
 
     def test_a_long_assignment_reaches_codex_whole(self, tmp_path: Path) -> None:
         """Codex cut a validator's 19k-token assignment short, and the validator lost its work package id."""
-        argv = codex_argv(AgentSettings.from_environment({}), tmp_path, ROLE, None)
+        argv = codex_argv(_with_codex({}), tmp_path, ROLE, None)
         limit = next(a for a in argv if a.startswith("tool_output_token_limit="))
         assert int(limit.split("=")[1]) >= 50_000
 
     def test_how_hard_codex_thinks_is_a_persons_choice(self, tmp_path: Path) -> None:
         """Left to the model, GPT-6.1 ran with no reasoning and sometimes answered that it had no tools."""
-        assert not any(
-            "model_reasoning_effort" in a for a in codex_argv(AgentSettings.from_environment({}), tmp_path, ROLE, None)
-        )
-        chosen = AgentSettings.from_environment({"TRYPRO_CODEX_REASONING_EFFORT": "High"})
+        assert not any("model_reasoning_effort" in a for a in codex_argv(_with_codex({}), tmp_path, ROLE, None))
+        chosen = _with_codex({"TRYPRO_CODEX_REASONING_EFFORT": "High"})
         assert 'model_reasoning_effort="high"' in codex_argv(chosen, tmp_path, ROLE, None)
 
     def test_a_session_without_the_tools_is_started_again(self, org: Org, harness: Callable[..., Any]) -> None:
@@ -1051,12 +1055,13 @@ def test_a_role_is_told_where_its_companys_files_are(org: Org, tmp_path: Path) -
 class TestGateOnWindows:
     """A .cmd wrapper gave its arguments to cmd.exe, which split a gh api query at its "&": a scout's search broke."""
 
+    # Windows only: pretending to be Windows elsewhere sends shutil.which down a path that needs Windows' own APIs.
+    @pytest.mark.skipif(sys.platform != "win32", reason="The launcher stands in as gh.exe and git.exe on Windows")
     def test_trypros_launcher_stands_in_as_gh_and_git(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         scripts = tmp_path / "venv" / "Scripts"
         scripts.mkdir(parents=True)
         (scripts / "trypro.exe").write_bytes(b"launcher")
         monkeypatch.setattr(agent_runner.sys, "executable", str(scripts / "python.exe"))
-        monkeypatch.setattr(agent_runner.sys, "platform", "win32")
         real = tmp_path / "real"
         real.mkdir()
         for name in ("gh", "git"):
