@@ -20,6 +20,7 @@ from pathlib import Path
 from typing import Any
 
 from ...core.artifacts import PAYLOAD_TYPES, Flags, WorkNotes
+from ...core.listing import all_files
 from ...core.outside import urls_in
 from ...core.ports import MemoryPort, SearchPort, SkillPort
 from .clients import ClientError, ToolSpec
@@ -445,6 +446,7 @@ class ToolContext:
     hold: Callable[[str], int] | None = None
     # Follows a link an approved outside command printed, such as the issue it opened. Takes the URL and command.
     track: Callable[[str, str], None] | None = None
+    scratch: Path | None = None
 
 
 def _resolve(workspace: Path, relative: Any) -> Path:
@@ -467,9 +469,7 @@ def run_tool(context: ToolContext, name: str, arguments: dict[str, Any]) -> str:
     if name not in context.allowed or name not in _SPECS:
         raise ToolRefused(f"{context.role} is not allowed to use '{name}'")
     if name == "workspace_list":
-        root = context.workspace.resolve()
-        files = sorted(str(p.relative_to(root)).replace("\\", "/") for p in root.rglob("*") if p.is_file())
-        return json.dumps(files, ensure_ascii=False)
+        return json.dumps(all_files(context.workspace), ensure_ascii=False)
     if name == "workspace_read":
         path = _resolve(context.workspace, arguments.get("path"))
         if not path.is_file():
@@ -552,7 +552,7 @@ def _run_shell(context: ToolContext, command: str) -> str:
             "That changes something outside, so a person has to approve it, and none did. Put what you'd run, and "
             "why, in your submission, for a person to decide."
         )
-    result = execute(context.workspace, command)
+    result = execute(context.workspace, command, scratch=context.scratch)
     if outside and context.track is not None:
         for url in urls_in(result):
             context.track(url, command)
@@ -562,10 +562,12 @@ def _run_shell(context: ToolContext, command: str) -> str:
     return untrusted("shell", f"{head}\n{output}")
 
 
-def execute(workspace: Path, command: str) -> str:
+def execute(workspace: Path, command: str, *, scratch: Path | None = None) -> str:
     """Run a command in a workspace as a role's shell does: bash, no model keys, a time limit. There's no approval
     check here: a caller running something outside has already had a person approve it."""
     environment = {k: v for k, v in os.environ.items() if k in _KEPT_SECRETS or not _SECRET_NAME.search(k)}
+    if scratch is not None:
+        environment["TRYPRO_RUN_SCRATCH"] = str(scratch)
     workspace.mkdir(parents=True, exist_ok=True)
     shell = _shell_command(command)
     # Its own process group, so a time limit stops everything the command started, not only the shell.

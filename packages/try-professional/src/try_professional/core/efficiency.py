@@ -13,6 +13,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from .pipeline.state import ESTIMATED_BY_SERVER
+
 
 @dataclass
 class Efficiency:
@@ -22,6 +24,14 @@ class Efficiency:
     waiting_seconds: float = 0.0
     calls: int = 0
     tokens: int = 0
+    input_tokens: int = 0
+    cached_input_tokens: int = 0
+    output_tokens: int = 0
+    estimated_tool_tokens: int = 0
+    estimated_tool_calls: int = 0
+    unknown_model_calls: int = 0
+    unavailable_usage_records: int = 0
+    unverified_usage_records: int = 0
     steps: dict[str, int] = field(default_factory=dict)  # purpose -> how many times a role was asked
     calls_by_purpose: dict[str, int] = field(default_factory=dict)
     tokens_by_purpose: dict[str, int] = field(default_factory=dict)
@@ -44,13 +54,24 @@ class Efficiency:
         return self.tokens_by_purpose.get("review", 0) / self.tokens if self.tokens else 0.0
 
     def to_dict(self) -> dict[str, Any]:
-        return {**self.__dict__, "working_seconds": self.working_seconds, "review_share": round(self.review_share, 3)}
+        return {
+            **self.__dict__,
+            "working_seconds": self.working_seconds,
+            "review_share": round(self.review_share, 3),
+            "model_usage_status": self.model_usage_status,
+        }
+
+    @property
+    def model_usage_status(self) -> str:
+        if self.unavailable_usage_records or self.unverified_usage_records:
+            return "partial" if self.tokens else "unavailable"
+        return "exact" if self.calls or self.unknown_model_calls else "unavailable"
 
     def lines(self) -> list[str]:
         minutes = self.working_seconds / 60
         waited = f", plus {self.waiting_seconds / 60:.1f} waiting for a person" if self.waiting_seconds >= 1 else ""
         out = [
-            f"Took {minutes:.1f} min of work{waited}: {self.calls} model calls, {self.tokens:,} tokens, "
+            f"Took {minutes:.1f} min of work{waited}: {self.calls} verified model calls, {self.tokens:,} model tokens, "
             f"{self.roles} roles, {self.tool_calls} tool calls.",
             "Where it went: "
             + ", ".join(
@@ -59,6 +80,17 @@ class Efficiency:
             )
             + ".",
         ]
+        out.insert(
+            1,
+            f"Model usage ({self.model_usage_status}): {self.input_tokens} input, "
+            f"{self.cached_input_tokens} of input cached, "
+            f"{self.output_tokens} output. Tool traffic: about {self.estimated_tool_tokens} tokens, "
+            f"estimated by the server from {self.estimated_tool_calls} tool calls; separate from model usage.",
+        )
+        if self.unknown_model_calls:
+            out.insert(2, f"Model call count unavailable for {self.unknown_model_calls} CLI process(es).")
+        if self.unavailable_usage_records or self.unverified_usage_records:
+            out.append("Model usage is incomplete or unverified; unavailable counts are not zero usage.")
         waste = []
         if self.rework:
             waste.append(f"{self.rework} sent back for rework")
@@ -112,14 +144,31 @@ def measure(audit_path: Path, run_id: str = "") -> Efficiency:
             roles.add(str(data.get("role", "")))
         elif kind == "event" and inner == "usage_recorded":
             purpose = purpose_of.get(str(data.get("invocation_id", "")), "other")
-            tokens = int(data.get("input_tokens") or 0) + int(data.get("output_tokens") or 0)
-            report.calls += 1
+            inputs = int(data.get("input_tokens") or 0)
+            outputs = int(data.get("output_tokens") or 0)
+            cached = int(data.get("cached_input_tokens") or 0)
+            if data.get("model") == ESTIMATED_BY_SERVER:
+                report.estimated_tool_tokens += inputs + outputs
+                report.estimated_tool_calls += 1
+                continue
+            convention = data.get("input_tokens_includes_cache")
+            if convention is False:
+                inputs += cached + int(data.get("cache_creation_input_tokens") or 0)
+            calls = data.get("calls", 1)
+            report.calls += int(calls or 0)
+            report.unknown_model_calls += int(calls is None)
+            report.unavailable_usage_records += int(data.get("usage_status") == "unavailable")
+            report.unverified_usage_records += int(data.get("usage_status") == "unverified" or convention is None)
+            report.input_tokens += inputs
+            report.cached_input_tokens += cached
+            report.output_tokens += outputs
+            tokens = inputs + outputs
             report.tokens += tokens
-            report.calls_by_purpose[purpose] = report.calls_by_purpose.get(purpose, 0) + 1
+            report.calls_by_purpose[purpose] = report.calls_by_purpose.get(purpose, 0) + int(calls or 0)
             report.tokens_by_purpose[purpose] = report.tokens_by_purpose.get(purpose, 0) + tokens
             role = str(data.get("role") or "")
             if role:
-                report.calls_by_role[role] = report.calls_by_role.get(role, 0) + 1
+                report.calls_by_role[role] = report.calls_by_role.get(role, 0) + int(calls or 0)
         elif kind == "event" and inner == "handoff_raised":
             payload = data.get("payload") or {}
             report.handoffs.append(f"{payload.get('from_department')} to {payload.get('to_department')}")

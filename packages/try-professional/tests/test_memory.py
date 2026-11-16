@@ -376,7 +376,7 @@ class TestPipelineUsesMemory:
             def recall(self, role: str, query: str) -> list[str]:
                 raise RuntimeError("disk full")
 
-            def write(self, role: str, text: str) -> None:
+            def write(self, role: str, text: str, *, source: str = "") -> None:
                 raise RuntimeError("disk full")
 
             def promote(self, role: str, text: str, source: str) -> None:

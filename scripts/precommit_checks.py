@@ -44,7 +44,9 @@ def checks() -> list[tuple[str, list[str]]]:
 
 def main() -> int:
     # The tests must see this checkout, whatever the shell has set.
-    environment = {k: v for k, v in os.environ.items() if k != "PYTHONPATH"}
+    # Nor git's own hook variables: from a worktree, GIT_INDEX_FILE names the worktree's index, and the tests that
+    # make a repository of their own then wrote into it.
+    environment = {k: v for k, v in os.environ.items() if k != "PYTHONPATH" and not k.startswith("GIT_")}
     environment["PYTHONUTF8"] = "1"
     for name, command in checks():
         print(f"pre-commit: {name}", flush=True)

@@ -24,7 +24,10 @@ from __future__ import annotations
 import contextlib
 import getpass
 import json
+import os
 import re
+import subprocess
+import sys
 import threading
 from concurrent.futures import Future, ThreadPoolExecutor
 from concurrent.futures import TimeoutError as StepStillRunning
@@ -34,6 +37,7 @@ from typing import Any
 from ...core.artifacts import PAYLOAD_TYPES, Flags, settle_flags
 from ...core.audit import read_records
 from ...core.efficiency import trend_line
+from ...core.lock import run_is_driven
 from ...core.orchestrator import Orchestrator, utc_now
 from ...core.pipeline import (
     AskHuman,
@@ -87,10 +91,14 @@ PERSON_TOOLS = (
 # All a coordinator may do. Anything else is a role's work.
 # Hands a role's step to the agent that role works in, such as Antigravity or Codex.
 AGENT_STEP_TOOL = "run_step"
+# Drives a run to its end in a trypro process of its own, for a coordinator that shouldn't wait on each step.
+BACKGROUND_TOOL = "run_in_background"
 COORDINATOR_TOOLS = ("org_get", "run_start", "run_status", "run_next_action", "audit_tail", AGENT_STEP_TOOL,
-                     *PERSON_TOOLS)  # fmt: skip
+                     BACKGROUND_TOOL, *PERSON_TOOLS)  # fmt: skip
 # How long run_step waits before saying the step is still working, under Claude Code's 30 minutes of silence.
 RUN_STEP_WAIT_SECONDS = 1200
+# Under Antigravity's 3 minutes for one tool call: 15 of 21 run_step calls in one hunt round timed out at 1200.
+SHORT_RUN_STEP_WAIT_SECONDS = 150
 DEFAULT_AUDIT_TAIL = 20
 MAX_AUDIT_TAIL = 200
 CHARS_PER_TOKEN = 3.5
@@ -106,6 +114,41 @@ class ToolError(Exception):
     """A refusal the client should see and can act on."""
 
 
+def _start_outside_job(argv: list[str], cwd: Path, extra_env: dict[str, str], log: Path) -> None:
+    """Use a task people can see and stop: Windows Update and session changes killed the WMI-only driver."""
+    kept = ("PATH", "PATHEXT", "SYSTEMROOT", "LOCALAPPDATA", "APPDATA", "USERPROFILE", "HOMEDRIVE", "HOMEPATH", "TEMP",
+            "TMP", "USERNAME", "COMPUTERNAME")  # fmt: skip
+    values = {name: os.environ[name] for name in kept if name in os.environ} | extra_env
+    lines = ["@echo off", *(f'set "{name}={value}"' for name, value in values.items()), f'cd /d "{cwd}"']
+    lines.append(" ".join(f'"{part}"' for part in argv) + f' >> "{log}" 2>&1')
+    launcher = log.with_name("driver.cmd")
+    name = f"trypro-{log.parent.name}"
+    cleanup = ['set "trypro_exit=%errorlevel%"', f'schtasks /Delete /TN "{name}" /F >> "{log}" 2>&1',
+               "exit /b %trypro_exit%"]  # fmt: skip
+    launcher.write_text("\r\n".join(lines + cleanup) + "\r\n", encoding="utf-8")
+    command = f'cmd /d /s /c ""{launcher}""'
+    created = False
+    try:
+        # A past one-time trigger will not recur; /Run starts it now without waiting for a clock boundary.
+        subprocess.run(["schtasks", "/Create", "/F", "/SC", "ONCE", "/ST", "00:00", "/TN", name, "/TR", command],
+                       check=True, capture_output=True, timeout=60)  # fmt: skip
+        created = True
+        subprocess.run(["schtasks", "/Run", "/TN", name], check=True, capture_output=True, timeout=60)
+        return
+    except (OSError, subprocess.SubprocessError):
+        if created:
+            with contextlib.suppress(OSError, subprocess.SubprocessError):
+                subprocess.run(["schtasks", "/Delete", "/TN", name, "/F"], check=True,
+                               capture_output=True, timeout=60)  # fmt: skip
+    # Machines that cannot use Task Scheduler keep the former launch, without a task to remove.
+    launcher.write_text("\r\n".join(lines) + "\r\n", encoding="utf-8")
+    wmi_command, wmi_cwd = command.replace("'", "''"), str(cwd).replace("'", "''")
+    script = ("Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments "
+              f"@{{CommandLine='{wmi_command}'; CurrentDirectory='{wmi_cwd}'}} | Out-Null")  # fmt: skip
+    subprocess.run(["powershell", "-NoProfile", "-NonInteractive", "-Command", script], check=True,
+                   capture_output=True, timeout=60)  # fmt: skip
+
+
 class McpService:
     def __init__(
         self,
@@ -117,6 +160,7 @@ class McpService:
         root: Path | None = None,
         runtimes: Any = None,
         agents: Any = None,
+        client: str = "claude-code",
     ) -> None:
         # The company's folder, where org/ is. Its records are usually in .trypro beside it.
         self.root = root or orchestrator.home.parent
@@ -134,6 +178,8 @@ class McpService:
         from ..agent_runner import CLAUDE_CODE, AgentSettings, RuntimePlan
 
         self.runtimes: RuntimePlan = runtimes or RuntimePlan(default=CLAUDE_CODE)
+        # The coordinator's own agent. Only Claude Code starts a role as its subagent; anywhere else, run_step does.
+        self.client = client
         self.agents: AgentSettings = agents or AgentSettings.from_environment()
         self._steps: dict[str, Future[list[Any]]] = {}
         self._steps_lock = threading.Lock()
@@ -198,6 +244,8 @@ class McpService:
             return {
                 "run_id": run_id,
                 "phase": state.phase.value,
+                "early_closure_reason": state.early_closure_reason,
+                "early_closed_by": state.early_closed_by,
                 "goal": state.goal,
                 "tasks": [{"id": t.task_id, "status": t.status.value, "owner": t.owner_role} for t in own],
             }
@@ -205,10 +253,32 @@ class McpService:
         return {
             "run_id": run_id,
             "phase": state.phase.value,
+            "early_closure_reason": state.early_closure_reason,
+            "early_closed_by": state.early_closed_by,
+            "packages": [{"id": p.id, "status": p.status.value} for p in state.packages.values()],
             "goal": state.goal,
             "activated_departments": list(state.activated),
             "tasks": [{"id": t.task_id, "status": t.status.value, "owner": t.owner_role} for t in state.tasks.values()],
-            "tokens_estimated_by_server": state.usage.total,
+            "tokens_estimated_by_server": state.usage.estimated_tool_tokens,
+            "model_usage": {
+                "status": state.usage.model_usage_status,
+                "input_tokens": state.usage.input_tokens,
+                "cached_input_tokens": state.usage.cached_input_tokens,
+                "output_tokens": state.usage.output_tokens,
+                "total_tokens": state.usage.total,
+                "calls": state.usage.calls,
+                "unknown_model_calls": state.usage.unknown_model_calls,
+                "unavailable_records": state.usage.unavailable_records,
+                "unverified_records": state.usage.unverified_records,
+                "unverified_legacy_tokens": state.usage.unverified_legacy_tokens,
+            },
+            "estimated_tool_traffic": {
+                "input_tokens": state.usage.estimated_tool_input_tokens,
+                "output_tokens": state.usage.estimated_tool_output_tokens,
+                "total_tokens": state.usage.estimated_tool_tokens,
+                "calls": state.usage.tool_calls,
+                "source": ESTIMATED_BY_SERVER,
+            },
             "tokens_self_reported": self._self_reported(run_id),
             "counters": state.counters.model_dump(),
             "final": final.payload if final and state.phase.value == "done" else None,
@@ -233,8 +303,56 @@ class McpService:
             if run_id not in {row[0] for row in self.orchestrator.ledger.list_runs()}:
                 raise ToolError(f"There's no run {run_id} to continue. Check the run_id.")
             return {"run_id": run_id, "continued": True, **self.run_next_action(run_id)}
-        run_id, _ = self.orchestrator.start(goal)
+        run_id, _ = self.orchestrator.start(goal, workers=self._workers() if self.coordinator else None)
         return {"run_id": run_id, **self.run_next_action(run_id)}
+
+    def run_in_background(self, goal: str) -> dict[str, Any]:
+        """Start a command, or carry on "continue <run_id>", in a trypro process of its own that drives every step to
+        the end or until a person is needed, waiting out an agent's limits. The chat needn't stay open, and nothing
+        polls it: a hunt round's front desk spent a seventh of the run asking whether steps had finished."""
+        if not self.coordinator:
+            raise ToolError("Only the coordinator starts work in the background.")
+        wanted = _CONTINUE.fullmatch(goal)
+        if wanted:
+            run_id = wanted.group(1)
+            if run_id not in {row[0] for row in self.orchestrator.ledger.list_runs()}:
+                raise ToolError(f"There's no run {run_id} to continue. Check the run_id.")
+        else:
+            run_id, _ = self.orchestrator.start(goal, workers=self._workers())
+        if run_is_driven(self.orchestrator.home, run_id):
+            return {"run_id": run_id, "status": "running", "tell": "It's already going on by itself."}
+        self._drive(run_id)
+        return {
+            "run_id": run_id,
+            "status": "running",
+            "tell": "It goes on by itself; this chat needn't stay open. To see where it is, call run_next_action: "
+            "while it says working, it's still going, so don't call run_step.",
+        }
+
+    def _drive(self, run_id: str) -> None:
+        from .claude_code import _command
+
+        command, prefix = _command()
+        log = self.orchestrator.home / "runs" / run_id / "driver.log"
+        log.parent.mkdir(parents=True, exist_ok=True)
+        # Roles default to the coordinator's agent here; `trypro resume` reads the same from TRYPRO_RUNTIME.
+        env = {**os.environ, "TRYPRO_RUNTIME": self.runtimes.default}
+        argv = [command, *prefix, "resume", run_id]
+        with log.open("ab") as out:
+            out.write(f"{utc_now()} driving {run_id}: {' '.join(argv)}\n".encode())
+            out.flush()
+            if sys.platform != "win32":
+                subprocess.Popen(argv, cwd=self.root, env=env, stdin=subprocess.DEVNULL, stdout=out,
+                                 stderr=subprocess.STDOUT, start_new_session=True)  # fmt: skip
+                return
+        # On Windows, Antigravity ends every process its servers started when its chat ends, out of their job or not:
+        # the run stopped with the chat. Task Scheduler starts it instead, with WMI only as a fallback.
+        _start_outside_job(argv, self.root, {"TRYPRO_RUNTIME": self.runtimes.default, "PYTHONUNBUFFERED": "1"}, log)
+
+    def _workers(self) -> dict[str, str]:
+        from ..agent_runner import workers_for
+
+        return workers_for(self.org, self.runtimes, self.agents)
 
     def run_next_action(self, run_id: str) -> dict[str, Any]:
         actions = self.orchestrator.open_actions(run_id)
@@ -258,23 +376,34 @@ class McpService:
                 "needs_a_person": [
                     {
                         "question": q.question,
+                        "next_reply_role": "human",
                         "options": q.options,
                         "command": f"trypro decide {run_id} {q.request_id} <option>",
                         "tell_the_person": self._how_to_answer(run_id, q),
                     }
                     for q in questions
                 ],
+                "next_reply_role": "human",
             }
         work = [a for a in actions if isinstance(a, InvokeRole)]
+        replies = [{"invocation_id": a.invocation_id, "next_reply_role": a.role} for a in work]
         if self.bound_role:
             work = [a for a in work if a.role == self.bound_role]
-        answer: dict[str, Any] = {"status": "working", "actions": [self._describe(run_id, action) for action in work]}
+        answer: dict[str, Any] = {
+            "status": "working",
+            "actions": [self._describe(run_id, action) for action in work],
+            "next_replies": replies,
+        }
+        if len(replies) == 1:
+            answer["next_reply_role"] = replies[0]["next_reply_role"]
         roles = sorted({action.role for action in work})
         if self.coordinator and len(roles) > 1:
             # Said here, when it matters, because a small model followed the same rule in /company only partly.
             answer["start_together"] = (
                 f"{len(roles)} roles are ready: {', '.join(roles)}. Start all their subagents now, in one message, so "
-                "they work at the same time. One subagent per role."
+                "they work at the same time. Start only the first action for each role in the returned order, "
+                "one fresh subagent per action. Never run two subagents for the same role at once. "
+                "Wait for those subagents to stop, then call run_next_action and use the refreshed actions."
             )
         return answer
 
@@ -326,7 +455,7 @@ class McpService:
         return str(folder / "index.md").replace("\\", "/") if folder and status == "done" else None
 
     def _charge(self, run_id: str, invocation_id: str, role: str, sent: str = "", received: str = "") -> None:
-        """Budgets can't rest on what a client says it spent, so this counts what passed through here."""
+        """Count estimated tool traffic separately: it is not the CLI's model usage."""
         self.orchestrator.handle(
             run_id,
             UsageRecorded(
@@ -344,20 +473,24 @@ class McpService:
         workspace = self._workspace_files(state.run_id)
         loadout = self.orchestrator.skills.loadout(role.ref) if invocation.purpose == Purpose.EXECUTE else []
         computer = self.computer and bool(self.bound_role)
-        return user_prompt(invocation, state, self.org, workspace, loadout, briefing=briefing, computer=computer)
+        return user_prompt(invocation, state, self.org, workspace, loadout, briefing=briefing, computer=computer,
+                           scratch=self.orchestrator.scratch(state.run_id))  # fmt: skip
 
     def _workspace_files(self, run_id: str) -> list[str] | None:
         """Files only a bound role is limited to. An operator's client has its own tools, so this can't speak for it."""
         if not self.bound_role:
             return None
-        root = self.orchestrator.workspace(run_id).resolve()
-        return sorted(str(p.relative_to(root)).replace("\\", "/") for p in root.rglob("*") if p.is_file())
+        from ...core.listing import brief_listing
+
+        return brief_listing(self.orchestrator.workspace(run_id))
 
     def _works_elsewhere(self, role: str) -> str | None:
         """The agent a role works in, when that isn't a subagent of the coordinator's Claude Code."""
-        from ..agent_runner import ANTIGRAVITY, CODEX
+        from ..agent_runner import ANTIGRAVITY, CLAUDE_CODE, CODEX
 
         runtime = self.runtimes.for_role(role)
+        if runtime == CLAUDE_CODE:
+            return None if self.client == CLAUDE_CODE else runtime
         return runtime if runtime in (ANTIGRAVITY, CODEX) else None
 
     def run_step(self, run_id: str, invocation_id: str) -> dict[str, Any]:
@@ -367,6 +500,8 @@ class McpService:
 
         if not self.coordinator:
             raise ToolError("Only the coordinator hands a step to another agent.")
+        if run_is_driven(self.orchestrator.home, run_id):
+            raise ToolError("This run goes on by itself in the background. Call run_next_action to see where it is.")
         with self._steps_lock:
             future = self._steps.get(invocation_id)
             if future is None:
@@ -385,7 +520,9 @@ class McpService:
                 )  # fmt: skip
                 self._steps[invocation_id] = future
         try:
-            events = future.result(timeout=RUN_STEP_WAIT_SECONDS)
+            # Antigravity gives up on a tool call after 3 minutes, so it's told "working" sooner, and calls again.
+            wait = RUN_STEP_WAIT_SECONDS if self.client == "claude-code" else SHORT_RUN_STEP_WAIT_SECONDS
+            events = future.result(timeout=wait)
         except StepStillRunning:
             return {
                 "status": "working",
@@ -413,6 +550,7 @@ class McpService:
             described = {
                 "invocation_id": action.invocation_id,
                 "role": action.role,
+                "next_reply_role": action.role,
                 "purpose": action.purpose.value,
                 "task_id": action.task_id,
             }
@@ -428,11 +566,13 @@ class McpService:
         return {
             "invocation_id": action.invocation_id,
             "role": action.role,
+            "next_reply_role": action.role,
             "purpose": action.purpose.value,
             "output_type": action.output_type,
             "task_id": action.task_id,
             "gate": action.gate,
             "instructions": system_prompt(role, self.org),
+            "environment": {"TRYPRO_RUN_SCRATCH": str(self.orchestrator.scratch(run_id))},
             "assignment": self._assignment(state, invocation),
             "output_schema": submit_spec(action.output_type, declares_flags=declares_flags).input_schema,
             "may_use": usable,
@@ -441,14 +581,29 @@ class McpService:
 
     def _send(self, run_id: str, event: Any, invocation_id: str) -> dict[str, Any]:
         try:
-            self.orchestrator.handle(run_id, event)
+            following = self.orchestrator.handle(run_id, event)
         except IllegalEvent as error:
             return {"accepted": False, "code": error.code, "reason": str(error)}
         reopened = self.orchestrator.state(run_id).invocations.get(invocation_id)
         if isinstance(event, Submission) and reopened is not None and reopened.feedback:
             # Validation failed, and the pipeline kept the work open with the reason.
             return {"accepted": False, "code": "REJECTED", "reason": reopened.feedback[-1]}
-        return {"accepted": True, **self.run_next_action(run_id)}
+        # Bound roles cannot see other roles' assignments. They still need to know who owes the answer after they
+        # escalate, hand off or submit a report, otherwise both sides can wait for the other.
+        replies = [
+            {"invocation_id": action.invocation_id, "next_reply_role": action.role}
+            for action in following
+            if isinstance(action, InvokeRole)
+        ]
+        replies += [
+            {"request_id": action.request_id, "next_reply_role": "human"}
+            for action in following
+            if isinstance(action, AskHuman)
+        ]
+        result = {"accepted": True, **self.run_next_action(run_id), "next_replies": replies}
+        if len(replies) == 1:
+            result["next_reply_role"] = replies[0]["next_reply_role"]
+        return result
 
     def artifact_submit(
         self,
@@ -542,19 +697,27 @@ class McpService:
         return {"recorded": True, "decided_by": by, "next": f"Call run_next_action with run_id {run_id}"}
 
     def person_decide_company_change(self, proposal_id: int, decision: str) -> dict[str, Any]:
-        """Add or reject a role or department the CEO proposed, as the person said."""
+        """Accept or reject an organization change the CEO proposed, as the person said."""
         from ...api import Company, CompanyError
 
         by = self._for_a_person("change who works here")
-        if decision not in ("add", "reject"):
-            raise ToolError("decision is add or reject.")
+        if decision not in ("add", "accept", "reject"):
+            raise ToolError("decision is accept (or add) or reject.")
         company = Company(self.root)
         try:
-            added = company.decide_org_change(proposal_id, decision == "add", by=by)
+            proposal = next((p for p in company.org_proposals() if p.id == proposal_id), None)
+            added = company.decide_org_change(proposal_id, decision != "reject", by=by)
         except CompanyError as error:
             raise ToolError(str(error)) from error
         if added is None:
             return {"rejected": proposal_id, "note": "It won't be proposed again."}
+        if proposal and proposal.change["kind"] in ("retire_role", "merge_role"):
+            return {
+                "applied": proposal.change["kind"],
+                "role": added.ref,
+                "into": proposal.change.get("into", ""),
+                "tell_the_person": "Restart Claude Code so it loads the changed roster from the next command.",
+            }
         return {
             "added": added.ref,
             "title": added.title,
@@ -588,9 +751,10 @@ class McpService:
             raise ToolError(f"#{number} isn't waiting for a decision. company_rules lists what is.")
         if decision == "keep":
             # Saved first: a lesson that couldn't be saved stays waiting, rather than marked kept and lost.
-            self.orchestrator.memory.promote(
-                self.org.root_role, pending[number].text, f"{pending[number].source}, kept by {by}"
-            )
+            for learning in pending[number].evidence:
+                self.orchestrator.memory.promote(
+                    self.org.root_role, learning.text, f"{learning.reference}, kept by {by}"
+                )
         self.orchestrator.company.decide_memory(number, decision == "keep", by=by, at=utc_now())
         return {"kept" if decision == "keep" else "dropped": number}
 

@@ -16,6 +16,10 @@ CREATE TABLE IF NOT EXISTS runs (
     audit_head TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS scratch_allocations (
+    run_id TEXT PRIMARY KEY,
+    path   TEXT NOT NULL
+);
 """
 
 
@@ -38,6 +42,22 @@ class Ledger:
                 (state.run_id, state.model_dump_json(), audit_head, timestamp),
             )
             self._conn.commit()
+
+    def scratch_path(self, run_id: str) -> Path | None:
+        with self._lock:
+            row = self._conn.execute("SELECT path FROM scratch_allocations WHERE run_id = ?", (run_id,)).fetchone()
+        return Path(row[0]) if row is not None else None
+
+    def own_scratch(self, run_id: str, path: Path) -> None:
+        # A correct owner basename in scratch.json once let cancel delete an unallocated parent. Bind the whole path.
+        with self._lock:
+            self._conn.execute(
+                "INSERT OR IGNORE INTO scratch_allocations (run_id, path) VALUES (?, ?)", (run_id, str(path))
+            )
+            self._conn.commit()
+            row = self._conn.execute("SELECT path FROM scratch_allocations WHERE run_id = ?", (run_id,)).fetchone()
+            if row is None or Path(row[0]) != path:
+                raise OSError("scratch allocation belongs to a different path; cleanup refused")
 
     def load(self, run_id: str) -> RunState:
         with self._lock:

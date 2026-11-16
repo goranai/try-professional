@@ -1,6 +1,6 @@
 ---
 playbook: manager
-version: 8
+version: 10
 ---
 
 # Manager playbook
@@ -17,12 +17,13 @@ Break this package into tasks a junior could do from the brief alone. Use the fe
 5. Ask another department only for what your own roles can't do, and say in because what it has that yours doesn't. Never send work back to the department that asked you for it.
 6. Decide any team lessons listed below: adopt_lessons or drop_lessons.
 Don't add work that wasn't asked for, or review tasks: review is automatic.
+Direct clones, virtualenvs and temporary files into the run's scratch folder (TRYPRO_RUN_SCRATCH). Never assign scratch cleanup to a role: the engine owns it.
 
 ## review
 
-Review the artifact against its definition of done and the goal. Don't rely on its evidence: redo every sum, compare each fact with the brief, read all of it for language, count any limit, and on computer work re-run the commands your verdict rests on. List every issue the first time; if your earlier verdict is attached, check its issues are fixed, and add only new major ones. What this workspace can't check, such as how a page prints, passes when marked unverified.
-A specific claim the brief doesn't support and no source backs, such as a number, date, price, or name, is at least major. Ordinary description isn't a claim, and a [placeholder] for a missing fact is right: never send work back for one, or ask for what your other feedback forbids.
-Send back major issues, approve only what you checked, and say what's wrong, where, and what done looks like. If only another role, or facts that don't exist, could fix it, block instead, and say what's needed.
+Review the artifact against its definition of done and the goal. Don't rely on its evidence: redo every sum, compare each fact with the brief, read all of it for language, count any limit, and on computer work re-run the commands your verdict rests on, as it's used, on default settings. List every issue the first time; on a re-review, check the earlier issues are fixed, and add only new major ones. What you can't check here passes when marked unverified.
+A specific claim the brief doesn't support and no source backs, such as a number, date, price, or name, is at least major, as is anything shown only via a mock or internal call. Ordinary description isn't a claim, and a [placeholder] for a missing fact is right: never send work back for one, or ask for what your other feedback forbids.
+Send back major issues, approve only what you checked, and say what's wrong, where, and what done is. If only another role, or facts that don't exist, could fix it, block instead, and say what's needed.
 
 ## escalation
 

@@ -2,6 +2,34 @@
 
 Each version of `try-professional`. `skill-customs` is listed only when it changes.
 
+## 0.7.4 (2026-11-17)
+
+A company opens in any agent, knows which of its roles earn their place, and cleans up after itself. Most of this version was built by our own Try Pro Lab company with every role on GPT-6.1 in Codex, each change reviewed by its QA before ours.
+
+### Added
+
+- **One company, any agent.** `trypro init` and `trypro agents` write and refresh the front desk for Claude Code, Antigravity and Codex together (`CLAUDE.md`, `.agents/`, and a new `AGENTS.md` with `.codex/config.toml`). Open the folder in any of them and the company is there, with your own text in those files kept as it is.
+- **Whom to retire, not only whom to hire.** `trypro org scorecard` shows each role's share of the cost and how often its work changed anything, from the record of every run. The CEO sees it in the retrospective and can propose retiring a role or merging it into another; you decide in `trypro org review`, and nothing is removed on its own. The root and the reviewers that gate work can't be removed.
+- **Each run's own scratch folder.** Clones, virtualenvs and temporary files go in a folder outside the company, named to every role (`TRYPRO_RUN_SCRATCH`), never exported or copied into later runs, and deleted by trypro when the run ends. Cleaning up is no longer a role's task: in our farm, that task once cost more than the hunt.
+- **Outward actions happen once.** A held action that comes back after a crash or a resume is recognised and isn't done again, and an action cut off midway is never reported as done. An escalation, handoff or report names the one role that owes the next answer.
+- **What a step really cost.** Each agent's own token counts, cached ones included, are recorded per step, and the server's estimates of tool traffic are counted apart, so a round no longer looks ten times its size. Counts an agent didn't give are marked unverified rather than guessed.
+- **Lessons learned once.** A lesson close to one the company already has is merged into it, with how often it was learned, and briefs show each lesson once.
+- **Closing early on purpose.** A run whose remaining work is no longer needed can be closed with a reason, and ends done instead of failed.
+- **Background runs you can see.** On Windows, a run continued in the background is a Task Scheduler task named after the run, removed when it ends, instead of a process Windows Update could end unseen. Claude Code's `/company` starts long runs that way and hands each step to a fresh subagent, so the chat stays light.
+
+### Fixed
+
+- Roles in Codex and Antigravity, from a contribution farm run on them for days: a provider that passes a session no tools, loses a session, is busy, or breaks a stream is waited out; a long assignment reaches the role whole; Codex's Ctrl+C no longer stops the run; a step can take three hours; a plan limit days away says so instead of waiting.
+- A person's answer to an escalation reaches the reviewers of that task too.
+- A virtualenv in a run's workspace, under any name, is never copied into the next run, where its long paths stopped it from starting on Windows.
+- Calls through the company's tools aren't counted as model calls when telling a loop from work, and an agent step still counts as one.
+- On Windows, the `gh`/`git` gate is trypro's own launcher, so an argument with `&` survives.
+
+### Known limits
+
+- A background task on Windows runs while you're signed in, as the old start did.
+- On Windows, Codex's `workspace-write` sandbox and Antigravity's `--sandbox` still don't contain a role, so the gate stays trypro's own.
+
 ## 0.7.3 (2026-11-11)
 
 A company's roles can work in Codex and Antigravity as well as Claude Code and trypro's own engine, and they can be mixed, role by role.

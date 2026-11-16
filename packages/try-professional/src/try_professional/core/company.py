@@ -10,16 +10,20 @@ from __future__ import annotations
 import json
 import sqlite3
 import threading
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+import numpy as np
+
+from ..memory.embedding import Embedder, Vectors
+from ..memory.lessons import Learning, closest_lesson
 from ..org import Org
 from .pipeline.base import QA_GATE, TRUST
 from .pipeline.state import FINAL_TASK_ID, PackageStatus, RunPhase, RunState, TaskStatus
 
-FORMAT_VERSION = 4  # 2: organization proposals, in 0.6.4. 3: standing rules, in 0.6.5. 4: QA record, in 0.7.2
+FORMAT_VERSION = 6  # 6: repeated lessons retain each learning event, in 0.7.4
 MAX_LOG_TEXT = 240
 LESSON_KINDS = ("lesson", "team_lesson")
 # A teammate's lesson its head dropped goes to the person, with this before the head's name in its source.
@@ -129,6 +133,30 @@ _MIGRATIONS = [
     );
     CREATE INDEX reviews_role ON reviews (role, at);
     """,
+    """
+    ALTER TABLE commands ADD COLUMN estimated_tool_tokens INTEGER NOT NULL DEFAULT 0;
+    ALTER TABLE commands ADD COLUMN unknown_model_calls INTEGER NOT NULL DEFAULT 0;
+    ALTER TABLE commands ADD COLUMN unavailable_usage_records INTEGER NOT NULL DEFAULT 0;
+    ALTER TABLE commands ADD COLUMN unverified_usage_records INTEGER NOT NULL DEFAULT 0;
+    ALTER TABLE commands ADD COLUMN unverified_legacy_tokens INTEGER NOT NULL DEFAULT 0;
+    ALTER TABLE commands ADD COLUMN model_usage_status TEXT NOT NULL DEFAULT 'unavailable';
+    UPDATE commands SET unverified_legacy_tokens=input_tokens+output_tokens,
+        input_tokens=0, cached_input_tokens=0, output_tokens=0, calls=0, unverified_usage_records=1;
+    """,
+    """
+    ALTER TABLE memory_proposals ADD COLUMN embedding BLOB;
+    ALTER TABLE memory_proposals ADD COLUMN embedding_model TEXT;
+    CREATE TABLE memory_evidence (
+        proposal_id INTEGER NOT NULL REFERENCES memory_proposals(id),
+        source_run TEXT NOT NULL,
+        source TEXT NOT NULL,
+        proposed_by TEXT NOT NULL,
+        text TEXT NOT NULL,
+        at TEXT NOT NULL,
+        UNIQUE (proposal_id, source_run, source, proposed_by, text)
+    );
+    INSERT INTO memory_evidence SELECT id, source_run, source, proposed_by, text, created_at FROM memory_proposals;
+    """,
 ]
 # A company's standing rules reach every role on every step, so together they stay short.
 MAX_RULES_CHARS = 3_000
@@ -150,7 +178,7 @@ class WorkEntry:
 
 @dataclass(frozen=True)
 class OrgProposal:
-    """A role, or a department and its head, that the root role proposed. `change` is the OrgChange as proposed."""
+    """A roster change that the root role proposed. `change` includes its evidence for the person's decision."""
 
     id: int
     change: dict[str, Any]
@@ -163,6 +191,12 @@ class OrgProposal:
         return f"{self.change['department']}/{self.change['role_id']}"
 
     def line(self) -> str:
+        if self.change["kind"] in ("retire_role", "merge_role"):
+            what = f"Retire role {self.ref}"
+            if self.change["kind"] == "merge_role":
+                what = f"Merge role {self.ref} into {self.change['into']}"
+            evidence = "\n   ".join(self.change.get("scorecard_evidence", []))
+            return f"#{self.id} {what}. Because: {_capped(self.change['because'], 200)}\n   {evidence}"
         what = "New department" if self.change["kind"] == "add_department" else "New role"
         head = ", headed by" if self.change["kind"] == "add_department" else ":"
         return (
@@ -181,6 +215,11 @@ class Proposal:
     source: str
     proposed_by: str
     status: str
+    evidence: tuple[Learning, ...] = ()
+
+    @property
+    def learned_count(self) -> int:
+        return len(self.evidence)
 
     def line(self) -> str:
         """How a person sees it: what to remember, and, for a lesson a head dropped, who proposed it and who didn't
@@ -210,6 +249,8 @@ def _task_status(status: TaskStatus, command: str) -> str:
         return "completed"
     if status == TaskStatus.FAILED:
         return "failed"
+    if status == TaskStatus.NOT_NEEDED:
+        return "not_needed"
     if command in ("cancelled", "failed"):
         return "cancelled"
     if status in (TaskStatus.ESCALATED, TaskStatus.WAITING):
@@ -223,7 +264,7 @@ def _entries(state: RunState, org: Org) -> Iterable[WorkEntry]:
     root = org.root_role
 
     def entry(name: str, role: str, kind: str, text: Any) -> WorkEntry:
-        return WorkEntry(f"{run}:{name}", run, role, kind, _capped(text))
+        return WorkEntry(f"{run}:{name}", run, role, kind, _capped(text, 500 if kind in LESSON_KINDS else MAX_LOG_TEXT))
 
     if state.charter_artifact_id:
         yield entry("charter", root, "did", f"Took command: {state.goal}")
@@ -272,9 +313,10 @@ def _reviews(state: RunState) -> Iterable[tuple[str, str, str]]:
 
 
 class CompanyStore:
-    def __init__(self, path: Path) -> None:
+    def __init__(self, path: Path, *, embedder: Embedder | None = None) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
         self.path = path
+        self.embedder = embedder
         self._lock = threading.RLock()
         self._conn = sqlite3.connect(path, check_same_thread=False)
         self._conn.execute("PRAGMA journal_mode=WAL")
@@ -309,11 +351,18 @@ class CompanyStore:
         with self._lock, self._conn:
             self._conn.execute(
                 "INSERT INTO commands (run_id, goal, status, size, created_at, updated_at, input_tokens, "
-                "cached_input_tokens, output_tokens, calls) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+                "cached_input_tokens, output_tokens, calls, estimated_tool_tokens, unknown_model_calls, "
+                "unavailable_usage_records, unverified_usage_records, unverified_legacy_tokens, model_usage_status) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
                 "ON CONFLICT(run_id) DO UPDATE SET status=excluded.status, size=excluded.size, "
                 "updated_at=excluded.updated_at, input_tokens=excluded.input_tokens, "
                 "cached_input_tokens=excluded.cached_input_tokens, output_tokens=excluded.output_tokens, "
-                "calls=excluded.calls",
+                "calls=excluded.calls, estimated_tool_tokens=excluded.estimated_tool_tokens, "
+                "unknown_model_calls=excluded.unknown_model_calls, "
+                "unavailable_usage_records=excluded.unavailable_usage_records, "
+                "unverified_usage_records=excluded.unverified_usage_records, "
+                "unverified_legacy_tokens=excluded.unverified_legacy_tokens, "
+                "model_usage_status=excluded.model_usage_status",
                 (
                     state.run_id,
                     state.goal,
@@ -325,6 +374,12 @@ class CompanyStore:
                     state.usage.cached_input_tokens,
                     state.usage.output_tokens,
                     state.usage.calls,
+                    state.usage.estimated_tool_tokens,
+                    state.usage.unknown_model_calls,
+                    state.usage.unavailable_records,
+                    state.usage.unverified_records,
+                    state.usage.unverified_legacy_tokens,
+                    state.usage.model_usage_status,
                 ),
             )
             self._conn.execute("DELETE FROM tasks WHERE run_id = ?", (state.run_id,))
@@ -373,17 +428,21 @@ class CompanyStore:
             ).fetchall()
         return [int(tokens) // int(tasks) for tokens, tasks in reversed(rows)]
 
-    def trust(self, after: int) -> dict[str, int]:
+    def trust(self, after: int, counts: Callable[[str, str], bool] | None = None) -> dict[str, int]:
         """Roles whose last `after` reviewed hand-ins were all approved, each with how many QA reviews it has skipped
         since its last one. A review that asked for changes ends a role's trust until it has `after` clean ones again.
+        `counts(run_id, role)` says whether a hand-in counts, such as only those of the model doing the role now.
         """
         if after <= 0:
             return {}
         with self._lock:
-            rows = self._conn.execute("SELECT role, outcome FROM reviews ORDER BY at DESC, rowid DESC").fetchall()
+            rows = self._conn.execute(
+                "SELECT run_id, role, outcome FROM reviews ORDER BY at DESC, rowid DESC"
+            ).fetchall()
         newest_first: dict[str, list[str]] = {}
-        for role, outcome in rows:
-            newest_first.setdefault(str(role), []).append(str(outcome))
+        for run_id, role, outcome in rows:
+            if counts is None or counts(str(run_id), str(role)):
+                newest_first.setdefault(str(role), []).append(str(outcome))
         trusted: dict[str, int] = {}
         for role, outcomes in newest_first.items():
             reviewed = [o for o in outcomes if o != "skipped"][:after]
@@ -400,7 +459,7 @@ class CompanyStore:
             if package.origin != "handoff":
                 continue
             source = next((a for a in requests if a.payload.get("request") == package.title), None)
-            if package.status in (PackageStatus.APPROVED, PackageStatus.FAILED):
+            if package.status in (PackageStatus.APPROVED, PackageStatus.FAILED, PackageStatus.NOT_NEEDED):
                 status = package.status.value
             else:
                 status = "cancelled" if command in ("cancelled", "failed") else "open"
@@ -557,17 +616,34 @@ class CompanyStore:
         with self._lock:
             rows = self._conn.execute(
                 "SELECT substr(created_at, 1, 7), COUNT(*), SUM(input_tokens), SUM(cached_input_tokens), "
-                "SUM(output_tokens), SUM(calls) FROM commands GROUP BY 1 ORDER BY 1 DESC"
+                "SUM(output_tokens), SUM(calls), SUM(estimated_tool_tokens), SUM(unknown_model_calls), "
+                "SUM(unavailable_usage_records), SUM(unverified_usage_records), SUM(unverified_legacy_tokens) "
+                "FROM commands GROUP BY 1 ORDER BY 1 DESC"
             ).fetchall()
         return [
-            {"month": r[0], "commands": r[1], "input": r[2], "cached_input": r[3], "output": r[4], "calls": r[5]}
+            {
+                "month": r[0],
+                "commands": r[1],
+                "input": r[2],
+                "cached_input": r[3],
+                "output": r[4],
+                "calls": r[5],
+                "estimated_tool_tokens": r[6],
+                "unknown_model_calls": r[7],
+                "unavailable_usage_records": r[8],
+                "unverified_usage_records": r[9],
+                "unverified_legacy_tokens": r[10],
+                "model_usage_status": "partial" if r[8] or r[9] else ("exact" if r[5] or r[7] else "unavailable"),
+            }
             for r in rows
         ]
 
     def tokens_by_command(self, limit: int = 20) -> list[dict[str, Any]]:
         with self._lock:
             rows = self._conn.execute(
-                "SELECT run_id, goal, size, status, input_tokens, cached_input_tokens, output_tokens, calls "
+                "SELECT run_id, goal, size, status, input_tokens, cached_input_tokens, output_tokens, calls, "
+                "estimated_tool_tokens, unknown_model_calls, unavailable_usage_records, unverified_usage_records, "
+                "unverified_legacy_tokens, model_usage_status "
                 "FROM commands ORDER BY created_at DESC LIMIT ?",
                 (limit,),
             ).fetchall()
@@ -581,6 +657,12 @@ class CompanyStore:
                 "cached_input": r[5],
                 "output": r[6],
                 "calls": r[7],
+                "estimated_tool_tokens": r[8],
+                "unknown_model_calls": r[9],
+                "unavailable_usage_records": r[10],
+                "unverified_usage_records": r[11],
+                "unverified_legacy_tokens": r[12],
+                "model_usage_status": r[13],
             }
             for r in rows
         ]
@@ -590,14 +672,92 @@ class CompanyStore:
     def propose_memory(
         self, tier: str, owner: str, text: str, *, source_run: str, source: str, proposed_by: str, at: str
     ) -> bool:
-        """Repeating a pending or decided proposal does nothing, so a person isn't asked twice. True if it's new."""
+        """A repeated lesson keeps its decision, so the same question doesn't crowd later briefs."""
+        _, added, _ = self.record_memory(
+            tier, owner, text, source_run=source_run, source=source, proposed_by=proposed_by, at=at
+        )
+        return added
+
+    def _proposal(self, row: Any) -> Proposal:
+        evidence = self._conn.execute(
+            "SELECT source_run, source, proposed_by, text, at FROM memory_evidence "
+            "WHERE proposal_id = ? ORDER BY rowid",
+            (row[0],),
+        ).fetchall()
+        return Proposal(
+            row[0],
+            row[1],
+            row[2],
+            row[3],
+            row[4],
+            row[5],
+            row[6],
+            row[7],
+            evidence=tuple(Learning(*item) for item in evidence),
+        )
+
+    def record_memory(
+        self, tier: str, owner: str, text: str, *, source_run: str, source: str, proposed_by: str, at: str
+    ) -> tuple[Proposal, bool, bool]:
+        """Return the canonical proposal, whether it is new, and whether this evidence is new.
+
+        A run can be projected more than once. Evidence identifies the learning event,
+        so replay doesn't count as learning again. Decisions survive a paraphrase.
+        """
+        vector = self.embedder.embed_documents([text])[0] if self.embedder else None
+        model = self.embedder.model_name if self.embedder else None
         with self._lock, self._conn:
+            self._conn.execute("BEGIN IMMEDIATE")
+            rows = self._conn.execute(
+                "SELECT id, tier, owner, text, source_run, source, proposed_by, status, embedding, embedding_model "
+                "FROM memory_proposals WHERE tier = ? AND owner = ? ORDER BY id",
+                (tier, owner),
+            ).fetchall()
+            match = next((i for i, row in enumerate(rows) if row[3] == text), None)
+            if match is None and vector is not None and self.embedder is not None:
+                candidates: list[Vectors] = []
+                for row in rows:
+                    if row[8] is None or row[9] != model:
+                        embedded = self.embedder.embed_documents([row[3]])[0]
+                        self._conn.execute(
+                            "UPDATE memory_proposals SET embedding = ?, embedding_model = ? WHERE id = ?",
+                            (embedded.tobytes(), model, row[0]),
+                        )
+                    else:
+                        embedded = np.frombuffer(row[8], dtype=np.float32)
+                    candidates.append(embedded)
+                match = closest_lesson(vector, candidates, self.embedder.model_name)
+            added = match is None
+            if match is None:
+                cursor = self._conn.execute(
+                    "INSERT INTO memory_proposals (tier, owner, text, source_run, source, proposed_by, status, "
+                    "created_at, embedding, embedding_model) VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?)",
+                    (
+                        tier,
+                        owner,
+                        text,
+                        source_run,
+                        source,
+                        proposed_by,
+                        at,
+                        vector.tobytes() if vector is not None else None,
+                        model,
+                    ),
+                )
+                number = cursor.lastrowid
+            else:
+                number = rows[match][0]
             cursor = self._conn.execute(
-                "INSERT OR IGNORE INTO memory_proposals (tier, owner, text, source_run, source, proposed_by, status, "
-                "created_at) VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)",
-                (tier, owner, text, source_run, source, proposed_by, at),
+                "INSERT OR IGNORE INTO memory_evidence VALUES (?, ?, ?, ?, ?, ?)",
+                (number, source_run, source, proposed_by, text, at),
             )
-        return cursor.rowcount > 0
+            learned = cursor.rowcount > 0
+            row = self._conn.execute(
+                "SELECT id, tier, owner, text, source_run, source, proposed_by, status "
+                "FROM memory_proposals WHERE id = ?",
+                (number,),
+            ).fetchone()
+            return self._proposal(row), added, learned
 
     def pending_memory(self, tier: str, owner: str | None = None, limit: int = 50) -> list[Proposal]:
         query = (
@@ -610,7 +770,7 @@ class CompanyStore:
             args.append(owner)
         with self._lock:
             rows = self._conn.execute(f"{query} ORDER BY id LIMIT ?", (*args, limit)).fetchall()
-        return [Proposal(*row) for row in rows]
+            return [self._proposal(row) for row in rows]
 
     def decide_memory(self, proposal_id: int, accepted: bool, *, by: str, at: str) -> Proposal | None:
         """Compare-and-swap on 'pending', so a proposal can't be applied twice."""
@@ -628,7 +788,7 @@ class CompanyStore:
                 "WHERE id = ?",
                 (proposal_id,),
             ).fetchone()
-        return Proposal(*row)
+            return self._proposal(row)
 
     # ---- standing rules -------------------------------------------------------------
 

@@ -221,7 +221,7 @@ class TestAStoppedCommandSaysWhatToDo:
     def test_it_says_exactly_what_happened(self, make_org: Callable[..., Org], tmp_path: Path) -> None:
         _, message = self._stopped(make_org, tmp_path, True)
         assert "over its limit of 3000" in message
-        assert "by the server's corrected estimate" in message
+        assert "of tool traffic, estimated by the server" in message
         assert "its work so far is saved" in message
         assert "Resuming adds 1500 tokens" in message
 

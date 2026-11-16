@@ -12,7 +12,9 @@ be tracked, and a person or a check decides what happened to it.
 
 from __future__ import annotations
 
+import hashlib
 import json
+import os
 import re
 import sqlite3
 import threading
@@ -22,7 +24,17 @@ from pathlib import Path
 from typing import Any
 
 # by_design: it works as the project means it to. low_impact: real, but not worth acting on.
-OUTCOME_STATUSES = ("open", "accepted", "rejected", "duplicate", "by_design", "low_impact", "ignored")
+OUTCOME_STATUSES = (
+    "open",
+    "accepted",
+    "merged",
+    "posted",
+    "rejected",
+    "duplicate",
+    "by_design",
+    "low_impact",
+    "ignored",
+)
 MAX_TEXT = 300
 RECENT_SHOWN = 8
 _URL = re.compile(r"https?://[^\s\"'<>)\]]+")
@@ -61,7 +73,8 @@ CREATE TABLE IF NOT EXISTS held (
     decided_by TEXT,
     decided_at TEXT,
     output TEXT NOT NULL DEFAULT '',
-    checks TEXT NOT NULL DEFAULT ''
+    checks TEXT NOT NULL DEFAULT '',
+    idempotency_key TEXT NOT NULL DEFAULT ''
 );
 CREATE TABLE IF NOT EXISTS schedules (
     name TEXT PRIMARY KEY,
@@ -122,6 +135,8 @@ def _line(item: Outcome) -> str:
 
 _LESSONS = {
     "accepted": "It was accepted. What led to it worked: keep doing it that way.",
+    "merged": "It was merged. What led to it worked: keep doing it that way.",
+    "posted": "It was posted. The work reached its audience.",
     "rejected": (
         "It was turned down. Before the next one, make sure it's wanted: their own rules, what they already plan, and "
         "whether it's worth their time."
@@ -205,6 +220,18 @@ class Held:
     output: str
     # What code found before a person decides, such as issues that may already report the same thing.
     checks: str = ""
+    idempotency_key: str = ""
+
+
+def held_approval_message(held_id: int, execution: Held | None, *, ran: bool = False) -> str:
+    """Terminal and chat approvals must describe the same durable claim, including a lost approval race."""
+    if execution is None:
+        return "It had already been decided; completion is unverified. Nothing was repeated."
+    if execution.status == "approved":
+        message = f"Ran #{held_id}." if ran else f"#{held_id} was already done as #{execution.id}."
+    else:
+        message = f"#{held_id} was already started as #{execution.id}; completion is unverified. It won't run again."
+    return f"{message}\n{execution.output}".strip()
 
 
 @dataclass(frozen=True)
@@ -220,7 +247,16 @@ class Schedule:
 _OUTCOME_COLUMNS = (
     "id, ref, target, run_id, role, credited, kind, title, created_at, status, note, checked_at, seen_replies"
 )
-_HELD_COLUMNS = "id, run_id, role, command, workspace, created_at, status, decided_by, output, checks"
+_HELD_COLUMNS = "id, run_id, role, command, workspace, created_at, status, decided_by, output, checks, idempotency_key"
+
+
+def _held_key(command: str, workspace: Path) -> str:
+    """A resumed proposal must reuse the same command in the same place, regardless of its run or role.
+
+    Keep shell text exact: collapsing whitespace or changing quotes can change the payload being sent.
+    """
+    content = json.dumps([os.path.normcase(str(workspace.resolve())), command], ensure_ascii=False)
+    return hashlib.sha256(content.encode("utf-8")).hexdigest()
 
 
 def _outcome(row: Any) -> Outcome:
@@ -237,6 +273,26 @@ class OutsideStore:
         self._conn = sqlite3.connect(path, check_same_thread=False)
         self._conn.execute("PRAGMA journal_mode=WAL")
         self._conn.executescript(_SCHEMA)
+        with self._conn:
+            self._conn.execute("BEGIN IMMEDIATE")
+            columns = {row[1] for row in self._conn.execute("PRAGMA table_info(held)")}
+            if "idempotency_key" not in columns:
+                self._conn.execute("ALTER TABLE held ADD COLUMN idempotency_key TEXT NOT NULL DEFAULT ''")
+            for held_id, command, workspace in self._conn.execute(
+                "SELECT id, command, workspace FROM held WHERE idempotency_key = ''"
+            ).fetchall():
+                self._conn.execute(
+                    "UPDATE held SET idempotency_key = ? WHERE id = ?",
+                    (_held_key(command, Path(workspace)), held_id),
+                )
+            # QA reproduced killed shells and failed launches being saved as completed by older code.
+            for held_id, output in self._conn.execute(
+                "SELECT id, output FROM held WHERE status = 'approved'"
+            ).fetchall():
+                if output.partition("\n")[0] != "exit code 0":
+                    self._conn.execute("UPDATE held SET status = 'running' WHERE id = ?", (held_id,))
+            # Older stores may already contain duplicates. Preserve their ids and decisions for the person's record.
+            self._conn.execute("CREATE INDEX IF NOT EXISTS held_key ON held(idempotency_key)")
 
     def close(self) -> None:
         with self._lock:
@@ -357,16 +413,21 @@ class OutsideStore:
     # ---- commands held for a person ---------------------------------------------
 
     def hold(self, *, run_id: str, role: str, command: str, workspace: Path, at: str, checks: str = "") -> int:
+        key = _held_key(command, workspace)
         with self._lock, self._conn:
+            # Serialize lookup and insertion across separate role servers, not just threads in this store.
+            self._conn.execute("BEGIN IMMEDIATE")
             existing = self._conn.execute(
-                "SELECT id FROM held WHERE run_id = ? AND command = ? AND status = 'waiting'", (run_id, command)
+                "SELECT id FROM held WHERE idempotency_key = ? AND status IN ('waiting', 'running', 'approved') "
+                "ORDER BY CASE status WHEN 'approved' THEN 0 WHEN 'running' THEN 1 ELSE 2 END, id LIMIT 1",
+                (key,),
             ).fetchone()
             if existing:
                 return int(existing[0])
             cursor = self._conn.execute(
-                "INSERT INTO held (run_id, role, command, workspace, created_at, status, checks) "
-                "VALUES (?, ?, ?, ?, ?, 'waiting', ?)",
-                (run_id, role, command, str(workspace), at, checks[:2000]),
+                "INSERT INTO held (run_id, role, command, workspace, created_at, status, checks, idempotency_key) "
+                "VALUES (?, ?, ?, ?, ?, 'waiting', ?, ?)",
+                (run_id, role, command, str(workspace.resolve()), at, checks[:2000], key),
             )
             return int(cursor.lastrowid or 0)
 
@@ -376,6 +437,11 @@ class OutsideStore:
         if status:
             query += " WHERE status = ?"
             args.append(status)
+            if status == "waiting":
+                query += (
+                    " AND NOT EXISTS (SELECT 1 FROM held AS prior WHERE prior.idempotency_key = held.idempotency_key "
+                    "AND prior.status IN ('running', 'approved'))"
+                )
         with self._lock:
             rows = self._conn.execute(f"{query} ORDER BY id", args).fetchall()
         return [Held(*row) for row in rows]
@@ -386,18 +452,40 @@ class OutsideStore:
         return Held(*row) if row else None
 
     def decide_held(self, held_id: int, status: str, *, by: str, at: str, output: str = "") -> bool:
-        """Compare-and-swap on 'waiting', so a command can't run twice."""
+        """Claim a key before executing, including duplicates left by an older store."""
         with self._lock, self._conn:
             cursor = self._conn.execute(
                 "UPDATE held SET status = ?, decided_by = ?, decided_at = ?, output = ? "
-                "WHERE id = ? AND status = 'waiting'",
-                (status, by, at, output[-4000:], held_id),
+                "WHERE id = ? AND status = 'waiting' AND (? = 'denied' OR NOT EXISTS "
+                "(SELECT 1 FROM held AS prior WHERE prior.idempotency_key = held.idempotency_key "
+                "AND prior.status IN ('running', 'approved')))",
+                (status, by, at, output[-4000:], held_id, status),
             )
             return bool(cursor.rowcount)
 
-    def finish_held(self, held_id: int, output: str) -> None:
+    def held_execution(self, held_id: int) -> Held | None:
+        """The durable execution claim for this action, even if an older store gave a duplicate another id."""
+        with self._lock:
+            row = self._conn.execute(
+                f"SELECT {_HELD_COLUMNS} FROM held WHERE idempotency_key = "
+                "(SELECT idempotency_key FROM held WHERE id = ?) AND status IN ('running', 'approved') "
+                "ORDER BY CASE status WHEN 'approved' THEN 0 ELSE 1 END, id LIMIT 1",
+                (held_id,),
+            ).fetchone()
+        return Held(*row) if row else None
+
+    def finish_held(self, held_id: int, output: str) -> bool:
+        """QA's killed-shell reproduction returned text; only a successful exit verifies completion."""
+        head = output.partition("\n")[0]
+        completed = head == "exit code 0"
+        if len(output) > 4000:
+            output = f"{head[:500]}\n{output[-3500:]}"
         with self._lock, self._conn:
-            self._conn.execute("UPDATE held SET output = ? WHERE id = ?", (output[-4000:], held_id))
+            self._conn.execute(
+                "UPDATE held SET status = ?, output = ? WHERE id = ? AND status = 'running'",
+                ("approved" if completed else "running", output, held_id),
+            )
+        return completed
 
     # ---- schedules --------------------------------------------------------------
 

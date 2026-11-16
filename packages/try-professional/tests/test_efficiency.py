@@ -89,7 +89,7 @@ class TestNoPassingWorkAround:
 class TestRolesWorkAtTheSameTime:
     def test_claude_code_starts_every_ready_role_at_once(self) -> None:
         assert "start all of them at once, in one message" in _COMMAND
-        assert "one at a time" not in _COMMAND
+        assert "Never run two subagents for the same role at once" in _COMMAND
 
     def test_the_coordinator_is_told_when_several_roles_are_ready(self, org: Org, harness: Callable[..., Any]) -> None:
         """Haiku followed the rule in /company only partly, so the server says it at the moment it matters."""
@@ -110,7 +110,35 @@ class TestRolesWorkAtTheSameTime:
         assert "2 roles are ready" in answer["start_together"]
         assert "Start all their subagents now, in one message" in answer["start_together"]
         run.orchestrator.open_actions = ready("sales/proposal-writer", "sales/proposal-writer")  # type: ignore[method-assign]
-        assert "start_together" not in coordinator.run_next_action(run_id), "one role, two steps: one subagent"
+        assert "start_together" not in coordinator.run_next_action(run_id), "only different roles start together"
+
+    def test_a_mixed_batch_sequences_same_role_actions_while_other_roles_start_together(
+        self, org: Org, harness: Callable[..., Any], monkeypatch: Any
+    ) -> None:
+        from try_professional.adapters.mcp import McpService
+        from try_professional.core.pipeline import InvokeRole
+
+        run = harness(org)
+        run_id, _ = run.orchestrator.start("Goal")
+        ready = [
+            InvokeRole(invocation_id="action1", role="engineering/backend", purpose=Purpose.EXECUTE, output_type="x"),
+            InvokeRole(invocation_id="action2", role="engineering/backend", purpose=Purpose.EXECUTE, output_type="x"),
+            InvokeRole(
+                invocation_id="action3", role="marketing/content-writer", purpose=Purpose.EXECUTE, output_type="x"
+            ),
+        ]
+        monkeypatch.setattr(run.orchestrator, "open_actions", lambda _: ready)
+        answer = McpService(run.orchestrator, coordinator=True).run_next_action(run_id)
+        assert [a["invocation_id"] for a in answer["actions"]] == ["action1", "action2", "action3"]
+        instruction = answer["start_together"]
+        assert "2 roles are ready" in instruction
+        assert "Start all their subagents now, in one message" in instruction
+        assert "Start only the first action for each role in the returned order" in instruction
+        assert "one fresh subagent per action" in instruction
+        assert "Never run two subagents for the same role at once" in instruction
+        assert "Wait for those subagents to stop, then call run_next_action" in instruction
+        assert "use the refreshed actions" in instruction
+        assert "One subagent per role" not in instruction
 
 
 class TestEveryRunSaysWhatItCost:

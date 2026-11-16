@@ -91,6 +91,9 @@ class ChatResponse:
     cached_input_tokens: int = 0
     model: str = ""
     detail: str = ""
+    raw_input_tokens: int | None = None
+    cache_creation_input_tokens: int = 0
+    input_tokens_includes_cache: bool | None = None
 
 
 class ChatClient(Protocol):
@@ -196,15 +199,23 @@ class AnthropicClient:
 
         stop = {"end_turn": "end", "tool_use": "tool_use", "max_tokens": "max_tokens", "refusal": "refusal"}
         stop_details = getattr(response, "stop_details", None)
+        # The 2026-11-16 scorecard review found cache reads reversing the cost ranking.
+        # Anthropic's prompt-caching docs exclude reads and writes from input_tokens:
+        # https://platform.claude.com/docs/en/build-with-claude/prompt-caching
+        cached = getattr(response.usage, "cache_read_input_tokens", 0) or 0
+        created = getattr(response.usage, "cache_creation_input_tokens", 0) or 0
         return ChatResponse(
             text="".join(text_parts),
             tool_calls=calls,
             stop_reason=stop.get(response.stop_reason or "", "other"),
             # The whole content list goes back unchanged, which keeps thinking blocks valid.
             assistant_message={"role": "assistant", "content": response.content},
-            input_tokens=response.usage.input_tokens,
+            input_tokens=response.usage.input_tokens + cached + created,
             output_tokens=response.usage.output_tokens,
-            cached_input_tokens=getattr(response.usage, "cache_read_input_tokens", 0) or 0,
+            cached_input_tokens=cached,
+            raw_input_tokens=response.usage.input_tokens,
+            cache_creation_input_tokens=created,
+            input_tokens_includes_cache=True,
             model=response.model,
             detail=str(getattr(stop_details, "category", "") or "") if response.stop_reason == "refusal" else "",
         )
@@ -410,6 +421,8 @@ class OpenAICompatibleClient:
             )
         stop = {"stop": "end", "tool_calls": "tool_use", "length": "max_tokens", "content_filter": "refusal"}
         usage = data.get("usage") or {}
+        # Chat Completions reports cached tokens as a subset of prompt_tokens.
+        # Adding them again would reverse the scorecard error found on 2026-11-16.
         return ChatResponse(
             text=message.get("content") or "",
             tool_calls=calls,
@@ -418,5 +431,7 @@ class OpenAICompatibleClient:
             input_tokens=usage.get("prompt_tokens", 0),
             output_tokens=usage.get("completion_tokens", 0),
             cached_input_tokens=_cached_tokens(usage),
+            raw_input_tokens=usage.get("prompt_tokens", 0),
+            input_tokens_includes_cache=True,
             model=data.get("model", request.model),
         )

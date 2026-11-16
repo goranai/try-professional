@@ -83,9 +83,12 @@ def _run(company: Orchestrator, reply: Callable[..., Any]) -> tuple[Any, BadMode
     return ApiRunner(company, client, ROUTES, max_turns=8).run("Write a launch note"), client
 
 
-def _limit_tokens(company: Orchestrator, run_id: str, limit: int) -> None:
+def _limit_tokens(company: Orchestrator, run_id: str, limit: int, *, tool_traffic: bool = False) -> None:
     state = company.state(run_id)
-    state.budget_override = limit
+    if tool_traffic:
+        state.tool_budget_override = limit
+    else:
+        state.budget_override = limit
     company.ledger.save(state, company._log(run_id).head, company.clock())
 
 
@@ -688,17 +691,19 @@ class TestOverMcp:
         service = McpService(company)
         invocation_id = next(iter(company.state(run_id).invocations))
         service.usage_report(run_id, invocation_id, 0, 0)
-        before = company.state(run_id).usage.total
+        before = company.state(run_id).usage.estimated_tool_tokens
         state = company.state(run_id)
         payload = default_payload(state.invocations[invocation_id], state, company.org)
         service.artifact_submit(run_id, invocation_id, payload)
         status = service.run_status(run_id)
-        assert company.state(run_id).usage.total > before, "the server counted what passed through it"
+        assert company.state(run_id).usage.estimated_tool_tokens > before, "the server counted what passed through it"
         assert status["tokens_self_reported"] == 0
+        assert status["model_usage"]["total_tokens"] == 0
+        assert status["model_usage"]["status"] == "unavailable"
 
     def test_a_token_limit_applies_whatever_the_client_reports(self, company: Orchestrator, org: Org) -> None:
         run_id, _ = company.start("Goal")
-        _limit_tokens(company, run_id, 1)
+        _limit_tokens(company, run_id, 1, tool_traffic=True)
         service = McpService(company)
         invocation_id = next(iter(company.state(run_id).invocations))
         state = company.state(run_id)
@@ -736,3 +741,17 @@ class TestSharedState:
         assert one.verify_audit(run_id).ok, one.verify_audit(run_id).problem
         one.close()
         two.close()
+
+
+def test_a_file_named_by_its_path_in_the_repository_is_found(tmp_path: Path) -> None:
+    """A role on Gemini named its files by their path in the repository, was refused twice with no hint, and then read
+    the engine's code to see why. The refusal now says where each file is."""
+    from try_professional.core.orchestrator import _with_where_it_is
+
+    target = tmp_path / "work" / "repo" / "packages" / "a" / "tools.py"
+    target.parent.mkdir(parents=True)
+    target.write_text("x", encoding="utf-8")
+    said = _with_where_it_is(tmp_path, "packages/a/tools.py")
+    assert "it's at work/repo/packages/a/tools.py" in said
+    assert _with_where_it_is(tmp_path, "packages/b/other.py") == "packages/b/other.py"
+    assert _with_where_it_is(tmp_path, "../outside.py") == "../outside.py"

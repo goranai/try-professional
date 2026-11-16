@@ -12,14 +12,16 @@ from ..artifacts import (
     parse_payload,
 )
 from .base import MAX_AMENDMENTS, MAX_WORK_PACKAGES, IllegalEvent, _check_actor
-from .budget import _token_limit
+from .budget import _token_limit, _tool_token_limit
 from .planning import _add_package, _find_cycle
 from .state import (
+    FINAL_TASK_ID,
     MAX_ASSIGNMENTS,
     EscalationRaised,
     HumanDecided,
     Invocation,
     InvocationFailed,
+    PackageStatus,
     RunPhase,
 )
 
@@ -54,6 +56,29 @@ def _on_resolution(
 ) -> None:
     state, org = step.state, step.org
     origin_id = invocation.origin_invocation_id or ""
+    if parsed.decision == "close_early":
+        if invocation.role != org.root_role:
+            step.reject(invocation, "Only the root role can close the run early. Use escalate_further.")
+            return
+        if not parsed.guidance.strip():
+            step.reject(
+                invocation, "close_early needs a reason in guidance explaining why remaining work is not needed."
+            )
+            return
+        if (
+            not state.packages
+            or FINAL_TASK_ID in state.tasks
+            or any(p.status == PackageStatus.FAILED for p in state.packages.values())
+            or not any(p.status != PackageStatus.APPROVED for p in state.packages.values())
+        ):
+            step.reject(
+                invocation, "close_early applies to unfinished work packages before final delivery, not failures."
+            )
+            return
+        artifact()
+        close()
+        step.close_early(parsed.guidance, invocation.role)
+        return
     if parsed.decision == "amend_plan":
         if invocation.role != org.root_role:
             step.reject(invocation, "Only the root role can amend the plan. Use escalate_further.")
@@ -158,6 +183,12 @@ def _on_human(step: _Step, event: HumanDecided) -> None:
         return
 
     if request.kind == "escalation" and request.invocation_id:
+        # Kept on the task as well: a person allowed an exception, the scout used it, and the task's reviewer, who saw
+        # only the brief, found no authorization and sent the work back to the person again.
+        origin = state.suspended.get(request.invocation_id)
+        task = state.tasks.get(origin.task_id or "") if origin is not None else None
+        if task is not None and event.note.strip():
+            task.person_decisions.append(f"{event.decided_by}: {event.note.strip()}")
         step.resume_origin(request.invocation_id, event.note)
     elif request.kind == "gate_unavailable" and request.task_id and request.gate:
         task = state.tasks[request.task_id]
@@ -165,7 +196,15 @@ def _on_human(step: _Step, event: HumanDecided) -> None:
         step.next_gate(task)
     elif request.kind == "budget":
         # With no amount, half a limit more. Otherwise the very next token would stop it again. It can stop again after.
-        state.budget_override = event.new_token_budget or state.usage.total + (_token_limit(state, step.org) or 0) // 2
+        if request.usage_is_tool_traffic or state.usage.estimated:
+            state.tool_budget_override = (
+                event.new_token_budget
+                or state.usage.estimated_tool_tokens + (_tool_token_limit(state, step.org) or 0) // 2
+            )
+        else:
+            state.budget_override = (
+                event.new_token_budget or state.usage.total + (_token_limit(state, step.org) or 0) // 2
+            )
     elif request.kind == "runaway":
         state.assignment_limit = state.counters.assignments + MAX_ASSIGNMENTS
 

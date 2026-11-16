@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 from typing import Any
 
 from ... import playbooks
@@ -10,6 +11,7 @@ from ...core.artifacts import WORK_OUTPUT_TYPES as TASK_OUTPUTS
 from ...core.brief import Briefing
 from ...core.pipeline import Purpose, RunState
 from ...core.pipeline.state import Invocation
+from ...core.scratch import scratch_instructions
 from ...org import Org, Role
 
 _RULES = """You work in a strict hierarchy. You report to {escalation}.
@@ -152,6 +154,7 @@ def user_prompt(
     search: bool = False,
     briefing: Briefing | None = None,
     computer: bool = False,
+    scratch: Path | None = None,
 ) -> str:
     """`computer`: roles that work or check work have a shell and the web, so the prompt mustn't say otherwise."""
     briefing = briefing or Briefing()
@@ -162,7 +165,10 @@ def user_prompt(
         if briefing.brief.state:
             parts.append(_section("Your stand-up", untrusted("work-state", briefing.brief.state)))
     parts.append(_section("Your assignment", playbooks.section(level, invocation.purpose.value)))
+    parts.append(_section("Reply ownership", f"Next reply: {invocation.role}."))
     parts.append(_section("Goal", state.goal))
+    if scratch is not None:
+        parts.append(_section("Run scratch", scratch_instructions(scratch)))
     if briefing.rules:
         rules = "\n".join(f"- {rule}" for rule in briefing.rules)
         parts.append(_section("The company's standing rules, from the person who runs it. They always apply", rules))
@@ -223,6 +229,9 @@ def user_prompt(
         task = state.tasks[invocation.task_id]
         if task.memory_context:
             parts.append(_section("Relevant memory", untrusted("memory", "\n".join(task.memory_context))))
+        if task.person_decisions:
+            decided = "\n".join(f"- {d}" for d in task.person_decisions)
+            parts.append(_section("Decided by a person for this task, and binding on it", decided))
     if invocation.feedback:
         parts.append(_section("Feedback to address", "\n".join(f"- {f}" for f in invocation.feedback)))
     if invocation.purpose == Purpose.DISPATCH and invocation.work_package_id:

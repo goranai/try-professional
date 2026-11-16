@@ -205,7 +205,7 @@ class Conversation:
     def _outside(self, name: str, args: list[str]) -> Reply:
         """Approvals, outcomes, and schedules. Someone in this conversation is the person the company works for."""
         from .adapters.api_runner.tools import execute
-        from .core.outside import describe_every
+        from .core.outside import describe_every, held_approval_message
 
         orchestrator = self.company._orchestrator()
         try:
@@ -233,13 +233,17 @@ class Conversation:
                 return Reply(f"Which one? {name} <number>. /held lists them.")
             number = int(args[0].lstrip("#"))
             held = outside.held_item(number)
+            prior = outside.held_execution(number)
+            if name == "/approve" and prior is not None:
+                return Reply(held_approval_message(number, prior))
             if held is None or held.status != "waiting":
                 return Reply(f"#{number} isn't waiting for approval.")
             if name == "/deny":
                 orchestrator.deny_held(number, by=self.person)
                 return Reply(f"Refused #{number}. It won't run.")
             done = orchestrator.run_held(number, execute, by=self.person)
-            return Reply(f"Ran #{number}.\n{done.output[-1500:] if done else ''}".strip())
+            execution = done or outside.held_execution(number)
+            return Reply(held_approval_message(number, execution, ran=done is not None))
         finally:
             orchestrator.close()
 

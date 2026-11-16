@@ -83,6 +83,34 @@ class StateLock:
         self._thread.release()
 
 
+def _run_lock_path(home: Path, run_id: str) -> Path:
+    return home / "runs" / run_id / "driver.lock"
+
+
+@contextmanager
+def run_lock(home: Path, run_id: str) -> Iterator[bool]:
+    """Yields whether this process drives the run, its steps taken by nobody else meanwhile. Never waits."""
+    path = _run_lock_path(home, run_id)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    descriptor = os.open(path, os.O_RDWR | os.O_CREAT)
+    held = _try_lock(descriptor)
+    try:
+        yield held
+    finally:
+        if held:
+            _unlock(descriptor)
+        os.close(descriptor)
+
+
+def run_is_driven(home: Path, run_id: str) -> bool:
+    """Whether another process is driving the run now, such as `trypro resume` started in the background."""
+    path = _run_lock_path(home, run_id)
+    if not path.is_file():
+        return False
+    with run_lock(home, run_id) as held:
+        return not held
+
+
 @contextmanager
 def command_lock(home: Path) -> Iterator[bool]:
     """Yields whether this process holds the company. Never waits."""

@@ -92,7 +92,7 @@ def judge(kind: str, data: dict[str, Any], said: str = "") -> tuple[str, str]:
     labels = _labels(data)
     label_text = " ".join(labels)
     if kind == "pull" and (state == "MERGED" or data.get("mergedAt")):
-        return "accepted", "merged"
+        return "merged", "merged"
     if state != "CLOSED":
         return "open", ""
     if reason == "DUPLICATE" or "duplicate" in labels:

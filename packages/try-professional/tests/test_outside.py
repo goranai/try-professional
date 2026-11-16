@@ -50,7 +50,7 @@ class Remembering(NullMemory):
     def __init__(self) -> None:
         self.notes: list[tuple[str, str]] = []
 
-    def write(self, role: str, text: str) -> None:
+    def write(self, role: str, text: str, *, source: str = "") -> None:
         self.notes.append((role, text))
 
 
@@ -287,7 +287,7 @@ class TestChecking:
             ("issue", {"state": "CLOSED", "stateReason": "DUPLICATE"}, "duplicate"),
             ("issue", {"state": "CLOSED", "stateReason": "COMPLETED", "labels": [{"name": "invalid"}]}, "rejected"),
             ("issue", {"state": "CLOSED", "labels": [{"name": "duplicate"}]}, "duplicate"),
-            ("pull", {"state": "MERGED"}, "accepted"),
+            ("pull", {"state": "MERGED"}, "merged"),
             ("pull", {"state": "CLOSED"}, "rejected"),
             ("issue", {"state": "OPEN"}, "open"),
         ],

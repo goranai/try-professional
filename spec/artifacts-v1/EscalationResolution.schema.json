@@ -126,7 +126,8 @@
         "resume",
         "abandon",
         "escalate_further",
-        "amend_plan"
+        "amend_plan",
+        "close_early"
       ],
       "title": "Decision",
       "type": "string"

@@ -45,17 +45,19 @@ class Flags(_Strict):
         return [name for name, value in self.model_dump().items() if value]
 
 
-# A role or department the root role finds the company lacks. A person decides, and nothing changes until then. No
+# A roster change the root role proposes from evidence. A person decides, and nothing changes until then. No
 # docstring: it would be sent in the schema of every intake.
 class OrgChange(_Strict):
-    kind: Literal["add_role", "add_department"]
-    department: str = Field(min_length=1, description="add_role: an existing one. add_department: the new id")
-    role_id: str = Field(min_length=1, description="The new role's id. add_department: its head")
-    title: str = NonEmpty
-    mission: str = NonEmpty
+    kind: Literal["add_role", "add_department", "retire_role", "merge_role"]
+    department: str = Field(min_length=1, description="An existing department, or the new id for add_department")
+    role_id: str = Field(min_length=1, description="The affected role's id. add_department: its head")
+    title: str = ""
+    mission: str = ""
     responsibilities: list[str] = []
     skill_needs: list[str] = []
-    because: str = Field(min_length=1, description="The evidence no current role covers it")
+    because: str = Field(min_length=1, description="The evidence that warrants this roster change")
+    into: str = Field("", description="merge_role: the existing department/role that takes over")
+    scorecard_evidence: list[str] = Field(default_factory=list, description="Retirement or merger: cite audit evidence")
 
     @model_validator(mode="after")
     def _ids(self) -> OrgChange:
@@ -63,6 +65,12 @@ class OrgChange(_Strict):
         for name in ("department", "role_id"):
             slug = re.sub(r"[^a-z0-9]+", "-", getattr(self, name).split("/")[-1].lower()).strip("-")
             object.__setattr__(self, name, slug or getattr(self, name))
+        if self.kind in ("add_role", "add_department") and (not self.title or not self.mission):
+            raise ValueError("An addition needs title and mission")
+        if self.kind in ("retire_role", "merge_role") and not self.scorecard_evidence:
+            raise ValueError("Retirement or merger needs scorecard_evidence from the audit")
+        if self.kind == "merge_role" and not self.into:
+            raise ValueError("merge_role needs into, an existing department/role")
         return self
 
 
@@ -294,7 +302,7 @@ class Escalation(_Strict):
 
 
 class EscalationResolution(_Strict):
-    decision: Literal["resume", "abandon", "escalate_further", "amend_plan"]
+    decision: Literal["resume", "abandon", "escalate_further", "amend_plan", "close_early"]
     guidance: str = ""
     activate_departments: list[DepartmentActivation] = []
     added_work_packages: list[WorkPackage] = []

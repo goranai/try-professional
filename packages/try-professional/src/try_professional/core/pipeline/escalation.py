@@ -8,6 +8,7 @@ from .state import (
     Invocation,
     PackageStatus,
     Purpose,
+    RunPhase,
     TaskStatus,
 )
 
@@ -98,3 +99,23 @@ class StepEscalation(StepCore):
             return
         self.state.packages[task.work_package_id].status = PackageStatus.FAILED
         self.fail_run(f"Task {task.task_id} abandoned: {reason}")
+
+    def close_early(self, reason: str, decided_by: str) -> None:
+        """A zero-finding round ended correctly but abandonment failed it and stopped the next round.
+
+        Keep the approved work; unfinished work is unnecessary, and delivery and learning still follow.
+        """
+        state = self.state
+        state.early_closure_reason = reason
+        state.early_closed_by = decided_by
+        for package in state.packages.values():
+            if package.status != PackageStatus.APPROVED:
+                package.status = PackageStatus.NOT_NEEDED
+                package.resumes_invocation_id = None
+        for task in state.tasks.values():
+            if task.status != TaskStatus.APPROVED:
+                task.status = TaskStatus.NOT_NEEDED
+        state.invocations.clear()
+        state.suspended.clear()
+        state.human_requests.clear()
+        state.phase = RunPhase.EXECUTION

@@ -178,3 +178,29 @@ class TestTrend:
         assert "Tokens per task over the last 2 finished commands" in capsys.readouterr().out
         finished = McpService(run.orchestrator, coordinator=True).run_next_action(result.run_id)
         assert finished["cost_per_task"].startswith("Tokens per task over the last 2")
+
+
+class TestWhoEarnedIt:
+    """Trust earned on one model was lent to another: a company moved its roles to Gemini, and a hunter skipped its
+    review on the strength of five clean hand-ins Claude had made."""
+
+    def test_only_the_same_workers_hand_ins_count(self, tmp_path: Path) -> None:
+        store = TestRecord()._store(tmp_path, ["clean"] * 5)
+        assert store.trust(5, lambda run_id, role: False) == {}
+        assert store.trust(5, lambda run_id, role: True) == {ROLE: 0}
+
+    def test_a_run_records_who_did_each_role_and_trust_follows_it(
+        self, org: Org, harness: Callable[..., Any], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        run = harness(org)
+        claude = {ref: "claude-code:sonnet" for ref in org.roles}
+        gemini = {ref: "antigravity:gemini-3.8-flash-high" for ref in org.roles}
+        started = run.orchestrator.start
+        monkeypatch.setattr(run.orchestrator, "start", lambda goal, run_id=None: started(goal, run_id, claude))
+        for _ in range(org.pipeline.trust_after + 1):
+            assert run.runner.run("Goal").status == "done"
+        same, _ = started("Goal", None, claude)
+        moved, _ = started("Goal", None, gemini)
+        assert run.orchestrator.state(same).trust, "the same model keeps the trust it earned"
+        assert not run.orchestrator.state(moved).trust, "another model starts without a record"
+        assert (run.orchestrator.home / "workers.jsonl").is_file()

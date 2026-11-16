@@ -364,9 +364,9 @@ class TestAStoppedCommand:
 
     def test_resuming_with_no_amount_adds_half_a_limit(self, make_org: Callable[..., Org], tmp_path: Path) -> None:
         service, run_id, stopped = self._stopped(make_org, tmp_path)
-        total = service.orchestrator.state(run_id).usage.total
+        total = service.orchestrator.state(run_id).usage.estimated_tool_tokens
         self._answer(service, run_id, stopped)
-        assert service.orchestrator.state(run_id).budget_override == total + 4500
+        assert service.orchestrator.state(run_id).tool_budget_override == total + 4500
 
     def test_the_next_step_doesnt_stop_it_again(self, make_org: Callable[..., Org], tmp_path: Path) -> None:
         service, run_id, stopped = self._stopped(make_org, tmp_path)
@@ -386,12 +386,12 @@ class TestAStoppedCommand:
             current = self._step(service, run_id, current)
         assert current["status"] == "blocked"
         state = service.orchestrator.state(run_id)
-        assert state.budget_override is not None and state.usage.total > state.budget_override
+        assert state.tool_budget_override is not None and state.usage.estimated_tool_tokens > state.tool_budget_override
 
     def test_a_named_amount_still_wins(self, make_org: Callable[..., Org], tmp_path: Path) -> None:
         service, run_id, stopped = self._stopped(make_org, tmp_path)
         self._answer(service, run_id, stopped, 99_000)
-        assert service.orchestrator.state(run_id).budget_override == 99_000
+        assert service.orchestrator.state(run_id).tool_budget_override == 99_000
 
     def test_the_settings_keep_a_person_s_decisions_from_a_session(self, org: Org, tmp_path: Path) -> None:
         """Deny rules hold even when someone runs Claude Code with every permission on."""
@@ -481,7 +481,8 @@ class TestWhatAPersonGetsBack:
         _, _, done = self._finished(orchestrator)
         index = Path(done["deliverables"]).read_text(encoding="utf-8")
         assert "estimated by the server" in index
-        assert "model calls" not in index
+        assert "Model tokens (unavailable): 0" in index
+        assert "separate from model usage" in index
 
     def test_a_final_review_is_given_the_work_it_signs_off(self, org: Org, tmp_path: Path) -> None:
         """A real legal review said it could read only the CEO's summary, and approved on that."""

@@ -146,5 +146,6 @@ class ScriptedClient:
             assistant_message={"role": "assistant", "content": arguments},
             input_tokens=len(str(request.messages[0])) // 4,
             output_tokens=size // 4,
+            input_tokens_includes_cache=True,
             model="scripted",
         )

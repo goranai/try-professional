@@ -2,12 +2,17 @@
 
 from __future__ import annotations
 
+import json
 import sqlite3
 import threading
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Protocol
 
+import numpy as np
+
+from .embedding import FastEmbedEmbedder, Vectors
+from .lessons import closest_lesson
 from .settings import (
     MemorySettings,
     apply_to_environment,
@@ -65,6 +70,7 @@ class MnemosyneBackend:
         check_model_unchanged(settings)
         verify_mnemosyne_is_local(settings)
         share_the_model(settings)
+        self.embedder = FastEmbedEmbedder(settings.embedding_model, settings.cache_dir)
         self._local = threading.local()
 
     def _bank(self, bank: str) -> Any:
@@ -81,7 +87,57 @@ class MnemosyneBackend:
         return bank_size(self.settings.data_dir, bank)
 
     def remember(self, bank: str, text: str, *, source: str) -> None:
-        self._bank(bank).remember(text, source=source, scope="global", importance=0.5)
+        from mnemosyne.core.filters import admit_memory_write
+        from mnemosyne.core.memory import _deferred_commits
+
+        if not admit_memory_write(text)[0]:
+            return
+        memory = self._bank(bank)
+        vector = self.embedder.embed_documents([text])[0]
+        # Recall mixes lexical and dense ranking. Compare stored document vectors
+        # directly instead, so a crowded recall page cannot hide the closest lesson.
+        # Mnemosyne also commits internally. Its transaction scope keeps the
+        # candidate read and either write atomic across threads and processes.
+        with _deferred_commits(memory.conn, immediate=True):
+            rows = memory.conn.execute(
+                "SELECT w.id, w.content, w.source, w.metadata_json, e.embedding_json, e.model, 'working_memory' "
+                "FROM working_memory w LEFT JOIN memory_embeddings e ON e.memory_id = w.id "
+                "WHERE w.scope = 'global' AND w.superseded_by IS NULL "
+                "UNION ALL "
+                "SELECT w.id, w.content, w.source, w.metadata_json, e.embedding_json, e.model, 'episodic_memory' "
+                "FROM episodic_memory w LEFT JOIN memory_embeddings e ON e.memory_id = w.id "
+                "WHERE w.scope = 'global' AND w.superseded_by IS NULL ORDER BY id"
+            ).fetchall()
+            match = next((i for i, row in enumerate(rows) if row[1] == text), None)
+            if match is None:
+                candidates: list[Vectors] = []
+                for row in rows:
+                    if row[4] is not None and row[5] == self.embedder.model_name:
+                        embedded = np.asarray(json.loads(row[4]), dtype=np.float32)
+                    else:
+                        embedded = self.embedder.embed_documents([row[1]])[0]
+                    # Mnemosyne's stored vectors need not already be normalized.
+                    norm = np.linalg.norm(embedded)
+                    candidates.append(np.asarray(embedded / norm if norm else embedded, dtype=np.float32))
+                match = closest_lesson(vector, candidates, self.embedder.model_name)
+            evidence = {"text": text, "source": source}
+            if match is None:
+                metadata = {"trypro_lesson": {"learned_count": 1, "evidence": [evidence]}}
+            else:
+                row = rows[match]
+                metadata = json.loads(row[3] or "{}")
+                lesson = metadata.setdefault(
+                    "trypro_lesson", {"learned_count": 1, "evidence": [{"text": row[1], "source": row[2]}]}
+                )
+                lesson["learned_count"] += 1
+                lesson["evidence"].append(evidence)
+                encoded = json.dumps(metadata)
+                memory.conn.execute(f"UPDATE {row[6]} SET metadata_json = ? WHERE id = ?", (encoded, row[0]))
+                memory.conn.execute("UPDATE memories SET metadata_json = ? WHERE id = ?", (encoded, row[0]))
+                return
+            # The merge only updates evidence, never the canonical words, their
+            # vector, or the original source. New memories use Mnemosyne's facade.
+            memory.remember(text, source=source, scope="global", importance=0.5, metadata=metadata)
 
     def recall(self, bank: str, query: str, top_k: int) -> list[MemoryHit]:
         hits = self._bank(bank).recall(query, top_k=top_k)

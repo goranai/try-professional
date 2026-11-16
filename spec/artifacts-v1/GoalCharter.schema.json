@@ -4,27 +4,35 @@
       "additionalProperties": false,
       "properties": {
         "because": {
-          "description": "The evidence no current role covers it",
+          "description": "The evidence that warrants this roster change",
           "minLength": 1,
           "title": "Because",
           "type": "string"
         },
         "department": {
-          "description": "add_role: an existing one. add_department: the new id",
+          "description": "An existing department, or the new id for add_department",
           "minLength": 1,
           "title": "Department",
+          "type": "string"
+        },
+        "into": {
+          "default": "",
+          "description": "merge_role: the existing department/role that takes over",
+          "title": "Into",
           "type": "string"
         },
         "kind": {
           "enum": [
             "add_role",
-            "add_department"
+            "add_department",
+            "retire_role",
+            "merge_role"
           ],
           "title": "Kind",
           "type": "string"
         },
         "mission": {
-          "minLength": 1,
+          "default": "",
           "title": "Mission",
           "type": "string"
         },
@@ -37,10 +45,18 @@
           "type": "array"
         },
         "role_id": {
-          "description": "The new role's id. add_department: its head",
+          "description": "The affected role's id. add_department: its head",
           "minLength": 1,
           "title": "Role Id",
           "type": "string"
+        },
+        "scorecard_evidence": {
+          "description": "Retirement or merger: cite audit evidence",
+          "items": {
+            "type": "string"
+          },
+          "title": "Scorecard Evidence",
+          "type": "array"
         },
         "skill_needs": {
           "default": [],
@@ -51,7 +67,7 @@
           "type": "array"
         },
         "title": {
-          "minLength": 1,
+          "default": "",
           "title": "Title",
           "type": "string"
         }
@@ -60,8 +76,6 @@
         "kind",
         "department",
         "role_id",
-        "title",
-        "mission",
         "because"
       ],
       "title": "OrgChange",

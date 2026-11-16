@@ -16,6 +16,8 @@ from collections.abc import Callable
 
 from ..org import Org
 from .backend import MemoryBackend, MemoryHit
+from .embedding import Embedder, Vectors
+from .lessons import LESSON_SIMILARITY, closest_lesson
 
 COMPANY_BANK = "company"
 DEFAULT_TOP_K = 7
@@ -76,6 +78,11 @@ class MemoryGateway:
         self.floor = floor
         self.top_k = top_k
 
+    @property
+    def embedder(self) -> Embedder | None:
+        embedder: Embedder | None = getattr(self.backend, "embedder", None)
+        return embedder
+
     def _department_of(self, role: str) -> str:
         if not self.org.has_role(role):
             raise MemoryAccessDenied(f"'{role}' is not a role in this company")
@@ -89,17 +96,44 @@ class MemoryGateway:
         hits.sort(key=lambda h: h.dense_score, reverse=True)
         return hits[:limit]
 
-    def search(self, role: str, query: str) -> list[MemoryHit]:
-        """Best matches, with a limit per tier. The floor lets a query honestly find nothing."""
+    def _grouped_hits(self, role: str, query: str) -> list[list[MemoryHit]]:
         limits = (PERSONAL_HITS, DEPARTMENT_HITS, COMPANY_HITS)
         hits: list[MemoryHit] = []
         for bank, limit in zip(self.readable_banks(role), limits, strict=True):
             hits += self._from_bank(bank, query, limit)
         hits.sort(key=lambda h: h.dense_score, reverse=True)
-        return hits[: self.top_k]
+
+        # QA's 0.7.4 assignment repeated one merged lesson from all three readable
+        # tiers. Group only these hits, before the overall limit, so provenance
+        # survives and a duplicate cannot take a distinct lesson's place.
+        texts = list(dict.fromkeys(hit.text for hit in hits))
+        vectors: dict[str, Vectors] = {}
+        embedder = self.embedder
+        if embedder is not None and embedder.model_name in LESSON_SIMILARITY and len(texts) > 1:
+            vectors = dict(zip(texts, embedder.embed_documents(texts), strict=True))
+        groups: list[list[MemoryHit]] = []
+        canonical_vectors: list[Vectors] = []
+        for hit in hits:
+            match = next((i for i, group in enumerate(groups) if any(h.text == hit.text for h in group)), None)
+            if match is None and vectors and embedder is not None:
+                match = closest_lesson(vectors[hit.text], canonical_vectors, embedder.model_name)
+            if match is None:
+                groups.append([hit])
+                if vectors:
+                    canonical_vectors.append(vectors[hit.text])
+            else:
+                groups[match].append(hit)
+        return groups[: self.top_k]
+
+    def search(self, role: str, query: str) -> list[MemoryHit]:
+        """Best distinct matches within each tier's limit. Below the floor, find nothing."""
+        return [group[0] for group in self._grouped_hits(role, query)]
 
     def recall(self, role: str, query: str) -> list[str]:
-        return [f"[{_label(hit.bank)}] {hit.text[:MAX_HIT_CHARS]}" for hit in self.search(role, query)]
+        return [
+            f"[{', '.join(dict.fromkeys(_label(hit.bank) for hit in group))}] {group[0].text[:MAX_HIT_CHARS]}"
+            for group in self._grouped_hits(role, query)
+        ]
 
     def recall_personal(self, role: str, query: str) -> list[str]:
         self._department_of(role)
@@ -113,17 +147,21 @@ class MemoryGateway:
             raise MemoryAccessDenied(f"memory text is over {MAX_TEXT_CHARS} characters. Save something shorter.")
         return cleaned
 
-    def write(self, role: str, text: str) -> None:
+    def write(self, role: str, text: str, *, source: str = "") -> None:
         """Always the role's own personal memory. There is no way to name another bank."""
         self._department_of(role)
-        self.backend.remember(personal_bank(role), self._check_text(text), source=role)
+        self.backend.remember(
+            personal_bank(role), self._check_text(text), source=f"{role} from {source}" if source else role
+        )
 
-    def write_department(self, role: str, text: str) -> None:
+    def write_department(self, role: str, text: str, *, source: str = "") -> None:
         """Only a department's head curates its memory, and only its own department's."""
         department = self._department_of(role)
         if not self.org.is_head(role):
             raise MemoryAccessDenied(f"Only the head of {department} can change its memory, not {role}.")
-        self.backend.remember(department_bank(department), self._check_text(text), source=role)
+        self.backend.remember(
+            department_bank(department), self._check_text(text), source=f"{role} from {source}" if source else role
+        )
 
     def promote(self, role: str, text: str, source: str) -> None:
         """Write an approved change to company memory. No agent tool reaches this."""

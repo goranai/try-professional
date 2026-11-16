@@ -96,12 +96,15 @@ class TestApprovingAfterSetup:
         assert (folder / ".claude" / "commands" / "company.md").is_file()
         assert "/company" in output
 
-    def test_without_setup_nothing_extra_is_written(
+    def test_approval_without_prior_setup_writes_every_front_desk(
         self, folder: Path, monkeypatch: pytest.MonkeyPatch, capsys: Any
     ) -> None:
         output = self._approve(folder, monkeypatch, capsys)
-        assert not (folder / ".claude").exists()
-        assert "trypro agents claude-code" in output
+        assert (folder / ".claude/commands/company.md").is_file()
+        assert (folder / ".agents/rules/trypro-front-desk.md").is_file()
+        assert (folder / "AGENTS.md").is_file()
+        assert (folder / ".codex/config.toml").is_file()
+        assert "Claude Code, Antigravity, and Codex" in output
 
     def test_approval_still_needs_a_person(self, folder: Path, monkeypatch: pytest.MonkeyPatch, capsys: Any) -> None:
         setup_claude_code(folder, lambda text: None, _added)

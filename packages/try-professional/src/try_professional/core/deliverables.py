@@ -9,13 +9,33 @@ from __future__ import annotations
 import json
 import re
 import shutil
+from collections.abc import Collection
 from pathlib import Path
 from typing import Any
 
-from .pipeline.state import RunState
+from .pipeline.state import PackageStatus, RunState, TaskStatus
+from .scratch import files_under
 
 _UNSAFE = re.compile(r"[^A-Za-z0-9._-]+")
 _INPUTS = "inputs"
+
+# What a machine makes for itself: never exported, never copied into a run. A role kept a virtualenv in its workspace
+# under its own name ("venvs/llama_index"); exported and copied into the next run, its paths passed Windows' 260
+# characters and the next run failed to start.
+MADE_BY_A_MACHINE = frozenset({".trypro-scratch", ".venv", "venv", "node_modules", "__pycache__", ".pytest_cache",
+                               ".mypy_cache", ".ruff_cache", ".tox", ".DS_Store", "site-packages",
+                               "dist-packages"})  # fmt: skip
+
+
+def environments(root: Path) -> set[Path]:
+    """Python environments under root, whatever they're called: each has a pyvenv.cfg."""
+    return {found.parent.relative_to(root) for found in files_under(root) if found.name == "pyvenv.cfg"}
+
+
+def made_by_a_machine(relative: Path, found_environments: Collection[Path] = ()) -> bool:
+    return any(part in MADE_BY_A_MACHINE for part in relative.parts) or any(
+        relative.is_relative_to(environment) for environment in found_environments
+    )
 
 
 def read_sources(path: Path) -> dict[str, str]:
@@ -88,7 +108,7 @@ def export_deliverables(state: RunState, workspace: Path, target: Path, retrieve
     for task in state.tasks.values():
         artifact = state.artifacts.get(task.result_artifact_id or "")
         # The final deliverable is what the index itself reports.
-        if artifact is None or artifact.type == "FinalDeliverable":
+        if artifact is None or artifact.type == "FinalDeliverable" or task.status == TaskStatus.NOT_NEEDED:
             continue
         name = _UNSAFE.sub("-", f"{task.owner_role.replace('/', '-')}-{task.task_id}") + ".md"
         body = [f"# {task.title}", "", f"By {task.owner_role}. Status: {task.status.value}.", ""]
@@ -99,8 +119,11 @@ def export_deliverables(state: RunState, workspace: Path, target: Path, retrieve
 
     copied = []
     root = workspace.resolve()
-    for path in sorted(root.rglob("*")):
+    found = environments(root)
+    for path in sorted(files_under(root)):
         relative = path.relative_to(root)
+        if made_by_a_machine(relative, found):
+            continue
         if path.is_file() and not path.is_symlink() and relative.parts[0] != _INPUTS:
             destination = target / "files" / relative
             destination.parent.mkdir(parents=True, exist_ok=True)
@@ -109,6 +132,12 @@ def export_deliverables(state: RunState, workspace: Path, target: Path, retrieve
 
     final = state.artifacts.get(state.final_artifact_id or "")
     lines = ["# Deliverables", "", f"Goal: {state.goal}", f"Run: {state.run_id}", ""]
+    if state.early_closure_reason:
+        lines += [f"Closed early by {state.early_closed_by}: {state.early_closure_reason}", ""]
+        lines += [
+            f"- {p.id} ({p.title}): not_needed" for p in state.packages.values() if p.status == PackageStatus.NOT_NEEDED
+        ]
+        lines.append("")
     if final is not None:
         lines += [final.payload["summary_in_user_language"], "", "## Success criteria"]
         lines += [f"- [{'x' if c['met'] else ' '}] {c['criterion']}" for c in final.payload["criteria_results"]]
@@ -133,14 +162,7 @@ def export_deliverables(state: RunState, workspace: Path, target: Path, retrieve
         lines += ["## What reviewers noted", "", *notes, ""]
     lines += ["## What this run retrieved", ""]
     lines += [f"- {source}{f' ({day})' if day else ''}" for source, day in sorted(retrieved.items())] or ["- Nothing."]
-    if state.usage.estimated:
-        lines += [
-            "",
-            f"Tokens: about {state.usage.total}, estimated by the server from what passed through it, and corrected "
-            "for what clients were measured to spend. Your client's own count is the one billed.",
-        ]
-    else:
-        lines += ["", f"Tokens: {state.usage.total} total, in {state.usage.calls} model calls."]
+    lines += ["", *state.usage.lines()]
     index = target / "index.md"
     index.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
     return index
@@ -165,7 +187,11 @@ def stop_reason(state: RunState) -> str:
     if state.human_requests:
         request = next(iter(state.human_requests.values()))
         at = _STOPPED_AT.get(request.kind, "a question for a person")
-        return f"{at}, at {state.usage.total:,} tokens" if request.kind in ("budget", "stuck") else at
+        if request.kind in ("budget", "stuck"):
+            total = state.usage.estimated_tool_tokens if request.usage_is_tool_traffic else state.usage.total
+            kind = "estimated tool tokens" if request.usage_is_tool_traffic else "model tokens"
+            return f"{at}, at {total:,} {kind}"
+        return at
     return "a failure" if state.failure_reason else "a stop"
 
 
@@ -222,6 +248,7 @@ def export_drafts(state: RunState, workspace: Path, target: Path, retrieved: dic
     if copied:
         lines += ["## Files roles wrote", ""]
         lines += [f"- [files/{name}](files/{name})" for name in copied]
+    lines += ["", *state.usage.lines()]
     index = target / "index.md"
     index.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
     return index
@@ -243,7 +270,7 @@ def _copy_workspace(workspace: Path, target: Path) -> list[str]:
     root = workspace.resolve()
     if not root.is_dir():
         return copied
-    for path in sorted(root.rglob("*")):
+    for path in sorted(files_under(root)):
         relative = path.relative_to(root)
         if path.is_file() and not path.is_symlink() and relative.parts[0] != _INPUTS:
             destination = target / "files" / relative

@@ -14,9 +14,9 @@ class MemoryPort(Protocol):
 
     def recall_personal(self, role: str, query: str) -> list[str]: ...
 
-    def write(self, role: str, text: str) -> None: ...
+    def write(self, role: str, text: str, *, source: str = "") -> None: ...
 
-    def write_department(self, role: str, text: str) -> None: ...
+    def write_department(self, role: str, text: str, *, source: str = "") -> None: ...
 
     def promote(self, role: str, text: str, source: str) -> None: ...
 
@@ -66,10 +66,10 @@ class NullMemory:
     def recall_personal(self, role: str, query: str) -> list[str]:
         return []
 
-    def write(self, role: str, text: str) -> None:
+    def write(self, role: str, text: str, *, source: str = "") -> None:
         return None
 
-    def write_department(self, role: str, text: str) -> None:
+    def write_department(self, role: str, text: str, *, source: str = "") -> None:
         return None
 
     def promote(self, role: str, text: str, source: str) -> None:

@@ -15,6 +15,7 @@ from try_professional.adapters.api_runner.runner import ApiRunner, ModelRoutes
 from try_professional.adapters.api_runner.scripted import LABEL
 from try_professional.adapters.api_runner.tools import ToolContext, ToolRefused, run_tool, tools_for
 from try_professional.adapters.base import RuntimeAdapter
+from try_professional.core.audit import read_records
 from try_professional.core.orchestrator import Orchestrator
 from try_professional.core.pipeline import Purpose
 from try_professional.core.ports import NullMemory, NullSkills
@@ -37,6 +38,31 @@ def _first_invocation(org: Org, tmp_path: Path, client: Any) -> tuple[list[Any],
 
 
 class TestAdapter:
+    @pytest.mark.parametrize("raw_input,cache_writes", [(10, 10), (990, 0)])
+    def test_normalized_input_and_provider_cache_counts_survive_in_the_audit(
+        self, org: Org, tmp_path: Path, raw_input: int, cache_writes: int
+    ) -> None:
+        response = _submit()
+        response.input_tokens = 990
+        response.output_tokens = 10
+        response.raw_input_tokens = raw_input
+        response.cached_input_tokens = 980 - cache_writes
+        response.cache_creation_input_tokens = cache_writes
+        response.input_tokens_includes_cache = True
+        _, orchestrator, run_id = _first_invocation(org, tmp_path, SequenceClient([response]))
+        try:
+            records = read_records(orchestrator.audit_path(run_id))
+            [usage] = [r["data"] for r in records if r["data"].get("kind") == "usage_recorded"]
+            assert usage["input_tokens"] == 990 and usage["output_tokens"] == 10
+            assert usage["raw_input_tokens"] == raw_input
+            assert usage["cached_input_tokens"] == 980 - cache_writes
+            assert usage["cache_creation_input_tokens"] == cache_writes
+            assert usage["input_tokens_includes_cache"] is True
+            assert orchestrator.role_scorecard().roles[org.root_role].tokens == 1000
+            assert orchestrator.role_scorecard().problems == []
+        finally:
+            orchestrator.close()
+
     def test_smoke(self, org: Org, harness: Callable[..., Any]) -> None:
         run = harness(org)
         assert isinstance(run.runner, RuntimeAdapter)

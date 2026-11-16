@@ -1,5 +1,11 @@
 # Try Professional
 
+Each run has an engine-owned scratch folder outside its workspace for clones, virtualenvs and temporary files.
+Roles receive its path in their prompt and as `TRYPRO_RUN_SCRATCH` in step environments. Scratch is never listed,
+exported or copied into later runs. The engine deletes it when the run completes, fails or is cancelled and records
+the outcome in the audit. Set `keep_run_scratch: true` in `trypro.yaml` to keep it for inspection; retention is
+also audited and does not include scratch in transfers. Cleanup is never a role's task.
+
 [![PyPI](https://img.shields.io/pypi/v/try-professional)](https://pypi.org/project/try-professional/)
 [![CI](https://github.com/goranai/try-professional/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/goranai/try-professional/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/github/license/goranai/try-professional)](LICENSE)
@@ -187,8 +193,10 @@ trypro outcomes add "<link or reference>" --run <id> --role <role> --target "<cl
 
 A company starts with the roles you approved. When its work shows one is missing, the CEO proposes it, and you decide: in Claude Code, it asks you at the end of the command. Nothing changes until you do. From a terminal, `trypro org proposals` lists them, and `trypro org review` decides them.
 
+`trypro org scorecard` shows each role's share of recorded tokens and its contribution across runs: accepted work, reviews followed by changed work, merged or posted outcomes, approvals and identical repeated hand-ins. The CEO sees this in its retrospective and can propose retiring a role or merging it into another role in the same department. Each proposal keeps the measured evidence for you to decide with `trypro org review`. The root and gate reviewers cannot be removed; earned trust reduces review work while keeping spot checks. A scorecard measures recorded activity, not whether every claim was true, and an unobserved role is not grounds for retirement. Record an outcome as `merged` or `posted` with `trypro outcome set` when that is what happened.
+
 - **When it proposes:** at intake, when part of a command fits no role, and at the end of any command that was sent back, escalated, or handed between departments, and of every large one. It sees every department, and the record: work sent back and why, departments left with no work across recent commands, and work put out by a person by hand. It proposes only on that evidence, never for one-off work, and never a role that exists. An idle department isn't a missing role: if it should have worked, that's a lesson about planning instead.
-- **What it can propose:** a role in the department whose work it is, or a new department with its role as the head, when no department fits. A new department's work passes the same review as the others'.
+- **What it can propose:** add a role in the department whose work it is, add a new department with its role as the head when no department fits, or retire or merge an existing role with scorecard evidence. A new department's work passes the same review as the others'. Root and gate roles remain protected.
 - **When you add one,** it's checked like any role, and undone if it would break the company. In Claude Code, the roles are rewritten, and each keeps the model you gave it. A rejected one is never proposed again.
 - **A command that names another department's role, such as "confirmed by the validator", is planned for both departments,** even when the CEO sized it for one. A real company's CEO sized six hunts that way, and its Validator never ran.
 

@@ -201,3 +201,81 @@ class TestClaudeCodeFiles:
         text = (tmp_path / ".claude" / "commands" / "company.md").read_text(encoding="utf-8")
         assert "Never choose for me" in text and "known_limits" in text
         assert "When I've answered in my own words, record it with person_answer" in text
+
+    def test_each_action_gets_a_fresh_subagent_even_for_the_same_role(self, tmp_path: Path, org: Any) -> None:
+        write_claude_code_files(tmp_path, org)
+        text = " ".join((tmp_path / ".claude/commands/company.md").read_text(encoding="utf-8").split())
+        assert "For each action, start a fresh subagent" in text
+        assert "Never resume or reuse a subagent, even when the next action has the same role" in text
+        assert "Give it only the run_id" in text
+        assert "start all of them at once, in one message" in text
+        assert "one fresh subagent per action" in text
+
+    def test_same_role_actions_wait_for_a_fresh_agent_and_select_the_first_open_assignment(
+        self, tmp_path: Path, org: Any
+    ) -> None:
+        write_claude_code_files(tmp_path, org)
+        text = " ".join((tmp_path / ".claude/commands/company.md").read_text(encoding="utf-8").split())
+        assert "start only the first action for each role in the returned order" in text
+        assert "Never run two subagents for the same role at once" in text
+        assert "Wait for those subagents to stop, then call run_next_action" in text
+        assert "use the refreshed actions" in text
+        prompt = " ".join(role_agent(tmp_path, org, org.role("engineering/backend")).split())
+        assert "If it returns several actions for your role, do only the first action in the returned order" in prompt
+        assert "Submit or escalate that one assignment, then stop" in prompt
+
+    def test_upgrading_an_unmarked_command_replaces_old_polling_and_keeps_personal_notes(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr("try_professional.cli.FastEmbedEmbedder", FakeEmbedder)
+        assert main(["init", "--skip-model", "--dir", str(tmp_path)]) == 0
+        path = tmp_path / ".claude/commands/company.md"
+        historical = (Path(__file__).parent / "fixtures/claude-company-before-subagents.md").read_text(encoding="utf-8")
+        note = "\n\nMy note: keep the weekly report short.\n"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(historical.rstrip() + note, encoding="utf-8")
+        monkeypatch.chdir(tmp_path)
+        assert main(["agents", "claude-code"]) == 0
+        text = path.read_text(encoding="utf-8")
+        assert text.count("Run this through the company: $ARGUMENTS") == 1
+        assert "Call run_step with its run_id" not in text
+        assert "one subagent per role" not in text
+        assert "For each action, start a fresh subagent" in text
+        assert "run_in_background" in text
+        assert text.endswith(note)
+
+    def test_long_runs_start_and_resume_in_the_background_without_chat_polling(self, tmp_path: Path, org: Any) -> None:
+        write_claude_code_files(tmp_path, org)
+        text = " ".join((tmp_path / ".claude/commands/company.md").read_text(encoding="utf-8").split())
+        assert "For a long run, call your coordinator's run_in_background with the command as written" in text
+        assert '"continue <run_id>" to carry a run on' in text
+        assert "Tell me its run_id and that it's running, then return" in text
+        assert "Only when I ask how it's going, call run_next_action" in text
+        assert "Never start subagents or call run_step for a background run" in text
+        assert 'resume a background run with run_in_background and "continue <run_id>"' in text
+
+    def test_external_actions_keep_run_step_calls_in_fresh_coordinator_subagents(
+        self, tmp_path: Path, org: Any
+    ) -> None:
+        write_claude_code_files(tmp_path, org)
+        text = " ".join((tmp_path / ".claude/commands/company.md").read_text(encoding="utf-8").split())
+        assert "start a fresh coordinator subagent with your trypro tools" in text
+        assert "Give it only the run_id and invocation_id" in text
+        assert "call run_step until it no longer says working" in text
+        assert "Keep those run_step calls in that subagent" in text
+
+    def test_person_decisions_and_posting_still_wait_for_the_person(self, tmp_path: Path, org: Any) -> None:
+        write_claude_code_files(tmp_path, org)
+        text = " ".join((tmp_path / ".claude/commands/company.md").read_text(encoding="utf-8").split())
+        assert "show me each question under needs_a_person, word for word, with its options" in text
+        assert "Never choose for me" in text
+        assert "When I've answered in my own words, record it with person_answer" in text
+        assert "company_changes (add this role? record with person_decide_company_change)" in text
+        assert "company_memory (keep this for the whole company? record with person_decide_memory)" in text
+        assert "Only record what I said" in text
+        assert "Posting, sending, or opening anything outside waits for my approval" in text
+        settings = json.loads((tmp_path / ".claude/settings.json").read_text(encoding="utf-8"))
+        assert f"mcp__{SERVER}__person_*" in settings["permissions"]["ask"]
+        assert f"mcp__{ROLE_SERVER}__person_*" in settings["permissions"]["deny"]
+        rules = (tmp_path / "CLAUDE.md").read_text(encoding="utf-8")
+        assert "record it afterwards with outcome_record, naming the role" in rules

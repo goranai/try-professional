@@ -41,7 +41,17 @@ spec.loader.exec_module(measure_prompts)
 # what didn't go smoothly, and may propose roles and departments (+2326). A real company's six hunts went to one
 # department, its Validator never ran once, and its reviewer sent the same work back for that check until a person
 # stopped the run. The retrospective runs once per large or troubled command.
-TOTAL_CHAR_BUDGET = 42600
+# Raised on 2026-11-15 to 47000 for the 0.7.4 audit scorecard and reduction proposal schema: 46815 characters
+# measured with eight skills by scripts/measure_prompts.py. The supplied feature brief reports about 29% of lab
+# cost in review and rework; showing cost and contribution lets the person decide whether roles still earn it.
+# This is an offline prompt regression allowance, not a runtime token limit.
+# Raised for run scratch paths and instructions: the regression tests measured 47853 characters without skills
+# and 50554 with eight skills after scratch was isolated outside the test company home. Earlier long test paths
+# measured 50715. This small allowance covers path variation; it remains an offline check, not a runtime limit.
+# Raised again for the 0.7.4 review, which put back the CEO's plain retrospective guidance (be specific, leave out what
+# one team alone needs) that had been cut to fit: 48419 characters measured in the repository folder, 51036 under
+# pytest-xdist's longer temporary paths.
+TOTAL_CHAR_BUDGET = 51500
 
 
 def test_a_minimal_run_stays_within_its_prompt_budget() -> None:

@@ -11,7 +11,6 @@ from ..artifacts import (
     Artifact,
     DepartmentActivation,
     GoalCharter,
-    OrgChange,
     Plan,
     TaskBrief,
     TaskPlan,
@@ -20,6 +19,7 @@ from ..artifacts import (
     make_artifact,
 )
 from ..gates import deterministic_flags
+from ..org_changes import org_change_problem as org_change_problem
 from .base import MAX_TASKS_PER_PACKAGE, MAX_WORK_PACKAGES, TERMINAL_PHASES, IllegalEvent, _not_done, _same_words
 from .review import StepReview
 from .state import (
@@ -143,12 +143,16 @@ class StepPlanning(StepReview):
             return
         if state.invocations or state.suspended:
             return
-        if all(p.status == PackageStatus.APPROVED for p in state.packages.values()):
+        if all(p.status in (PackageStatus.APPROVED, PackageStatus.NOT_NEEDED) for p in state.packages.values()):
             if self.assemble_one_role_final():
                 return
             root = self.org.root_role
             refs = [state.charter_artifact_id or ""]
-            refs += [t.result_artifact_id for t in state.tasks.values() if t.result_artifact_id]
+            refs += [
+                t.result_artifact_id
+                for t in state.tasks.values()
+                if t.result_artifact_id and t.status == TaskStatus.APPROVED
+            ]
             final = TaskState(
                 task_id=FINAL_TASK_ID,
                 work_package_id=None,
@@ -159,7 +163,14 @@ class StepPlanning(StepReview):
                 status=TaskStatus.RUNNING,
             )
             state.tasks[FINAL_TASK_ID] = final
-            self.invoke(root, Purpose.INTEGRATE, "FinalDeliverable", task_id=FINAL_TASK_ID, context_refs=refs)
+            self.invoke(
+                root,
+                Purpose.INTEGRATE,
+                "FinalDeliverable",
+                task_id=FINAL_TASK_ID,
+                context_refs=refs,
+                feedback=_not_done(state) if state.early_closure_reason else [],
+            )
 
     def assemble_one_role_final(self) -> bool:
         """A small command one role did needs no final report from the CEO, and its summary no second legal review.
@@ -345,20 +356,6 @@ def _route_problem(charter: GoalCharter, org: Org) -> str | None:
         return f"route_role '{role}' isn't a role in '{department}'. Its roles: {known}"
     if _work_output(org.role(role).outputs) is None:
         return f"route_role '{role}' doesn't produce work results. Route to the department instead"
-    return None
-
-
-def org_change_problem(changes: list[OrgChange], org: Org) -> str | None:
-    """A proposed role or department a person could approve as written. Nothing is changed here."""
-    for change in changes:
-        if change.kind == "add_role":
-            if change.department not in org.departments:
-                known = ", ".join(org.departments)
-                return f"add_role needs an existing department, one of: {known}. For a new one, use add_department"
-            if f"{change.department}/{change.role_id}" in org.roles:
-                return f"{change.department}/{change.role_id} already exists. Propose only what the company lacks"
-        elif change.department in org.departments:
-            return f"Department '{change.department}' already exists. Use add_role to add to it"
     return None
 
 

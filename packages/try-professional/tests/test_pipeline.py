@@ -487,6 +487,34 @@ class TestReview:
         assert state.phase == RunPhase.FAILED
         assert "No" in (state.failure_reason or "")
 
+    def test_what_a_person_decides_on_an_escalation_reaches_the_tasks_reviewers(
+        self, org: Org, harness: Callable[..., Any]
+    ) -> None:
+        """A person allowed an exception to a goal's star floor; the scout used it, and the task's reviewer, who saw
+        only the brief, found no authorization and asked the person again."""
+        from try_professional.adapters.api_runner.prompts import user_prompt
+        from try_professional.core.pipeline.state import Invocation
+
+        def override(invocation: Any, state: Any, org_: Org) -> dict[str, Any] | None:
+            if invocation.purpose == Purpose.ESCALATION:
+                return {"decision": "escalate_further", "guidance": "Above my level"}
+            return self._verdict("block")(invocation, state, org_)
+
+        run = harness(org, override)
+        result = run.runner.run("Goal")
+        question = result.questions[0]
+        run.orchestrator.handle(
+            result.run_id,
+            HumanDecided(request_id=question.request_id, decision="resume", note="An exception for this one repo.",
+                         decided_by="owner"),
+        )  # fmt: skip
+        state = run.orchestrator.state(result.run_id)
+        task = next(t for t in state.tasks.values() if t.person_decisions)
+        assert task.person_decisions == ["owner: An exception for this one repo."]
+        review = Invocation(id="inv-review", role=task.owner_role, purpose=Purpose.REVIEW, output_type="ReviewVerdict",
+                            task_id=task.task_id)  # fmt: skip
+        assert "owner: An exception for this one repo." in user_prompt(review, state, org)
+
     def test_final_deliverable_must_cover_every_success_criterion(self, org: Org, harness: Callable[..., Any]) -> None:
         attempts = []
 

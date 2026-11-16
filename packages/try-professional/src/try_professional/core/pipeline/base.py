@@ -17,6 +17,7 @@ from .state import (
     HumanRequest,
     Invocation,
     InvokeRole,
+    PackageStatus,
     Purpose,
     RunPhase,
     RunState,
@@ -126,6 +127,7 @@ class StepCore:
         task_id: str | None = None,
         gate: str | None = None,
         invocation_id: str | None = None,
+        usage_is_tool_traffic: bool = False,
     ) -> None:
         request = HumanRequest(
             id=self.next_id("hum"),
@@ -135,6 +137,7 @@ class StepCore:
             task_id=task_id,
             gate=gate,
             invocation_id=invocation_id,
+            usage_is_tool_traffic=usage_is_tool_traffic,
         )
         self.state.human_requests[request.id] = request
         self.state.phase = RunPhase.BLOCKED
@@ -200,8 +203,13 @@ def _unreported(wanted: list[str], reported: Any) -> list[str]:
 def _not_done(state: RunState) -> list[str]:
     """What a person must be told, whatever the final report chose to say."""
     lines: list[str] = []
+    if state.early_closure_reason:
+        lines.append(f"Closed early by {state.early_closed_by}: {state.early_closure_reason}")
+        lines += [
+            f"Not needed: {p.id} ({p.title})" for p in state.packages.values() if p.status == PackageStatus.NOT_NEEDED
+        ]
     for task in state.tasks.values():
-        if task.task_id == FINAL_TASK_ID:
+        if task.task_id == FINAL_TASK_ID or task.status == TaskStatus.NOT_NEEDED:
             continue
         if task.status == TaskStatus.FAILED:
             lines.append(f"Not done: {task.title}")

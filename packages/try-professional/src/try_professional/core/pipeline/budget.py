@@ -25,22 +25,25 @@ def _note_package_usage(step: _Step, event: UsageRecorded) -> None:
     """A package's budget is the CEO's estimate. Going over it is counted. Only the run's limit stops a run."""
     state = step.state
     invocation = state.invocations.get(event.invocation_id or "")
-    if invocation is None:
-        return
-    task = state.tasks.get(invocation.task_id or "")
-    package_id = invocation.work_package_id or (task.work_package_id if task else None)
+    task = state.tasks.get(invocation.task_id or "") if invocation else None
+    package_id = event.work_package_id or (
+        invocation.work_package_id or (task.work_package_id if task else None) if invocation else None
+    )
     package = state.packages.get(package_id or "")
     if package is None:
         return
     before = state.package_usage.get(package.id, 0)
-    after = before + event.input_tokens + event.output_tokens
+    inputs = event.input_tokens
+    if event.input_tokens_includes_cache is False:
+        inputs += event.cached_input_tokens + event.cache_creation_input_tokens
+    after = before + inputs + event.output_tokens
     state.package_usage[package.id] = after
     if package.token_budget and before <= package.token_budget < after:
         state.counters.package_overruns += 1
 
 
 def _token_limit(state: RunState, org: Org) -> int | None:
-    """A person's own decision wins. Otherwise every command has a limit, and a small one has a smaller one."""
+    """Use the person's optional model budget, otherwise the configured optional budget."""
     if state.budget_override:
         return state.budget_override
     return _own_limit(state, org)
@@ -49,10 +52,14 @@ def _token_limit(state: RunState, org: Org) -> int | None:
 def _own_limit(state: RunState, org: Org) -> int | None:
     """The command's own limit, before any budget a person added."""
     pipeline = org.pipeline
-    if state.usage.estimated:
-        # Over MCP: corrected estimates, with their own limits.
-        return pipeline.mcp_max_tokens_per_small_command if state.size == "small" else pipeline.mcp_max_tokens_per_run
     return pipeline.max_tokens_per_small_command if state.size == "small" else pipeline.max_tokens_per_run
+
+
+def _tool_token_limit(state: RunState, org: Org) -> int | None:
+    if state.tool_budget_override:
+        return state.tool_budget_override
+    pipeline = org.pipeline
+    return pipeline.mcp_max_tokens_per_small_command if state.size == "small" else pipeline.mcp_max_tokens_per_run
 
 
 # Model calls with nothing moving before a run counts as stuck. Two full attempts at a step, on the API runner.
@@ -140,13 +147,20 @@ def _check_progress(step: _Step, event: UsageRecorded) -> bool:
         state.tokens_at_progress = state.usage.total
         state.refusals_at_progress = state.counters.invalid_outputs
         return False
-    state.calls_since_progress += 1
+    # A call through the company's tools, counted by the server, isn't a model call: a role working in its own agent
+    # (Codex, Antigravity) wrote its evidence through workspace_write, and 24 such calls into a hunt were taken for a
+    # loop. Refused hand-ins still are one, wherever they come from.
+    counted = event.model != ESTIMATED_BY_SERVER
+    if counted:
+        # An agent CLI's step doesn't say how many model calls it made, but it made at least one. Counting it as none
+        # switched loop detection off for every Codex, Antigravity and Claude Code role.
+        state.calls_since_progress += event.calls if event.calls is not None else 1
     if state.phase in TERMINAL_PHASES or state.phase == RunPhase.BLOCKED:
         return False
     looping = (
-        state.calls_since_progress >= STUCK_CALLS
+        (counted and state.calls_since_progress >= STUCK_CALLS)
         or state.counters.invalid_outputs - state.refusals_at_progress >= STUCK_REFUSALS
-        or _spent_a_whole_limit(state, step.org)
+        or (counted and _spent_a_whole_limit(state, step.org))
     )
     if not looping:
         return False
@@ -156,23 +170,41 @@ def _check_progress(step: _Step, event: UsageRecorded) -> bool:
 
 def _on_usage(step: _Step, event: UsageRecorded) -> None:
     state = step.state
-    state.usage.estimated = state.usage.estimated or event.model == ESTIMATED_BY_SERVER
     buckets = [state.usage]
     if event.role:
         buckets.append(state.usage_by_role.setdefault(event.role, Usage()))
     invocation = state.invocations.get(event.invocation_id or "")
-    if invocation is not None:
-        buckets.append(state.usage_by_purpose.setdefault(invocation.purpose.value, Usage()))
+    purpose = invocation.purpose.value if invocation else event.purpose
+    if purpose:
+        buckets.append(state.usage_by_purpose.setdefault(purpose, Usage()))
+    if event.invocation_id:
+        buckets.append(state.usage_by_invocation.setdefault(event.invocation_id, Usage()))
+    estimated_tool = event.model == ESTIMATED_BY_SERVER
     for bucket in buckets:
-        bucket.input_tokens += event.input_tokens
+        if estimated_tool:
+            bucket.estimated_tool_input_tokens += event.input_tokens
+            bucket.estimated_tool_output_tokens += event.output_tokens
+            bucket.tool_calls += 1
+            continue
+        inputs = event.input_tokens
+        if event.input_tokens_includes_cache is False:
+            inputs += event.cached_input_tokens + event.cache_creation_input_tokens
+        bucket.input_tokens += inputs
         bucket.output_tokens += event.output_tokens
         bucket.cached_input_tokens += event.cached_input_tokens
-        bucket.calls += 1
-    _note_package_usage(step, event)
+        bucket.calls += event.calls or 0
+        bucket.unknown_model_calls += int(event.calls is None)
+        bucket.unavailable_records += int(event.usage_status == "unavailable")
+        bucket.unverified_records += int(
+            event.usage_status == "unverified" or event.input_tokens_includes_cache is None
+        )
+    if not estimated_tool:
+        _note_package_usage(step, event)
     if _check_progress(step, event):
         return
-    limit = _token_limit(state, step.org)
-    if limit is None or state.usage.total <= limit or state.phase in TERMINAL_PHASES:
+    limit = _tool_token_limit(state, step.org) if estimated_tool else _token_limit(state, step.org)
+    total = state.usage.estimated_tool_tokens if estimated_tool else state.usage.total
+    if limit is None or total <= limit or state.phase in TERMINAL_PHASES:
         return
     if state.phase == RunPhase.BLOCKED:
         return
@@ -181,15 +213,16 @@ def _on_usage(step: _Step, event: UsageRecorded) -> None:
         _ask_stuck(step, state.invocations.get(event.invocation_id or ""), state.calls_since_progress)
         return
     counters = state.counters
-    how = " by the server's corrected estimate" if state.usage.estimated else ""
+    how = " of tool traffic, estimated by the server" if estimated_tool else " of model usage"
     step.ask_human(
-        f"This command stopped at {state.usage.total} tokens{how}, "
+        f"This command stopped at {total} tokens{how}, "
         f"over its limit of {limit}. Nothing more is spent until you decide, and its work so far is saved. "
         f"So far: {counters.assignments} assignments, {counters.invalid_outputs} rejected outputs, "
         f"{counters.rework_loops} rounds of rework, {counters.escalations} escalations. "
         f"Resuming adds {limit // 2} tokens, unless you name an amount with --token-budget. Abandoning stops it here.",
         ["resume", "abandon"],
         "budget",
+        usage_is_tool_traffic=estimated_tool,
     )
 
 

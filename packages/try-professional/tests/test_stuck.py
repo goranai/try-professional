@@ -393,3 +393,35 @@ class TestDraftsWhenItStops:
         message = McpService(exporting, coordinator=True).run_next_action(result.run_id)["needs_a_person"][0]
         assert "not approved" in message["tell_the_person"]
         assert "draft/index.md" in message["tell_the_person"]
+
+
+class TestARoleInItsOwnAgent:
+    """A hunter on Codex wrote its evidence through workspace_write. The server counts each call through the company's
+    tools, and 24 of them, an hour into real work, were taken for a loop that needed a person."""
+
+    def test_calls_through_the_companys_tools_arent_model_calls(self, company: Orchestrator) -> None:
+        from try_professional.core.pipeline import UsageRecorded
+        from try_professional.core.pipeline.state import ESTIMATED_BY_SERVER
+
+        run_id, actions = company.start("Note")
+        invoke = next(a for a in actions if a.kind == "invoke_role")
+        for _ in range(STUCK_CALLS * 2):
+            company.handle(run_id, UsageRecorded(invocation_id=invoke.invocation_id, role=invoke.role,
+                                                 model=ESTIMATED_BY_SERVER, input_tokens=5_000, output_tokens=0))  # fmt: skip
+        assert not any(a.kind == "ask_human" for a in company.open_actions(run_id))
+        for _ in range(STUCK_CALLS):
+            company.handle(run_id, UsageRecorded(invocation_id=invoke.invocation_id, role=invoke.role,
+                                                 model="a-model", input_tokens=500, output_tokens=50))  # fmt: skip
+        assert any(a.kind == "ask_human" for a in company.open_actions(run_id)), "a model's own calls still count"
+
+    def test_an_agent_step_that_doesnt_count_its_calls_still_counts_toward_a_loop(self, company: Orchestrator) -> None:
+        """Agent CLIs record their steps with calls unknown. Counted as none, a looping Codex role was never stuck."""
+        from try_professional.core.pipeline import UsageRecorded
+
+        run_id, actions = company.start("Note")
+        invoke = next(a for a in actions if a.kind == "invoke_role")
+        # The first record sets where progress stands; the next STUCK_CALLS steps with nothing moving are a loop.
+        for _ in range(STUCK_CALLS + 1):
+            company.handle(run_id, UsageRecorded(invocation_id=invoke.invocation_id, role=invoke.role,
+                                                 model="codex", input_tokens=500, output_tokens=50, calls=None))  # fmt: skip
+        assert any(a.kind == "ask_human" for a in company.open_actions(run_id))

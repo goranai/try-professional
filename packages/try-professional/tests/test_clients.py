@@ -131,6 +131,22 @@ class TestOpenAICompatible:
 
         assert self._client(handler).complete(_request()).cached_input_tokens == 40
 
+    def test_cached_prompt_tokens_are_already_in_the_input_total(self) -> None:
+        def handler(request: httpx.Request) -> httpx.Response:
+            body = self._ok({"content": "hi"})
+            body["usage"] = {
+                "prompt_tokens": 990,
+                "completion_tokens": 10,
+                "prompt_tokens_details": {"cached_tokens": 980},
+            }
+            return httpx.Response(200, json=body)
+
+        response = self._client(handler).complete(_request())
+        assert response.input_tokens + response.output_tokens == 1000
+        assert response.raw_input_tokens == 990
+        assert response.cached_input_tokens == 980
+        assert response.input_tokens_includes_cache is True
+
     def test_max_tokens_parameter_is_configurable(self) -> None:
         seen: dict[str, Any] = {}
 
@@ -306,6 +322,28 @@ class TestAnthropic:
         AnthropicClient(base_url=stub.url).complete(_request("claude-haiku-5-5"))
         assert "fallbacks" not in stub.requests[0]["body"]
         assert "beta=true" not in stub.requests[0]["path"]
+
+    def test_cache_reads_and_writes_are_added_to_uncached_input_once(self, stub: _Stub) -> None:
+        stub.responses.append(
+            (
+                200,
+                _message(
+                    [{"type": "text", "text": "hi"}],
+                    usage={
+                        "input_tokens": 10,
+                        "output_tokens": 10,
+                        "cache_read_input_tokens": 970,
+                        "cache_creation_input_tokens": 10,
+                    },
+                ),
+            )
+        )
+        response = AnthropicClient(base_url=stub.url).complete(_request())
+        assert response.input_tokens + response.output_tokens == 1000
+        assert response.raw_input_tokens == 10
+        assert response.cached_input_tokens == 970
+        assert response.cache_creation_input_tokens == 10
+        assert response.input_tokens_includes_cache is True
 
     def test_fallbacks_can_be_turned_off(self, stub: _Stub) -> None:
         stub.responses.append((200, _message([{"type": "text", "text": "hi"}])))

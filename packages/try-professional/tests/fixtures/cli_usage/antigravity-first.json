@@ -1,0 +1,12 @@
+{
+  "status": "SUCCESS",
+  "num_turns": 1,
+  "usage": {
+    "input_tokens": 13615,
+    "output_tokens": 52,
+    "thinking_tokens": 48,
+    "cache_read_tokens": 0,
+    "total_tokens": 13667
+  },
+  "conversation_id": "00000000-0000-0000-0000-000000000001"
+}

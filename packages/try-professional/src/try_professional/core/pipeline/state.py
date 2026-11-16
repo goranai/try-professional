@@ -5,7 +5,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from ..artifacts import Artifact, Flags
 
@@ -34,6 +34,7 @@ class TaskStatus(str, Enum):
     ESCALATED = "escalated"
     APPROVED = "approved"
     FAILED = "failed"
+    NOT_NEEDED = "not_needed"
 
 
 class PackageStatus(str, Enum):
@@ -42,6 +43,7 @@ class PackageStatus(str, Enum):
     ACTIVE = "active"
     APPROVED = "approved"
     FAILED = "failed"
+    NOT_NEEDED = "not_needed"
 
 
 class Purpose(str, Enum):
@@ -100,6 +102,8 @@ class TaskState(_Model):
     memory_context: list[str] = []
     skill_artifact_id: str | None = None
     feedback: list[str] = []
+    # What a person decided when this task's work was escalated to them, for every role on the task, its reviewers too.
+    person_decisions: list[str] = []
     notes_artifact_id: str | None = None
 
 
@@ -143,10 +147,72 @@ class Usage(_Model):
     cached_input_tokens: int = 0
     calls: int = 0
     estimated: bool = False
+    estimated_tool_input_tokens: int = 0
+    estimated_tool_output_tokens: int = 0
+    tool_calls: int = 0
+    unknown_model_calls: int = 0
+    unavailable_records: int = 0
+    unverified_records: int = 0
+    unverified_legacy_tokens: int = 0
+
+    @model_validator(mode="before")
+    @classmethod
+    def preserve_unknown_historical_totals(cls, value: Any) -> Any:
+        # Old snapshots merged model usage with MCP estimates. Without their
+        # audit events, neither part can be recovered from the combined total.
+        if isinstance(value, dict) and value.get("estimated") and "estimated_tool_input_tokens" not in value:
+            value = dict(value)
+            value["unverified_legacy_tokens"] = value.get("input_tokens", 0) + value.get("output_tokens", 0)
+            value.update(input_tokens=0, output_tokens=0, cached_input_tokens=0, calls=0, unverified_records=1)
+        elif (
+            isinstance(value, dict)
+            and "estimated_tool_input_tokens" not in value
+            and (value.get("input_tokens") or value.get("output_tokens") or value.get("calls"))
+        ):
+            value = dict(value)
+            value["unverified_records"] = value.get("unverified_records", 0) + 1
+        return value
 
     @property
     def total(self) -> int:
         return self.input_tokens + self.output_tokens
+
+    @property
+    def estimated_tool_tokens(self) -> int:
+        return self.estimated_tool_input_tokens + self.estimated_tool_output_tokens
+
+    @property
+    def model_usage_status(self) -> str:
+        if self.estimated or self.unavailable_records or self.unverified_records:
+            return "partial" if self.total else "unavailable"
+        return "exact" if self.calls or self.unknown_model_calls else "unavailable"
+
+    def lines(self) -> list[str]:
+        calls = f"{self.calls} verified model calls"
+        if self.unknown_model_calls:
+            calls += f"; model call count unavailable for {self.unknown_model_calls} CLI process(es)"
+        return [
+            f"Model tokens ({self.model_usage_status}): {self.total} "
+            f"({self.input_tokens} input, {self.cached_input_tokens} of input cached, "
+            f"{self.output_tokens} output); {calls}.",
+            f"Tool traffic: about {self.estimated_tool_tokens} tokens "
+            f"({self.estimated_tool_input_tokens} input, {self.estimated_tool_output_tokens} output), "
+            "estimated by the server "
+            f"from {self.tool_calls} tool calls; separate from model usage.",
+            *(
+                ["Model usage is incomplete or unverified; unavailable counts are not zero usage."]
+                if self.model_usage_status != "exact"
+                else []
+            ),
+            *(
+                [
+                    f"Historical combined usage: {self.unverified_legacy_tokens} tokens, unverified; "
+                    "its model and tool portions are unavailable."
+                ]
+                if self.unverified_legacy_tokens
+                else []
+            ),
+        ]
 
 
 class HumanRequest(_Model):
@@ -157,6 +223,7 @@ class HumanRequest(_Model):
     task_id: str | None = None
     gate: str | None = None
     invocation_id: str | None = None
+    usage_is_tool_traffic: bool = False
 
 
 class RunState(_Model):
@@ -184,10 +251,15 @@ class RunState(_Model):
     usage: Usage = Usage()
     usage_by_role: dict[str, Usage] = {}
     usage_by_purpose: dict[str, Usage] = {}
+    usage_by_invocation: dict[str, Usage] = {}
     package_usage: dict[str, int] = {}
     budget_override: int | None = None
+    # The existing optional MCP budget resumes independently of a model budget.
+    tool_budget_override: int | None = None
     assignment_limit: int = MAX_ASSIGNMENTS
     failure_reason: str | None = None
+    early_closure_reason: str | None = None
+    early_closed_by: str | None = None
     size: Literal["small", "large"] = "large"
     cancelled: bool = False
     # Model calls since anything moved: a new artifact, approval, rework round, or assignment. See _check_progress.
@@ -264,7 +336,21 @@ class UsageRecorded(_Model):
     input_tokens: int = 0
     output_tokens: int = 0
     cached_input_tokens: int = 0
+    # Keep the provider's raw count beside normalized input, so audit readers need
+    # not guess the caching convention from a model name or a historical record.
+    raw_input_tokens: int | None = None
+    cache_creation_input_tokens: int = 0
+    input_tokens_includes_cache: bool | None = None
     role: str | None = None
+    purpose: str | None = None
+    work_package_id: str | None = None
+    usage_source: str = ""
+    usage_status: Literal["exact", "unavailable", "unverified"] = "exact"
+    usage_note: str = ""
+    raw_input_tokens_includes_cache: bool | None = None
+    # A CLI's final result counts tokens across its internal calls, not the calls
+    # themselves. Keeping that unknown prevents one process being called one model call.
+    calls: int | None = 1
 
 
 class HumanDecided(_Model):

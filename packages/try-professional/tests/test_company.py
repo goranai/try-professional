@@ -771,7 +771,10 @@ class TestPlaybooks:
         for step in steps:
             text = playbooks.section(level, step)
             assert text
-            assert estimate_tokens(text) <= 250, (level, step)
+            # Scratch guidance keeps clones and environments out of transfers and cleanup out of role assignments.
+            # Measured after this change: dispatch 276 tokens and execute 298. Other sections keep their allowance.
+            limits = {("manager", "dispatch"): 280, ("manager", "execute"): 300, ("staff", "execute"): 300}
+            assert estimate_tokens(text) <= limits.get((level, step), 250), (level, step)
 
     @pytest.mark.parametrize("level", ["manager", "staff"])
     def test_a_reviewer_is_told_to_check_and_not_to_trust(self, level: str) -> None:
@@ -781,6 +784,14 @@ class TestPlaybooks:
         assert "redo every sum" in text
         assert "count any limit" in text
         assert "at least major" in text
+
+    @pytest.mark.parametrize("level", ["manager", "staff"])
+    def test_a_reviewer_checks_it_the_way_its_used(self, level: str) -> None:
+        """A hunt round's validator and reviewer passed a bug shown only through a mock in a state the real code
+        never produces, and another behind an opt-in flag the report didn't name."""
+        text = playbooks.section(level, "review")
+        assert "as it's used, on default settings" in text
+        assert "only via a mock or internal call" in text
 
     def test_a_head_doing_a_task_follows_the_staff_playbook(self) -> None:
         assert playbooks.section("manager", "execute").startswith("Do this task")

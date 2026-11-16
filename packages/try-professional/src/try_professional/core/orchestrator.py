@@ -12,18 +12,25 @@ import json
 import re
 import shutil
 import uuid
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
 from .. import playbooks
 from ..org import Org
-from . import org_growth
+from . import org_growth, scratch
 from .audit import AuditLog, VerifyResult, archive_log, verify_log
 from .brief import Briefing, build_brief
 from .company import DROPPED_BY, CompanyStore
-from .deliverables import DRAFT_FOLDER, export_deliverables, export_drafts, read_sources
+from .deliverables import (
+    DRAFT_FOLDER,
+    environments,
+    export_deliverables,
+    export_drafts,
+    made_by_a_machine,
+    read_sources,
+)
 from .ledger import Ledger
 from .lock import StateLock
 from .outside import RUN_ID, Held, Outcome, OutsideStore, describe_link, outcome_lesson, urls_in
@@ -40,6 +47,7 @@ from .pipeline import (
     RunStarted,
     RunState,
     Submission,
+    UsageRecorded,
     advance,
     initial_state,
     open_actions,
@@ -47,6 +55,7 @@ from .pipeline import (
 from .pipeline.base import TRUST
 from .pipeline.state import Invocation
 from .ports import FeedbackPort, MemoryPort, NullMemory, NullSkills, ProposalPort, SearchPort, SkillPort
+from .scorecard import Scorecard, scorecard
 
 Clock = Callable[[], str]
 MAX_INPUT_BYTES = 2_000_000
@@ -67,6 +76,35 @@ def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="milliseconds")
 
 
+# Never copied into a run: secrets, and what a machine makes for itself.
+_SECRET_NAMES = re.compile(r"^\.env(\..+)?$|\.(pem|key|p12|pfx)$|^id_(rsa|ed25519|ecdsa)$", re.IGNORECASE)
+_SAMPLES = re.compile(r"\.(example|sample|template|dist)$", re.IGNORECASE)
+
+
+def _kept_input(relative: Path, *, in_repository: bool) -> bool:
+    """A person's loose hidden files stay behind. A git repository comes whole, its history and its own dotfiles (CI,
+    ignores) too: a role asked to work in it can't without them. Secrets and caches never come."""
+    parts = relative.parts
+    if made_by_a_machine(relative):
+        return False
+    if _SECRET_NAMES.search(parts[-1]) and not _SAMPLES.search(parts[-1]):
+        return False
+    return in_repository or not any(part.startswith(".") for part in parts)
+
+
+def _with_where_it_is(workspace: Path, name: str) -> str:
+    """A file named by its path in the repository rather than in the workspace: say where it is. A role on Gemini was
+    refused twice for this, and then read the engine's code to find out why."""
+    wanted = name.replace("\\", "/").strip("/")
+    if not wanted or ".." in wanted.split("/"):
+        return name
+    for found in workspace.rglob(Path(wanted).name):
+        relative = found.relative_to(workspace).as_posix()
+        if found.is_file() and relative.endswith("/" + wanted):
+            return f"{name} (it's at {relative}: name each file by its path in the workspace)"
+    return name
+
+
 class Orchestrator:
     def __init__(
         self,
@@ -82,8 +120,10 @@ class Orchestrator:
         deliverables_dir: Path | None = None,
         clock: Clock = utc_now,
         check_claimed_files: bool = True,
+        keep_run_scratch: bool = False,
     ) -> None:
         self.check_claimed_files = check_claimed_files
+        self.keep_run_scratch = keep_run_scratch
         self.org = org
         self.home = home
         self.memory: MemoryPort = memory or NullMemory()
@@ -95,7 +135,7 @@ class Orchestrator:
         self.deliverables_dir = deliverables_dir
         self.clock = clock
         self.ledger = Ledger(home / "ledger.sqlite")
-        self.company = CompanyStore(home / "company.sqlite")
+        self.company = CompanyStore(home / "company.sqlite", embedder=getattr(self.memory, "embedder", None))
         self.outside = OutsideStore(home / "outside.sqlite")
         # Several MCP servers can serve one company, one per role, so this also holds across processes.
         self._lock = StateLock(home)
@@ -111,6 +151,42 @@ class Orchestrator:
 
     def sources_path(self, run_id: str) -> Path:
         return self.home / "runs" / run_id / "sources.jsonl"
+
+    def scratch(self, run_id: str) -> Path:
+        """The same path across role servers; reading it never recreates a finished run's storage."""
+        path = scratch.scratch_path(self.home, run_id, self.ledger.scratch_path(run_id))
+        if not path.exists():
+            # Runs saved before this feature need storage when their next role resumes them.
+            with self._lock:
+                if (
+                    not path.exists()
+                    and self._has_run(run_id)
+                    and self.ledger.load(run_id).phase not in (RunPhase.DONE, RunPhase.FAILED)
+                ):
+                    self._allocate_scratch(run_id)
+        return path
+
+    def _allocate_scratch(self, run_id: str) -> None:
+        path = scratch.allocate(self.home, run_id, self.ledger.scratch_path(run_id))
+        self.ledger.own_scratch(run_id, path)
+        self._log(run_id).append(self.clock(), "scratch_allocated", {"path": str(path)})
+
+    def _cleanup_scratch(self, state: RunState) -> None:
+        data = {
+            "status": "cancelled" if state.cancelled else state.phase.value,
+        }
+        try:
+            allocated = self.ledger.scratch_path(state.run_id)
+            data["path"] = str(scratch.scratch_path(self.home, state.run_id, allocated))
+            if self.keep_run_scratch:
+                data["outcome"] = "retained"
+            else:
+                data["outcome"] = "deleted" if scratch.cleanup(self.home, state.run_id, allocated) else "already_absent"
+        except OSError as error:
+            data.update(outcome="failed", error=type(error).__name__, reason=str(error))
+            if "path" not in data:
+                data["record"] = str(scratch.record_path(self.home, state.run_id))
+        self._log(state.run_id).append(self.clock(), "scratch_cleanup", data)
 
     def deliverables_path(self, run_id: str) -> Path | None:
         return self.deliverables_dir / run_id if self.deliverables_dir else None
@@ -143,15 +219,28 @@ class Orchestrator:
             sources.insert(0, (self.inputs_dir, Path()))
         copied = []
         for folder, prefix in sources:
-            for path in sorted(folder.rglob("*")):
-                if not path.is_file() or path.is_symlink() or path.stat().st_size > MAX_INPUT_BYTES:
+            paths = sorted(scratch.paths_under(folder))
+            files = [p for p in paths if p.is_file()]
+            repositories = {p.parent.relative_to(folder) for p in paths if p.name == ".git" and p.is_dir()}
+            found = environments(folder)
+            for path in files:
+                if not path.is_file() or path.is_symlink():
                     continue
                 relative = path.relative_to(folder)
-                if any(part.startswith(".") for part in relative.parts):
+                if made_by_a_machine(relative, found):
+                    continue
+                repository = next((r for r in repositories if relative.is_relative_to(r)), None)
+                inside = relative.relative_to(repository) if repository is not None else relative
+                if not _kept_input(inside, in_repository=repository is not None):
+                    continue
+                history = repository is not None and inside.parts[0] == ".git"
+                if path.stat().st_size > MAX_INPUT_BYTES and not history:
                     continue
                 destination = target / prefix / relative
                 destination.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copyfile(path, destination)
+                if history:
+                    continue  # the repository's own history: needed to work in it, and no source of anything
                 name = f"inputs/{(prefix / relative).as_posix()}"
                 self.note_source(run_id, name)
                 copied.append({"path": name, "sha256": hashlib.sha256(path.read_bytes()).hexdigest()})
@@ -196,7 +285,35 @@ class Orchestrator:
             log = self._logs[run_id] = AuditLog(self.audit_path(run_id))
         return log
 
-    def start(self, goal: str, run_id: str | None = None) -> tuple[str, list[Action]]:
+    def _workers_path(self) -> Path:
+        # Beside the company's database, not in it: an older trypro opening the same company reads on unchanged.
+        return self.home / "workers.jsonl"
+
+    def _record_workers(self, run_id: str, workers: Mapping[str, str]) -> None:
+        path = self._workers_path()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("a", encoding="utf-8", newline="\n") as handle:
+            for role, worker in sorted(workers.items()):
+                handle.write(json.dumps({"run_id": run_id, "role": role, "worker": worker}) + "\n")
+
+    def _same_worker(self, workers: Mapping[str, str]) -> Callable[[str, str], bool]:
+        """A hand-in counts toward a role's trust only if the same agent and model did it as do the role now. Trust
+        earned on one model was once lent to another: a company moved to Gemini skipped the review of a role whose
+        clean record was Claude's."""
+        known: dict[tuple[str, str], str] = {}
+        path = self._workers_path()
+        if path.is_file():
+            for line in path.read_text(encoding="utf-8").splitlines():
+                with contextlib.suppress(ValueError, KeyError, TypeError):
+                    row = json.loads(line)
+                    known[(row["run_id"], row["role"])] = row["worker"]
+        return lambda run_id, role: role in workers and known.get((run_id, role)) == workers[role]
+
+    def start(
+        self, goal: str, run_id: str | None = None, workers: Mapping[str, str] | None = None
+    ) -> tuple[str, list[Action]]:
+        """`workers` names who does each role in this run, such as "antigravity:gemini-3.8-flash-high": then only
+        hand-ins the same worker made count toward a role's trust."""
         with self._lock:
             run_id = run_id or f"run-{uuid.uuid4().hex[:12]}"
             state = initial_state(run_id, goal)
@@ -204,13 +321,23 @@ class Orchestrator:
             log.append(self.clock(), "run_started", {"run_id": run_id, "goal": goal})
             log.append(self.clock(), "playbooks", playbooks.versions())
             try:
-                state.trust = self.company.trust(self.org.pipeline.trust_after)
+                counts = None
+                if workers:
+                    self._record_workers(run_id, workers)
+                    counts = self._same_worker(workers)
+                state.trust = self.company.trust(self.org.pipeline.trust_after, counts)
             except Exception as error:  # trust only saves work, so without it every hand-in is reviewed
                 log.append(self.clock(), "trust_error", {"error": type(error).__name__})
             if state.trust:
                 log.append(self.clock(), "trusted", {"roles": state.trust})
-            self._copy_inputs(run_id)
-            return run_id, self._apply(state, RunStarted())
+            try:
+                self._allocate_scratch(run_id)
+                self._copy_inputs(run_id)
+                return run_id, self._apply(state, RunStarted())
+            except Exception:
+                state.phase = RunPhase.FAILED
+                self._cleanup_scratch(state)
+                raise
 
     def handle(self, run_id: str, event: Any) -> list[Action]:
         """Apply an event from an adapter and return what must happen next."""
@@ -238,7 +365,7 @@ class Orchestrator:
         for name in claimed:
             target = (workspace / name).resolve()
             if not target.is_relative_to(workspace) or not target.is_file():
-                missing.append(name)
+                missing.append(_with_where_it_is(workspace, name))
         return missing
 
     def _apply(self, state: RunState, event: Any) -> list[Action]:
@@ -261,9 +388,46 @@ class Orchestrator:
                 self.ledger.save(state, log.head, self.clock())
                 raise
             log.append(self.clock(), "event", current.model_dump(mode="json"))
+            if isinstance(current, Submission) and current.invocation_id not in state.invocations:
+                invocation = previous.invocations.get(current.invocation_id)
+                accepted = next(
+                    (
+                        a
+                        for key, a in state.artifacts.items()
+                        if key not in previous.artifacts and invocation and a.type == invocation.output_type
+                    ),
+                    None,
+                )
+                if accepted is None and invocation and invocation.purpose in (Purpose.EXECUTE, Purpose.INTEGRATE):
+                    task = state.tasks.get(invocation.task_id or "")
+                    if task and state.counters.invalid_outputs == previous.counters.invalid_outputs:
+                        # Identical rework reuses its content hash, so it need not add an artifact.
+                        accepted = state.artifacts.get(task.result_artifact_id or "")
+                if accepted is not None:
+                    log.append(
+                        self.clock(),
+                        "submission_accepted",
+                        {"invocation_id": current.invocation_id, "payload": accepted.payload},
+                    )
+                elif invocation is not None:
+                    # Reaching the retry limit closes the failed invocation too. Without
+                    # this record, a scorecard would mistake its last refusal for acceptance.
+                    log.append(self.clock(), "submission_refused", {"invocation_id": current.invocation_id})
             for waiver in state.waivers[len(previous.waivers) :]:
                 if waiver.get("decided_by") == TRUST:
                     log.append(self.clock(), "review_skipped", waiver)
+            if state.early_closure_reason and not previous.early_closure_reason:
+                log.append(
+                    self.clock(),
+                    "run_closed_early",
+                    {
+                        "reason": state.early_closure_reason,
+                        "decided_by": state.early_closed_by,
+                        "not_needed_packages": [
+                            p.id for p in state.packages.values() if p.status.value == "not_needed"
+                        ],
+                    },
+                )
             self._log_rejection(state, current, log)
             self._note_qa_verdict(previous, state, current, log)
             self._note_lesson_decisions(previous, state, current, log)
@@ -283,8 +447,19 @@ class Orchestrator:
                     outward.append(action)
                 elif not isinstance(action, DepartmentActivated):
                     outward.append(action)
+            if state.phase != before and state.phase in (RunPhase.DONE, RunPhase.FAILED):
+                self._cleanup_scratch(state)
             self.ledger.save(state, log.head, self.clock())
             self._sync_company(state, log)
+            if isinstance(current, UsageRecorded):
+                # Agent CLIs print their final counts after submitting through MCP.
+                # The index exported at submission must include that late usage too.
+                if state.phase == RunPhase.DONE:
+                    self._export(state)
+                elif state.phase == before and state.phase in (RunPhase.BLOCKED, RunPhase.FAILED):
+                    target = self.drafts_path(state.run_id)
+                    if target is not None and target.is_dir():
+                        self._export_drafts(state)
         return outward
 
     def _sync_company(self, state: RunState, log: AuditLog) -> None:
@@ -292,9 +467,9 @@ class Orchestrator:
         for entry in self.company.sync(state, self.org, self.clock()):
             try:
                 if entry.kind == "lesson":
-                    self.memory.write(entry.role, entry.text)
+                    self.memory.write(entry.role, entry.text, source=entry.key)
                 elif entry.kind == "team_lesson":
-                    self.company.propose_memory(
+                    self._propose_memory(
                         "department",
                         entry.role.split("/", 1)[0],
                         entry.text,
@@ -305,6 +480,22 @@ class Orchestrator:
                     )
             except Exception as error:
                 log.append(self.clock(), "memory_error", {"role": entry.role, "error": type(error).__name__})
+
+    def _propose_memory(
+        self, tier: str, owner: str, text: str, *, source_run: str, source: str, proposed_by: str, at: str
+    ) -> bool:
+        proposal, added, learned = self.company.record_memory(
+            tier, owner, text, source_run=source_run, source=source, proposed_by=proposed_by, at=at
+        )
+        if learned and proposal.status == "accepted":
+            reference = f"{source_run}: {source}, learned by {proposed_by} at {at}"
+            # Approval belongs to the canonical lesson. A later paraphrase adds
+            # evidence to it; a distinct lesson still waits for its own decision.
+            if tier == "department":
+                self.memory.write_department(self.org.departments[owner].head_ref, text, source=reference)
+            else:
+                self.memory.promote(self.org.root_role, text, reference)
+        return added
 
     def briefing(self, run_id: str, invocation: Invocation) -> Briefing:
         """What an agent is told when it wakes up. It costs no model call, and failing never stops a run."""
@@ -351,6 +542,11 @@ class Orchestrator:
                 roster = org_growth.roster(self.org)
                 try:
                     record = org_growth.signals(self.org, state, self.company, self.outside)
+                    card = self.role_scorecard()
+                    record.extend(card.lines())
+                    for row in card.roles.values():
+                        if row.evidence:
+                            record.append(f"{row.role}: audit evidence: " + "; ".join(row.evidence[-3:]))
                 except Exception as error:
                     self._log(run_id).append(self.clock(), "org_record_error", {"error": type(error).__name__})
             rules = [text for _, text in self.company.rules()]
@@ -364,6 +560,9 @@ class Orchestrator:
             org_record=record,
             rules=rules,
         )
+
+    def role_scorecard(self) -> Scorecard:
+        return scorecard(self.home, self.org)
 
     def cancel(self, run_id: str, reason: str = "Cancelled by a person") -> None:
         self.handle(run_id, RunCancelled(reason=reason))
@@ -385,19 +584,24 @@ class Orchestrator:
                 if decided is None:
                     continue
                 log.append(self.clock(), "lesson_decided", {"number": number, "adopted": accepted})
-                if not accepted and decided.proposed_by != invocation.role:
+                if not accepted and any(e.proposed_by != invocation.role for e in decided.evidence):
                     # A real head dropped a lesson about work it doesn't do, its hunter's drafts, and the same
                     # mistake came back in the next command. A head can't drop a teammate's lesson for good: it
                     # goes to the person, who decides.
-                    sent = self.company.propose_memory(
-                        "company",
-                        "company",
-                        decided.text,
-                        source_run=state.run_id,
-                        source=f"{DROPPED_BY}{invocation.role}",
-                        proposed_by=decided.proposed_by,
-                        at=self.clock(),
-                    )
+                    sent = False
+                    for learning in decided.evidence:
+                        sent = (
+                            self._propose_memory(
+                                "company",
+                                "company",
+                                learning.text,
+                                source_run=learning.source_run,
+                                source=f"{DROPPED_BY}{invocation.role}; {learning.reference}",
+                                proposed_by=learning.proposed_by,
+                                at=self.clock(),
+                            )
+                            or sent
+                        )
                     # The same words already proposed or decided for the whole company aren't asked about again.
                     if sent:
                         log.append(
@@ -405,7 +609,8 @@ class Orchestrator:
                         )
                 if accepted:
                     try:
-                        self.memory.write_department(invocation.role, decided.text)
+                        for learning in decided.evidence:
+                            self.memory.write_department(invocation.role, learning.text, source=learning.reference)
                     except Exception as error:
                         log.append(
                             self.clock(), "memory_error", {"role": invocation.role, "error": type(error).__name__}
@@ -475,7 +680,7 @@ class Orchestrator:
         )
 
     def _propose_org_changes(self, previous: RunState, state: RunState, log: AuditLog) -> None:
-        """A charter or retrospective was just accepted with roles or departments the company lacks. A person decides
+        """A charter or retrospective was just accepted with proposed roster changes. A person decides
         each one, with `trypro org review`. Stored the moment they're accepted, so a run stopped later loses none."""
         for name in ("charter_artifact_id", "retrospective_artifact_id"):
             artifact_id = getattr(state, name)
@@ -484,6 +689,21 @@ class Orchestrator:
             artifact = state.artifacts.get(artifact_id)
             for change in (artifact.payload.get("org_changes") or []) if artifact else []:
                 try:
+                    if change["kind"] in ("retire_role", "merge_role"):
+                        card = self.role_scorecard()
+                        row = card.roles[f"{change['department']}/{change['role_id']}"]
+                        # Preserve the measured evidence and its limitations for the person.
+                        # A model's citations never replace the audit's snapshot.
+                        lines = card.lines()
+                        change = {
+                            **change,
+                            "scorecard_evidence": [
+                                *lines[:2],
+                                row.line(),
+                                *row.evidence,
+                                *lines[2 + len(card.roles) :],
+                            ],
+                        }
                     added = self.company.propose_org_change(
                         change, source_run=state.run_id, proposed_by=self.org.root_role, at=self.clock()
                     )
@@ -497,14 +717,14 @@ class Orchestrator:
                 )
 
     def _propose_lessons(self, state: RunState) -> None:
-        """Retrospective: the root role proposes company memory, and a person decides. Nothing is written here."""
+        """New company lessons wait for the person. Repeats add evidence to the lesson already kept."""
         artifact = state.artifacts.get(state.retrospective_artifact_id or "")
         if artifact is None:
             return
         log = self._log(state.run_id)
         items = [*artifact.payload.get("lessons", []), *artifact.payload.get("procedures", [])]
         for text in items:
-            self.company.propose_memory(
+            self._propose_memory(
                 "company",
                 "company",
                 text,
@@ -649,7 +869,11 @@ class Orchestrator:
                     at=self.clock(),
                 )
             if self._has_run(item.run_id):
-                self.record(item.run_id, "outcome_settled", {"id": item.id, "status": status, "by": by})
+                self.record(
+                    item.run_id,
+                    "outcome_settled",
+                    {"id": item.id, "status": status, "by": by, "role": item.role, "ref": item.ref},
+                )
         return item
 
     def hold_command(self, run_id: str, role: str, command: str, checks: str = "") -> int:
@@ -670,10 +894,14 @@ class Orchestrator:
     def run_held(self, held_id: int, execute: Execute, *, by: str) -> Held | None:
         """A person approved a held command: run it where its role would have, and follow what it made."""
         item = self.outside.held_item(held_id)
-        if item is None or not self.outside.decide_held(held_id, "approved", by=by, at=self.clock()):
+        if item is None or not self.outside.decide_held(held_id, "running", by=by, at=self.clock()):
             return None
-        output = execute(Path(item.workspace), item.command)
-        self.outside.finish_held(held_id, output)
+        try:
+            output = execute(Path(item.workspace), item.command)
+        except OSError as error:
+            output = f"Could not run the command: {error}"
+        if not self.outside.finish_held(held_id, output):
+            return self.outside.held_item(held_id)
         if self._has_run(item.run_id):
             self.record(item.run_id, "held_command_ran", {"id": held_id, "by": by})
         for url in urls_in(output):

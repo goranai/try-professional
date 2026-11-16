@@ -22,7 +22,7 @@ from .adapters.api_runner.clients import ClientError
 from .adapters.api_runner.runner import ApiRunner, ModelRoutes, RunResult
 from .adapters.api_runner.scripted import ScriptedClient
 from .adapters.mcp import McpService, ToolError
-from .adapters.mcp.claude_code import refresh_claude_code_files, write_claude_code_files
+from .adapters.mcp.front_desk import FrontDeskError, refresh_front_desks, write_front_desks
 from .adapters.mcp.service import MCP_ESTIMATE_FACTOR
 from .check_model import NOT_RECOMMENDED, ModelUnreachable, ScriptedModel, check_model, render_check
 from .config import (
@@ -39,7 +39,7 @@ from .config import (
 from .core.audit import read_records
 from .core.brief import build_brief, role_card
 from .core.company import DROPPED_BY
-from .core.lock import command_lock
+from .core.lock import command_lock, run_lock
 from .core.orchestrator import Orchestrator, utc_now
 from .core.outside import OUTCOME_STATUSES
 from .core.pipeline import HumanDecided, IllegalEvent, Purpose
@@ -85,7 +85,7 @@ from .resources import (
     memory_shortfall,
     wait_for_memory,
 )
-from .setup import CLAUDE_CODE, runtime_of, setup_claude_code
+from .setup import setup_claude_code
 from .skills import (
     DEFAULT_UNUSED_RUNS,
     UNCATEGORIZED,
@@ -187,14 +187,9 @@ def _review(bundle: Proposal, root: Path, embedder: Any, *, by: str, client: Any
                 return 1
             _seed_company_memory(bundle, root, by)
             _print("Approved. Files go to deliverables/. Put anything roles should read in inputs/.")
-            if runtime_of(root) == CLAUDE_CODE:
-                # trypro setup claude-code was run here, so the roles are written now, not as a separate step.
-                written = write_claude_code_files(root, load_org(root / "org"))
-                _print(f"Wrote {len(written)} files for Claude Code: a subagent per role, and the /company command.")
-                _print("Next: start Claude Code here again, and run: /company <a command>")
-            else:
-                _print("Next, in Claude Code: trypro agents claude-code, then /company <a command>")
-                _print('Or, with the experimental API runner: trypro run "<your goal>"')
+            written = write_front_desks(root, load_org(root / "org"))
+            _print(f"Wrote {len(written)} files for Claude Code, Antigravity, and Codex in this folder.")
+            _print("Next: open any of those agents here and ask for work; in Claude Code, /company also works.")
             return 0
         if choice.startswith("e"):
             subprocess.run([*_editor(), str(bundle.path / "proposal.yaml")], check=False)
@@ -300,6 +295,7 @@ def cmd_init(args: argparse.Namespace) -> int:
     home.mkdir(exist_ok=True)
     (home / ".gitignore").write_text("*\n", encoding="utf-8", newline="\n")
     org = load_org(org_dir)
+    write_front_desks(root, org)
     _print(f"Created a company with {len(org.departments)} departments and {len(org.roles)} roles in {root}")
     if not args.skip_model:
         _print(f"Downloading the local embedding model if needed (about 0.22 GB, once) to {model_cache_dir()}")
@@ -338,6 +334,16 @@ def cmd_org_show(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_org_scorecard(args: argparse.Namespace) -> int:
+    orchestrator = _orchestrator()
+    try:
+        for line in orchestrator.role_scorecard().lines():
+            _print(line)
+    finally:
+        orchestrator.close()
+    return 0
+
+
 def _org_change_detail(proposal: Any) -> list[str]:
     change = proposal.change
     lines = [proposal.line(), f"   Proposed in {proposal.source_run} by {proposal.proposed_by}."]
@@ -369,6 +375,7 @@ def _decide_org_change(company: Any, proposal_id: int, accept: bool, by: str) ->
     from .api import CompanyError
 
     try:
+        proposal = next((p for p in company.org_proposals() if p.id == proposal_id), None)
         added = company.decide_org_change(proposal_id, accept, by=by)
     except CompanyError as error:
         _print(str(error))
@@ -376,7 +383,14 @@ def _decide_org_change(company: Any, proposal_id: int, accept: bool, by: str) ->
     if added is None:
         _print(f"#{proposal_id} rejected. The CEO won't propose it again.")
     else:
-        _print(f"#{proposal_id} added: {added.ref}, {added.title}. It works from the next command.")
+        change = proposal.change if proposal else {}
+        kind = change.get("kind", "add_role")
+        if kind == "retire_role":
+            _print(f"#{proposal_id} retired: {added.ref}. It applies from the next command.")
+        elif kind == "merge_role":
+            _print(f"#{proposal_id} merged: {added.ref} into {change['into']}. It applies from the next command.")
+        else:
+            _print(f"#{proposal_id} added: {added.ref}, {added.title}. It works from the next command.")
         if (company.root / ".claude" / "agents").is_dir():
             _print("Claude Code's files were updated. Restart Claude Code in this folder so it sees the new role.")
     return 0
@@ -398,7 +412,7 @@ def cmd_org_review(args: argparse.Namespace) -> int:
     for proposal in proposals:
         for line in _org_change_detail(proposal):
             _print(line)
-        choice = input("[a]dd it  [r]eject it  [s]kip for now: ").strip().lower()
+        choice = input("[a]ccept it  [r]eject it  [s]kip for now: ").strip().lower()
         if choice.startswith(("a", "r")):
             _decide_org_change(company, proposal.id, choice.startswith("a"), by)
         _print()
@@ -411,7 +425,7 @@ def cmd_org_decide(args: argparse.Namespace) -> int:
     if not _person_at_terminal():
         _print("Deciding changes to the company needs a person at a terminal. Nothing was changed.")
         return 3
-    return _decide_org_change(Company(Path.cwd()), args.id, args.decision == "add", args.by or getpass.getuser())
+    return _decide_org_change(Company(Path.cwd()), args.id, args.decision != "reject", args.by or getpass.getuser())
 
 
 def cmd_rules(args: argparse.Namespace) -> int:
@@ -473,8 +487,19 @@ def _print_result(result: RunResult, deliverables: Path | None = None) -> int:
     if result.size:
         _print(f"Size: {result.size}")
     _print(
-        f"Tokens: {total} total ({result.input_tokens} in, {result.output_tokens} out{cached}), {result.calls} calls"
+        f"Model tokens ({result.model_usage_status}): {total} "
+        f"({result.input_tokens} in, {result.output_tokens} out{cached}), {result.calls} verified model calls"
     )
+    _print(
+        f"Tool traffic: about {result.estimated_tool_tokens} tokens, estimated by the server; "
+        "separate from model usage."
+    )
+    if result.unknown_model_calls:
+        _print(f"Model call count unavailable for {result.unknown_model_calls} CLI process(es).")
+    if result.model_usage_status != "exact":
+        _print("Model usage is incomplete or unavailable; unavailable counts are not zero usage.")
+    if result.unverified_legacy_tokens:
+        _print(f"Historical combined usage: {result.unverified_legacy_tokens} tokens, unverified.")
     if result.final:
         _print()
         _print(result.final["summary_in_user_language"])
@@ -525,7 +550,8 @@ def _runner(args: argparse.Namespace) -> tuple[ApiRunner | AgentRunner, Orchestr
     org = load_org(config.org_dir)
     inputs, deliverables = config.root / "inputs", config.root / "deliverables"
     if args.dry_run:
-        orchestrator = Orchestrator(org, config.home, inputs_dir=inputs, deliverables_dir=deliverables)
+        orchestrator = Orchestrator(org, config.home, inputs_dir=inputs, deliverables_dir=deliverables,
+                                    keep_run_scratch=config.raw.get("keep_run_scratch", False) is True)  # fmt: skip
         _print("Dry run: a scripted model is standing in. No model is called, and nothing here reflects real work.")
         return ApiRunner(orchestrator, ScriptedClient(), ModelRoutes({"standard": "scripted"})), orchestrator
     plan = runtime_plan(config)
@@ -550,6 +576,7 @@ def _runner(args: argparse.Namespace) -> tuple[ApiRunner | AgentRunner, Orchestr
         search=build_search(config.search),
         inputs_dir=inputs,
         deliverables_dir=deliverables,
+        keep_run_scratch=config.raw.get("keep_run_scratch", False) is True,
     )
     if isinstance(orchestrator.skills, LockedSkills):
         orchestrator.feedback = orchestrator.skills
@@ -818,10 +845,11 @@ def cmd_mcp(args: argparse.Namespace) -> int:
             return None
         plan = None
         if args.coordinator:
-            # Roles default to subagents of the coordinator's Claude Code; runtime in trypro.yaml can send some on.
+            # Roles default to the coordinator's own agent: subagents of Claude Code, or each step in its own `agy -p`.
+            # runtime in trypro.yaml can send some on.
             raw = dict(config.raw)
             if not isinstance(raw.get("runtime"), dict) and "TRYPRO_RUNTIME" not in os.environ:
-                raw["runtime"] = {"default": "claude-code", "roles": {}}
+                raw["runtime"] = {"default": args.client, "roles": {}}
             try:
                 plan = RuntimePlan.from_config(raw)
             except ValueError as error:
@@ -836,18 +864,20 @@ def cmd_mcp(args: argparse.Namespace) -> int:
             proposals=ProposalWriter(config.root / "skills" / "proposed"),
             inputs_dir=config.root / "inputs",
             deliverables_dir=config.root / "deliverables",
+            keep_run_scratch=config.raw.get("keep_run_scratch", False) is True,
             # An operator's client has its own tools and files, which this can't see.
             check_claimed_files=bool(args.role),
         )
         if isinstance(orchestrator.skills, LockedSkills):
             orchestrator.feedback = orchestrator.skills
         if args.coordinator:
-            # After an upgrade, Claude Code's files catch up by themselves: nobody has to know to rewrite them.
-            refresh_claude_code_files(config.root, org)
+            # Every desk catches up after an upgrade or a role change, whichever harness opens the company.
+            refresh_front_desks(config.root, org)
         return McpService(
             orchestrator,
             bound_role=args.role,
             coordinator=args.coordinator,
+            client=args.client,
             computer=not args.sandboxed,
             root=config.root,
             runtimes=plan,
@@ -860,7 +890,9 @@ def cmd_mcp(args: argparse.Namespace) -> int:
     # A role can't design the company it works in.
     design = None if args.role else _Design(root)
     # stdout belongs to the protocol from here on, so nothing else may print to it.
-    build_server(company, design, coordinator=args.coordinator).run("stdio")
+    # Only Claude Code, set up by trypro, asks the person to confirm each decision a coordinator records.
+    person_tools = args.client == "claude-code"
+    build_server(company, design, coordinator=args.coordinator, person_tools=person_tools).run("stdio")
     return 0
 
 
@@ -907,11 +939,16 @@ class _Design:
 def cmd_agents(args: argparse.Namespace) -> int:
     config = load_config(Path.cwd())
     org = load_org(config.org_dir)
-    written = write_claude_code_files(config.root, org, args.model, args.sandboxed)
-    _print(f"Wrote {len(org.roles)} role agents to .claude/agents, the /company command, and .mcp.json.")
-    _print("Start Claude Code in this folder (restart it if it's open, so it loads them), and run:")
-    _print('  /company "<what you want done>"')
-    _print(f"That's {len(written)} files. Run this again whenever the company changes.")
+    if args.runtime != "claude-code" and (args.sandboxed or args.model):
+        _print("--sandboxed and --model are Claude Code's. Set other agents' models in trypro.yaml.")
+        return 2
+    limited = True if args.sandboxed else None
+    written = write_front_desks(config.root, org, args.model, limited)
+    _print(f"Wrote {len(written)} files for Claude Code, Antigravity, and Codex in this folder.")
+    _print("Open any of those agents here (restart it if it's open), and ask for work.")
+    _print("Claude Code also has /company; Antigravity also has the /company workflow.")
+    _print("In Antigravity and Codex, a run's questions, new roles and memory are yours to decide at a terminal.")
+    _print("Run this again whenever the company changes; opening its coordinator also refreshes every desk.")
     return 0
 
 
@@ -1036,10 +1073,14 @@ def cmd_resume(args: argparse.Namespace) -> int:
             if not held:
                 _print("Another command is running. Nothing was resumed.")
                 return 1
-            wait_for_memory(COMMAND_PEAK_MB, say=_print)
-            code = _print_result(runner.resume(args.run_id), orchestrator.deliverables_path(args.run_id))
-            _print_efficiency(orchestrator, args.run_id)
-            return code
+            with run_lock(orchestrator.home, args.run_id) as driving:
+                if not driving:
+                    _print("That run is already going on elsewhere. Nothing was resumed.")
+                    return 1
+                wait_for_memory(COMMAND_PEAK_MB, say=_print)
+                code = _print_result(runner.resume(args.run_id), orchestrator.deliverables_path(args.run_id))
+                _print_efficiency(orchestrator, args.run_id)
+                return code
     finally:
         orchestrator.close()
 
@@ -1091,7 +1132,7 @@ def cmd_memory_review(args: argparse.Namespace) -> int:
     config = load_config(Path.cwd())
     org = load_org(config.org_dir)
     memory = _memory(config, org)
-    orchestrator = Orchestrator(org, config.home)
+    orchestrator = Orchestrator(org, config.home, keep_run_scratch=config.raw.get("keep_run_scratch", False) is True)
     try:
         for item in orchestrator.company.pending_memory("company"):
             dropped = f", {item.source} for its team" if item.source.startswith(DROPPED_BY) else ""
@@ -1101,7 +1142,8 @@ def cmd_memory_review(args: argparse.Namespace) -> int:
                 if memory is None:
                     _print("Memory is turned off, so this can't be saved. It stays pending.")
                     continue
-                memory.promote(org.root_role, item.text, f"{item.source}, approved by {args.by}")
+                for learning in item.evidence:
+                    memory.promote(org.root_role, learning.text, f"{learning.reference}, approved by {args.by}")
                 orchestrator.company.decide_memory(item.id, True, by=args.by, at=utc_now())
             elif choice.startswith("r"):
                 orchestrator.company.decide_memory(item.id, False, by=args.by, at=utc_now())
@@ -1123,7 +1165,8 @@ def cmd_compact(args: argparse.Namespace) -> int:
 
 def _orchestrator() -> Orchestrator:
     config = load_config(Path.cwd())
-    return Orchestrator(load_org(config.org_dir), config.home)
+    return Orchestrator(load_org(config.org_dir), config.home,
+                        keep_run_scratch=config.raw.get("keep_run_scratch", False) is True)  # fmt: skip
 
 
 def cmd_decide(args: argparse.Namespace) -> int:
@@ -1219,14 +1262,19 @@ def _status_tokens(orchestrator: Orchestrator) -> None:
         _print("  Nothing yet.")
     for row in months:
         _print(
-            f"  {row['month']}: {row['commands']} commands, {row['input']} input ({row['cached_input']} cached), "
-            f"{row['output']} output, {row['calls']} calls"
+            f"  {row['month']}: {row['commands']} commands, model usage ({row['model_usage_status']}): "
+            f"{row['input']} input ({row['cached_input']} cached), "
+            f"{row['output']} output, {row['calls']} verified model calls; "
+            f"about {row['estimated_tool_tokens']} estimated tool tokens; "
+            f"{row['unverified_legacy_tokens']} unverified historical tokens"
         )
     _print("Latest commands:")
     for row in orchestrator.company.tokens_by_command(limit=10):
         _print(
-            f"  {row['run_id']}  {row['size']:<5} {row['status']:<9} {row['input']} in ({row['cached_input']} cached), "
-            f"{row['output']} out  {row['goal'][:40]}"
+            f"  {row['run_id']}  {row['size']:<5} {row['status']:<9} model usage ({row['model_usage_status']}): "
+            f"{row['input']} in ({row['cached_input']} cached), "
+            f"{row['output']} out; about {row['estimated_tool_tokens']} estimated tool tokens; "
+            f"{row['unverified_legacy_tokens']} unverified historical tokens  {row['goal'][:40]}"
         )
 
 
@@ -1243,7 +1291,7 @@ def _status_role(orchestrator: Orchestrator, org: Org, ref: str) -> int:
 def cmd_status(args: argparse.Namespace) -> int:
     config = load_config(Path.cwd())
     org = load_org(config.org_dir)
-    orchestrator = Orchestrator(org, config.home)
+    orchestrator = Orchestrator(org, config.home, keep_run_scratch=config.raw.get("keep_run_scratch", False) is True)
     try:
         if args.role:
             return _status_role(orchestrator, org, args.role)
@@ -1261,16 +1309,27 @@ def cmd_status(args: argparse.Namespace) -> int:
             return 0
         state = orchestrator.state(args.run_id)
         _print(f"Run {state.run_id}: {state.phase.value}")
+        if state.early_closure_reason:
+            _print(f"Closed early by {state.early_closed_by}: {state.early_closure_reason}")
+        for package in state.packages.values():
+            _print(f"  {package.id}: {package.status.value}")
         _print(f"Goal: {state.goal}")
         _print(f"Active departments: {', '.join(state.activated)}")
         for task in state.tasks.values():
             _print(f"  {task.task_id}: {task.status.value} (owner {task.owner_role})")
-        _print(f"Tokens: {state.usage.total} total, {state.usage.calls} calls")
+        for line in state.usage.lines():
+            _print(line)
         for role, usage in sorted(state.usage_by_role.items(), key=lambda item: -item[1].total):
-            _print(f"  {role}: {usage.total} tokens, {usage.calls} calls")
+            _print(
+                f"  {role}: {usage.total} model tokens ({usage.model_usage_status}), "
+                f"about {usage.estimated_tool_tokens} estimated tool tokens"
+            )
         _print(f"Size: {state.size}")
         for purpose, usage in sorted(state.usage_by_purpose.items(), key=lambda item: -item[1].total):
-            _print(f"  {purpose}: {usage.total} tokens, {usage.calls} calls")
+            _print(
+                f"  {purpose}: {usage.total} model tokens ({usage.model_usage_status}), "
+                f"about {usage.estimated_tool_tokens} estimated tool tokens"
+            )
         _print(f"Counters: {state.counters.model_dump()}")
         _print_efficiency(orchestrator, args.run_id)
         return 0
@@ -1311,7 +1370,7 @@ def cmd_start(args: argparse.Namespace) -> int:
         return code
     if (root / "org" / "org.yaml").exists():
         _print("This folder already has a company, so it gets your request.")
-        write_claude_code_files(root, load_org(root / "org"))
+        write_front_desks(root, load_org(root / "org"))
     else:
         proposal = _setup.design_with_claude(root, request, _print)
         if proposal is None:
@@ -1360,7 +1419,9 @@ def _outside_orchestrator(root: Path, *, with_memory: bool) -> Orchestrator:
     config = load_config(root)
     org = load_org(config.org_dir)
     memory = _memory(config, org) if with_memory else None
-    return Orchestrator(org, config.home, memory=memory)
+    return Orchestrator(
+        org, config.home, memory=memory, keep_run_scratch=config.raw.get("keep_run_scratch", False) is True
+    )
 
 
 def cmd_outcomes(args: argparse.Namespace) -> int:
@@ -1411,6 +1472,7 @@ def cmd_outcomes(args: argparse.Namespace) -> int:
 
 def cmd_held(args: argparse.Namespace) -> int:
     from .adapters.api_runner.tools import execute
+    from .core.outside import held_approval_message
 
     root = _here(args)
     orchestrator = _outside_orchestrator(root, with_memory=False)
@@ -1423,6 +1485,7 @@ def cmd_held(args: argparse.Namespace) -> int:
             for item in waiting:
                 _print(f"#{item.id}  {item.role}, run {item.run_id}:")
                 _print(f"    {item.command}")
+                _print(f"    idempotency key: {item.idempotency_key}")
                 for line in item.checks.splitlines():
                     _print(f"    | {line}")
             if waiting:
@@ -1431,6 +1494,10 @@ def cmd_held(args: argparse.Namespace) -> int:
                 )
             return 0
         held = orchestrator.outside.held_item(args.id)
+        prior = orchestrator.outside.held_execution(args.id)
+        if action == "approve" and prior is not None:
+            _print(held_approval_message(args.id, prior))
+            return 0 if prior.status == "approved" else 2
         if held is None or held.status != "waiting":
             _print(f"#{args.id} isn't waiting for approval.")
             return 2
@@ -1444,8 +1511,9 @@ def cmd_held(args: argparse.Namespace) -> int:
             return 0
         _print(f"Running #{args.id} for {held.role}: {held.command}")
         done = orchestrator.run_held(args.id, execute, by=by)
-        _print(done.output if done else "It had already been decided.")
-        return 0
+        execution = done or orchestrator.outside.held_execution(args.id)
+        _print(held_approval_message(args.id, execution, ran=done is not None))
+        return 0 if execution is not None and execution.status == "approved" else 2
     finally:
         orchestrator.close()
 
@@ -1554,15 +1622,18 @@ def build_parser() -> argparse.ArgumentParser:
     validate.add_argument("--policy", action="store_true", help="Also apply the rules for generated companies")
     validate.set_defaults(func=cmd_org_validate)
     org.add_parser("show", help="Print the org chart").set_defaults(func=cmd_org_show)
-    proposals = org.add_parser("proposals", help="Roles and departments the CEO proposed, from what its runs showed")
+    org.add_parser("scorecard", help="Print role cost and contribution from audits across runs").set_defaults(
+        func=cmd_org_scorecard
+    )
+    proposals = org.add_parser("proposals", help="Roster changes the CEO proposed, from what its runs showed")
     proposals.add_argument("--all", action="store_true", help="Also the ones already decided")
     proposals.set_defaults(func=cmd_org_proposals)
-    review = org.add_parser("review", help="Decide the CEO's proposed roles and departments, at a terminal")
+    review = org.add_parser("review", help="Decide proposed additions, retirements and mergers, at a terminal")
     review.add_argument("--by", help="Your name, for the record. Default: your username")
     review.set_defaults(func=cmd_org_review)
-    decide = org.add_parser("decide", help="Add or reject one proposed role or department, at a terminal")
+    decide = org.add_parser("decide", help="Accept or reject one proposed roster change, at a terminal")
     decide.add_argument("id", type=int)
-    decide.add_argument("decision", choices=("add", "reject"))
+    decide.add_argument("decision", choices=("accept", "add", "reject"))
     decide.add_argument("--by", help="Your name, for the record. Default: your username")
     decide.set_defaults(func=cmd_org_decide)
 
@@ -1675,6 +1746,12 @@ def build_parser() -> argparse.ArgumentParser:
     mcp.add_argument(
         "--sandboxed", action="store_true", help="The role has only the company's tools: no shell, files, or web"
     )
+    mcp.add_argument(
+        "--client",
+        choices=["claude-code", "antigravity", "codex"],
+        default="claude-code",
+        help="The coordinator's agent. Roles work in it by default, and only Claude Code records a person's decisions",
+    )
     mcp.set_defaults(func=cmd_mcp)
 
     outcomes = sub.add_parser("outcomes", help="What the company put out, and what came of it. Roles learn from it")
@@ -1754,8 +1831,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     doctor.set_defaults(func=cmd_doctor)
 
-    agents = sub.add_parser("agents", help="Set up an agent runtime to run this company")
-    agents.add_argument("runtime", choices=["claude-code"])
+    agents = sub.add_parser("agents", help="Write every supported agent front desk for this company")
+    agents.add_argument("runtime", choices=["claude-code", "antigravity", "codex"])
     agents.add_argument(
         "--sandboxed",
         action="store_true",
@@ -1777,6 +1854,13 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    if argv is None:
+        # trypro's launcher copied into a step's gate folder as gh.exe or git.exe: the gate, not the CLI.
+        from .adapters.agent_runner import as_gate
+
+        gated = as_gate(sys.argv[0], sys.argv[1:])
+        if gated is not None:
+            return gated
     args = build_parser().parse_args(argv)
     try:
         result: int = args.func(args)
@@ -1794,6 +1878,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         MemoryConfigError,
         SkillCustomsError,
         ActivationError,
+        FrontDeskError,
     ) as error:
         _print(f"Error: {error.args[0] if error.args else error}")
         return 2

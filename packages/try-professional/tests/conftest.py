@@ -24,6 +24,17 @@ from try_professional.packs import available_packs, install_org
 ROUTES = ModelRoutes({"standard": "test-model", "executive": "test-model", "fast": "test-model"})
 
 
+@pytest.fixture(autouse=True)
+def isolated_run_scratch(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    import hashlib
+
+    from try_professional.core import scratch
+
+    # Some tests use tmp_path itself as the company home. Scratch must remain outside it, as in production.
+    owner = hashlib.sha256(str(tmp_path).encode()).hexdigest()[:8]
+    monkeypatch.setattr(scratch, "scratch_root", lambda: tmp_path.parent / scratch.SCRATCH_FOLDER / owner)
+
+
 @pytest.fixture
 def make_org(tmp_path: Path) -> Callable[..., Org]:
     counter = {"n": 0}
@@ -55,7 +66,7 @@ class RecordingMemory:
         self.recalls.append(role)
         return self.hits
 
-    def write(self, role: str, text: str) -> None:
+    def write(self, role: str, text: str, *, source: str = "") -> None:
         self.writes.append(role)
 
     def promote(self, role: str, text: str, source: str) -> None:

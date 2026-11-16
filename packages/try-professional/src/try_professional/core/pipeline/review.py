@@ -5,7 +5,7 @@ from __future__ import annotations
 from ..artifacts import (
     ReviewVerdict,
 )
-from .base import QA_GATE
+from .base import QA_GATE, _not_done
 from .escalation import StepEscalation
 from .state import (
     FINAL_TASK_ID,
@@ -79,7 +79,11 @@ class StepReview(StepEscalation):
         """A final report summarizes other work. A reviewer given only the summary can't check it, and said so."""
         if task.task_id != FINAL_TASK_ID:
             return []
-        return [t.result_artifact_id for t in self.state.tasks.values() if t.result_artifact_id and t is not task]
+        return [
+            t.result_artifact_id
+            for t in self.state.tasks.values()
+            if t.result_artifact_id and t is not task and t.status == TaskStatus.APPROVED
+        ]
 
     def waive(self, task: TaskState, gate: str, note: str, by: str) -> None:
         task.pending_gates.remove(gate)
@@ -97,7 +101,7 @@ class StepReview(StepEscalation):
         where a company finds out it lacks a role, and real small commands were where that kept happening."""
         counters = self.state.counters
         troubled = counters.rework_loops or counters.escalations or counters.handoffs
-        if self.state.size == "small" and not troubled:
+        if self.state.size == "small" and not troubled and not self.state.early_closure_reason:
             self.finish_done()
         else:
             self.start_retrospective()
@@ -108,7 +112,12 @@ class StepReview(StepEscalation):
         self.actions.append(Finish(status="done", final_artifact_id=self.state.final_artifact_id))
 
     def start_retrospective(self) -> None:
-        self.invoke(self.org.root_role, Purpose.RETROSPECTIVE, "Retrospective")
+        self.invoke(
+            self.org.root_role,
+            Purpose.RETROSPECTIVE,
+            "Retrospective",
+            feedback=_not_done(self.state) if self.state.early_closure_reason else [],
+        )
 
     def request_rework(self, task: TaskState, reason: str) -> None:
         self.state.counters.rework_loops += 1

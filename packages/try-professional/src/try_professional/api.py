@@ -76,6 +76,13 @@ class RunStatus:
     questions: list[str] = field(default_factory=list)
     input_tokens: int = 0
     output_tokens: int = 0
+    cached_input_tokens: int = 0
+    model_usage_status: str = "unavailable"
+    estimated_tool_tokens: int = 0
+    unknown_model_calls: int = 0
+    unavailable_usage_records: int = 0
+    unverified_usage_records: int = 0
+    unverified_legacy_tokens: int = 0
 
     @property
     def finished(self) -> bool:
@@ -208,7 +215,7 @@ class Company:
             store.close()
 
     def decide_org_change(self, proposal_id: int, accept: bool, *, by: str) -> RoleInfo | None:
-        """Accept, which adds the role or department now, or reject. A change that can't be added stays waiting, and
+        """Apply the person's decision, or reject. A change that can't be applied stays waiting, and
         CompanyError says why. Claude Code's files are rewritten, if this company has them, keeping each role's model.
         """
         from .core.orchestrator import utc_now
@@ -227,21 +234,78 @@ class Company:
                         change["department"], change["role_id"], title=change["title"], mission=change["mission"],
                         responsibilities=change.get("responsibilities"), skill_needs=change.get("skill_needs"),
                     )  # fmt: skip
-                else:
+                elif change["kind"] == "add_role":
                     added = self.add_role(
                         change["department"], change["role_id"], title=change["title"], mission=change["mission"],
                         responsibilities=change.get("responsibilities"), skill_needs=change.get("skill_needs"),
                     )  # fmt: skip
-            except CompanyError:
+                else:
+                    added = self._reduce_role(change, store)
+            except Exception as error:
                 store.reopen_org_change(proposal_id)
-                raise
+                if isinstance(error, CompanyError):
+                    raise
+                raise CompanyError(f"The change couldn't be applied: {error}") from error
         finally:
             store.close()
-        if (self.root / ".claude" / "agents").is_dir():
-            from .adapters.mcp.claude_code import was_sandboxed
+        from .adapters.mcp.front_desk import refresh_front_desks
 
-            self.setup_claude_code(sandboxed=was_sandboxed(self.root))
+        refresh_front_desks(self.root, self.org)
         return added
+
+    def _reduce_role(self, change: dict[str, Any], store: CompanyStore) -> RoleInfo:
+        """Keep the hierarchy valid when a person accepts a reduction; restore every file on failure."""
+        from .core.artifacts import OrgChange
+        from .core.pipeline.planning import org_change_problem
+
+        org = self.org
+        problem = org_change_problem([OrgChange.model_validate(change)], org)
+        if problem:
+            raise CompanyError(problem)
+        ref = f"{change['department']}/{change['role_id']}"
+        if store.open_task_counts([ref])[ref]:
+            raise CompanyError(f"{ref} still has open work. Finish or abandon it before removing the role")
+        source = org.role(ref)
+        target_ref = change.get("into") or org.department_of(ref).head_ref
+        data, roles = read_documents(self.root / "org")
+        target = roles[target_ref]
+        if change["kind"] == "merge_role":
+            target["mission"] = f"{target['mission']} {roles[ref]['mission']}"
+            for name in ("responsibilities", "skill_needs", "inputs", "outputs"):
+                target[name] = list(dict.fromkeys([*target.get(name, []), *roles[ref].get(name, [])]))
+        for department in data["departments"]:
+            if department["id"] == source.department:
+                department["roles"].remove(source.id)
+                if department["head"] == source.id:
+                    department["head"] = target_ref.split("/", 1)[1]
+        del roles[ref]
+        data.get("llm_overrides", {}).pop(ref, None)
+        for other_ref, role in roles.items():
+            for name in ("reviewer", "escalation"):
+                value = role.get(name, "")
+                full = value if "/" in value else f"{role['department']}/{value}"
+                if full == ref:
+                    role[name] = getattr(source, name) if other_ref == target_ref else target_ref
+        org_folder = self.root / "org"
+        documents = {org_folder / "org.yaml": data}
+        documents.update({org_folder / "roles" / r["department"] / f"{r['id']}.yaml": r for r in roles.values()})
+        removed = org_folder / "roles" / source.department / f"{source.id}.yaml"
+        before = {path: path.read_bytes() for path in [*documents, removed]}
+        kept = {str(issue) for issue in check_policy(*read_documents(org_folder))}
+        try:
+            for path, document in documents.items():
+                path.write_text(yaml.safe_dump(document, sort_keys=False, allow_unicode=True), encoding="utf-8")
+            removed.unlink()
+            problems = self.validate()
+            problems += [str(i) for i in check_policy(*read_documents(org_folder)) if str(i) not in kept]
+            if problems:
+                raise CompanyError("The role wasn't removed: " + "; ".join(problems))
+        except Exception:
+            for path, content in before.items():
+                path.write_bytes(content)
+            raise
+        # The existing return value describes the affected role; additions keep their API.
+        return RoleInfo(ref, source.title, source.mission, org.is_head(ref))
 
     def validate(self) -> list[str]:
         """Every error that would stop the company loading. An empty list means it's valid."""
@@ -295,16 +359,20 @@ class Company:
             role_path.unlink()
             org_path.write_text(before, encoding="utf-8")
             raise CompanyError(f"{failed}: " + "; ".join(problems))
+        from .adapters.mcp.front_desk import refresh_front_desks
+
+        refresh_front_desks(self.root, self.org)
 
     # ---- Claude Code ---------------------------------------------------------------------------------------------
 
     def setup_claude_code(self, *, sandboxed: bool = False) -> list[Path]:
         """Write what Claude Code needs to run this company: the /company command, one subagent per role, each bound
         to its own role's server, and .mcp.json. Each role is a full agent, with the shell, files, git, and the web,
-        unless `sandboxed`. Run it again after changing roles. Returns the files written."""
-        from .adapters.mcp.claude_code import write_claude_code_files
+        unless `sandboxed`. Also writes Antigravity and Codex front desks for switching harnesses.
+        Returns Claude Code files."""
+        from .adapters.mcp.front_desk import write_front_desks
 
-        write_claude_code_files(self.root, self.org, sandboxed=sandboxed)
+        write_front_desks(self.root, self.org, sandboxed=sandboxed)
         claude = self.root / ".claude"
         return sorted([*claude.rglob("*.md"), self.root / ".mcp.json"])
 
@@ -352,6 +420,13 @@ class Company:
                 questions=[request.question for request in state.human_requests.values()],
                 input_tokens=state.usage.input_tokens,
                 output_tokens=state.usage.output_tokens,
+                model_usage_status=state.usage.model_usage_status,
+                estimated_tool_tokens=state.usage.estimated_tool_tokens,
+                unknown_model_calls=state.usage.unknown_model_calls,
+                unavailable_usage_records=state.usage.unavailable_records,
+                unverified_usage_records=state.usage.unverified_records,
+                unverified_legacy_tokens=state.usage.unverified_legacy_tokens,
+                cached_input_tokens=state.usage.cached_input_tokens,
             )
         finally:
             orchestrator.close()
@@ -396,6 +471,7 @@ class Company:
             config.home,
             inputs_dir=self.root / "inputs",
             deliverables_dir=self.root / "deliverables",
+            keep_run_scratch=config.raw.get("keep_run_scratch", False) is True,
         )
 
     def _runner(

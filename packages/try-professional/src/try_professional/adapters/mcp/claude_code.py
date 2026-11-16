@@ -1,4 +1,4 @@
-"""Set a company up for Claude Code: one subagent per role, each held to one bound MCP server.
+"""Set a company up for Claude Code: a fresh subagent per action, held to its role's bound MCP server.
 
 A role's subagent acts as its own role only: its server is started for it, so it can't read another role's memory or
 assignment, or submit for one. It's a full agent, with the shell, files, git and the web, unless the company was set
@@ -18,6 +18,14 @@ import yaml
 
 from ... import __version__
 from ...org import Org, Role
+from .front_desk import FRONT_DESK_END as FRONT_DESK_END
+from .front_desk import FRONT_DESK_START as FRONT_DESK_START
+from .front_desk import (
+    MANAGED_END,
+    YAML_START,
+    front_desk_rules,
+    write_managed,
+)
 
 SERVER = "trypro"
 # Not the session's name. Claude Code gave a subagent the session's server when the two names matched, so a "bound"
@@ -26,9 +34,13 @@ ROLE_SERVER = "trypro_role"
 _MODELS = {"executive": "sonnet", "standard": "sonnet", "fast": "haiku"}
 _ROLE_PROMPT = """You are {title} at {company}. You work on one assignment, then stop.
 
-You'll be given a run_id. Call run_next_action with it. It returns your assignment, its instructions, and the output \
-schema, and it's the only thing to work from. Follow those instructions as your own. If run_next_action isn't one of \
-your tools, don't reach the company any other way: reply only NO_ROLE_TOOLS, and stop.
+You'll be given a run_id. Call run_next_action with it: your agent may list it with its server's name in front, such \
+as mcp__trypro_role__run_next_action. It returns your assignment, its instructions, and the output schema, and it's \
+the only thing to work from. Follow those instructions as your own. Only if no tool of that name is among yours, \
+don't reach the company any other way: reply only NO_ROLE_TOOLS, and stop.
+
+If it returns several actions for your role, do only the first action in the returned order. Submit or escalate \
+that one assignment, then stop. Another fresh agent will take the next assignment.
 
 {tools_line} Finish with the tool it names under submit_with. If a submission is rejected, it says what to fix, \
 so fix that and submit again. If you can't finish, or the decision isn't yours, call escalate.
@@ -44,7 +56,8 @@ _FULL_TOOLS = (
     "submission, and files through workspace_write when your step lists it under may_use, because only those reach "
     "whoever reviews your work. A review or a final report hands in only its verdict or its report. When you "
     "put something out, such as a pull request, a post, a quote, or an email, give its link or a reference, and who "
-    "it went to, to outcome_track, so the company learns from what happens to it. The machine is shared: run heavy "
+    "it went to, to outcome_track, so the company learns from what happens to it. Look for things in your workspace "
+    "and the places your assignment names, never across the whole machine. The machine is shared: run heavy "
     "commands, such as a test suite, one at a time, with at most 2 parallel workers and a time limit, and stop what "
     "you started before you submit."
 )
@@ -59,17 +72,33 @@ Run this through the company: $ARGUMENTS
 You coordinate, and you aren't a role in the company. Your {server} tools can't do a role's work, and they don't show \
 you what a role was asked. Use them like this:
 
+For a long run, call your coordinator's run_in_background with the command as written, or with \
+"continue <run_id>" to carry a run on. It drives every action in its own agent, as Antigravity's front desk does. \
+Tell me its run_id and that it's running, then return: this chat needn't wait or stay open. Only when I ask how it's \
+going, call run_next_action with its run_id. While it says working, tell me which roles are at work. Never start \
+subagents or call run_step for a background run. If it is blocked or done, follow step 4 or 6 below.
+
+Posting, sending, or opening anything outside waits for my approval.
+
+For a run kept in this chat:
+
 1. If the command is "continue" and a run_id, don't start anything: call run_next_action with that run_id. \
 Otherwise, call run_start with the command as written. It returns a run_id, and the first actions.
-2. For each action, start the subagent named trypro-<department>-<role> for its role (a role of marketing/seo is \
-trypro-marketing-seo). Give it only the run_id. When there are actions for several roles, start all of them at once, \
-in one message, so they work at the same time, one subagent per role. Never add what another role did. An \
-action that says runs_in works in another agent: don't start a subagent for it. Call run_step with its run_id \
-and invocation_id, at the same time as the subagents, and while it says working, call it again.
-3. Call run_next_action, and repeat until its status isn't "working".
+2. For each action, start a fresh subagent named trypro-<department>-<role> for its role (a role of marketing/seo is \
+trypro-marketing-seo). Give it only the run_id. Never resume or reuse a subagent, even when the next action has the \
+same role: it does one assignment, then stops, keeping the run's steps out of this chat. In each ready batch, \
+start only the first action for each role in the returned order. Never run two subagents for the same role at once: \
+with only the run_id, they would see the same open assignments. When there are actions for several roles, \
+start all of them at once, in one message, so they work at the same time, one fresh subagent per action. \
+Never add what another role did. An action that says runs_in works in another agent: don't start its role's \
+subagent; start a fresh coordinator subagent with your trypro tools. Give it only the run_id and invocation_id, and \
+have it call run_step until it no longer says working. Keep those run_step calls in that subagent, and start it at \
+the same time as the role subagents. Never resume or reuse it for another action.
+3. Wait for those subagents to stop, then call run_next_action, and use the refreshed actions for the next batch. \
+Repeat until its status isn't "working".
 4. If its status is "blocked", show me each question under needs_a_person, word for word, with its options, and ask \
 me which. Never choose for me. When I've answered in my own words, record it with person_answer, then carry on from \
-step 3.
+step 3, or resume a background run with run_in_background and "continue <run_id>".
 5. If a role's subagent won't start, or replies NO_ROLE_TOOLS, stop, and tell me: Claude Code leaves out each role's \
 own tools until this exact folder is trusted, so open Claude Code here once and accept its prompt, and then run it \
 again. That holds for `claude -p` too. Never do a role's work yourself.
@@ -80,45 +109,9 @@ for the whole company? record with person_decide_memory). Only record what I sai
 """
 
 
-FRONT_DESK_START = "<!-- trypro:front-desk:start -->"
-FRONT_DESK_END = "<!-- trypro:front-desk:end -->"
-_FRONT_DESK = """{start}
-# This folder is a company: {company}
-
-It's run by Try Professional, and you're its front desk.
-
-- **When I ask for work, in any words, it's a command for the company.** Follow `.claude/commands/company.md`, with my \
-words as the command, exactly as if I'd typed `/company <my words>`. Don't do the work yourself, with any tool.
-- **The one exception: a quick one-off whose answer stays here in our chat, and is cheap to get wrong**, such as a \
-fact to look up, a sum, or the time somewhere. Do that yourself, with your own tools, and say you did it alone. \
-Anything that goes out to someone, I'll rely on, or will ask for again is work for the company.
-- When I ask about earlier work, read `deliverables/`, and answer from it.
-- When I'm only chatting, or asking how something works, answer briefly yourself.
-- When a run stops for a person, or the CEO proposes a new role, show me the question word for word and ask me. Only \
-I decide: never choose for me. When I've answered, record it with person_answer or person_decide_company_change. \
-Claude Code asks me to confirm each one.
-- If I ask you to post, send, or open something yourself, such as an issue or a pull request, record it afterwards \
-with outcome_record, naming the role whose work it was, so the company learns what happens to it.
-- When I say something should always, or never, happen from now on, ask me whether to make it a standing rule for \
-the whole company. If I say yes, add it in my words with person_add_rule. company_rules lists them, and what's \
-waiting for me.
-{end}
-"""
-
-
 def write_front_desk(root: Path, org: Org) -> Path:
-    """CLAUDE.md tells the session that plain requests are work for the company. Anything else in it is kept."""
-    path = root / "CLAUDE.md"
-    block = _FRONT_DESK.format(start=FRONT_DESK_START, end=FRONT_DESK_END, company=org.company_name).strip()
-    text = path.read_text(encoding="utf-8") if path.is_file() else ""
-    if FRONT_DESK_START in text and FRONT_DESK_END in text:
-        before, rest = text.split(FRONT_DESK_START, 1)
-        after = rest.split(FRONT_DESK_END, 1)[1]
-        text = f"{before}{block}{after}"
-    else:
-        text = f"{block}\n\n{text}" if text.strip() else f"{block}\n"
-    path.write_text(text, encoding="utf-8", newline="\n")
-    return path
+    """Plain requests go to the company; the person's text outside our block stays in place."""
+    return write_managed(root / "CLAUDE.md", front_desk_rules(org, "claude-code"))
 
 
 _FOR_A_PERSON = (
@@ -187,6 +180,28 @@ def role_agent(root: Path, org: Org, role: Role, model: str | None = None, sandb
     return f"---\n{header}\n---\n\n{body}\n"
 
 
+def _legacy_agent(path: Path) -> str:
+    if not path.is_file():
+        return ""
+    text = path.read_text(encoding="utf-8")
+    last = "When your work is submitted, reply in one line saying what you submitted, and stop."
+    if text.startswith("---\n") and YAML_START not in text and last in text:
+        return text[: text.index(last) + len(last)]
+    return ""
+
+
+def _legacy_command(path: Path) -> str:
+    """The reviewed unmarked upgrade kept old polling rules when matched against the new command's whole text."""
+    if not path.is_file():
+        return ""
+    text = path.read_text(encoding="utf-8")
+    prefix = _COMMAND.split("\nYou coordinate,", 1)[0]
+    last = "Only record what I said."
+    if text.startswith(prefix) and YAML_START not in text and last in text:
+        return text[: text.index(last) + len(last)]
+    return ""
+
+
 def write_claude_code_files(root: Path, org: Org, model: str | None = None, sandboxed: bool = False) -> list[Path]:
     """Files under .claude/, .mcp.json, and the front desk's part of CLAUDE.md. Run it again after the company
     changes. Without `model`, each role keeps the model its file has now."""
@@ -194,17 +209,39 @@ def write_claude_code_files(root: Path, org: Org, model: str | None = None, sand
     agents.mkdir(parents=True, exist_ok=True)
     written = []
     kept = _models_now(agents)
+    names = {agent_name(role.ref) for role in org.roles.values()}
     for existing in agents.glob("trypro-*.md"):
+        if existing.stem in names:
+            continue
+        text = existing.read_text(encoding="utf-8")
+        if YAML_START in text and MANAGED_END in text:
+            before, rest = text.split(YAML_START, 1)
+            notes = before + rest.split(MANAGED_END, 1)[1]
+        elif legacy := _legacy_agent(existing):
+            notes = text[len(legacy) :]
+        else:
+            continue  # An unrecognized file belongs to the person, even if its name begins with trypro-.
+        if notes.strip():
+            # The retired subagent must stop loading, but its person's notes still belong in this folder.
+            saved = root / ".claude" / "notes" / existing.name
+            saved.parent.mkdir(parents=True, exist_ok=True)
+            with saved.open("a", encoding="utf-8", newline="\n") as out:
+                out.write(notes)
         existing.unlink()
     for role in org.roles.values():
         path = agents / f"{agent_name(role.ref)}.md"
         chosen = model or kept.get(agent_name(role.ref))
-        path.write_text(role_agent(root, org, role, chosen, sandboxed), encoding="utf-8", newline="\n")
+        content = role_agent(root, org, role, chosen, sandboxed)
+        legacy = _legacy_agent(path)
+        write_managed(path, content.removeprefix("---\n"), start=YAML_START, end=MANAGED_END, legacy=legacy)
         written.append(path)
     commands = root / ".claude" / "commands"
     commands.mkdir(parents=True, exist_ok=True)
     command = commands / "company.md"
-    command.write_text(_COMMAND.format(server=SERVER), encoding="utf-8", newline="\n")
+    content = _COMMAND.format(server=SERVER)
+    write_managed(
+        command, content.removeprefix("---\n"), start=YAML_START, end=MANAGED_END, legacy=_legacy_command(command)
+    )
     written.append(command)
     mcp = root / ".mcp.json"
     existing_config: dict[str, Any] = json.loads(mcp.read_text(encoding="utf-8")) if mcp.is_file() else {}

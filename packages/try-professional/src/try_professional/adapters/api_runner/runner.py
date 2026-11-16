@@ -21,6 +21,7 @@ from ...core.artifacts import (
     settle_notes,
     settle_payload,
 )
+from ...core.listing import brief_listing
 from ...core.orchestrator import Orchestrator
 from ...core.pipeline import (
     AskHuman,
@@ -133,6 +134,12 @@ class RunResult:
     cached_input_tokens: int = 0
     calls: int = 0
     size: str = ""
+    model_usage_status: str = "unavailable"
+    estimated_tool_tokens: int = 0
+    unknown_model_calls: int = 0
+    unavailable_usage_records: int = 0
+    unverified_usage_records: int = 0
+    unverified_legacy_tokens: int = 0
 
 
 _CUT_MARK = "...(an earlier output, cut to its start"
@@ -310,6 +317,12 @@ class ApiRunner:
             cached_input_tokens=state.usage.cached_input_tokens,
             calls=state.usage.calls,
             size=state.size,
+            model_usage_status=state.usage.model_usage_status,
+            estimated_tool_tokens=state.usage.estimated_tool_tokens,
+            unknown_model_calls=state.usage.unknown_model_calls,
+            unavailable_usage_records=state.usage.unavailable_records,
+            unverified_usage_records=state.usage.unverified_records,
+            unverified_legacy_tokens=state.usage.unverified_legacy_tokens,
         )
 
     # ---- one role, one assignment ---------------------------------------------------
@@ -342,6 +355,7 @@ class ApiRunner:
             role=role.ref,
             allowed=usable,
             workspace=self.orchestrator.workspace(run_id),
+            scratch=self.orchestrator.scratch(run_id),
             memory=self.orchestrator.memory,
             skills=self.orchestrator.skills,
             search=search,
@@ -357,8 +371,7 @@ class ApiRunner:
             model = state.role_models.get(role.ref, model)
         except ClientError as error:
             return [InvocationFailed(invocation_id=action.invocation_id, reason=str(error), retryable=error.retryable)]
-        workspace = context.workspace.resolve()
-        files = sorted(str(p.relative_to(workspace)).replace("\\", "/") for p in workspace.rglob("*") if p.is_file())
+        files = brief_listing(context.workspace)
         loadout = skills.loadout(role.ref) if action.purpose == Purpose.EXECUTE else []
         web = "web_search" in usable
         briefing = self.orchestrator.briefing(run_id, invocation)
@@ -374,6 +387,7 @@ class ApiRunner:
                     search=search is not None,
                     briefing=briefing,
                     computer=self.computer,
+                    scratch=context.scratch,
                 )
             )
         ]
@@ -414,6 +428,9 @@ class ApiRunner:
                     input_tokens=response.input_tokens,
                     output_tokens=response.output_tokens,
                     cached_input_tokens=response.cached_input_tokens,
+                    raw_input_tokens=response.raw_input_tokens,
+                    cache_creation_input_tokens=response.cache_creation_input_tokens,
+                    input_tokens_includes_cache=response.input_tokens_includes_cache,
                     role=role.ref,
                 ),
             )

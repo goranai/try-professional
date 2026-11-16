@@ -9,6 +9,7 @@ from mcp.server.mcpserver import MCPServer
 
 from .service import (
     AGENT_STEP_TOOL,
+    BACKGROUND_TOOL,
     COORDINATOR_TOOLS,
     DEFAULT_AUDIT_TAIL,
     MCP_TOOLS,
@@ -56,6 +57,7 @@ def build_server(
     design: Any = None,
     *,
     coordinator: bool = False,
+    person_tools: bool = True,
 ) -> MCPServer:
     """design is what lets a client propose a company. A server bound to one role doesn't get it."""
     server = MCPServer("try-professional", instructions=_INSTRUCTIONS)
@@ -199,8 +201,8 @@ def build_server(
 
     @server.tool()
     def person_decide_company_change(proposal_id: int, decision: str) -> Any:
-        """Add ("add") or reject ("reject") a role or department the CEO proposed, as the person said. Only after
-        they've said: never decide for them. The person is asked to confirm."""
+        """Accept ("accept", or "add") or reject ("reject") a roster change the CEO proposed, as the person said.
+        Only after they've said: never decide for them. The person is asked to confirm."""
         return _guard(company_tool("person_decide_company_change"), proposal_id, decision)
 
     @server.tool()
@@ -234,6 +236,12 @@ def build_server(
         return _guard(company_tool("outcome_record"), run_id, ref, role, title, target, kind)
 
     @server.tool()
+    def run_in_background(goal: str) -> Any:
+        """Start the person's command, or carry on "continue <run_id>", running on its own to the end or until a
+        person is needed. Then call run_next_action to see where it is, not run_step."""
+        return _guard(company_tool("run_in_background"), goal)
+
+    @server.tool()
     def run_step(run_id: str, invocation_id: str) -> Any:
         """Do a step whose action says runs_in, in that agent, such as Antigravity or Codex. Returns when the role has
         handed in, or after 20 minutes says it's still working: then call it again with the same ids."""
@@ -248,9 +256,14 @@ def build_server(
         # Not only refused: a client's model never sees them, so it can't try.
         for name in _ROLE_ONLY:
             server.remove_tool(name)
+        if not person_tools:
+            # A client that can't ask the person to confirm each call, such as Antigravity with its permissions
+            # skipped, could record a decision nobody made. The person makes it at a terminal instead.
+            for name in PERSON_TOOLS:
+                server.remove_tool(name)
     else:
         # Only the coordinator records a person's decisions: Claude Code, set up by trypro, asks the person to confirm
         # each call. A role's server, or another client acting as every role, never sees these tools.
-        for name in (*PERSON_TOOLS, AGENT_STEP_TOOL):
+        for name in (*PERSON_TOOLS, AGENT_STEP_TOOL, BACKGROUND_TOOL):
             server.remove_tool(name)
     return server
